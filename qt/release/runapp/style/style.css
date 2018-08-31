@@ -1,0 +1,43 @@
+* {  
+  font-size: 13pt;
+}
+QPushButton { 
+  color: rgb(200,200,200);
+  background: rgb(14,99,156);
+  border-radius: 25px;
+  padding: 10px;
+  margin: 0px;
+  border: 0px;
+  width: 140px;
+  height: 30px;
+}
+QPushButton::hover {
+  color: white;
+  background: rgb(0,122,204);
+}
+
+QComboBox { 
+  padding:0px; 
+  border: 1px solid gainsboro;
+  height: 40px;
+  border-radius: 5px;
+}
+QComboBox QFrame { 
+  padding: 0px;
+  border: 1px solid gainsboro; 
+  background-color: white;
+}
+QComboBox::drop-down { 
+  border: 0px; 
+}
+QComboBox::down-arrow { 
+  image: url(images/arrow_down_16.png); 
+  margin-right: 20px;
+}
+QComboBox::hover { 
+  background-color: #fefefe;
+}
+
+QProgressBar { background: transparent; border:0px;}
+QProgressBar::chunk { background: rgb(14,99,156);}
+
