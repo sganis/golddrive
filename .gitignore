@@ -1,5 +1,5 @@
-/__pycache__/ 
-/x64/
-/.vs/
+__pycache__/ 
+x64/
+.vs/
 *.VC.db
 *.VC.opendb
