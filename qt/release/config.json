@@ -1,7 +1,0 @@
-{
-	"drive" 		: "Z:",
-	"drivename" 	: "Simulation",
-	"hosts" 		: ["localhost"],
-	"sshfs_path" 	: "C:\\Program Files\\SSHFS-Win\\bin",
-	"runapp" 		: "runapp\\runapppy.exe"
-}
