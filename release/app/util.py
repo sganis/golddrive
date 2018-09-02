@@ -2,7 +2,7 @@
 import subprocess
 
 def run(cmd):
-	#print(f'Running command:\n{cmd}')
+	print(f'Running command:\n{cmd}')
 	proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	ret = 0
 	try:

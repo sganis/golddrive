@@ -38,7 +38,7 @@ def main(ssh, keygen, userhost):
 
 	# Copy these keys to the target machines.
 	cmd = f'echo y | "{ssh}" -o StrictHostKeyChecking=no {userhost} "mkdir -p .ssh && echo \'{key}\' >> .ssh/authorized_keys && chmod 700 .ssh/authorized_keys"'
-	ret = os.system(cmd)
+	util.run(cmd)
 	if test(ssh, userhost):
 		print("SSH setup successfull")
 	else:
@@ -48,7 +48,7 @@ def main(ssh, keygen, userhost):
 if __name__ == '__main__':
 	import sys
 	assert len(sys.argv) > 1 and '@' in sys.argv[1] # usage: prog user@host
-	user, host = sys.argv[1].split('@')
+	userhost = sys.argv[1]
 	ssh = r'C:\Program Files\SSHFS-Win\bin\ssh.exe'
 	keygen = r'C:\Program Files\SSHFS-Win\bin\ssh-keygen.exe'
 	main(ssh, keygen, userhost)

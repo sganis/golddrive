@@ -2,7 +2,13 @@
 # 
 import util
 
-def main(sshfs, drive, userhost):
+def set_drive_name(name, userhost):
+	print(f'Setting drive name as {name}...')
+	key = fr'HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\##sshfs#{userhost}'
+	cmd = f'reg add {key} /v _LabelFromReg /d {name} /f'
+	util.run(cmd)
+
+def main(sshfs, drive, userhost, drivename=''):
 	print(f'Mounting {drive} {userhost}...')
 	
 	cmd = f'''
@@ -19,16 +25,17 @@ def main(sshfs, drive, userhost):
 		-oDirInfoTimeout=10000 
 		-oVolumeInfoTimeout=10000
 		'''.replace('\n',' ').replace('\t','')
+
+		# google mount: "-o" "max_readahead=131072"
+		
 	# print(cmd)
 	util.run(cmd)
 
-	# [HKEY_CURRENT_USER\Network\Z]
-	# "RemotePath"="\\\\sshfs\\user@localhost\\..\\.."
-	# "UserName"=""
-	# "ProviderName"="Windows File System Proxy"
-	# "ProviderType"=dword:20737046
-	# "ConnectionType"=dword:00000001
-	# "ConnectFlags"=dword:00000000
+	if not drivename:
+		drivename = 'Cluster'
+	set_drive_name(drivename, userhost)
+
+	# set net use info
 	letter = drive.strip(':')
 	remotepath = f'\\\\sshfs\\{userhost}\\..\\..'
 	key = fr'HKCU\Network\{letter}'
@@ -39,8 +46,13 @@ def main(sshfs, drive, userhost):
 	util.run(f'reg add {key} /v ConnectionType /d 1 /t REG_DWORD /f')
 	util.run(f'reg add {key} /v ConnectFlags /d 0 /t REG_DWORD /f')
 
+	# set drive icon
+	import driveicon
+	driveicon.main(letter)
+
 if __name__ == '__main__':
 	import sys
+	import os
 	assert len(sys.argv) > 2 and '@' in sys.argv[2] # usage: mount.py <drive> <user@host>
 	sshfs = r'C:\Program Files\SSHFS-Win\bin\sshfs.exe'
 	sys.path.insert(0, os.path.dirname(sshfs))

@@ -62,17 +62,11 @@ def unmount(drive):
 	import unmount
 	unmount.main(drive)
 
-def set_drive_name(name, userhost):
-	print(f'Setting drive name as {name}...')
-	key = fr'HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\##sshfs#{userhost}'
-	cmd = f'reg add {key} /v _LabelFromReg /d {name} /f'
-	util.run(cmd)
-
 def mount(sshfs, drive, userhost):
 	import mount
 	mount.main(sshfs, drive, userhost)
 
-def main():
+def main(sshfs, drive, userhost):
 	print('Mounting remote filesystem using SSHFS...')
 	
 	# read configuration
@@ -94,11 +88,15 @@ def main():
 		sys.path.insert(0, os.path.dirname(c['sshfs']))
 		unmount(c['drive'])
 		setup_ssh(c['ssh'], c['keygen'], c['userhost'])
-		set_drive_name(c['drivename'], c['userhost'])	
-		mount(c['sshfs'], c['drive'], c['userhost'])
+		mount(c['sshfs'], c['drive'], c['userhost'], c['drivename'])
 
 	return 0
 
 
 if __name__ == '__main__':
-	sys.exit(main())
+	import sys
+	import os
+	assert len(sys.argv) > 2 and '@' in sys.argv[2] # usage: mount.py <drive> <user@host>
+	sshfs = r'C:\Program Files\SSHFS-Win\bin\sshfs.exe'
+	sys.path.insert(0, os.path.dirname(sshfs))
+	main(sshfs, *sys.argv[1:])
