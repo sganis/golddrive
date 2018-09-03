@@ -13,7 +13,7 @@ DIR = os.path.abspath(os.path.dirname(__file__))
 
 class Worker(QtCore.QObject):
 
-	workDone = QtCore.pyqtSignal(str)
+	workDone = QtCore.pyqtSignal(str, str)
 
 	def restart_explorer(self, param):
 		import unmount
@@ -40,13 +40,13 @@ class Worker(QtCore.QObject):
 	# 	# mount.main(sshfs, drive, userhost, drivename)
 	# 	return 'Drive is connected'
 
-	def work(self, task, param):
+	def work(self, task, params):
 		time.sleep(1)
 		if hasattr(self, task):
-			result = getattr(self, task)(param)
+			result = getattr(self, task)(params)
 		else:
 			result = 'Not implemented.'
-		self.workDone.emit(result)
+		self.workDone.emit(task, result)
 
 
 class Window(Ui_MainWindow, QMainWindow):
@@ -70,6 +70,9 @@ class Window(Ui_MainWindow, QMainWindow):
 		with open(f'{DIR}/style.css') as r:
 			self.setStyleSheet(r.read())
 
+		# to store ui parameters and send to worker
+		self.params = {}
+
 		self.settings = QtCore.QSettings("sganis", "ssh-drive")
 		if self.settings.value("geometry"):
 			self.restoreGeometry(self.settings.value("geometry"))
@@ -77,7 +80,16 @@ class Window(Ui_MainWindow, QMainWindow):
 		self.cboParam.addItems(["   S:  Simulation","   I:  IT","   X:  Exploration"])
 		self.cboParam.setCurrentIndex(self.settings.value("cboParam",0))
 		self.progressBar.setVisible(False)	
-		self.lblStatus.setVisible(False)
+		self.lblStatus.setText("")
+		self.txtPassword.setVisible(False)
+
+		menu = QMenu()
+		menu.addAction('Setup SSH keys', self.mnuSetupSsh)
+		menu.addAction('Reconnect', self.mnuReconnect)
+		menu.addAction('Open settings folder', self.mnuSettings)
+		menu.addAction('Show log file', self.mnuShowLog)
+		menu.addAction('Restart Explorer.exe', self.mnuRestartExplorer)
+		self.pbHamburger.setMenu(menu)
 
 		# worker thread
 		self.thread = QtCore.QThread()
@@ -87,18 +99,16 @@ class Window(Ui_MainWindow, QMainWindow):
 		self.worker.workDone.connect(self.onWorkDone)
 		self.thread.start()
 		self.loaded = True
-		
-		menu = QMenu()
-		menu.addAction('Setup SSH keys', self.mnuSetupSsh)
-		menu.addAction('Reconnect', self.mnuReconnect)
-		menu.addAction('Open settings folder', self.mnuSettings)
-		menu.addAction('Show log file', self.mnuShowLog)
-		menu.addAction('Restart Explorer.exe', self.mnuRestartExplorer)
-		self.pbHamburger.setMenu(menu)
 
 	def mnuSetupSsh(self):
-		self.start('Setting up SSH keys...')
-		self.workRequested.emit('setupssh','')
+		self.lblStatus.setText('Password required:')
+		self.txtPassword.setVisible(True)
+	
+	def on_txtPassword_returnPressed(self):
+		self.txtPassword.setVisible(False)
+		self.start('Setting up ssh authentication...')
+		self.params['password'] =str(self.txtPassword.text())
+		self.workRequested.emit('setupssh', self.params)
 
 	def mnuReconnect(self):
 		self.start('Reconnecting drive...')
@@ -129,7 +139,6 @@ class Window(Ui_MainWindow, QMainWindow):
 
 		self.progressBar.setVisible(True)
 		self.lblStatus.setText(message)
-		self.lblStatus.setVisible(True)
 		self.pbConnect.setEnabled(False)
 
 	def end(self, message='Done.'):
@@ -151,7 +160,7 @@ class Window(Ui_MainWindow, QMainWindow):
 		self.start('Checking...')
 		self.workRequested.emit('connect', param)
 
-	def onWorkDone(self, result):
+	def onWorkDone(self, task, result):
 		print(f'work done, result: {result}')
 		self.end(result)
 
@@ -159,14 +168,16 @@ class Window(Ui_MainWindow, QMainWindow):
 
 		subprocess.call(fr'start /b c:\windows\explorer.exe "{DIR}\.."', shell=True)
 
+
+
 def run():
 
-    app = QApplication(sys.argv)
-    window = Window()
-    window.show()
-    sys.exit(app.exec_())
+	app = QApplication(sys.argv)
+	window = Window()
+	window.show()
+	sys.exit(app.exec_())
 
 
 
 if __name__ == '__main__':
-    run()    
+	run()

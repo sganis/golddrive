@@ -30,8 +30,8 @@ QPushButton::menu-indicator {
   image: url(myindicator.png);
 }
 
-QComboBox { 
-  padding:0px; 
+QComboBox, QLineEdit { 
+  padding: 0px; 
   border: 1px solid gainsboro;
   height: 40px;
   border-radius: 5px;
@@ -50,6 +50,10 @@ QComboBox::down-arrow {
 }
 QComboBox::hover { 
   background-color: #fefefe;
+}
+
+QLineEdit {
+  padding-left: 10px;
 }
 
 QProgressBar { background: transparent; border:0px;}
