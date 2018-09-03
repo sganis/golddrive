@@ -14,10 +14,7 @@ from PyQt5.QtWidgets import (QWidget, QLabel,
 from app_ui import Ui_MainWindow
 
 DIR = os.path.abspath(os.path.dirname(__file__))
-# logging.basicConfig(filename=fr'{DIR}\..\ssh-drive.log', level=logging.INFO)
-logging.basicConfig(level=logging.INFO, format='%(asctime)s: %(name)-10s: %(levelname)-7s: %(message)s')
 logger = logging.getLogger('ssh-drive')
-
 
 
 class Worker(QtCore.QObject):
@@ -278,16 +275,25 @@ class Window(Ui_MainWindow, QMainWindow):
 
 		subprocess.call(fr'start /b c:\windows\explorer.exe "{DIR}\.."', shell=True)
 
-
-
-def run():
-
+def _runApp():
 	app = QApplication(sys.argv)
 	window = Window()
 	window.show()
 	sys.exit(app.exec_())
 
 
+def run():
+	# this is call from C++ embedded app, log to file
+	logging.basicConfig(
+		level=logging.INFO, 
+		filename=fr'{DIR}\..\ssh-drive.log',
+		format='%(asctime)s: %(name)-10s: %(levelname)-7s: %(message)s')
+	_runApp()
+
 
 if __name__ == '__main__':
-	run()
+	# log to console
+	logging.basicConfig(
+		level=logging.INFO, 
+		format='%(asctime)s: %(name)-10s: %(levelname)-7s: %(message)s')
+	_runApp()

@@ -4,11 +4,11 @@
 QPushButton#pbConnect { 
   color: white;
   background: rgb(14,99,156);
-  border-radius: 25px;
+  border-radius: 35px;
   padding: 10px;
   border: 0px;
-  width: 160px;
-  height: 40px;
+  width: 180px;
+  height: 50px;
 }
 QPushButton#pbConnect:disabled { 
   color: gray;
