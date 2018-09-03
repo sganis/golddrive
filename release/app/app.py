@@ -15,7 +15,7 @@ from app_ui import Ui_MainWindow
 
 DIR = os.path.abspath(os.path.dirname(__file__))
 # logging.basicConfig(filename=fr'{DIR}\..\ssh-drive.log', level=logging.INFO)
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s: %(name)-10s: %(levelname)-7s: %(message)s')
 logger = logging.getLogger('ssh-drive')
 
 
@@ -24,8 +24,14 @@ class Worker(QtCore.QObject):
 
 	workDone = QtCore.pyqtSignal(str, ReturnBox)
 	
-	def get_drive_status(sefl, p):
-		rb = ReturnBox('','Not implemented')
+	def get_status(sefl, p):
+		rb = ReturnBox()
+		if p['drive'] == 'Z:':
+			rb.drive_state = 'CONNECTED'
+		if p['drive'] == 'X:':
+			rb.drive_state = 'ERROR'
+			rb.error = f"Drive {p['drive']}\nin error state"
+		rb.output = f"Drive {p['drive']}\n{rb.drive_state}"
 		return rb
 
 	def testssh(self, p):
@@ -67,7 +73,7 @@ class Worker(QtCore.QObject):
 	# slot decorator is optional, used here for documenting argument's type
 	@QtCore.pyqtSlot(str, dict)
 	def work(self, task, param):
-		time.sleep(0.5)
+		# time.sleep(0.2)
 		if hasattr(self, task):
 			rb = getattr(self, task)(param)
 		else:
@@ -99,7 +105,7 @@ class Window(Ui_MainWindow, QMainWindow):
 		# read config.json
 		with open(fr'{DIR}\..\config.json') as f:
 			self.config = json.load(f)
-		print (self.config)
+		# print (self.config)
 		# store parameters to send to worker
 		self.param = {}
 		self.param['user'] = getpass.getuser()
@@ -116,11 +122,12 @@ class Window(Ui_MainWindow, QMainWindow):
 		for d in drives:
 			items.append(f"   {d}   {drives[d]['name']}")
 		self.cboParam.addItems(items)
-		self.lblUserHostPort.setText("")
 		self.cboParam.setCurrentIndex(self.settings.value("cboParam",0))
 		self.progressBar.setVisible(False)	
 		self.lblStatus.setText("")
 		self.widgetPassword.setVisible(False)
+		self.command_state = 'ok' # or error
+		self.drive_state = 'disconnected' # or disconnected, or error
 
 		menu = QMenu()
 		menu.addAction('Setup SSH keys', self.mnuSetupSsh)
@@ -137,23 +144,36 @@ class Window(Ui_MainWindow, QMainWindow):
 		self.workRequested.connect(self.worker.work)
 		self.worker.workDone.connect(self.onWorkDone)
 		self.thread.start()
+		self.getStatus()
 		self.loaded = True
 
 	@QtCore.pyqtSlot(str, ReturnBox)
 	def onWorkDone(self, task, rb):
+		self.drive_state = rb.drive_state
+		if rb.error:
+			self.command_state = 'error'
 		if task == 'testssh':
 			if rb.output:
 				self.end(rb.output)
 			else:
-				self.setupSsh('Authentication required:')
-		elif task == 'setupssh' and 'password wrong' in rb.error:
-				self.setupSsh('Wrong password, try again:')
+				self.txtPassword.setText('')
+				self.txtPassword.setFocus()
+				self.widgetPassword.setVisible(True)
+				self.end('Authentication required:')				
+		elif task == 'setupssh':
+			if rb.error:
+				if 'password wrong' in rb.error:
+					rb.error = 'Wrong password, try again:'
+					self.widgetPassword.setVisible(True)
+				self.end(rb.error)
+			else:
+				self.widgetPassword.setVisible(False)
+				self.end(rb.output)
 		else:
-			msg = rb.output if not rb.error else rb.error
+			msg = rb.output 
+			if rb.error:
+				msg = rb.error
 			self.end(msg)
-			self.lblStatus.setProperty("error", rb.error != '');
-			self.lblStatus.style().unpolish(self.lblStatus);
-			self.lblStatus.style().polish(self.lblStatus);
 
 	# decorator used to trigger only the int overload and not twice
 	@QtCore.pyqtSlot(int)
@@ -168,8 +188,11 @@ class Window(Ui_MainWindow, QMainWindow):
 		userhostport = f"{self.param['user']}@{self.param['host']}:{self.param['port']}"
 		self.lblUserHostPort.setText(userhostport)
 		if self.loaded:
-			self.start(f"Checking {self.param['drive']}...")
-			self.workRequested.emit('get_drive_status', self.param)
+			self.getStatus()
+
+	def getStatus(self):
+		self.start(f"Checking {self.param['drive']}...")
+		self.workRequested.emit('get_status', self.param)
 
 	def mnuSetupSsh(self):
 		user = self.param['user']
@@ -177,18 +200,10 @@ class Window(Ui_MainWindow, QMainWindow):
 		port = self.param['port']
 		self.start(f'Checking ssh keys for {user}...')
 		self.workRequested.emit('testssh', self.param)
-	
-	def setupSsh(self, msg):
-		self.progressBar.setVisible(False)
-		self.lblPassword.setText(msg)
-		self.txtPassword.setFocus()
-		self.lblStatus.setVisible(False)
-		self.widgetPassword.setVisible(True)
-	
+		
 	def on_txtPassword_returnPressed(self):
 		self.widgetPassword.setVisible(False)
-		self.lblStatus.setVisible(True)
-		self.start('Setting up ssh authentication...')
+		self.start('Logging in...')
 		self.param['password'] = str(self.txtPassword.text())
 		self.workRequested.emit('setupssh', self.param)
 
@@ -217,20 +232,35 @@ class Window(Ui_MainWindow, QMainWindow):
 		self.thread.wait()
 
 	def start(self, message):	
+		self.command_state = 'ok'
+		self.pbConnect.setEnabled(False)
+		self.widgetPassword.setVisible(False)
+		self.progressBar.setVisible(True)
+		self.lblStatus.setVisible(True)
 		self.lblStatus.setProperty("error", False);
 		self.lblStatus.style().unpolish(self.lblStatus);
 		self.lblStatus.style().polish(self.lblStatus);	
 		self.lblStatus.setText(message)
-		self.progressBar.setVisible(True)
-		self.pbConnect.setEnabled(False)
-		self.widgetPassword.setVisible(False)
-		self.lblStatus.setVisible(True)
-		self.txtPassword.setText("")
-
+		logger.info(message)
+		
 	def end(self, message=''):
-		self.lblStatus.setText(message)
 		self.progressBar.setVisible(False)
+		self.lblStatus.setText(message)
 		self.pbConnect.setEnabled(True)
+		self.lblStatus.setProperty("error", self.command_state == 'error');
+		self.lblStatus.style().unpolish(self.lblStatus);
+		self.lblStatus.style().polish(self.lblStatus);
+		if self.drive_state == 'CONNECTED':
+			self.pbConnect.setText('DISCONNECT')
+		elif self.drive_state == 'DISCONNECTED':
+			self.pbConnect.setText('CONNECT')
+		else:
+			self.pbConnect.setText('RECONNECT')
+		if message:
+			if self.command_state == 'error':
+				logger.error(message)
+			else:
+				logger.info(message)
 		# self.pbConnect.setText('CONNECT')
 
 	def on_pbConnect_released(self):

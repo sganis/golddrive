@@ -5,7 +5,8 @@ class ReturnBox():
 	def __init__(self, out='', err=''):
 		self.output = out
 		self.error = err
-		
+		self.drive_state = 'DISCONNECTED'
+
 
 def run(cmd):
 	print(f'Running command:\n{cmd}')
