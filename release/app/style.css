@@ -1,8 +1,9 @@
 * {  
   font-size: 13pt;
 }
-QPushButton { 
-  color: rgb(200,200,200);
+QPushButton#pbConnect { 
+  color: white;
+  font-weight: bold;
   background: rgb(14,99,156);
   border-radius: 25px;
   padding: 10px;
@@ -11,9 +12,22 @@ QPushButton {
   width: 140px;
   height: 30px;
 }
-QPushButton::hover {
-  color: white;
+QPushButton#pbConnect:disabled { 
+  color: gray;
+}
+QPushButton#pbConnect::hover {
   background: rgb(0,122,204);
+}
+QPushButton#pbHamburger { 
+  border-image: url(images/hamburger_hover.png);
+  max-width: 32px;
+  max-height: 32px;
+}
+QPushButton#pbHamburger::hover {
+  border-image: url(images/hamburger.png);
+}
+QPushButton::menu-indicator {
+  image: url(myindicator.png);
 }
 
 QComboBox { 

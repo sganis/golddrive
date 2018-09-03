@@ -9,9 +9,14 @@ def is_running(program):
 	return len(o) > 0
 
 def kill(program):
-	util.run(f'taskkill /im {program} /t /f 2>nul')
+	os.system(f'taskkill /im {program} /t /f 2>nul')
 	while is_running(program):
 		time.sleep(1)
+
+def restart_explorer():
+	# QTimer.singleShot(200, _restart_explorer) 
+	import os
+	os.system(fr'taskkill /im explorer.exe /f & start /b c:\windows\explorer.exe')
 
 def main(drive):
 	print(f'Unmounting {drive}...')
@@ -42,14 +47,7 @@ def main(drive):
 				util.run(cmd)
 			except Exception as ex:
 				# print(ex)
-				pass
-
-
-		#restart_explorer()
-		# kill('explorer.exe')
-		# import os
-		# os.system('start /b c:\\windows\\explorer.exe')
-		
+				pass		
 	else:
 		print('No mounts')
 

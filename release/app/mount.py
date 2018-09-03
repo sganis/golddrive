@@ -50,6 +50,8 @@ def main(sshfs, drive, userhost, drivename=''):
 	import driveicon
 	driveicon.main(letter)
 
+
+
 if __name__ == '__main__':
 	import sys
 	import os
