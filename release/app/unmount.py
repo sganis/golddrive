@@ -1,27 +1,25 @@
 # unmount drive
 import util
 import subprocess
-import time
+# import time
 
-def is_running(program):
-	cmd = f"tasklist /FI \"IMAGENAME eq {program}\" 2>NUL | find /I /N \"{program}\""
-	o,e,r = util.run(cmd)
-	return len(o) > 0
+# def is_running(program):
+# 	cmd = f"tasklist /FI \"IMAGENAME eq {program}\" 2>NUL | find /I /N \"{program}\""
+# 	o,e,r = util.run(cmd)
+# 	return len(o) > 0
 
-def kill(program):
-	os.system(f'taskkill /im {program} /t /f 2>nul')
-	while is_running(program):
-		time.sleep(1)
+# def kill(program):
+# 	os.system(f'taskkill /im {program} /t /f 2>nul')
+# 	while is_running(program):
+# 		time.sleep(1)
 
 def restart_explorer():
-	# QTimer.singleShot(200, _restart_explorer) 
-	import os
-	os.system(fr'taskkill /im explorer.exe /f & start /b c:\windows\explorer.exe')
+	subprocess.call(fr'taskkill /im explorer.exe /f & start /b c:\windows\explorer.exe', shell=True)
 
 def main(drive):
 	print(f'Unmounting {drive}...')
-	kill('sshfs.exe')
-	kill('ssh.exe')
+	subprocess.call('sshfs.exe')
+	subprocess.call('ssh.exe')
 
 	# cleanup
 	entry = fr'HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2'

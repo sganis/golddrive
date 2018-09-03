@@ -3,6 +3,7 @@
 import sys
 import os
 import time
+import subprocess
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import (QWidget, QLabel, QComboBox, 
 	QApplication, QMainWindow, QMenu)
@@ -155,7 +156,8 @@ class Window(Ui_MainWindow, QMainWindow):
 		self.end(result)
 
 	def on_lblSettings_linkActivated(self, link):
-		os.system(fr'start /b c:\windows\explorer.exe "{DIR}\.."')
+
+		subprocess.call(fr'start /b c:\windows\explorer.exe "{DIR}\.."', shell=True)
 
 def run():
 
