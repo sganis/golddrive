@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>350</width>
-    <height>500</height>
+    <height>608</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -18,8 +18,8 @@
   </property>
   <property name="maximumSize">
    <size>
-    <width>350</width>
-    <height>500</height>
+    <width>500</width>
+    <height>800</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -27,6 +27,9 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout_2">
+    <property name="spacing">
+     <number>10</number>
+    </property>
     <item>
      <widget class="QWidget" name="widget_6" native="true">
       <layout class="QHBoxLayout" name="horizontalLayout_5">
@@ -65,11 +68,168 @@
        <property name="rightMargin">
         <number>50</number>
        </property>
+       <property name="bottomMargin">
+        <number>20</number>
+       </property>
        <item>
         <widget class="QComboBox" name="cboParam"/>
        </item>
       </layout>
      </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="lblUserHostPort">
+      <property name="text">
+       <string>user@host:port</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="lblStatus">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>150</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>150</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Status</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+      <property name="wordWrap">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QWidget" name="widgetPassword" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>150</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>150</height>
+       </size>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">border:1px solid gainsboro</string>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <property name="spacing">
+        <number>5</number>
+       </property>
+       <property name="leftMargin">
+        <number>50</number>
+       </property>
+       <property name="topMargin">
+        <number>20</number>
+       </property>
+       <property name="rightMargin">
+        <number>50</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="lblPassword">
+         <property name="styleSheet">
+          <string notr="true">border: 0px</string>
+         </property>
+         <property name="text">
+          <string>Authentication required:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="txtPassword">
+         <property name="echoMode">
+          <enum>QLineEdit::Password</enum>
+         </property>
+         <property name="placeholderText">
+          <string>Password</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QWidget" name="widget_8" native="true">
+         <property name="styleSheet">
+          <string notr="true">border: 0px</string>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_6">
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <spacer name="horizontalSpacer_3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pbCancel">
+            <property name="maximumSize">
+             <size>
+              <width>100</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>CANCEL</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <spacer name="verticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>40</height>
+       </size>
+      </property>
+     </spacer>
     </item>
     <item>
      <widget class="QWidget" name="widget_2" native="true">
@@ -93,19 +253,6 @@
           <property name="spacing">
            <number>10</number>
           </property>
-          <item>
-           <widget class="QPushButton" name="pbConnect">
-            <property name="maximumSize">
-             <size>
-              <width>200</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>CONNECT</string>
-            </property>
-           </widget>
-          </item>
           <item>
            <widget class="QWidget" name="widget_4" native="true">
             <property name="sizePolicy">
@@ -158,6 +305,19 @@
             </layout>
            </widget>
           </item>
+          <item>
+           <widget class="QPushButton" name="pbConnect">
+            <property name="maximumSize">
+             <size>
+              <width>200</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>CONNECT</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </widget>
        </item>
@@ -178,57 +338,6 @@
      </widget>
     </item>
     <item>
-     <widget class="QLabel" name="lblStatus">
-      <property name="minimumSize">
-       <size>
-        <width>0</width>
-        <height>30</height>
-       </size>
-      </property>
-      <property name="text">
-       <string>Status</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignHCenter|Qt::AlignTop</set>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QWidget" name="widget_7" native="true">
-      <layout class="QVBoxLayout" name="verticalLayout_3">
-       <property name="leftMargin">
-        <number>50</number>
-       </property>
-       <property name="rightMargin">
-        <number>50</number>
-       </property>
-       <item>
-        <widget class="QLineEdit" name="txtPassword">
-         <property name="echoMode">
-          <enum>QLineEdit::Password</enum>
-         </property>
-         <property name="placeholderText">
-          <string>Password</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item>
-     <spacer name="verticalSpacer">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>20</width>
-        <height>96</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
-    <item>
      <widget class="QWidget" name="widget_5" native="true">
       <layout class="QHBoxLayout" name="horizontalLayout_4">
        <item>
@@ -243,7 +352,7 @@
           <cursorShape>PointingHandCursor</cursorShape>
          </property>
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;#&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;Settings Folder&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;#&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;Config Folder&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>

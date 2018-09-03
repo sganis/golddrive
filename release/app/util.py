@@ -1,6 +1,12 @@
 # util module for running commands and load config
 import subprocess
 
+class ReturnBox():
+	def __init__(self, out='', err=''):
+		self.output = out
+		self.error = err
+		
+
 def run(cmd):
 	print(f'Running command:\n{cmd}')
 	proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

@@ -1,7 +1,23 @@
 {
-	"drive" 		: "Z:",
-	"drivename" 	: "Simulation",
-	"hosts" 		: ["localhost"],
-	"sshfs_path" 	: "C:\\Program Files\\SSHFS-Win\\bin",
-	"apppath" 		: "runapp\\runapppy.exe"
+	"sshfs_path" : "C:\\Program Files\\SSHFS-Win\\bin",
+	"drives" : {
+		"S:" : {
+			"name" 	: "Simulation",
+			"hosts" : ["localhost", "vlcc30"],
+			"options" : "" 
+		},		
+		"I:" : {
+			"name" 	: "IT",
+			"hosts" : ["server01", "server02"]
+		},		
+		"X:" : {
+			"name" 	: "Exploration",
+			"hosts" : ["explor01", "explor02"]
+		},		
+		"Z:" : {
+			"name" 	: "My Linux Box",
+			"hosts" : ["192.168.100.201"],
+			"port"  : 22
+		}
+	}
 }
