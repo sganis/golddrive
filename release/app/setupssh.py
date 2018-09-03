@@ -10,7 +10,7 @@ def test(ssh, userhost, port=22):
 
 	cmd = f'"{ssh}" -p {port} -o StrictHostKeyChecking=no -o BatchMode=yes {userhost} echo ok 2>&1'
 	r = subprocess.run(cmd, capture_output=True, shell=True, text=True)
-	return str(r.stdout).strip() == 'ok'
+	return r.stdout.strip() == 'ok'
 
 def main(ssh, keygen, userhost, password, port=22):
 
@@ -39,12 +39,10 @@ def main(ssh, keygen, userhost, password, port=22):
 	# Generate and read the new keys into a variable
 	if not sk:
 		sk = paramiko.RSAKey.from_private_key_file(seckey)
-	key = sk.get_base64()
-
-	# todo: compare key with the existing 
-
-	with open(pubkey, 'w') as w:
-		w.write(key)
+	key = f'ssh-rsa {sk.get_base64()} {userhost}'
+	# todo: compare 	key with the existing 
+	# with open(pubkey, 'w') as w:
+	# 	w.write(key)
 
 	# cmd = f'"{keygen}" -y -f {seckey} > {pubkey}'
 	# with open(f'{pubkey}', 'r') as f:
@@ -62,7 +60,6 @@ def main(ssh, keygen, userhost, password, port=22):
 	client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 	client.connect(hostname=host, username=user, password=password, port=port)
 	stdin, stdout, stderr = client.exec_command(cmd)
-
 	if test(ssh, userhost, port):
 		print("SSH setup successfull")
 	else:
