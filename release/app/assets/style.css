@@ -27,12 +27,12 @@ QPushButton#pbCancel {
   height: 15px;
 }
 QPushButton#pbHamburger { 
-  border-image: url(images/hamburger_hover.png);
+  border-image: url(assets/hamburger_hover.png);
   max-width: 32px;
   max-height: 32px;
 }
 QPushButton#pbHamburger::hover {
-  border-image: url(images/hamburger.png);
+  border-image: url(assets/hamburger.png);
 }
 QPushButton::menu-indicator {
   image: url(myindicator.png);
@@ -53,7 +53,7 @@ QComboBox::drop-down {
   border: 0px; 
 }
 QComboBox::down-arrow { 
-  image: url(images/arrow_down_16.png); 
+  image: url(assets/arrow_down_16.png); 
   margin-right: 20px;
 }
 QComboBox::hover { 

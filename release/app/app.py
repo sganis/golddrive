@@ -9,14 +9,19 @@ import getpass
 import logging
 import util
 from worker import Worker
+from PyQt5 import uic
 from PyQt5.QtCore import (QObject, pyqtSlot, 
 	QThread, QSize, QSettings, QFileSystemWatcher)
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import (QWidget, QLabel, 
+from PyQt5.QtWidgets import (QWidget, QLabel,
 	QComboBox, QApplication, QMainWindow, QMenu)
-from app_ui import Ui_MainWindow
+# from app_ui import Ui_MainWindow
+
 
 DIR = os.path.abspath(os.path.dirname(__file__))
+
+Ui_MainWindow, QMainWindow = uic.loadUiType(fr'{DIR}\assets\app.ui')
+
 logging.basicConfig(
 	level=logging.INFO, 
 	filename=fr'{DIR}\..\ssh-drive.log',
@@ -24,20 +29,33 @@ logging.basicConfig(
 	datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger('ssh-drive')
 
-class Window(Ui_MainWindow, QMainWindow):
+
+class Menu(QMenu):
+	'''Subclass QMenu to align at the right'''
+	def __init__(self, button):
+		super().__init__()
+		self.b = button
+
+	def showEvent(self, e):
+		p = self.pos();
+		geo = self.b.geometry();
+		self.move(p.x()+geo.width()-self.geometry().width(), p.y())
+
+
+class Window(QMainWindow, Ui_MainWindow):
 	
 	def __init__(self):
-		super().__init__()
-		self.loaded = False
+		QMainWindow.__init__(self)
 		self.setupUi(self)
+		self.loaded = False
 		self.setWindowTitle('SSH Drive')
 		app_icon = QIcon()
-		app_icon.addFile(fr'{DIR}\images\icon_16.png', QSize(16,16))
-		app_icon.addFile(fr'{DIR}\images\icon_32.png', QSize(32,32))
-		app_icon.addFile(fr'{DIR}\images\icon_48.png', QSize(48,48))
+		app_icon.addFile(fr'{DIR}\assets\icon_16.png', QSize(16,16))
+		app_icon.addFile(fr'{DIR}\assets\icon_32.png', QSize(32,32))
+		app_icon.addFile(fr'{DIR}\assets\icon_48.png', QSize(48,48))
 		QApplication.setWindowIcon(app_icon)
 		os.chdir(f'{DIR}')
-		with open(f'{DIR}/style.css') as r:
+		with open(fr'{DIR}\assets\style.css') as r:
 			self.setStyleSheet(r.read())
 
 		# initial values from settings
@@ -60,9 +78,10 @@ class Window(Ui_MainWindow, QMainWindow):
 		self.fillParam()
 		self.lblUserHostPort.setText(self.param['userhostport'])
 
-		menu = QMenu()
+		menu = Menu(self.pbHamburger)
 		menu.addAction('Setup SSH keys', self.mnuSetupSsh)
-		menu.addAction('Reconnect', self.mnuReconnect)
+		menu.addAction('Connect', self.mnuConnect)
+		menu.addAction('Disconnect', self.mnuDisconnect)
 		menu.addAction('Open settings folder', self.mnuSettings)
 		menu.addAction('Show log file', self.mnuShowLog)
 		menu.addAction('Restart Explorer.exe', self.mnuRestartExplorer)
@@ -128,7 +147,7 @@ class Window(Ui_MainWindow, QMainWindow):
 		items = []
 		drives = self.config['drives']
 		for d in drives:
-			items.append(f"   {d}   {drives[d]['name']}")
+			items.append(f"   {d}   {drives[d]['drivename']}")
 		self.cboParam.blockSignals(True)
 		self.cboParam.clear()
 		self.cboParam.addItems(items)
@@ -145,6 +164,7 @@ class Window(Ui_MainWindow, QMainWindow):
 		drive = currentText.split()[0].strip()
 		d = self.config['drives'][drive]
 		p['drive'] = drive
+		p['drivename'] = d.get('drivename', 'SSH-DRIVE')
 		p['host'] = d['hosts'][0]
 		p['port'] = d.get('port', 22)
 		p['user'] = d.get('user', getpass.getuser())		
@@ -184,9 +204,13 @@ class Window(Ui_MainWindow, QMainWindow):
 		self.param['password'] = str(self.txtPassword.text())
 		self.worker.doWork('setupssh', self.param)
 
-	def mnuReconnect(self):
-		self.start('Reconnecting drive...')
-		self.worker.doWork('reconnect', self.param)
+	def mnuConnect(self):
+		self.start('Connecting drive...')
+		self.worker.doWork('connect', self.param)
+
+	def mnuDisconnect(self):
+		self.start('Disconnecting drive...')
+		self.worker.doWork('disconnect', self.param)
 
 	def mnuSettings(self):
 		self.start('Open settings folder...')

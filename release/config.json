@@ -3,30 +3,25 @@
 	"private_key" : "%USERPROFILE%\\.ssh\\id_rsa.ssh-drive",
 	"drives" : {
 		"S:" : {
-			"name" 	: "Simulation",
-			"hosts" : ["192.168.100.201", "vlcc30"],
-			"options" : "" 
+			"drivename" : "Simulation",
+			"hosts" 	: ["192.168.100.201", "vlcc30"],
+			"options" 	: "" 
 		},		
 		"I:" : {
-			"name" 	: "IT",
-			"user"  : "ituser",
-			"hosts" : ["S1", "server02"],
-			"port"  : 333
+			"drivename" : "IT",
+			"user"  	: "ituser",
+			"hosts" 	: ["S1", "server02"],
+			"port"  	: 333
 		},		
 		"X:" : {
-			"name" 	: "Exploration",
-			"hosts" : ["explor01", "explor02"]
+			"drivename" : "Exploration",
+			"hosts" 	: ["explor01", "explor02"]
 		},		
 		"Y:" : {
-			"name" 	: "Container",
-			"user"  : "support",
-			"hosts" : ["192.168.99.100"],
-			"port"  : 2222
-		},
-		"Z:" : {
-			"name" 	: "My Linux Box",
-			"hosts" : ["192.168.100.201"],
-			"port"  : 22
+			"drivename" : "Container",
+			"user"  	: "support",
+			"hosts" 	: ["192.168.100.201"],
+			"port"  	: 2222
 		}
 	}
 }

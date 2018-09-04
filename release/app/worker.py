@@ -21,15 +21,15 @@ class BackgroundWorker(QObject):
 		if p['drive'] == 'Z:':
 			rb.drive_state = 'CONNECTED'
 		if p['drive'] == 'X:':
-			rb.drive_state = 'ERROR'
-			rb.error = f"{p['drive']} in error state"
-		rb.output = f"{p['drive']} {rb.drive_state}"
+			rb.drive_state = 'UNSTABLE STATE'
+			rb.error = rb.drive_state
+		rb.output = f"{rb.drive_state}"
 		return rb
 
 	def testssh(self, p):
 		import setupssh	
 		ok = setupssh.testssh(p['ssh'], p['userhost'], 
-			p['seckey'], p['port'])
+							p['seckey'], p['port'])
 		rb = ReturnBox()
 		if ok:
 			rb.output = "SSH authentication is OK"
@@ -38,29 +38,26 @@ class BackgroundWorker(QObject):
 	def setupssh(self, p):
 		import setupssh	
 		return setupssh.main(p['ssh'], p['userhost'], p['password'],
-			p['seckey'], p['port'])
+							p['seckey'], p['port'])
 
 	def restart_explorer(self, p):
-		import unmount
-		unmount.restart_explorer()
-		msg = 'Explorer.exe was restarted.'
-		return ReturnBox('','Not implemented')
+		import mount
+		mount.restart_explorer()
+		return ReturnBox('Explorer.exe was restarted.','')
 
 	def connect(self, p):
 		import mount		
-		# mount.main(sshfs, drive, userhost, drivename)
-		msg =  'Drive is connected'
-		return ReturnBox('','Not implemented')
-
+		return mount.mount(p['sshfs'],p['ssh'], p['drive'],
+			 				p['userhost'], p['seckey'], p['port'], 
+							p['drivename'].replace(' ','-'))
+		
 	def disconnect(self, p):
 		import mount		
-		# mount.main(sshfs, drive, userhost, drivename)
-		msg =  'Drive is connected'
-		return ReturnBox('','Not implemented')
-
+		return mount.unmount(p['drive'])
+		
 	def reconnect(self, p):
-		import mount		
-		# mount.main(sshfs, drive, userhost, drivename)
+		# import remount		
+		# remount.main(sshfs, drive, userhost, drivename)
 		msg =  'Drive is connected'
 		return ReturnBox('','Not implemented')
 

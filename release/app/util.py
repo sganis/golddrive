@@ -20,8 +20,8 @@ def run(cmd, capture=False, timeout=10):
 	shell=False
 	if '"' in cmd or '%' in cmd or '>' in cmd:
 		shell=True
-	cmd = re.sub(r'[\n\r\t ]+',' ', cmd)
-	# print(f'CMD:\n{cmd}')
+	cmd = re.sub(r'[\n\r\t ]+',' ', cmd).strip()
+	print(f'CMD:\n{cmd}')
 
 	r = subprocess.run(cmd, timeout, shell=shell, 
 		capture_output=capture, text=True)
