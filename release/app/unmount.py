@@ -1,31 +1,23 @@
 # unmount drive
-import util
 import subprocess
-# import time
+import logging
 
-# def is_running(program):
-# 	cmd = f"tasklist /FI \"IMAGENAME eq {program}\" 2>NUL | find /I /N \"{program}\""
-# 	o,e,r = util.run(cmd)
-# 	return len(o) > 0
+logger = logging.getLogger('ssh-drive')
 
-# def kill(program):
-# 	os.system(f'taskkill /im {program} /t /f 2>nul')
-# 	while is_running(program):
-# 		time.sleep(1)
 
 def restart_explorer():
-	subprocess.call(fr'taskkill /im explorer.exe /f & start /b c:\windows\explorer.exe', shell=True)
+	subprocess.run(fr'taskkill /im explorer.exe /f & start /b c:\windows\explorer.exe')
 
 def main(drive):
 	print(f'Unmounting {drive}...')
-	subprocess.call('sshfs.exe')
-	subprocess.call('ssh.exe')
+	subprocess.run('taskkill /im sshfs.exe /f')
+	subprocess.run('taskkill /im ssh.exe /f')
 
 	# cleanup
 	entry = fr'HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2'
 	mounts = []
-	out, err, ret = util.run(f'reg query {entry}')
-	for e in out.split('\n'):
+	response = subprocess.run(f'reg query {entry}', capture_output=True, text=True)
+	for e in response.stdout.split('\n'):
 		# print(e)
 		m = e.split('\\')[-1]
 		if m.startswith('##'):
@@ -42,7 +34,7 @@ def main(drive):
 				cmd = f'reg delete "{e.strip()}" /f 2>nul'
 				# print (cmd)
 				sys.stdout.flush()
-				util.run(cmd)
+				subprocess.run(cmd, shell=True)
 			except Exception as ex:
 				# print(ex)
 				pass		
@@ -53,4 +45,7 @@ def main(drive):
 if __name__ == '__main__':
 	import sys
 	assert len(sys.argv) > 1 # usage: unmount.py <drive>
+
+	logging.basicConfig(level=logging.INFO)
+
 	main(sys.argv[1])

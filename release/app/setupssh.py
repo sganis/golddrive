@@ -6,9 +6,11 @@ import paramiko
 import logging
 from util import ReturnBox
 
-DIR = os.path.dirname(os.path.realpath(__file__))
 logger = logging.getLogger('ssh-drive')
 logging.getLogger("paramiko.transport").setLevel(logging.WARNING)
+
+DIR = os.path.dirname(os.path.realpath(__file__))
+
 
 def testssh(ssh, user, host, port=22):
 	'''
@@ -16,7 +18,7 @@ def testssh(ssh, user, host, port=22):
 	'''
 	logger.info(f'Testing ssh keys for {user}@{host}...')
 	cmd = f'"{ssh}" -p {port} -o StrictHostKeyChecking=no -o BatchMode=yes {user}@{host} echo ok 2>&1'
-	r = subprocess.run(cmd, capture_output=True, shell=True, text=True)
+	r = subprocess.run(cmd, capture_output=True, shell=True, text=True, timeout=10)
 	return r.stdout.strip() == 'ok'
 
 def main(ssh, user, host, password, port=22):
@@ -72,10 +74,19 @@ def main(ssh, user, host, password, port=22):
 	# print(cmd)
 
 	ok = False
-	stdin, stdout, stderr = client.exec_command(cmd)
-	logger.info(stdout)
-	if stderr:
-		logger.error(stderr)
+	try:
+		stdin, stdout, stderr = client.exec_command(cmd, timeout=10)		
+	except Exception as ex:
+		logger.error(ex)
+		rb.error = f'error transfering public key: {ex}'
+		return rb
+
+	err = stderr.read()
+	if err:
+		logger.error(err)
+		rb.error = f'error transfering public key, command run with errors: {err}'
+		return rb
+	
 	ok = testssh(ssh, user, host, port)
 	if ok:
 		rb.output = "SSH setup successfull." 
@@ -97,4 +108,9 @@ if __name__ == '__main__':
 		userhost, port = userhost.split(':')		
 	ssh = fr'C:\Program Files\SSHFS-Win\bin\ssh.exe'
 	user, host = userhost.split('@')
+
+	# log to console
+	logging.basicConfig(level=logging.INFO)
+
+
 	main(ssh, user, host, password, port)
