@@ -9,8 +9,8 @@ import getpass
 import logging
 from util import ReturnBox
 from worker import Worker
-from PyQt5.QtCore import (QObject, pyqtSignal, pyqtSlot, 
-	QThread, QSize, QSettings)
+from PyQt5.QtCore import (QObject, pyqtSlot, 
+	QThread, QSize, QSettings, QFileSystemWatcher)
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QWidget, QLabel, 
 	QComboBox, QApplication, QMainWindow, QMenu)
@@ -24,72 +24,8 @@ logging.basicConfig(
 	datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger('ssh-drive')
 
-
-# class Worker(QObject):
-
-# 	workDone = pyqtSignal(str, ReturnBox)
-	
-# 	def get_status(sefl, p):
-# 		rb = ReturnBox()
-# 		if p['drive'] == 'Z:':
-# 			rb.drive_state = 'CONNECTED'
-# 		if p['drive'] == 'X:':
-# 			rb.drive_state = 'ERROR'
-# 			rb.error = f"Drive {p['drive']}\nin error state"
-# 		rb.output = f"Drive {p['drive']}\n{rb.drive_state}"
-# 		return rb
-
-# 	def testssh(self, p):
-# 		import setupssh	
-# 		ok = setupssh.testssh(p['ssh'],p['user'],p['host'], p['port'])
-# 		rb = ReturnBox()
-# 		if ok:
-# 			rb.output = "SSH authentication is OK"
-# 		return rb
-
-# 	def setupssh(self, p):
-# 		import setupssh	
-# 		return setupssh.main(p['ssh'], p['user'], p['host'], p['password'], p['port'])
-
-# 	def restart_explorer(self, p):
-# 		import unmount
-# 		unmount.restart_explorer()
-# 		msg = 'Explorer.exe was restarted.'
-# 		return ReturnBox('','Not implemented')
-
-# 	def connect(self, p):
-# 		import mount		
-# 		# mount.main(sshfs, drive, userhost, drivename)
-# 		msg =  'Drive is connected'
-# 		return ReturnBox('','Not implemented')
-
-# 	def disconnect(self, p):
-# 		import mount		
-# 		# mount.main(sshfs, drive, userhost, drivename)
-# 		msg =  'Drive is connected'
-# 		return ReturnBox('','Not implemented')
-
-# 	def reconnect(self, p):
-# 		import mount		
-# 		# mount.main(sshfs, drive, userhost, drivename)
-# 		msg =  'Drive is connected'
-# 		return ReturnBox('','Not implemented')
-
-# 	# slot decorator is optional, used here for documenting argument's type
-# 	@pyqtSlot(str, dict)
-# 	def work(self, task, param):
-# 		# time.sleep(0.2)
-# 		if hasattr(self, task):
-# 			rb = getattr(self, task)(param)
-# 		else:
-# 			rb = ReturnBox('','Not implemented')
-# 		self.workDone.emit(task, rb)
-
-
 class Window(Ui_MainWindow, QMainWindow):
 	
-	# workRequested = pyqtSignal(str, dict)
-
 	def __init__(self):
 		super().__init__()
 		self.loaded = False
@@ -100,39 +36,28 @@ class Window(Ui_MainWindow, QMainWindow):
 		app_icon.addFile(fr'{DIR}\images\icon_32.png', QSize(32,32))
 		app_icon.addFile(fr'{DIR}\images\icon_48.png', QSize(48,48))
 		QApplication.setWindowIcon(app_icon)
-		# widgets = self.findChildren(QWidget)
-		# for w in widgets:
-		# 	w.setProperty('css',True)
 		os.chdir(f'{DIR}')
 		with open(f'{DIR}/style.css') as r:
 			self.setStyleSheet(r.read())
 
-		# read config.json
-		with open(fr'{DIR}\..\config.json') as f:
-			self.config = json.load(f)
-		# print (self.config)
-		# store parameters to send to worker
-		self.param = {}
-		self.param['user'] = getpass.getuser()
-		self.param['ssh'] = fr"{self.config['sshfs_path']}\ssh.exe"
-		self.param['sshfs'] = fr"{self.config['sshfs_path']}\sshfs.exe"
-		
+		# initial values from settings
 		self.settings = QSettings("sganis", "ssh-drive")
 		if self.settings.value("geometry"):
 			self.restoreGeometry(self.settings.value("geometry"))
 			self.restoreState(self.settings.value("windowState"))
-		# load combo
-		items = []
-		drives = self.config['drives']
-		for d in drives:
-			items.append(f"   {d}   {drives[d]['name']}")
-		self.cboParam.addItems(items)
-		self.cboParam.setCurrentIndex(self.settings.value("cboParam",0))
 		self.progressBar.setVisible(False)	
 		self.lblStatus.setText("")
 		self.widgetPassword.setVisible(False)
 		self.command_state = 'ok' # or error
 		self.drive_state = 'disconnected' # or disconnected, or error
+
+		# read config.json
+		self.configfile = fr'{DIR}\..\config.json'
+		self.config = {}
+		self.param = {}
+		self.loadConfig(self.configfile)
+		self.loadCombo(self.settings.value("cboParam",0))	
+		
 
 		menu = QMenu()
 		menu.addAction('Setup SSH keys', self.mnuSetupSsh)
@@ -146,6 +71,11 @@ class Window(Ui_MainWindow, QMainWindow):
 		self.worker = Worker()
 		self.worker.workDone.connect(self.onWorkDone)
 		
+		# worker for watching config.json changes
+		self.watcher = QFileSystemWatcher()
+		self.watcher.addPaths([self.configfile])
+		self.watcher.fileChanged.connect(self.onConfigFileChanged)
+
 		self.getStatus()
 		self.loaded = True
 
@@ -177,11 +107,43 @@ class Window(Ui_MainWindow, QMainWindow):
 				msg = rb.error
 			self.end(msg)
 
+	@pyqtSlot(str)
+	def onConfigFileChanged(self, path):
+		logger.error('Config file has changed, reloading...')
+		self.loadConfig(path)
+		currentIndex = self.settings.value("cboParam",0)
+		self.loadCombo(currentIndex)
+
+	def loadConfig(self, path):
+		try:
+			with open(path) as f:
+				self.config = json.load(f)
+		except Exception as ex:
+			logger.error(f'Cannot read config file: {path}')
+		# store parameters to send to worker
+		self.param['user'] = getpass.getuser()
+		self.param['ssh'] = fr"{self.config['sshfs_path']}\ssh.exe"
+		self.param['sshfs'] = fr"{self.config['sshfs_path']}\sshfs.exe"
+
+	def loadCombo(self, currentIndex):
+		items = []
+		drives = self.config['drives']
+		for d in drives:
+			items.append(f"   {d}   {drives[d]['name']}")
+		self.cboParam.blockSignals(True)
+		self.cboParam.clear()
+		self.cboParam.addItems(items)
+		self.cboParam.setCurrentIndex(currentIndex)
+		self.cboParam.blockSignals(False)
+		
+
 	# decorator used to trigger only the int overload and not twice
 	@pyqtSlot(int)
 	def on_cboParam_currentIndexChanged(self, e):
 		# print(f'index changed: {e}')
 		cbotext = self.cboParam.currentText();
+		if not cbotext:
+			return
 		drive = cbotext.split()[0].strip()
 		d = self.config['drives'][drive]
 		self.param['drive'] = drive
@@ -190,6 +152,7 @@ class Window(Ui_MainWindow, QMainWindow):
 		userhostport = f"{self.param['user']}@{self.param['host']}:{self.param['port']}"
 		self.lblUserHostPort.setText(userhostport)
 		if self.loaded:
+			self.settings.setValue("cboParam", self.cboParam.currentIndex())
 			self.getStatus()
 
 	def getStatus(self):
@@ -229,8 +192,7 @@ class Window(Ui_MainWindow, QMainWindow):
 		
 	def closeEvent(self, event):	
 		self.settings.setValue("geometry", self.saveGeometry())
-		self.settings.setValue("windowState", self.saveState())
-		self.settings.setValue("cboParam", self.cboParam.currentIndex())	
+		self.settings.setValue("windowState", self.saveState())			
 		QMainWindow.closeEvent(self, event)
 		self.worker.stop()
 		# self.thread.quit()

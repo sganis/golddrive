@@ -1,12 +1,12 @@
 {
 	"sshfs_path" : "C:\\Program Files\\SSHFS-Win\\bin",
 	"drives" : {
-		"S:" : {
+		"K:" : {
 			"name" 	: "Simulation",
 			"hosts" : ["localhost", "vlcc30"],
 			"options" : "" 
 		},		
-		"I:" : {
+		"M:" : {
 			"name" 	: "IT",
 			"hosts" : ["server01", "server02"]
 		},		
