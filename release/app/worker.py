@@ -28,7 +28,8 @@ class BackgroundWorker(QObject):
 
 	def testssh(self, p):
 		import setupssh	
-		ok = setupssh.testssh(p['ssh'],p['user'],p['host'], p['port'])
+		ok = setupssh.testssh(p['ssh'], p['userhost'], 
+			p['seckey'], p['port'])
 		rb = ReturnBox()
 		if ok:
 			rb.output = "SSH authentication is OK"
@@ -36,8 +37,8 @@ class BackgroundWorker(QObject):
 
 	def setupssh(self, p):
 		import setupssh	
-		return setupssh.main(p['ssh'], p['user'], p['host'], 
-			p['password'], p['port'])
+		return setupssh.main(p['ssh'], p['userhost'], p['password'],
+			p['seckey'], p['port'])
 
 	def restart_explorer(self, p):
 		import unmount
@@ -63,7 +64,8 @@ class BackgroundWorker(QObject):
 		msg =  'Drive is connected'
 		return ReturnBox('','Not implemented')
 
-	# slot decorator is optional, used here for documenting argument's type
+	# slot decorator is optional, used here 
+	# for documenting argument's type
 	@pyqtSlot(str, dict)
 	def work(self, task, param):
 		if self.slow:
@@ -92,7 +94,7 @@ class Worker(QObject):
 		
 	def doWork(self, task, param):
 		self.is_working = True
-		print(f'work requested: {task}, param: {param}')
+		# print(f'work requested: {task}, param: {param}')
 		self.workRequested.emit(task, param)
 
 	def stop(self):	
@@ -102,7 +104,7 @@ class Worker(QObject):
 
 	@pyqtSlot(str, ReturnBox)
 	def onWorkDone(self, task, rb):
-		print(f'{task}, result: {rb.output}, error: {rb.error}')
+		# print(f'{task}, result: {rb.output}, error: {rb.error}')
 		self.workDone.emit(task, rb)
 		self.is_working = False
 		if task == 'test_exit':

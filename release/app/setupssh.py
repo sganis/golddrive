@@ -28,16 +28,17 @@ def testssh(ssh, userhost, seckey='', port=22):
 	r= util.run(cmd, capture=True, timeout=5)
 	return r.stdout == 'ok'
 
-def main(ssh, user, host, password, seckey='', port=22):
+def main(ssh, userhost, password, seckey='', port=22):
 	'''
 	Setup ssh keys, return ReturnBox
 	'''
+	
 	rb = util.ReturnBox()
 	if not password:
 		rb.error = 'password is empty'
 		return rb
-		
-	userhost =f'{user}@{host}'
+
+	user, host = userhost.split('@')
 	logger.info(f'Setting up ssh keys for {userhost}...')
 	client = paramiko.SSHClient()
 	client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -62,7 +63,12 @@ def main(ssh, user, host, password, seckey='', port=22):
 	if not os.path.exists(seckey):
 		logger.info('Generating new ssh keys...')
 		sk = paramiko.RSAKey.generate(2048)
-		sk.write_private_key_file(seckey)	
+		try:
+			sk.write_private_key_file(seckey)	
+		except Exception as ex:
+			logger.error(f'{ex}, {seckey}')
+			rb.error = str(ex)
+			return rb
 	else:
 		logger.info('Private key already exists.')
 		if testssh(ssh, userhost, seckey, port):
@@ -79,7 +85,9 @@ def main(ssh, user, host, password, seckey='', port=22):
 	# 	key = f.read().strip()
 
 	# Copy to the target machines.
-	cmd = f"mkdir -p .ssh && echo '{key}' >> .ssh/authorized_keys && chmod 700 .ssh/authorized_keys"
+	cmd = fr"mkdir -p .ssh && \
+		echo '{key}' >> .ssh/authorized_keys && \
+		chmod 700 .ssh/authorized_keys"
 	# print(cmd)
 
 	ok = False
@@ -93,7 +101,7 @@ def main(ssh, user, host, password, seckey='', port=22):
 	err = stderr.read()
 	if err:
 		logger.error(err)
-		rb.error = f'error transfering public key, command run with errors: {err}'
+		rb.error = f'error transfering public key, error: {err}'
 		return rb
 	
 	ok = testssh(ssh, userhost, seckey, port)
@@ -109,17 +117,17 @@ def main(ssh, user, host, password, seckey='', port=22):
 if __name__ == '__main__':
 
 	import sys
-	assert len(sys.argv) > 2 and '@' in sys.argv[1] # usage: prog user@host password
+	assert (len(sys.argv) > 2 and 
+		'@' in sys.argv[1]) # usage: prog user@host password
 	userhost = sys.argv[1]
 	password = sys.argv[2]
 	port=22
 	if ':' in userhost:
 		userhost, port = userhost.split(':')		
 	ssh = fr'C:\Program Files\SSHFS-Win\bin\ssh.exe'
-	user, host = userhost.split('@')
-
+	
 	# log to console
 	logging.basicConfig(level=logging.INFO)
 
 
-	main(ssh, user, host, password, '', port)
+	main(ssh, userhost, password, '', port)

@@ -51,7 +51,6 @@ def set_net_use(letter, userhost):
 	util.run(f'''reg add {key} /v ConnectFlags 
 					/d 0 /t REG_DWORD / >nul 2>&1''')
 
-
 def main(sshfs, drive, userhost, seckey, port=22, drivename=''):
 
 	logger.info(f'Mounting {drive} {userhost}...')
@@ -69,7 +68,7 @@ def main(sshfs, drive, userhost, seckey, port=22, drivename=''):
 		-o port={port}
 		-o VolumePrefix=/sshfs/{userhost}
 		-o volname={drivename}-{userhost} 
-		-o uid=-1,gid=-1,create_umask=0007 
+		-o uid=-1,gid=-1,create_umask=007,mask=007 
 		-o rellinks -o reconnect
 		-o FileSystemName=SSHFS 
 		-o StrictHostKeyChecking=no

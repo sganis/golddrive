@@ -7,7 +7,7 @@ logger = logging.getLogger('ssh-drive')
 
 
 def restart_explorer():
-	util.run(fr'taskkill /im explorer.exe /f 2>nul')
+	subprocess.run(fr'taskkill /im explorer.exe /f >nul 2>&1', shell=True)
 	subprocess.run(fr'start /b c:\windows\explorer.exe', shell=True)
 
 def main(drive):

@@ -39,25 +39,25 @@ def test_testssh_no_key():
 	assert not ok
 	
 def test_empty_password():
-	rb = setupssh.main(ssh, user, host, '', seckey, port)
+	rb = setupssh.main(ssh, userhost, '', seckey, port)
 	assert 'password is empty' in rb.error
 
 def test_wrong_password():
-	rb = setupssh.main(ssh, user, host, 'secret', seckey, port)
+	rb = setupssh.main(ssh, userhost, 'secret', seckey, port)
 	assert 'password wrong'  in rb.error
 
 def test_bad_host():
-	rb = setupssh.main(ssh, user, 'unknown', 'secret', seckey, port)
+	rb = setupssh.main(ssh, f'{user}@unknown', 'secret', seckey, port)
 	assert 'not found' in rb.error
 
 def test_setupssh_with_key():
 	password = os.environ.get('PASS', '')
 	assert password
-	rb = setupssh.main(ssh, user, host, password, seckey, port)
+	rb = setupssh.main(ssh, userhost, password, seckey, port)
 	print (rb.output)
 	assert 'successfull' in rb.output
 
-	rb = setupssh.main(ssh, user, host, password, seckey, port)
+	rb = setupssh.main(ssh, userhost, password, seckey, port)
 	print (rb.output)
 	assert 'authentication is OK' in rb.output
 
@@ -67,11 +67,11 @@ def test_setupssh_with_key():
 def test_setupssh_default_key():
 	password = os.environ.get('PASS', '')
 	assert password
-	rb = setupssh.main(ssh, user, host, password, '', port)
+	rb = setupssh.main(ssh, userhost, password, '', port)
 	print (rb.output)
 	assert 'successfull' in rb.output
 
-	rb = setupssh.main(ssh, user, host, password, '', port)
+	rb = setupssh.main(ssh, userhost, password, '', port)
 	print (rb.output)
 	assert 'authentication is OK' in rb.output
 

@@ -7,7 +7,7 @@ import json
 import subprocess
 import getpass
 import logging
-from util import ReturnBox
+import util
 from worker import Worker
 from PyQt5.QtCore import (QObject, pyqtSlot, 
 	QThread, QSize, QSettings, QFileSystemWatcher)
@@ -80,7 +80,7 @@ class Window(Ui_MainWindow, QMainWindow):
 		self.getStatus()
 		self.loaded = True
 
-	@pyqtSlot(str, ReturnBox)
+	@pyqtSlot(str, util.ReturnBox)
 	def onWorkDone(self, task, rb):
 		self.drive_state = rb.drive_state
 		if rb.error:
@@ -136,18 +136,21 @@ class Window(Ui_MainWindow, QMainWindow):
 		self.cboParam.blockSignals(False)
 		
 	def fillParam(self):
-		self.param['ssh'] = fr"{self.config['sshfs_path']}\ssh.exe"
-		self.param['sshfs'] = fr"{self.config['sshfs_path']}\sshfs.exe"
+		p = self.param
+		p['ssh'] = fr"{self.config['sshfs_path']}\ssh.exe"
+		p['sshfs'] = fr"{self.config['sshfs_path']}\sshfs.exe"
 		currentText = self.cboParam.currentText();
 		if not currentText:
 			return
 		drive = currentText.split()[0].strip()
 		d = self.config['drives'][drive]
-		self.param['drive'] = drive
-		self.param['host'] = d['hosts'][0]
-		self.param['port'] = d.get('port', 22)
-		self.param['user'] = d.get('user', getpass.getuser())		
-		self.param['userhostport'] = f"{self.param['user']}@{self.param['host']}:{self.param['port']}"
+		p['drive'] = drive
+		p['host'] = d['hosts'][0]
+		p['port'] = d.get('port', 22)
+		p['user'] = d.get('user', getpass.getuser())		
+		p['userhost'] = f"{p['user']}@{p['host']}"
+		p['userhostport'] = f"{p['userhost']}:{p['port']}"
+		p['seckey'] = util.defaultKey()
 		
 	# decorator used to trigger only the int overload and not twice
 	@pyqtSlot(int)
@@ -159,7 +162,8 @@ class Window(Ui_MainWindow, QMainWindow):
 		self.fillParam()
 		self.lblUserHostPort.setText(self.param['userhostport'])
 		if self.loaded:
-			self.settings.setValue("cboParam", self.cboParam.currentIndex())
+			self.settings.setValue("cboParam", 
+				self.cboParam.currentIndex())
 			self.getStatus()
 
 	def getStatus(self):
@@ -220,7 +224,8 @@ class Window(Ui_MainWindow, QMainWindow):
 		self.progressBar.setVisible(False)
 		self.lblStatus.setText(message)
 		self.pbConnect.setEnabled(True)
-		self.lblStatus.setProperty("error", self.command_state == 'error');
+		self.lblStatus.setProperty("error", 
+			self.command_state == 'error');
 		self.lblStatus.style().unpolish(self.lblStatus);
 		self.lblStatus.style().polish(self.lblStatus);
 		if self.drive_state == 'CONNECTED':
@@ -249,7 +254,9 @@ class Window(Ui_MainWindow, QMainWindow):
 
 	def on_lblSettings_linkActivated(self, link):
 
-		subprocess.call(fr'start /b c:\windows\explorer.exe "{DIR}\.."', shell=True)
+		subprocess.call(
+			fr'start /b c:\windows\explorer.exe "{DIR}\.."', 
+			shell=True)
 
 def run():
 	app = QApplication(sys.argv)
