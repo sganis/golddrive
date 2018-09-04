@@ -55,9 +55,10 @@ class Window(Ui_MainWindow, QMainWindow):
 		self.configfile = fr'{DIR}\..\config.json'
 		self.config = {}
 		self.param = {}
-		self.loadConfig(self.configfile)
-		self.loadCombo(self.settings.value("cboParam",0))	
-		
+		self.getConfig(self.configfile)
+		self.updateCombo(self.settings.value("cboParam",0))	
+		self.fillParam()
+		self.lblUserHostPort.setText(self.param['userhostport'])
 
 		menu = QMenu()
 		menu.addAction('Setup SSH keys', self.mnuSetupSsh)
@@ -110,22 +111,20 @@ class Window(Ui_MainWindow, QMainWindow):
 	@pyqtSlot(str)
 	def onConfigFileChanged(self, path):
 		logger.error('Config file has changed, reloading...')
-		self.loadConfig(path)
-		currentIndex = self.settings.value("cboParam",0)
-		self.loadCombo(currentIndex)
+		self.getConfig(path)
+		self.updateCombo(self.settings.value("cboParam",0))
+		self.fillParam()
+		self.lblUserHostPort.setText(self.param['userhostport'])
+		self.getStatus()
 
-	def loadConfig(self, path):
+	def getConfig(self, path):
 		try:
 			with open(path) as f:
 				self.config = json.load(f)
 		except Exception as ex:
 			logger.error(f'Cannot read config file: {path}')
-		# store parameters to send to worker
-		self.param['user'] = getpass.getuser()
-		self.param['ssh'] = fr"{self.config['sshfs_path']}\ssh.exe"
-		self.param['sshfs'] = fr"{self.config['sshfs_path']}\sshfs.exe"
 
-	def loadCombo(self, currentIndex):
+	def updateCombo(self, currentIndex):
 		items = []
 		drives = self.config['drives']
 		for d in drives:
@@ -136,7 +135,20 @@ class Window(Ui_MainWindow, QMainWindow):
 		self.cboParam.setCurrentIndex(currentIndex)
 		self.cboParam.blockSignals(False)
 		
-
+	def fillParam(self):
+		self.param['ssh'] = fr"{self.config['sshfs_path']}\ssh.exe"
+		self.param['sshfs'] = fr"{self.config['sshfs_path']}\sshfs.exe"
+		currentText = self.cboParam.currentText();
+		if not currentText:
+			return
+		drive = currentText.split()[0].strip()
+		d = self.config['drives'][drive]
+		self.param['drive'] = drive
+		self.param['host'] = d['hosts'][0]
+		self.param['port'] = d.get('port', 22)
+		self.param['user'] = d.get('user', getpass.getuser())		
+		self.param['userhostport'] = f"{self.param['user']}@{self.param['host']}:{self.param['port']}"
+		
 	# decorator used to trigger only the int overload and not twice
 	@pyqtSlot(int)
 	def on_cboParam_currentIndexChanged(self, e):
@@ -144,20 +156,14 @@ class Window(Ui_MainWindow, QMainWindow):
 		cbotext = self.cboParam.currentText();
 		if not cbotext:
 			return
-		drive = cbotext.split()[0].strip()
-		d = self.config['drives'][drive]
-		self.param['drive'] = drive
-		self.param['host'] = d['hosts'][0]
-		self.param['port'] = d.get('port', 22)
-		userhostport = f"{self.param['user']}@{self.param['host']}:{self.param['port']}"
-		self.lblUserHostPort.setText(userhostport)
+		self.fillParam()
+		self.lblUserHostPort.setText(self.param['userhostport'])
 		if self.loaded:
 			self.settings.setValue("cboParam", self.cboParam.currentIndex())
 			self.getStatus()
 
 	def getStatus(self):
 		self.start(f"Checking {self.param['drive']}...")
-		# self.workRequested.emit('get_status', self.param)
 		self.worker.doWork('get_status', self.param)
 
 

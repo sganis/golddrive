@@ -22,8 +22,8 @@ class BackgroundWorker(QObject):
 			rb.drive_state = 'CONNECTED'
 		if p['drive'] == 'X:':
 			rb.drive_state = 'ERROR'
-			rb.error = f"Drive {p['drive']}\nin error state"
-		rb.output = f"Drive {p['drive']}\n{rb.drive_state}"
+			rb.error = f"{p['drive']} in error state"
+		rb.output = f"{p['drive']} {rb.drive_state}"
 		return rb
 
 	def testssh(self, p):

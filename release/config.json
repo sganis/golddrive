@@ -1,14 +1,16 @@
 {
 	"sshfs_path" : "C:\\Program Files\\SSHFS-Win\\bin",
 	"drives" : {
-		"K:" : {
+		"S:" : {
 			"name" 	: "Simulation",
-			"hosts" : ["localhost", "vlcc30"],
+			"hosts" : ["192.168.100.201", "vlcc30"],
 			"options" : "" 
 		},		
-		"M:" : {
+		"I:" : {
 			"name" 	: "IT",
-			"hosts" : ["server01", "server02"]
+			"user"  : "ituser",
+			"hosts" : ["S1", "server02"],
+			"port"  : 333
 		},		
 		"X:" : {
 			"name" 	: "Exploration",
@@ -16,7 +18,7 @@
 		},		
 		"Y:" : {
 			"name" 	: "Container",
-			"user" : ["192.168.99.100"],
+			"user"  : "support",
 			"hosts" : ["192.168.99.100"],
 			"port"  : 2222
 		},
