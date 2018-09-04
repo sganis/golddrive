@@ -1,6 +1,6 @@
 # mount drive using sshfs
 # 
-import subprocess
+import util
 import logging
 
 logger = logging.getLogger('ssh-drive')
@@ -9,8 +9,8 @@ def set_drive_name(name, user, host):
 	print(f'Setting drive name as {name}...')
 	key = fr'HKCU\Software\Microsoft\Windows\CurrentVersion'
 	key = fr'{key}\Explorer\MountPoints2\##sshfs#{user}@{host}'
-	cmd = f'reg add {key} /v _LabelFromReg /d {name} /f'
-	subprocess.run(cmd)
+	cmd = f'reg add {key} /v _LabelFromReg /d {name} /f 2>nul'
+	util.run(cmd)
 
 def main(sshfs, drive, user, host, port=22, drivename=''):
 	print(f'Mounting {drive} {user}@{host}...')
@@ -29,12 +29,13 @@ def main(sshfs, drive, user, host, port=22, drivename=''):
 		-oFileInfoTimeout=10000 
 		-oDirInfoTimeout=10000 
 		-oVolumeInfoTimeout=10000
+		-omax_readahead=131072
 		'''.replace('\n',' ').replace('\t','')
 
 		# google mount: "-o" "max_readahead=131072"
 		
 	# print(cmd)
-	subprocess.run(cmd, shell=True)
+	util.run(cmd)
 
 	if not drivename:
 		drivename = 'SSH'
@@ -44,12 +45,12 @@ def main(sshfs, drive, user, host, port=22, drivename=''):
 	letter = drive.strip(':')
 	remotepath = f'\\\\sshfs\\{user}@{host}\\..\\..'
 	key = fr'HKCU\Network\{letter}'	
-	subprocess.run(f'reg add {key} /v RemotePath /d "{remotepath}" /f')
-	subprocess.run(f'reg add {key} /v UserName /d "" /f')
-	subprocess.run(f'reg add {key} /v ProviderName /d "Windows File System Proxy" /f')
-	subprocess.run(f'reg add {key} /v ProviderType /d 20737046 /t REG_DWORD /f')
-	subprocess.run(f'reg add {key} /v ConnectionType /d 1 /t REG_DWORD /f')
-	subprocess.run(f'reg add {key} /v ConnectFlags /d 0 /t REG_DWORD /f')
+	util.run(f'reg add {key} /v RemotePath /d "{remotepath}" /f 2>nul')
+	util.run(f'reg add {key} /v UserName /d "" /f 2>nul')
+	util.run(f'reg add {key} /v ProviderName /d "Windows File System Proxy" /f 2>nul')
+	util.run(f'reg add {key} /v ProviderType /d 20737046 /t REG_DWORD /f 2>nul')
+	util.run(f'reg add {key} /v ConnectionType /d 1 /t REG_DWORD / 2>nul')
+	util.run(f'reg add {key} /v ConnectFlags /d 0 /t REG_DWORD / 2>nul')
 
 	# set drive icon
 	import driveicon

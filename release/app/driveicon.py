@@ -1,6 +1,6 @@
 # set drive icon
 import os
-import subprocess
+import util
 
 
 def main(letter):
@@ -12,11 +12,11 @@ def main(letter):
 	]
 
 	for key in keys:
-		subprocess.run(f'reg add {key} /ve /f'.split())
+		util.run(f'reg add {key} /ve /f')
 
 	key = fr'HKCU\Software\Classes\Applications\Explorer.exe\Drives\{letter}\DefaultIcon'
 	ico = fr'{os.path.dirname(os.path.realpath(__file__))}\images\ssh-drive.ico'
-	subprocess.run(f'reg add {key} /ve /d "{ico}" /f', shell=True)
+	util.run(f'reg add {key} /ve /d "{ico}" /f')
 
 
 if __name__ == '__main__':

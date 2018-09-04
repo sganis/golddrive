@@ -1,10 +1,9 @@
 # setup ssh keys
 
 import os
-import subprocess
 import paramiko
 import logging
-from util import ReturnBox
+import util
 
 logger = logging.getLogger('ssh-drive')
 logging.getLogger("paramiko.transport").setLevel(logging.WARNING)
@@ -18,14 +17,14 @@ def testssh(ssh, user, host, port=22):
 	'''
 	logger.info(f'Testing ssh keys for {user}@{host}...')
 	cmd = f'"{ssh}" -p {port} -o StrictHostKeyChecking=no -o BatchMode=yes {user}@{host} echo ok 2>&1'
-	r = subprocess.run(cmd, capture_output=True, shell=True, text=True, timeout=10)
-	return r.stdout.strip() == 'ok'
+	out, err, ret = util.run(cmd, output=True, timeout=10)
+	return out == 'ok'
 
 def main(ssh, user, host, password, port=22):
 	'''
 	Setup ssh keys, return ReturnBox
 	'''
-	rb = ReturnBox()
+	rb = util.ReturnBox()
 	userhost =f'{user}@{host}'
 	logger.info(f'Setting up ssh keys for {userhost}...')
 	client = paramiko.SSHClient()
