@@ -11,20 +11,32 @@ logging.getLogger("paramiko.transport").setLevel(logging.WARNING)
 DIR = os.path.dirname(os.path.realpath(__file__))
 
 
-def testssh(ssh, user, host, port=22):
+def testssh(ssh, userhost, seckey='', port=22):
 	'''
 	Test ssh key authentication, return True or False
 	'''
-	logger.info(f'Testing ssh keys for {user}@{host}...')
-	cmd = f'"{ssh}" -p {port} -o StrictHostKeyChecking=no -o BatchMode=yes {user}@{host} echo ok 2>&1'
-	out, err, ret = util.run(cmd, output=True, timeout=10)
-	return out == 'ok'
+	logger.info(f'Testing ssh keys for {userhost}...')
+	if not seckey:
+		seckey = util.defaultKey()
 
-def main(ssh, user, host, password, port=22):
+	cmd = f'''"{ssh}" 
+		-i "{seckey}"
+		-p {port} 
+		-o StrictHostKeyChecking=no 
+		-o BatchMode=yes 
+		{userhost} echo ok 2>&1'''
+	r= util.run(cmd, capture=True, timeout=5)
+	return r.stdout == 'ok'
+
+def main(ssh, user, host, password, seckey='', port=22):
 	'''
 	Setup ssh keys, return ReturnBox
 	'''
 	rb = util.ReturnBox()
+	if not password:
+		rb.error = 'password is empty'
+		return rb
+		
 	userhost =f'{user}@{host}'
 	logger.info(f'Setting up ssh keys for {userhost}...')
 	client = paramiko.SSHClient()
@@ -42,20 +54,18 @@ def main(ssh, user, host, password, port=22):
 			rb.error = f'{host} not found'
 		return rb
 
-	sshdir = os.path.expandvars("%USERPROFILE%\\.ssh")
-	seckey = os.path.join(sshdir, 'id_rsa')
-	pubkey = os.path.join(sshdir, 'id_rsa.pub')
-	sk 	   = None
+	if not seckey:
+		seckey = util.defaultKey()	
 
 	# Check if keys need to be generated
+	sk = None
 	if not os.path.exists(seckey):
-		# generate rsa keys
 		logger.info('Generating new ssh keys...')
 		sk = paramiko.RSAKey.generate(2048)
 		sk.write_private_key_file(seckey)	
 	else:
 		logger.info('Private key already exists.')
-		if testssh(ssh, user, host, port):
+		if testssh(ssh, userhost, seckey, port):
 			rb.output = 'SSH authentication is OK.'
 			logger.info(rb.output)
 			return rb
@@ -65,7 +75,7 @@ def main(ssh, user, host, password, port=22):
 	if not sk:
 		sk = paramiko.RSAKey.from_private_key_file(seckey)
 	key = f'ssh-rsa {sk.get_base64()} {userhost}'
-	# with open(f'{pubkey}', 'r') as f:
+	# with open(f'{seckey}.pub', 'r') as f:
 	# 	key = f.read().strip()
 
 	# Copy to the target machines.
@@ -86,7 +96,7 @@ def main(ssh, user, host, password, port=22):
 		rb.error = f'error transfering public key, command run with errors: {err}'
 		return rb
 	
-	ok = testssh(ssh, user, host, port)
+	ok = testssh(ssh, userhost, seckey, port)
 	if ok:
 		rb.output = "SSH setup successfull." 
 		logger.info(rb.output)
@@ -112,4 +122,4 @@ if __name__ == '__main__':
 	logging.basicConfig(level=logging.INFO)
 
 
-	main(ssh, user, host, password, port)
+	main(ssh, user, host, password, '', port)

@@ -1,5 +1,7 @@
 # util module for running commands and load config
 import subprocess
+import re
+import os
 
 class ReturnBox():
 	def __init__(self, out='', err=''):
@@ -7,34 +9,30 @@ class ReturnBox():
 		self.error = err
 		self.drive_state = 'DISCONNECTED'
 
-def run(cmd, output=False, timeout=10):
-	# print(f'CMD:\n{cmd}')
+
+def defaultKey():
+	sshdir = os.path.expandvars("%USERPROFILE%")
+	seckey = fr'{sshdir}\.ssh\id_rsa.ssh-drive'
+	return seckey.replace(f'\\', '/')
+
+
+def run(cmd, capture=False, timeout=10):
 	shell=False
 	if '"' in cmd or '%' in cmd or '>' in cmd:
 		shell=True
-	r = subprocess.run(cmd, timeout, shell=shell, capture_output=output, text=True)
+	cmd = re.sub(r'[\n\r\t ]+',' ', cmd)
+	# print(f'CMD:\n{cmd}')
+
+	r = subprocess.run(cmd, timeout, shell=shell, 
+		capture_output=capture, text=True)
 	# print(f'{r}')
-	if output:
+	if capture:
+		r.stdout = r.stdout.strip()
+		r.stderr = r.stderr.strip()
 		if r.stderr.strip():
 			print(f'ERROR:\n{r}')
-		return r.stdout.strip(), r.stderr.strip(), r.returncode
-	return ('','',r.returncode)
-	# proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-	# ret = 0
-	# try:
-	# 	out, err = proc.communicate(timeout=30)
-	# except subprocess.TimeoutExpired:
-	# 	proc.kill()
-	# 	out, err = proc.communicate()
-	# ret = proc.returncode
-	# if err:
-	# 	err = err.decode('ascii').strip()
-	# 	print(f'error: {err}')
-	# out = out.decode('ascii').strip()
-	# # print(f'output: {out}')
-	# # print(f'return: {ret}')
-	# return out, err, ret
-
+	return r
+	
 
 if __name__ == '__main__':
 	run('tasklist')	

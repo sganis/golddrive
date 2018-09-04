@@ -18,8 +18,8 @@ def main(drive):
 	# cleanup
 	entry = fr'HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2'
 	mounts = []
-	out, err, ret = util.run(f'reg query {entry}', output=True)
-	for e in out.split('\n'):
+	r = util.run(f'reg query {entry} >nul 2>&1', capture=True)
+	for e in r.stdout.split('\n'):
 		# print(e)
 		m = e.split('\\')[-1]
 		if m.startswith('##'):
@@ -33,9 +33,7 @@ def main(drive):
 		for e in mounts:
 			# print (e)
 			try:
-				cmd = f'reg delete "{e.strip()}" /f 2>nul'
-				# print (cmd)
-				sys.stdout.flush()
+				cmd = f'reg delete "{e.strip()}" /f >nul 2>&1'
 				util.run(cmd)
 			except Exception as ex:
 				# print(ex)

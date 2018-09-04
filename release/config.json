@@ -1,5 +1,6 @@
 {
 	"sshfs_path" : "C:\\Program Files\\SSHFS-Win\\bin",
+	"private_key" : "%USERPROFILE%\\.ssh\\id_rsa.ssh-drive",
 	"drives" : {
 		"S:" : {
 			"name" 	: "Simulation",
