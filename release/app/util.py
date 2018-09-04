@@ -7,7 +7,6 @@ class ReturnBox():
 		self.error = err
 		self.drive_state = 'DISCONNECTED'
 
-
 def run(cmd):
 	print(f'Running command:\n{cmd}')
 	proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

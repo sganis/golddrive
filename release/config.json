@@ -14,6 +14,12 @@
 			"name" 	: "Exploration",
 			"hosts" : ["explor01", "explor02"]
 		},		
+		"Y:" : {
+			"name" 	: "Container",
+			"user" : ["192.168.99.100"],
+			"hosts" : ["192.168.99.100"],
+			"port"  : 2222
+		},
 		"Z:" : {
 			"name" 	: "My Linux Box",
 			"hosts" : ["192.168.100.201"],

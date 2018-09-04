@@ -4,93 +4,101 @@ import sys
 import os
 import time
 import json
-import logging
 import subprocess
 import getpass
+import logging
 from util import ReturnBox
-from PyQt5 import QtCore, QtGui
+from worker import Worker
+from PyQt5.QtCore import (QObject, pyqtSignal, pyqtSlot, 
+	QThread, QSize, QSettings)
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QWidget, QLabel, 
 	QComboBox, QApplication, QMainWindow, QMenu)
 from app_ui import Ui_MainWindow
 
 DIR = os.path.abspath(os.path.dirname(__file__))
+logging.basicConfig(
+	level=logging.INFO, 
+	filename=fr'{DIR}\..\ssh-drive.log',
+	format='%(asctime)s: %(name)-10s: %(levelname)-7s: %(message)s',
+	datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger('ssh-drive')
 
 
-class Worker(QtCore.QObject):
+# class Worker(QObject):
 
-	workDone = QtCore.pyqtSignal(str, ReturnBox)
+# 	workDone = pyqtSignal(str, ReturnBox)
 	
-	def get_status(sefl, p):
-		rb = ReturnBox()
-		if p['drive'] == 'Z:':
-			rb.drive_state = 'CONNECTED'
-		if p['drive'] == 'X:':
-			rb.drive_state = 'ERROR'
-			rb.error = f"Drive {p['drive']}\nin error state"
-		rb.output = f"Drive {p['drive']}\n{rb.drive_state}"
-		return rb
+# 	def get_status(sefl, p):
+# 		rb = ReturnBox()
+# 		if p['drive'] == 'Z:':
+# 			rb.drive_state = 'CONNECTED'
+# 		if p['drive'] == 'X:':
+# 			rb.drive_state = 'ERROR'
+# 			rb.error = f"Drive {p['drive']}\nin error state"
+# 		rb.output = f"Drive {p['drive']}\n{rb.drive_state}"
+# 		return rb
 
-	def testssh(self, p):
-		import setupssh	
-		ok = setupssh.testssh(p['ssh'],p['user'],p['host'], p['port'])
-		rb = ReturnBox()
-		if ok:
-			rb.output = "SSH authentication is OK"
-		return rb
+# 	def testssh(self, p):
+# 		import setupssh	
+# 		ok = setupssh.testssh(p['ssh'],p['user'],p['host'], p['port'])
+# 		rb = ReturnBox()
+# 		if ok:
+# 			rb.output = "SSH authentication is OK"
+# 		return rb
 
-	def setupssh(self, p):
-		import setupssh	
-		return setupssh.main(p['ssh'], p['user'], p['host'], p['password'], p['port'])
+# 	def setupssh(self, p):
+# 		import setupssh	
+# 		return setupssh.main(p['ssh'], p['user'], p['host'], p['password'], p['port'])
 
-	def restart_explorer(self, p):
-		import unmount
-		unmount.restart_explorer()
-		msg = 'Explorer.exe was restarted.'
-		return ReturnBox('','Not implemented')
+# 	def restart_explorer(self, p):
+# 		import unmount
+# 		unmount.restart_explorer()
+# 		msg = 'Explorer.exe was restarted.'
+# 		return ReturnBox('','Not implemented')
 
-	def connect(self, p):
-		import mount		
-		# mount.main(sshfs, drive, userhost, drivename)
-		msg =  'Drive is connected'
-		return ReturnBox('','Not implemented')
+# 	def connect(self, p):
+# 		import mount		
+# 		# mount.main(sshfs, drive, userhost, drivename)
+# 		msg =  'Drive is connected'
+# 		return ReturnBox('','Not implemented')
 
-	def disconnect(self, p):
-		import mount		
-		# mount.main(sshfs, drive, userhost, drivename)
-		msg =  'Drive is connected'
-		return ReturnBox('','Not implemented')
+# 	def disconnect(self, p):
+# 		import mount		
+# 		# mount.main(sshfs, drive, userhost, drivename)
+# 		msg =  'Drive is connected'
+# 		return ReturnBox('','Not implemented')
 
-	def reconnect(self, p):
-		import mount		
-		# mount.main(sshfs, drive, userhost, drivename)
-		msg =  'Drive is connected'
-		return ReturnBox('','Not implemented')
+# 	def reconnect(self, p):
+# 		import mount		
+# 		# mount.main(sshfs, drive, userhost, drivename)
+# 		msg =  'Drive is connected'
+# 		return ReturnBox('','Not implemented')
 
-	# slot decorator is optional, used here for documenting argument's type
-	@QtCore.pyqtSlot(str, dict)
-	def work(self, task, param):
-		# time.sleep(0.2)
-		if hasattr(self, task):
-			rb = getattr(self, task)(param)
-		else:
-			rb = ReturnBox('','Not implemented')
-		self.workDone.emit(task, rb)
+# 	# slot decorator is optional, used here for documenting argument's type
+# 	@pyqtSlot(str, dict)
+# 	def work(self, task, param):
+# 		# time.sleep(0.2)
+# 		if hasattr(self, task):
+# 			rb = getattr(self, task)(param)
+# 		else:
+# 			rb = ReturnBox('','Not implemented')
+# 		self.workDone.emit(task, rb)
 
 
 class Window(Ui_MainWindow, QMainWindow):
 	
-	workRequested = QtCore.pyqtSignal(str, dict)
+	# workRequested = pyqtSignal(str, dict)
 
 	def __init__(self):
 		super().__init__()
 		self.loaded = False
 		self.setupUi(self)
 		self.setWindowTitle('SSH Drive')
-		app_icon = QtGui.QIcon()
-		app_icon.addFile(fr'{DIR}\images\icon_16.png', QtCore.QSize(16,16))
-		app_icon.addFile(fr'{DIR}\images\icon_32.png', QtCore.QSize(32,32))
-		app_icon.addFile(fr'{DIR}\images\icon_48.png', QtCore.QSize(48,48))
+		app_icon = QIcon()
+		app_icon.addFile(fr'{DIR}\images\icon_16.png', QSize(16,16))
+		app_icon.addFile(fr'{DIR}\images\icon_32.png', QSize(32,32))
+		app_icon.addFile(fr'{DIR}\images\icon_48.png', QSize(48,48))
 		QApplication.setWindowIcon(app_icon)
 		# widgets = self.findChildren(QWidget)
 		# for w in widgets:
@@ -109,7 +117,7 @@ class Window(Ui_MainWindow, QMainWindow):
 		self.param['ssh'] = fr"{self.config['sshfs_path']}\ssh.exe"
 		self.param['sshfs'] = fr"{self.config['sshfs_path']}\sshfs.exe"
 		
-		self.settings = QtCore.QSettings("sganis", "ssh-drive")
+		self.settings = QSettings("sganis", "ssh-drive")
 		if self.settings.value("geometry"):
 			self.restoreGeometry(self.settings.value("geometry"))
 			self.restoreState(self.settings.value("windowState"))
@@ -134,17 +142,14 @@ class Window(Ui_MainWindow, QMainWindow):
 		menu.addAction('Restart Explorer.exe', self.mnuRestartExplorer)
 		self.pbHamburger.setMenu(menu)
 
-		# worker thread
-		self.thread = QtCore.QThread()
+		# worker for background commands
 		self.worker = Worker()
-		self.worker.moveToThread(self.thread)
-		self.workRequested.connect(self.worker.work)
 		self.worker.workDone.connect(self.onWorkDone)
-		self.thread.start()
+		
 		self.getStatus()
 		self.loaded = True
 
-	@QtCore.pyqtSlot(str, ReturnBox)
+	@pyqtSlot(str, ReturnBox)
 	def onWorkDone(self, task, rb):
 		self.drive_state = rb.drive_state
 		if rb.error:
@@ -173,7 +178,7 @@ class Window(Ui_MainWindow, QMainWindow):
 			self.end(msg)
 
 	# decorator used to trigger only the int overload and not twice
-	@QtCore.pyqtSlot(int)
+	@pyqtSlot(int)
 	def on_cboParam_currentIndexChanged(self, e):
 		# print(f'index changed: {e}')
 		cbotext = self.cboParam.currentText();
@@ -189,44 +194,47 @@ class Window(Ui_MainWindow, QMainWindow):
 
 	def getStatus(self):
 		self.start(f"Checking {self.param['drive']}...")
-		self.workRequested.emit('get_status', self.param)
+		# self.workRequested.emit('get_status', self.param)
+		self.worker.doWork('get_status', self.param)
+
 
 	def mnuSetupSsh(self):
 		user = self.param['user']
 		host = self.param['host']
 		port = self.param['port']
 		self.start(f'Checking ssh keys for {user}...')
-		self.workRequested.emit('testssh', self.param)
+		self.worker.doWork('testssh', self.param)
 		
 	def on_txtPassword_returnPressed(self):
 		self.widgetPassword.setVisible(False)
 		self.start('Logging in...')
 		self.param['password'] = str(self.txtPassword.text())
-		self.workRequested.emit('setupssh', self.param)
+		self.worker.doWork('setupssh', self.param)
 
 	def mnuReconnect(self):
 		self.start('Reconnecting drive...')
-		self.workRequested.emit('reconnect', self.param)
+		self.worker.doWork('reconnect', self.param)
 
 	def mnuSettings(self):
 		self.start('Open settings folder...')
-		self.workRequested.emit('settings', self.param)
+		self.worker.doWork('settings', self.param)
 
 	def mnuShowLog(self):
 		self.start('Show log file...')
-		self.workRequested.emit('show_log', self.param)
+		self.worker.doWork('show_log', self.param)
 	
 	def mnuRestartExplorer(self):
 		self.start('Restarting explorer...')
-		self.workRequested.emit('restart_explorer', self.param)
+		self.worker.doWork('restart_explorer', self.param)
 		
 	def closeEvent(self, event):	
 		self.settings.setValue("geometry", self.saveGeometry())
 		self.settings.setValue("windowState", self.saveState())
 		self.settings.setValue("cboParam", self.cboParam.currentIndex())	
 		QMainWindow.closeEvent(self, event)
-		self.thread.quit()
-		self.thread.wait()
+		self.worker.stop()
+		# self.thread.quit()
+		# self.thread.wait()
 
 	def start(self, message):	
 		self.command_state = 'ok'
@@ -263,7 +271,7 @@ class Window(Ui_MainWindow, QMainWindow):
 	def on_pbConnect_released(self):
 		drive = self.param['drive']
 		self.start(f'Connecting {drive} ...')
-		self.workRequested.emit('connect', self.param)
+		self.worker.doWork('connect', self.param)
 
 	def on_pbCancel_released(self):
 		self.widgetPassword.setVisible(False)
@@ -275,25 +283,24 @@ class Window(Ui_MainWindow, QMainWindow):
 
 		subprocess.call(fr'start /b c:\windows\explorer.exe "{DIR}\.."', shell=True)
 
-def _runApp():
+def run():
 	app = QApplication(sys.argv)
 	window = Window()
 	window.show()
 	sys.exit(app.exec_())
 
 
-def run():
-	# this is call from C++ embedded app, log to file
-	logging.basicConfig(
-		level=logging.INFO, 
-		filename=fr'{DIR}\..\ssh-drive.log',
-		format='%(asctime)s: %(name)-10s: %(levelname)-7s: %(message)s')
-	_runApp()
-
-
 if __name__ == '__main__':
+	# quit with control-c
+	import signal
+	signal.signal(signal.SIGINT, signal.SIG_DFL)
+	# Remove all handlers associated with the root logger object.
+	for handler in logging.root.handlers[:]:
+		logging.root.removeHandler(handler)
 	# log to console
 	logging.basicConfig(
 		level=logging.INFO, 
-		format='%(asctime)s: %(name)-10s: %(levelname)-7s: %(message)s')
-	_runApp()
+		format='%(asctime)s: %(name)-10s: %(levelname)-7s: %(message)s',
+		datefmt='%Y-%m-%d %H:%M:%S')
+
+	run()

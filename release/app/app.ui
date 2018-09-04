@@ -63,6 +63,15 @@
      </widget>
     </item>
     <item>
+     <widget class="QWidget" name="widget_3" native="true">
+      <layout class="QHBoxLayout">
+       <item>
+        <widget class="QComboBox" name="cboParam"/>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
      <widget class="QLabel" name="lblUserHostPort">
       <property name="text">
        <string>user@host:port</string>
@@ -70,15 +79,6 @@
       <property name="alignment">
        <set>Qt::AlignCenter</set>
       </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QWidget" name="widget_3" native="true">
-      <layout class="QHBoxLayout">
-       <item>
-        <widget class="QComboBox" name="cboParam"/>
-       </item>
-      </layout>
      </widget>
     </item>
     <item>
