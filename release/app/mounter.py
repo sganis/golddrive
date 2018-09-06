@@ -96,8 +96,8 @@ def set_net_use(letter, userhost):
 					/d 0 /t REG_DWORD / >nul 2>&1''')
 
 def restart_explorer():
-	subprocess.run(fr'taskkill /im explorer.exe /f >nul 2>&1')
-	subprocess.run(fr'start /b c:\windows\explorer.exe')
+	util.run(fr'taskkill /im explorer.exe /f >nul 2>&1')
+	util.run(fr'start /b c:\windows\explorer.exe')
 
 def mount(sshfs, ssh, drive, userhost, seckey, port=22, drivename=''):
 
