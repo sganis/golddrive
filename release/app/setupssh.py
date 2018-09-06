@@ -5,7 +5,7 @@ import paramiko
 import logging
 import util
 
-logger = logging.getLogger('ssh-drive')
+logger = logging.getLogger('golddrive')
 logging.getLogger("paramiko.transport").setLevel(logging.WARNING)
 
 DIR = os.path.dirname(os.path.realpath(__file__))
@@ -17,14 +17,20 @@ def testssh(ssh, userhost, seckey='', port=22):
 	'''
 	logger.info(f'Testing ssh keys for {userhost}...')
 	if not seckey:
-		seckey = util.defaultKey()
+		user, host = userhost.split('@')
+		seckey = util.defaultKey(user)
+	seckey_win = seckey.replace('/','\\')
+	if not os.path.exists(seckey):
+		logger.info(f'Key does not exist: {seckey_win}')
+		return False
 
 	cmd = f'''"{ssh}" 
 		-i "{seckey}"
 		-p {port} 
 		-o StrictHostKeyChecking=no 
+		-o UserKnownHostsFile=/dev/null
 		-o BatchMode=yes 
-		{userhost} echo ok 2>&1'''
+		{userhost} "echo ok"'''
 	r= util.run(cmd, capture=True, timeout=5)
 	return r.stdout == 'ok'
 
@@ -56,7 +62,7 @@ def main(ssh, userhost, password, seckey='', port=22):
 		return rb
 
 	if not seckey:
-		seckey = util.defaultKey()	
+		seckey = util.defaultKey(user)	
 
 	# Check if keys need to be generated
 	sk = None
@@ -124,10 +130,12 @@ if __name__ == '__main__':
 	port=22
 	if ':' in userhost:
 		userhost, port = userhost.split(':')		
-	ssh = fr'C:\Program Files\SSHFS-Win\bin\ssh.exe'
 	
-	# log to console
+	ssh_path = fr'C:\Program Files\SSHFS-Win\bin'
+	ssh = fr'{ssh_path}\ssh.exe'
+	path = os.environ['PATH']
+	os.environ['PATH'] = fr'{ssh_path};{path}'
 	logging.basicConfig(level=logging.INFO)
-
+	logging.basicConfig(level=logging.INFO)
 
 	main(ssh, userhost, password, '', port)

@@ -24,10 +24,10 @@ Ui_MainWindow, QMainWindow = uic.loadUiType(fr'{DIR}\assets\app.ui')
 
 logging.basicConfig(
 	level=logging.INFO, 
-	filename=fr'{DIR}\..\ssh-drive.log',
+	filename=fr'{DIR}\..\golddrive.log',
 	format='%(asctime)s: %(name)-10s: %(levelname)-7s: %(message)s',
 	datefmt='%Y-%m-%d %H:%M:%S')
-logger = logging.getLogger('ssh-drive')
+logger = logging.getLogger('golddrive')
 
 
 class Menu(QMenu):
@@ -48,7 +48,7 @@ class Window(QMainWindow, Ui_MainWindow):
 		QMainWindow.__init__(self)
 		self.setupUi(self)
 		self.loaded = False
-		self.setWindowTitle('SSH Drive')
+		self.setWindowTitle('Gold Drive')
 		app_icon = QIcon()
 		app_icon.addFile(fr'{DIR}\assets\icon_16.png', QSize(16,16))
 		app_icon.addFile(fr'{DIR}\assets\icon_32.png', QSize(32,32))
@@ -59,7 +59,7 @@ class Window(QMainWindow, Ui_MainWindow):
 			self.setStyleSheet(r.read())
 
 		# initial values from settings
-		self.settings = QSettings("sganis", "ssh-drive")
+		self.settings = QSettings("sganis", "golddrive")
 		if self.settings.value("geometry"):
 			self.restoreGeometry(self.settings.value("geometry"))
 			self.restoreState(self.settings.value("windowState"))
@@ -82,8 +82,8 @@ class Window(QMainWindow, Ui_MainWindow):
 		menu.addAction('Setup SSH keys', self.mnuSetupSsh)
 		menu.addAction('Connect', self.mnuConnect)
 		menu.addAction('Disconnect', self.mnuDisconnect)
-		menu.addAction('Open settings folder', self.mnuSettings)
-		menu.addAction('Show log file', self.mnuShowLog)
+		menu.addAction('Open program location', self.mnuOpenProgramLocation)
+		menu.addAction('Open log file', self.mnuOpenLogFile)
 		menu.addAction('Restart Explorer.exe', self.mnuRestartExplorer)
 		self.pbHamburger.setMenu(menu)
 
@@ -156,21 +156,23 @@ class Window(QMainWindow, Ui_MainWindow):
 		
 	def fillParam(self):
 		p = self.param
-		p['ssh'] = fr"{self.config['sshfs_path']}\ssh.exe"
-		p['sshfs'] = fr"{self.config['sshfs_path']}\sshfs.exe"
+		p['ssh'] = os.path.expandvars(fr"{self.config['sshfs_path']}\ssh.exe")
+		p['sshfs'] = os.path.expandvars(fr"{self.config['sshfs_path']}\sshfs.exe")
+		p['editor'] = os.path.expandvars(self.config['editor'])
+		p['logfile'] = os.path.expandvars(self.config['logfile'])
 		currentText = self.cboParam.currentText();
 		if not currentText:
 			return
 		drive = currentText.split()[0].strip()
 		d = self.config['drives'][drive]
 		p['drive'] = drive
-		p['drivename'] = d.get('drivename', 'SSH-DRIVE')
+		p['drivename'] = d.get('drivename', 'Golddrive')
 		p['host'] = d['hosts'][0]
 		p['port'] = d.get('port', 22)
 		p['user'] = d.get('user', getpass.getuser())		
 		p['userhost'] = f"{p['user']}@{p['host']}"
 		p['userhostport'] = f"{p['userhost']}:{p['port']}"
-		p['seckey'] = util.defaultKey()
+		p['seckey'] = util.defaultKey(p['user'])
 		
 	# decorator used to trigger only the int overload and not twice
 	@pyqtSlot(int)
@@ -212,13 +214,21 @@ class Window(QMainWindow, Ui_MainWindow):
 		self.start('Disconnecting drive...')
 		self.worker.doWork('disconnect', self.param)
 
-	def mnuSettings(self):
-		self.start('Open settings folder...')
-		self.worker.doWork('settings', self.param)
+	def mnuOpenProgramLocation(self):
+		editor = self.param["editor"]
+		if not os.path.exists(editor):
+			editor = 'C:\\windows\\notepad.exe'
+		cmd = fr'start /b c:\windows\explorer.exe "{DIR}\.."'
+		util.run(cmd, shell=True)
 
-	def mnuShowLog(self):
-		self.start('Show log file...')
-		self.worker.doWork('show_log', self.param)
+	def mnuOpenLogFile(self):
+		editor = self.param["editor"]
+		if not os.path.exists(editor):
+			editor = 'C:\\windows\\notepad.exe'
+		logfile = self.param['logfile']
+		cmd = fr'start /b "" "{editor}" "{logfile}"'
+		util.run(cmd, shell=True)
+
 	
 	def mnuRestartExplorer(self):
 		self.start('Restarting explorer...')
@@ -277,12 +287,17 @@ class Window(QMainWindow, Ui_MainWindow):
 		self.end()
 
 	def on_lblSettings_linkActivated(self, link):
+		editor = self.param["editor"]
+		if not os.path.exists(editor):
+			editor = 'C:\\windows\\notepad.exe'
+		cmd = fr'start /b "" "{editor}" "{DIR}\..\config.json'
+		util.run(cmd, shell=True)
 
-		subprocess.call(
-			fr'start /b c:\windows\explorer.exe "{DIR}\.."', 
-			shell=True)
 
 def run():
+	path = os.environ['PATH']
+	os.environ['PATH'] = fr'C:\Program Files\SSHFS-Win\bin;{path}'
+	os.environ['GOLDDRIVE_PATH'] = os.path.realpath(fr'{DIR}\..')
 	app = QApplication(sys.argv)
 	window = Window()
 	window.show()

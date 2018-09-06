@@ -6,7 +6,7 @@ import logging
 import subprocess
 import setupssh
 
-logger = logging.getLogger('ssh-drive')
+logger = logging.getLogger('golddrive')
 
 
 def get_host():
@@ -21,7 +21,6 @@ def get_config():
 		path 			= c['sshfs_path']
 		c['sshfs']  	= f'{path}\\sshfs.exe'
 		c['ssh']  		= f'{path}\\ssh.exe'
-		c['keygen'] 	= f'{path}\\ssh-keygen.exe'
 		c['host'] 		= get_host()
 		c['userhost'] 	= f"{user}@{c['host']}"
 		return c
@@ -62,7 +61,7 @@ def set_drive_name(name, userhost):
 def set_drive_icon(letter):
 	
 	loc = os.path.dirname(os.path.realpath(__file__))
-	ico = fr'{loc}\assets\ssh-drive.ico'
+	ico = fr'{loc}\assets\golddrive.ico'
 	
 	logger.info(f'Setting drive icon as {ico}...')
 	
@@ -97,8 +96,8 @@ def set_net_use(letter, userhost):
 					/d 0 /t REG_DWORD / >nul 2>&1''')
 
 def restart_explorer():
-	subprocess.run(fr'taskkill /im explorer.exe /f >nul 2>&1', shell=True)
-	subprocess.run(fr'start /b c:\windows\explorer.exe', shell=True)
+	subprocess.run(fr'taskkill /im explorer.exe /f >nul 2>&1')
+	subprocess.run(fr'start /b c:\windows\explorer.exe')
 
 def mount(sshfs, ssh, drive, userhost, seckey, port=22, drivename=''):
 
@@ -122,10 +121,11 @@ def mount(sshfs, ssh, drive, userhost, seckey, port=22, drivename=''):
 		-o port={port}
 		-o VolumePrefix=/sshfs/{userhost}
 		-o volname={drivename}-{userhost} 
-		-o uid=-1,gid=-1,create_umask=007,mask=007 
+		-o idmap=user,create_umask=007,mask=007 
 		-o rellinks -o reconnect
 		-o FileSystemName=SSHFS 
 		-o StrictHostKeyChecking=no
+		-o UserKnownHostsFile=/dev/null
 		-o ServerAliveInterval=10 
 		-o ServerAliveCountMax=10000
 		-o FileInfoTimeout=10000 
@@ -147,79 +147,107 @@ def mount(sshfs, ssh, drive, userhost, seckey, port=22, drivename=''):
 	set_drive_icon(letter)
 	return rb
 
+def get_process_id(drive):
+	wmic = fr'c:\windows\system32\wbem\wmic.exe'
+	cmd = f"""{wmic} process where (commandline like '% {drive} %' 
+		and name='sshfs.exe') get processid"""
+	r = util.run(cmd, capture=True)
+	if r.returncode == 0 and r.stdout:
+		pid = r.stdout.split('\n')[-1]
+		return pid
+	else:
+		return '0'
+
 def unmount(drive):
 	logger.info(f'Unmounting {drive}...')
 	rb = util.ReturnBox()
-	util.run('taskkill /im sshfs.exe /f >nul 2>&1')
-	util.run('taskkill /im ssh.exe /f >nul 2>&1')
-
+	pid = get_process_id(drive)
+	if pid != '0':
+		util.run(f'taskkill /pid {pid} /t /f >nul 2>&1')
+	
 	# cleanup
-	key = fr'HKCU\Software\Microsoft\Windows'
-	key = fr'{key}\CurrentVersion\Explorer\MountPoints2'
+	letter = drive.split(':')[0].upper()
+	regkey = fr'HKCU\Network\{letter}'
+	r = util.run(f'reg query "{regkey}"', capture=True)
+	user = ''
+	host = ''
+	for line in r.stdout.split('\n'):
+		# print(line)
+		if 'RemotePath' in line:
+			fields = line.strip().split()
+			if len(fields) > 2:
+				remotepath = fields[2].split('\\')
+				if len(remotepath) > 3:
+					user, host = remotepath[3].split('@')
+
+	util.run(f'reg delete "{regkey}" /f >nul 2>&1', )
+
+	regkey = fr'HKCU\Software\Microsoft\Windows'
+	regkey = fr'{regkey}\CurrentVersion\Explorer\MountPoints2'
 	mounts = []
-	r = util.run(f'reg query {key} >nul 2>&1', capture=True)
+	r = util.run(f'reg query {regkey}', capture=True)
 	for e in r.stdout.split('\n'):
-		# print(e)
 		m = e.split('\\')[-1]
-		if m.startswith('##'):
-			mounts.append(e)
+		if m.startswith(f'##sshfs#{user}@{host}'):
+			util.run(f'reg delete "{e.strip()}" /f')
 
-	# append extra entries that needs to be deleted
-	for letter in 'IJKLMNOPQRSTUVWXYZ':
-		mounts.append(fr'HKCU\Network\{letter}')
-
-	if mounts:
-		for e in mounts:
-			# print (e)
-			try:
-				cmd = f'reg delete "{e.strip()}" /f >nul 2>&1'
-				util.run(cmd)
-			except Exception as ex:
-				logger.error(f'{ex}')
-	rb.output = 'ok'
+	rb.output = 'DISCONNECTED'
 	return rb
 
 
-def remount(sshfs, drive, userhost):
-	print('Mounting remote filesystem using SSHFS...')
+# def remount(sshfs, drive, userhost):
+# 	print('Mounting remote filesystem using SSHFS...')
 	
-	# read configuration
-	c = get_config()
-	# print(c)
-	if not c:
-		print('Cannot read configuration.')
-		return 1
+# 	# read configuration
+# 	c = get_config()
+# 	# print(c)
+# 	if not c:
+# 		print('Cannot read configuration.')
+# 		return 1
 
-	# check if sshfs is installed, if not exit
-	if not has_sshfs(c['sshfs']):
-		print('SSHFS not installed.')
-		return 2
+# 	# check if sshfs is installed, if not exit
+# 	if not has_sshfs(c['sshfs']):
+# 		print('SSHFS not installed.')
+# 		return 2
 
-	# test drive
-	ok = check_drive(c['drive'])
+# 	# test drive
+# 	ok = check_drive(c['drive'])
 
-	if not ok:
-		sys.path.insert(0, os.path.dirname(c['sshfs']))
-		unmount(c['drive'])
-		setup_ssh(c['ssh'], c['keygen'], c['userhost'])
-		mount(c['sshfs'], c['drive'], c['userhost'], c['drivename'])
+# 	if not ok:
+# 		sys.path.insert(0, os.path.dirname(c['sshfs']))
+# 		unmount(c['drive'])
+# 		setup_ssh(c['ssh'], c['keygen'], c['userhost'])
+# 		mount(c['sshfs'], c['drive'], c['userhost'], c['drivename'])
 
-	return 0
+# 	return 0
 
 
 if __name__ == '__main__':
+
 	import sys
 	import os
-	assert len(sys.argv) > 2 and '@' in sys.argv[2] # usage: mount.py <drive> <user@host>
-	drive = sys.argv[1]
-	userhost = sys.argv[2]
-	port=22
-	if ':' in userhost:
-		userhost, port = userhost.split(':')		
-	sshfs = r'C:\Program Files\SSHFS-Win\bin\sshfs.exe'
-	ssh = fr'C:\Program Files\SSHFS-Win\bin\ssh.exe'
-	sys.path.insert(0, os.path.dirname(sshfs))
+	assert len(sys.argv) > 2 # usage: mount.py <drive> [<user@host>|-d]
+	drive = sys.argv[1].upper()
+	assert (len(drive)==2 
+		and drive[-1]==':'
+		and drive[0] in 'EFGHIJKLMNOPQRSTUVWXYZ') # invalid drive
+	assert ('@' in sys.argv[2] 
+		or sys.argv[2]=='-d') # wrong argument, try user@host or -d
 
 	logging.basicConfig(level=logging.INFO)
-
-	mount(sshfs, ssh, drive, userhost, '', port)
+	
+	ssh_path = fr'C:\Program Files\SSHFS-Win\bin'
+	sshfs = fr'{ssh_path}\sshfs.exe'
+	ssh = fr'{ssh_path}\ssh.exe'
+	path = os.environ['PATH']
+	os.environ['PATH'] = fr'{ssh_path};{path}'
+	
+	
+	if sys.argv[2]=='-d':
+		unmount(drive)
+	else:		
+		userhost = sys.argv[2]
+		port=22
+		if ':' in userhost:
+			userhost, port = userhost.split(':')		
+		mount(sshfs, ssh, drive, userhost, '', port)

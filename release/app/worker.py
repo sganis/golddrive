@@ -21,7 +21,7 @@ class BackgroundWorker(QObject):
 		if p['drive'] == 'Z:':
 			rb.drive_state = 'CONNECTED'
 		if p['drive'] == 'X:':
-			rb.drive_state = 'UNSTABLE STATE'
+			rb.drive_state = 'INVALID'
 			rb.error = rb.drive_state
 		rb.output = f"{rb.drive_state}"
 		return rb
@@ -41,19 +41,19 @@ class BackgroundWorker(QObject):
 							p['seckey'], p['port'])
 
 	def restart_explorer(self, p):
-		import mount
-		mount.restart_explorer()
+		import mounter
+		mounter.restart_explorer()
 		return ReturnBox('Explorer.exe was restarted.','')
 
 	def connect(self, p):
-		import mount		
-		return mount.mount(p['sshfs'],p['ssh'], p['drive'],
+		import mounter		
+		return mounter.mount(p['sshfs'],p['ssh'], p['drive'],
 			 				p['userhost'], p['seckey'], p['port'], 
 							p['drivename'].replace(' ','-'))
 		
 	def disconnect(self, p):
-		import mount		
-		return mount.unmount(p['drive'])
+		import mounter		
+		return mounter.unmount(p['drive'])
 		
 	def reconnect(self, p):
 		# import remount		
