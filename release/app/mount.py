@@ -154,9 +154,10 @@ def unmount(drive):
 	util.run('taskkill /im ssh.exe /f >nul 2>&1')
 
 	# cleanup
-	entry = fr'HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2'
+	key = fr'HKCU\Software\Microsoft\Windows'
+	key = fr'{key}\CurrentVersion\Explorer\MountPoints2'
 	mounts = []
-	r = util.run(f'reg query {entry} >nul 2>&1', capture=True)
+	r = util.run(f'reg query {key} >nul 2>&1', capture=True)
 	for e in r.stdout.split('\n'):
 		# print(e)
 		m = e.split('\\')[-1]
