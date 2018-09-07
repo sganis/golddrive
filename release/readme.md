@@ -37,3 +37,4 @@ Map a network drive to a remote file systems using SSH.
 - Explore fsptool-x64.exe to query drives and user ids
 - Create installer
 - Add about info
+- Show link to open explorer again after restarting

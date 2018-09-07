@@ -52,7 +52,9 @@ class Window(QMainWindow, Ui_MainWindow):
 		app_icon = QIcon()
 		app_icon.addFile(fr'{DIR}\assets\icon_16.png', QSize(16,16))
 		app_icon.addFile(fr'{DIR}\assets\icon_32.png', QSize(32,32))
-		app_icon.addFile(fr'{DIR}\assets\icon_48.png', QSize(48,48))
+		app_icon.addFile(fr'{DIR}\assets\icon_64.png', QSize(64,64))
+		app_icon.addFile(fr'{DIR}\assets\icon_128.png', QSize(128,128))
+		app_icon.addFile(fr'{DIR}\assets\icon_256.png', QSize(256,256))
 		QApplication.setWindowIcon(app_icon)
 		os.chdir(f'{DIR}')
 		with open(fr'{DIR}\assets\style.css') as r:
