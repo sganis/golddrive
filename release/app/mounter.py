@@ -5,28 +5,12 @@ import util
 import logging
 import subprocess
 import setupssh
+import time
 
 logger = logging.getLogger('golddrive')
 
+GOLDLETTERS = 'EGHIJKLMNOPQRSTUVWXYZ'
 
-def get_host():
-	'''get hostname to ssh'''
-	# if service == 'simulation':
-	# 	return 'localhost'
-	return 'localhost'
-
-def get_config():
-	try:
-		c = json.loads(open(DIR + '\\config.json').read())
-		path 			= c['sshfs_path']
-		c['sshfs']  	= f'{path}\\sshfs.exe'
-		c['ssh']  		= f'{path}\\ssh.exe'
-		c['host'] 		= get_host()
-		c['userhost'] 	= f"{user}@{c['host']}"
-		return c
-	except Exception as ex:
-		print(ex)
-		return {}
 
 def has_sshfs(sshfs):
 	return os.path.exists(sshfs)
@@ -35,20 +19,6 @@ def get_sshfs_version(ssh, sshfs):
 	util.run(f'{sshfs} -v')
 	util.run(f'{ssh} -v')
 
-def check_drive(drive):
-	'''check if drive is working'''
-	try:
-		now = time.time()
-		tempfile = f'{drive}\\tmp\\{user}.{now}'
-		# print(f'temp file: {tempfile}')
-		with open(tempfile, 'w') as w: w.write('test')
-		if os.path.exists(tempfile):
-			os.remove(tempfile)
-		print(f'Drive {drive} is OK')
-		return True
-	except Exception as ex:
-		# print(ex)
-		return False
 
 def set_drive_name(name, userhost):
 	logger.info(f'Setting drive name as {name}...')
@@ -96,10 +66,11 @@ def set_net_use(letter, userhost):
 					/d 0 /t REG_DWORD / >nul 2>&1''')
 
 def restart_explorer():
+
 	util.run(fr'taskkill /im explorer.exe /f >nul 2>&1')
 	util.run(fr'start /b c:\windows\explorer.exe')
 
-def mount(sshfs, ssh, drive, userhost, seckey, port=22, drivename=''):
+def mount(sshfs, ssh, drive, userhost, seckey='', port=22, drivename=''):
 
 	logger.info(f'Mounting {drive} {userhost}...')
 	rb = util.ReturnBox()
@@ -108,11 +79,15 @@ def mount(sshfs, ssh, drive, userhost, seckey, port=22, drivename=''):
 	if not seckey:
 		seckey = util.defaultKey()
 	if not drivename:
-		drivename = 'SSH'
+		drivename = 'GOLDDRIVE'
 
 	ssh_ok = setupssh.testssh(ssh, userhost, seckey, port)
 	if not ssh_ok:
 		rb.error = 'SSH key authetication wrong'
+		return rb
+
+	if drive_in_use(drive):
+		rb.error = 'Drive in use'
 		return rb
 
 	cmd = f'''
@@ -133,6 +108,7 @@ def mount(sshfs, ssh, drive, userhost, seckey, port=22, drivename=''):
 		-o VolumeInfoTimeout=10000
 		-o max_readahead=131072
 		'''
+		# -o ssh_command='ssh -vv -d'
 		# google mount: "-o" "max_readahead=131072"
 	r = util.run(cmd, capture=True)
 	if r.stderr:
@@ -145,6 +121,7 @@ def mount(sshfs, ssh, drive, userhost, seckey, port=22, drivename=''):
 	set_drive_name(drivename, userhost)
 	set_net_use(letter, userhost)
 	set_drive_icon(letter)
+	rb.output = 'CONNECTED'
 	return rb
 
 def get_process_id(drive):
@@ -194,32 +171,51 @@ def unmount(drive):
 	rb.output = 'DISCONNECTED'
 	return rb
 
+def drive_in_use(drive):
+	'''return true if net use <drive> show a connection
+	net use and winfsp fsptool-x64.exe lsvol get the info
+	'''
+	# C:\Program Files (x86)\WinFsp\bin>fsptool-x64.exe lsvol
+	# S:  \Device\Volume{c7095a9e-b1dc-11e8-bb5e-080027ae368e}\sshfs\sag@192.168.100.201
+	# Y:  \Device\Volume{c7095a8b-b1dc-11e8-bb5e-080027ae368e}\sshfs\support@192.168.100.201
+	# C:\Users\sant\Documents\golddrive\release\app>net use Y:
+	# Local name        Y:
+	# Remote name       \\sshfs\support@192.168.100.201
+	# Resource type     Disk
 
-# def remount(sshfs, drive, userhost):
-# 	print('Mounting remote filesystem using SSHFS...')
-	
-# 	# read configuration
-# 	c = get_config()
-# 	# print(c)
-# 	if not c:
-# 		print('Cannot read configuration.')
-# 		return 1
+	r = util.run(f'net use {drive}', capture=True)
+	return f'{drive}' in r.stdout
 
-# 	# check if sshfs is installed, if not exit
-# 	if not has_sshfs(c['sshfs']):
-# 		print('SSHFS not installed.')
-# 		return 2
+def drive_is_golddrive(drive, user, host):
 
-# 	# test drive
-# 	ok = check_drive(c['drive'])
+	r = util.run(f'net use {drive}', capture=True)
+	return fr'\\sshfs\{user}@{host}' in r.stdout
 
-# 	if not ok:
-# 		sys.path.insert(0, os.path.dirname(c['sshfs']))
-# 		unmount(c['drive'])
-# 		setup_ssh(c['ssh'], c['keygen'], c['userhost'])
-# 		mount(c['sshfs'], c['drive'], c['userhost'], c['drivename'])
+def drive_works(drive, user):
+	'''check if drive is working'''
+	try:
+		tempfile = f'{drive}\\tmp\\{user}.{time.time()}'
+		with open(tempfile, 'w') as w: 
+			w.write('test')
+		if os.path.exists(tempfile):
+			os.remove(tempfile)
+		return True
+	except Exception as ex:
+		print(ex)
+		return False
 
-# 	return 0
+def check_drive_status(drive, user, host):
+	if not (drive and len(drive)==2 and drive.split(':')[0].upper() in GOLDLETTERS):
+		return 'NOT SUPPORTED'
+	elif not drive_in_use(drive):						
+		return 'DISCONNECTED'
+	elif not drive_is_golddrive(drive, user, host):	
+		return 'IN USE'
+	elif not drive_works(drive, user):				
+		return 'BROKEN'
+	else:											
+		return 'CONNECTED' 
+
 
 
 if __name__ == '__main__':
@@ -230,7 +226,7 @@ if __name__ == '__main__':
 	drive = sys.argv[1].upper()
 	assert (len(drive)==2 
 		and drive[-1]==':'
-		and drive[0] in 'EFGHIJKLMNOPQRSTUVWXYZ') # invalid drive
+		and drive[0] in GOLDLETTERS) # invalid drive
 	assert ('@' in sys.argv[2] 
 		or sys.argv[2]=='-d') # wrong argument, try user@host or -d
 

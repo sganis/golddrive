@@ -33,7 +33,11 @@ def run(cmd, capture=False, shell=True, timeout=10):
 			text=True)
 	except Exception as ex:
 		logger.error(ex)
-		return subprocess.CompletedProcess()
+		r = subprocess.CompletedProcess()
+		r.stdout = ''
+		r.stderr = repr(ex)
+		r.returncode = 1
+		return r
 
 	if r.returncode != 0:
 		if r.stderr and r.stderr.startswith('Warning'):

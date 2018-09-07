@@ -2,24 +2,14 @@
 
 import sys
 import os
-sys.path.append(fr'{os.path.dirname(__file__)}\..')
-import setupssh	
-import util
 import pytest
-import getpass
+import logging
+sys.path.append(fr'{os.path.dirname(__file__)}\..')
+import util
+import setupssh	
+from config import *
 
-
-password 	= os.environ.get('GOLDDRIVE_PASS', '')
-host 		= os.environ.get('GOLDDRIVE_HOST', '')
-user 		= os.environ.get('GOLDDRIVE_USER', '')
-port  	 	= os.environ.get('GOLDDRIVE_PORT', '')
-assert password  # env var 'GOLDDRIVE_PASS' empty, run setenv.bat
-userhost 	= f'{user}@{host}'
-seckey 		= 'rsa.sec'
-sshdir 		= os.path.expandvars("%USERPROFILE%")
-idrsa 		= util.defaultKey(user)
-idrsa_bak 	= fr'{idrsa}.pytest_backup'
-ssh 		= fr'C:\Program Files\SSHFS-Win\bin\ssh.exe'
+logging.basicConfig(level=logging.INFO)
 
 def setup_module():
 	if os.path.exists(idrsa):		os.rename(idrsa, idrsa_bak)
