@@ -35,3 +35,5 @@ Map a network drive to a remote file systems using SSH.
 - Check if drive is in error state (invalid)
 - Connect using key instead of asking password if ssh key is setup already 
 - Explore fsptool-x64.exe to query drives and user ids
+- Create installer
+- Add about info
