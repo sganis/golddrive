@@ -109,7 +109,9 @@ def mount(sshfs, ssh, drive, userhost, seckey='', port=22, drivename=''):
 		-o FileInfoTimeout=10000 
 		-o DirInfoTimeout=10000 
 		-o VolumeInfoTimeout=10000
-		-o max_readahead=131072
+		-o no_readahead
+		-o cache=no
+		-o ThreadCount=10
 		'''
 		# -o ssh_command='ssh -vv -d'
 		# google mount: "-o" "max_readahead=131072"
