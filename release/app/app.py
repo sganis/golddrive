@@ -207,6 +207,9 @@ class Window(QMainWindow, Ui_MainWindow):
 		try:
 			with open(path) as f:
 				self.config = json.load(f)
+			path = os.environ['PATH']
+			sshfs_path = os.path.expandvars(self.config['sshfs_path'])
+			os.environ['PATH'] = fr'{sshfs_path};{path}'	
 		except Exception as ex:
 			logger.error(f'Cannot read config file: {path}')
 
@@ -345,9 +348,7 @@ class Window(QMainWindow, Ui_MainWindow):
 
 
 def run():
-	path = os.environ['PATH']
-	os.environ['PATH'] = fr'C:\Program Files\SSHFS-Win\bin;{path}'
-	os.environ['GOLDDRIVE_PATH'] = os.path.realpath(fr'{DIR}\..')
+	os.environ['GOLDDRIVE'] = os.path.realpath(fr'{DIR}\..')
 	app = QApplication(sys.argv)
 	window = Window()
 	window.show()

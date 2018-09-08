@@ -1,6 +1,6 @@
 {
-	"sshfs_path" 		: "C:\\Program Files\\SSHFS-Win\\bin",
-	"logfile" 			: "%GOLDDRIVE_PATH%\\golddrive.log",
+	"sshfs_path" 		: "%GOLDDRIVE%\\sshfs\\bin",
+	"logfile" 			: "%GOLDDRIVE%\\golddrive.log",
 	"editor" 			: "C:\\Program Files\\Sublime Text 3\\sublime_text.exe",
 	"drives" : {
 		"S:" : {
