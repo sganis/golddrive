@@ -19,8 +19,7 @@ class BackgroundWorker(QObject):
 	def check_drive(sefl, p):
 		rb = util.ReturnBox()
 		import mounter	
-		rb.drive_status = mounter.check_drive(p['drive'],
-											p['user'], p['host'])
+		rb.drive_status = mounter.check_drive(p['drive'], p['userhost'])
 		return rb
 
 	def check_keys(self, p):
@@ -40,7 +39,7 @@ class BackgroundWorker(QObject):
 	def restart_explorer(self, p):
 		import mounter
 		mounter.restart_explorer()
-		return util.ReturnBox('Explorer.exe was restarted.','')
+		return util.ReturnBox('Explorer.exe was restarted','')
 
 	def connect(self, p):
 		import mounter		

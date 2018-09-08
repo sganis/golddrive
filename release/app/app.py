@@ -9,7 +9,6 @@ import getpass
 import logging
 import util
 from worker import Worker
-from PyQt5 import uic
 from PyQt5.QtCore import (QObject, pyqtSlot, QFile, Qt,
 	QThread, QSize, QSettings, QIODevice, QTextStream,
 	QFileSystemWatcher)
@@ -18,11 +17,10 @@ from PyQt5.QtWidgets import (QWidget, QLabel,
 	QComboBox, QApplication, QMainWindow, QMenu)
 
 VERSION = '0.1'
-DIR = os.path.abspath(os.path.dirname(__file__))
 
 from ui.app_ui import Ui_MainWindow
-# Ui_MainWindow, QMainWindow = uic.loadUiType(fr'{DIR}\assets\app.ui', resource_suffix='')
 
+DIR = os.path.abspath(os.path.dirname(__file__))
 logging.basicConfig(
 	level=logging.INFO, 
 	filename=fr'{DIR}\..\golddrive.log',
@@ -66,7 +64,6 @@ class Window(QMainWindow, Ui_MainWindow):
 		stream = QFile(':/assets/style.css')
 		if stream.open(QIODevice.ReadOnly | QFile.Text):
 			self.setStyleSheet(QTextStream(stream).readAll())
-		
 
 		# initial values from settings
 		self.settings = QSettings("sganis", "golddrive")
@@ -186,7 +183,11 @@ class Window(QMainWindow, Ui_MainWindow):
 			or task == 'disconnect'
 			or task == 'repair'):
 			self.end(rb.drive_status)
-			
+		elif task == 'restart_explorer':
+			msg = util.richText(f"{rb.output}\n\n"
+					f"<a href='open_drive'>Open</a>")
+			self.end(msg)
+
 		else:
 			msg = rb.output 
 			if rb.error:

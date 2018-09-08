@@ -27,14 +27,6 @@ Map a network drive to a remote file systems using SSH.
 
 # TODO
 
-- After successfull connection, show link to open in explorer
-- Check if drive is in use
-- Check if drive is operational (connected)
 - Login first time with host and password form
-- Check if drive is disconnected
-- Check if drive is in error state (invalid)
 - Connect using key instead of asking password if ssh key is setup already 
-- Explore fsptool-x64.exe to query drives and user ids
 - Create installer
-- Add about info
-- Show link to open explorer again after restarting

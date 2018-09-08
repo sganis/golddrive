@@ -87,8 +87,10 @@ def mount(sshfs, ssh, drive, userhost, seckey='', port=22, drivename=''):
 		rb.drive_status = 'KEYS_WRONG'
 		return rb
 
-	if drive_in_use(drive):
-		rb.error = 'Drive in use'
+	status = check_drive(drive, userhost)
+	if not status == 'DISCONNECTED':
+		rb.error = status
+		rb.drive_status = status
 		return rb
 
 	cmd = f'''
@@ -193,15 +195,15 @@ def drive_in_use(drive):
 	r = util.run(f'net use {drive}', capture=True)
 	return f'{drive}' in r.stdout
 
-def drive_is_golddrive(drive, user, host):
+def drive_is_golddrive(drive, userhost):
 
 	r = util.run(f'net use {drive}', capture=True)
-	return fr'\\sshfs\{user}@{host}' in r.stdout
+	return fr'\\sshfs\{userhost}' in r.stdout
 
-def drive_works(drive, user):
+def drive_works(drive, userhost):
 	'''check if drive is working'''
 	try:
-		tempfile = f'{drive}\\tmp\\{user}.{time.time()}'
+		tempfile = f'{drive}\\tmp\\{userhost}.{time.time()}'
 		with open(tempfile, 'w') as w: 
 			w.write('test')
 		if os.path.exists(tempfile):
@@ -211,14 +213,14 @@ def drive_works(drive, user):
 		print(ex)
 		return False
 
-def check_drive(drive, user, host):
+def check_drive(drive, userhost):
 	if not (drive and len(drive)==2 and drive.split(':')[0].upper() in GOLDLETTERS):
 		return 'NOT SUPPORTED'
 	elif not drive_in_use(drive):						
 		return 'DISCONNECTED'
-	elif not drive_is_golddrive(drive, user, host):	
+	elif not drive_is_golddrive(drive, userhost):	
 		return 'IN USE'
-	elif not drive_works(drive, user):				
+	elif not drive_works(drive, userhost):				
 		return 'BROKEN'
 	else:											
 		return 'CONNECTED' 

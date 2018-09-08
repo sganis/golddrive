@@ -49,11 +49,11 @@ def test_mount_without_ssh():
 	assert 'authetication wrong' in rb.error
 	setup_module()
 
-def test_mount_in_use():
+def test_mount_connected():
 	mount()
 	time.sleep(1)
 	rb = mounter.mount(sshfs, ssh, drive, userhost, seckey, port)
-	assert 'Drive in use' in rb.error
+	assert 'CONNECTED' in rb.error
 	unmount()
 
 def test_drive_in_use():
@@ -63,30 +63,30 @@ def test_drive_in_use():
 	assert not mounter.drive_in_use(drive)
 	
 def test_drive_is_golddrive():
-	assert not mounter.drive_is_golddrive('C:', user, host)
-	assert not mounter.drive_is_golddrive('E:', user, host)
+	assert not mounter.drive_is_golddrive('C:', userhost)
+	assert not mounter.drive_is_golddrive('E:', userhost)
 	mount()
-	assert mounter.drive_is_golddrive(drive, user, host)
+	assert mounter.drive_is_golddrive(drive, userhost)
 	unmount()
-	assert not mounter.drive_is_golddrive(drive, user, host)
+	assert not mounter.drive_is_golddrive(drive, userhost)
 	
 def test_drive_works():
-	assert not mounter.drive_works(drive, user)
+	assert not mounter.drive_works(drive, userhost)
 	mount()
-	assert mounter.drive_works(drive, user)
+	assert mounter.drive_works(drive, userhost)
 	unmount()
-	assert not mounter.drive_works(drive, user)
+	assert not mounter.drive_works(drive, userhost)
 	
 def test_check_drive():
 	# if not drive_in_use(drive):					return 'DISCONNECTED'
 	# elif not drive_is_golddrive(drive, userhost):	return 'IN USE'
 	# elif not drive_works(drive, user):			return 'BROKEN'
 	# else:											return 'CONECTED' 
-	assert 'NOT SUPPORTED' == mounter.check_drive('C:', user, host)
-	assert 'DISCONNECTED' == mounter.check_drive(drive, user, host)
+	assert 'NOT SUPPORTED' == mounter.check_drive('C:', userhost)
+	assert 'DISCONNECTED' == mounter.check_drive(drive, userhost)
 	mount()
-	assert 'CONNECTED' == mounter.check_drive(drive, user, host)
-	assert 'IN USE' == mounter.check_drive('E:', user, host)
+	assert 'CONNECTED' == mounter.check_drive(drive, userhost)
+	assert 'IN USE' == mounter.check_drive('E:', userhost)
 	unmount()
-	assert 'DISCONNECTED' == mounter.check_drive(drive, user, host)
+	assert 'DISCONNECTED' == mounter.check_drive(drive, userhost)
 	

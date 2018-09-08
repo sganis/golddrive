@@ -10,7 +10,7 @@ typedef void(*P_PYSYS_SETARGVEX)(int, char**, int);
 typedef void(*P_RUN_SIMPLESTRING)(const char*);
 typedef void(*P_FINALIZEEX)(int);
 
-//int main(int argc, char *argv[])
+//int main(int argc, char *argv1[])
 // program without window
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int cmdShow)
 {
