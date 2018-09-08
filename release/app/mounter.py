@@ -100,21 +100,22 @@ def mount(sshfs, ssh, drive, userhost, seckey='', port=22, drivename=''):
 		-o VolumePrefix=/sshfs/{userhost}
 		-o volname={drivename}-{userhost} 
 		-o idmap=user,create_umask=007,mask=007 
-		-o rellinks -o reconnect
+		-o rellinks
+		-o reconnect
 		-o FileSystemName=SSHFS 
 		-o StrictHostKeyChecking=no
 		-o UserKnownHostsFile=/dev/null
 		-o ServerAliveInterval=10 
-		-o ServerAliveCountMax=10000
-		-o FileInfoTimeout=10000 
-		-o DirInfoTimeout=10000 
-		-o VolumeInfoTimeout=10000
 		-o no_readahead
 		-o cache=no
 		-o ThreadCount=10
 		'''
+		# -o ServerAliveCountMax=10000
+		# -o FileInfoTimeout=10000 
+		# -o DirInfoTimeout=10000 
+		# -o VolumeInfoTimeout=10000
 		# -o ssh_command='ssh -vv -d'
-		# google mount: "-o" "max_readahead=131072"
+		
 	r = util.run(cmd, capture=True)
 	if r.stderr:
 		logger.error(r.stderr)
