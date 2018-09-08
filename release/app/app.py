@@ -169,20 +169,20 @@ class Window(QMainWindow, Ui_MainWindow):
 			else:
 				self.end(rb.output)
 
-		elif task == 'connect':
-			if rb.error:
-				self.end(rb.error)
-			else:
-				drive = self.param['drive']
+		elif task == 'connect' or task == 'check_drive':
+			if rb.drive_status == 'CONNECTED':
+				drive = self.param['drive']				
 				msg = util.richText(f"{rb.drive_status}\n\n"
-						f"<a href='open_drive'>Open {drive}</a>")
-				self.end(msg)
+						f"<a href='open_drive'>Open</a>")
+			else:
+				msg = rb.drive_status
+				if rb.error:
+					msg = rb.error
+			self.end(msg)
 		
-		elif (task == 'check_drive'
-			or task == 'connect'
-			or task == 'disconnect'
-			or task == 'repair'):
+		elif (task == 'disconnect' or task == 'repair'):
 			self.end(rb.drive_status)
+
 		elif task == 'restart_explorer':
 			msg = util.richText(f"{rb.output}\n\n"
 					f"<a href='open_drive'>Open</a>")
