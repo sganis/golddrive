@@ -17,13 +17,13 @@ def setup_module():
 	rb = setupssh.main(ssh, userhost, password, seckey, port)
 	assert 'successfull' or 'OK' in rb.output
 	rb = mounter.unmount(drive)
-	assert rb.output == 'DISCONNECTED'
+	assert rb.drive_status == 'DISCONNECTED'
 
 def teardown_module():
 	if os.path.exists(seckey):		
 		os.remove(seckey)	
 	rb = mounter.unmount(drive)
-	assert rb.output == 'DISCONNECTED'
+	assert rb.drive_status == 'DISCONNECTED'
 
 # def setup_function():
 # 	pass
@@ -32,11 +32,11 @@ def teardown_module():
 
 def mount():
 	rb = mounter.mount(sshfs, ssh, drive, userhost, seckey, port)
-	assert rb.output == 'CONNECTED' and not rb.error
+	assert rb.drive_status == 'CONNECTED' and not rb.error
 
 def unmount():
 	rb = mounter.unmount(drive)
-	assert rb.output == 'DISCONNECTED'
+	assert rb.drive_status == 'DISCONNECTED'
 
 def test_mount_and_unmount():
 	mount()
@@ -77,16 +77,16 @@ def test_drive_works():
 	unmount()
 	assert not mounter.drive_works(drive, user)
 	
-def test_check_drive_status():
+def test_check_drive():
 	# if not drive_in_use(drive):					return 'DISCONNECTED'
 	# elif not drive_is_golddrive(drive, userhost):	return 'IN USE'
 	# elif not drive_works(drive, user):			return 'BROKEN'
 	# else:											return 'CONECTED' 
-	assert 'NOT SUPPORTED' == mounter.check_drive_status('C:', user, host)
-	assert 'DISCONNECTED' == mounter.check_drive_status(drive, user, host)
+	assert 'NOT SUPPORTED' == mounter.check_drive('C:', user, host)
+	assert 'DISCONNECTED' == mounter.check_drive(drive, user, host)
 	mount()
-	assert 'CONNECTED' == mounter.check_drive_status(drive, user, host)
-	assert 'IN USE' == mounter.check_drive_status('E:', user, host)
+	assert 'CONNECTED' == mounter.check_drive(drive, user, host)
+	assert 'IN USE' == mounter.check_drive('E:', user, host)
 	unmount()
-	assert 'DISCONNECTED' == mounter.check_drive_status(drive, user, host)
+	assert 'DISCONNECTED' == mounter.check_drive(drive, user, host)
 	

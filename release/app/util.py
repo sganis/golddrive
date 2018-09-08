@@ -3,21 +3,45 @@ import os
 import re
 import subprocess
 import logging
+from enum import Enum
 
 logger = logging.getLogger('golddrive')
+
+class DriveStatus(Enum):
+	CONNECTED = 1
+	DISCONNECTED = 2
+	IN_USE = 3
+	BROKEN = 4
+	NOT_SUPPORTED = 5
+	NONE = -1
+
+class WorkStatus(Enum):
+	SUCCESS = 1
+	FAILURE = 2
+	INPUT_REQUIRED = 3
+	NONE = -1
+
+class Page(Enum):
+	MAIN = 0
+	LOGIN = 1
+	ABOUT = 2
 
 class ReturnBox():
 	def __init__(self, out='', err=''):
 		self.output = out
 		self.error = err
-		self.drive_state = 'DISCONNECTED'
-
+		self.drive_status = None
+		self.work_status = None
+		self.object = None
 
 def defaultKey(user):
 	sshdir = os.path.expandvars("%USERPROFILE%")
 	seckey = fr'{sshdir}\.ssh\id_rsa-{user}-golddrive'
 	return seckey.replace(f'\\', '/')
 
+def richText(text):
+	t = text.replace('\n','<br/>') #.replace('\'','\\\'')
+	return f'<html><head/><body><p>{t}</p></body></html>'
 
 def run(cmd, capture=False, shell=True, timeout=10):
 	cmd = re.sub(r'[\n\r\t ]+',' ', cmd).replace('  ',' ').strip()

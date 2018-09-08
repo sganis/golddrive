@@ -52,7 +52,7 @@ def main(ssh, userhost, password, seckey='', port=22):
 		client.connect(hostname=host, username=user, 
 			password=password, port=port, timeout=10)
 	except paramiko.ssh_exception.AuthenticationException:
-		rb.error = f'User or password wrong for\n{userhost}:{port}'
+		rb.error = f'User or password wrong'
 	except Exception as ex:
 		rb.error = f'connection error: {ex}'
 	if rb.error:

@@ -1,0 +1,13 @@
+<RCC>
+  <qresource prefix="/">
+    <file>assets/style.css</file>
+    <file>assets/arrow_down_16.png</file>
+    <file>assets/hamburger.png</file>
+    <file>assets/hamburger_hover.png</file>
+    <file>assets/icon_16.png</file>
+    <file>assets/icon_32.png</file>
+    <file>assets/icon_64.png</file>
+    <file>assets/icon_128.png</file>
+    <file>assets/icon_256.png</file>
+  </qresource>
+</RCC>

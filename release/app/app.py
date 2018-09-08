@@ -10,17 +10,18 @@ import logging
 import util
 from worker import Worker
 from PyQt5 import uic
-from PyQt5.QtCore import (QObject, pyqtSlot, 
-	QThread, QSize, QSettings, QFileSystemWatcher)
+from PyQt5.QtCore import (QObject, pyqtSlot, QFile, Qt,
+	QThread, QSize, QSettings, QIODevice, QTextStream,
+	QFileSystemWatcher)
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QWidget, QLabel,
 	QComboBox, QApplication, QMainWindow, QMenu)
-# from app_ui import Ui_MainWindow
 
-
+VERSION = '0.1'
 DIR = os.path.abspath(os.path.dirname(__file__))
 
-Ui_MainWindow, QMainWindow = uic.loadUiType(fr'{DIR}\assets\app.ui')
+from ui.app_ui import Ui_MainWindow
+# Ui_MainWindow, QMainWindow = uic.loadUiType(fr'{DIR}\assets\app.ui', resource_suffix='')
 
 logging.basicConfig(
 	level=logging.INFO, 
@@ -28,6 +29,7 @@ logging.basicConfig(
 	format='%(asctime)s: %(name)-10s: %(levelname)-7s: %(message)s',
 	datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger('golddrive')
+
 
 
 class Menu(QMenu):
@@ -47,18 +49,24 @@ class Window(QMainWindow, Ui_MainWindow):
 	def __init__(self):
 		QMainWindow.__init__(self)
 		self.setupUi(self)
+		self.pbConnect.setProperty("css", True)
+		self.pageLogin.loginPressed.connect(self.onLogin)
+		self.pageLogin.cancelPressed.connect(self.showPage)
+		self.pageAbout.okPressed.connect(self.showPage)
+
 		self.loaded = False
 		self.setWindowTitle('Gold Drive')
 		app_icon = QIcon()
-		app_icon.addFile(fr'{DIR}\assets\icon_16.png', QSize(16,16))
-		app_icon.addFile(fr'{DIR}\assets\icon_32.png', QSize(32,32))
-		app_icon.addFile(fr'{DIR}\assets\icon_64.png', QSize(64,64))
-		app_icon.addFile(fr'{DIR}\assets\icon_128.png', QSize(128,128))
-		app_icon.addFile(fr'{DIR}\assets\icon_256.png', QSize(256,256))
+		app_icon.addFile(':/assets/icon_16.png', QSize(16,16))
+		app_icon.addFile(':/assets/icon_32.png', QSize(32,32))
+		app_icon.addFile(':/assets/icon_64.png', QSize(64,64))
+		app_icon.addFile(':/assets/icon_128.png', QSize(128,128))
+		app_icon.addFile(':/assets/icon_256.png', QSize(256,256))
 		QApplication.setWindowIcon(app_icon)
-		os.chdir(f'{DIR}')
-		with open(fr'{DIR}\assets\style.css') as r:
-			self.setStyleSheet(r.read())
+		stream = QFile(':/assets/style.css')
+		if stream.open(QIODevice.ReadOnly | QFile.Text):
+			self.setStyleSheet(QTextStream(stream).readAll())
+		
 
 		# initial values from settings
 		self.settings = QSettings("sganis", "golddrive")
@@ -66,10 +74,9 @@ class Window(QMainWindow, Ui_MainWindow):
 			self.restoreGeometry(self.settings.value("geometry"))
 			self.restoreState(self.settings.value("windowState"))
 		self.progressBar.setVisible(False)	
-		self.lblStatus.setText("")
-		self.widgetPassword.setVisible(False)
+		self.lblMessage.setText("")
+		# self.widgetPassword.setVisible(False)
 		self.command_state = 'ok' # or error
-		self.drive_state = 'disconnected' # or disconnected, or error
 
 		# read config.json
 		self.configfile = fr'{DIR}\..\config.json'
@@ -81,12 +88,14 @@ class Window(QMainWindow, Ui_MainWindow):
 		self.lblUserHostPort.setText(self.param['userhostport'])
 
 		menu = Menu(self.pbHamburger)
-		menu.addAction('Setup SSH keys', self.mnuSetupSsh)
-		menu.addAction('Connect', self.mnuConnect)
-		menu.addAction('Disconnect', self.mnuDisconnect)
-		menu.addAction('Open program location', self.mnuOpenProgramLocation)
-		menu.addAction('Open log file', self.mnuOpenLogFile)
-		menu.addAction('Restart Explorer.exe', self.mnuRestartExplorer)
+		menu.addAction('&Setup SSH keys', self.mnuSetupSsh)
+		menu.addAction('&Connect', self.mnuConnect)
+		menu.addAction('&Disconnect', self.mnuDisconnect)
+		menu.addAction('Disconnect &all drives', self.mnuDisconnectAll)
+		menu.addAction('&Open program location', self.mnuOpenProgramLocation)
+		menu.addAction('Open &log file', self.mnuOpenLogFile)
+		menu.addAction('&Restart Explorer.exe', self.mnuRestartExplorer)
+		menu.addAction('&About...', self.mnuAbout)
 		self.pbHamburger.setMenu(menu)
 
 		# worker for background commands
@@ -98,45 +107,100 @@ class Window(QMainWindow, Ui_MainWindow):
 		self.watcher.addPaths([self.configfile])
 		self.watcher.fileChanged.connect(self.onConfigFileChanged)
 
-		self.getStatus()
+		self.checkDriveStatus()
+		self.showPage(util.Page.MAIN)
+		self.lblMessage.linkActivated.connect(self.on_lblMessage_linkActivated)
 		self.loaded = True
+
+	def keyPressEvent(self, event):
+		if event.key() == Qt.Key_Return:
+			print('entre pressed')
+			self.on_pbConnect_released()
+			event.accept()
+
+	def start(self, message):	
+		self.showPage(util.Page.MAIN)
+		self.command_state = 'ok'
+		self.pbConnect.setEnabled(False)
+		self.progressBar.setVisible(True)
+		self.showMessage(message)
+		
+	def end(self, message=''):
+		self.showPage(util.Page.MAIN)
+		self.progressBar.setVisible(False)
+		self.pbConnect.setEnabled(True)
+		self.showMessage(message)
+		
+	def showMessage(self, message):
+		is_error = self.command_state == 'error'
+		self.lblMessage.setText(message)
+		self.lblMessage.setProperty("error", is_error);
+		self.lblMessage.style().unpolish(self.lblMessage);
+		self.lblMessage.style().polish(self.lblMessage);
+		if is_error:
+			logger.error(message)
+		else:
+			logger.info(message)
+
+	def setPbConnectText(self, status):
+		self.pbConnect.setText('&CONNECT')
+		if status == 'CONNECTED':
+			self.pbConnect.setText('&DISCONNECT')
+		elif status == 'BROKEN':
+			self.pbConnect.setText('&REPAIR')
+		elif status == 'KEYS_WRONG':
+			self.pbConnect.setText('&SETUP KEYS')
+		elif status == 'IN USE':
+			self.pbConnect.setEnabled(False)
+			
 
 	@pyqtSlot(str, util.ReturnBox)
 	def onWorkDone(self, task, rb):
-		self.drive_state = rb.drive_state
 		if rb.error:
 			self.command_state = 'error'
-		if task == 'testssh':
-			if rb.output:
-				self.end(rb.output)
+		if task == 'check_keys':
+			if rb.work_status == util.WorkStatus.SUCCESS:
+				self.end('SSH keys are good')
 			else:
-				self.txtPassword.setText('')
-				self.txtPassword.setFocus()
-				self.widgetPassword.setVisible(True)
-				self.end('Authentication required:')				
-		elif task == 'setupssh':
+				self.end()
+				self.showPage(util.Page.LOGIN)
+
+		elif task == 'setup_keys':
+			self.progressBar.setVisible(False)
 			if rb.error:
-				if 'password wrong' in rb.error:
-					rb.error = 'Wrong password, try again:'
-					self.widgetPassword.setVisible(True)
+				self.pageLogin.showError(rb.error)
+			else:
+				self.end(rb.output)
+
+		elif task == 'connect':
+			if rb.error:
 				self.end(rb.error)
 			else:
-				self.widgetPassword.setVisible(False)
-				self.end(rb.output)
+				drive = self.param['drive']
+				msg = util.richText(f"{rb.drive_status}\n\n"
+						f"<a href='open_drive'>Open {drive}</a>")
+				self.end(msg)
+		
+		elif (task == 'check_drive'
+			or task == 'connect'
+			or task == 'disconnect'
+			or task == 'repair'):
+			self.end(rb.drive_status)
+			
 		else:
 			msg = rb.output 
 			if rb.error:
 				msg = rb.error
 			self.end(msg)
+		self.setPbConnectText(rb.drive_status)
 
-	@pyqtSlot(str)
 	def onConfigFileChanged(self, path):
 		logger.error('Config file has changed, reloading...')
 		self.getConfig(path)
 		self.updateCombo(self.settings.value("cboParam",0))
 		self.fillParam()
 		self.lblUserHostPort.setText(self.param['userhostport'])
-		self.getStatus()
+		self.checkDriveStatus()
 
 	def getConfig(self, path):
 		try:
@@ -188,25 +252,24 @@ class Window(QMainWindow, Ui_MainWindow):
 		if self.loaded:
 			self.settings.setValue("cboParam", 
 				self.cboParam.currentIndex())
-			self.getStatus()
+			self.checkDriveStatus()
 
-	def getStatus(self):
+	def checkDriveStatus(self):
 		self.start(f"Checking {self.param['drive']}...")
-		self.worker.doWork('get_status', self.param)
-
+		self.worker.doWork('check_drive', self.param)
 
 	def mnuSetupSsh(self):
 		user = self.param['user']
 		host = self.param['host']
 		port = self.param['port']
-		self.start(f'Checking ssh keys for {user}...')
-		self.worker.doWork('testssh', self.param)
+		self.start(f'Checking ssh keys...')
+		self.worker.doWork('check_keys', self.param)
 		
-	def on_txtPassword_returnPressed(self):
-		self.widgetPassword.setVisible(False)
-		self.start('Logging in...')
-		self.param['password'] = str(self.txtPassword.text())
-		self.worker.doWork('setupssh', self.param)
+	def onLogin(self, host, password):
+		self.progressBar.setVisible(True)
+		self.param['host'] = host
+		self.param['password'] = password
+		self.worker.doWork('setup_keys', self.param)
 
 	def mnuConnect(self):
 		self.start('Connecting drive...')
@@ -215,6 +278,10 @@ class Window(QMainWindow, Ui_MainWindow):
 	def mnuDisconnect(self):
 		self.start('Disconnecting drive...')
 		self.worker.doWork('disconnect', self.param)
+
+	def mnuDisconnectAll(self):
+		self.start('Disconnecting all...')
+		self.worker.doWork('disconnect_all', self.param)
 
 	def mnuOpenProgramLocation(self):
 		editor = self.param["editor"]
@@ -230,11 +297,13 @@ class Window(QMainWindow, Ui_MainWindow):
 		logfile = self.param['logfile']
 		cmd = fr'start /b "" "{editor}" "{logfile}"'
 		util.run(cmd, shell=True)
-
 	
 	def mnuRestartExplorer(self):
 		self.start('Restarting explorer...')
 		self.worker.doWork('restart_explorer', self.param)
+	
+	def mnuAbout(self):
+		self.showPage(util.Page.ABOUT)
 		
 	def closeEvent(self, event):	
 		self.settings.setValue("geometry", self.saveGeometry())
@@ -244,49 +313,14 @@ class Window(QMainWindow, Ui_MainWindow):
 		# self.thread.quit()
 		# self.thread.wait()
 
-	def start(self, message):	
-		self.command_state = 'ok'
-		self.pbConnect.setEnabled(False)
-		self.widgetPassword.setVisible(False)
-		self.progressBar.setVisible(True)
-		self.lblStatus.setVisible(True)
-		self.lblStatus.setProperty("error", False);
-		self.lblStatus.style().unpolish(self.lblStatus);
-		self.lblStatus.style().polish(self.lblStatus);	
-		self.lblStatus.setText(message)
-		logger.info(message)
-		
-	def end(self, message=''):
-		self.progressBar.setVisible(False)
-		self.lblStatus.setText(message)
-		self.pbConnect.setEnabled(True)
-		self.lblStatus.setProperty("error", 
-			self.command_state == 'error');
-		self.lblStatus.style().unpolish(self.lblStatus);
-		self.lblStatus.style().polish(self.lblStatus);
-		if self.drive_state == 'CONNECTED':
-			self.pbConnect.setText('DISCONNECT')
-		elif self.drive_state == 'DISCONNECTED':
-			self.pbConnect.setText('CONNECT')
-		else:
-			self.pbConnect.setText('RECONNECT')
-		if message:
-			if self.command_state == 'error':
-				logger.error(message)
-			else:
-				logger.info(message)
-		# self.pbConnect.setText('CONNECT')
-
 	def on_pbConnect_released(self):
 		drive = self.param['drive']
-		self.start(f'Connecting {drive} ...')
-		self.worker.doWork('connect', self.param)
-
-	def on_pbCancel_released(self):
-		self.widgetPassword.setVisible(False)
-		self.lblStatus.setVisible(True)
-		self.txtPassword.setText('')
-		self.end()
+		self.start(f'Checking {drive} ...')
+		task = self.pbConnect.text().lower().replace('&','')
+		if task == 'setup keys':
+			self.mnuSetupSsh()
+		else:
+			self.worker.doWork(task, self.param)
 
 	def on_lblSettings_linkActivated(self, link):
 		editor = self.param["editor"]
@@ -294,6 +328,19 @@ class Window(QMainWindow, Ui_MainWindow):
 			editor = 'C:\\windows\\notepad.exe'
 		cmd = fr'start /b "" "{editor}" "{DIR}\..\config.json'
 		util.run(cmd, shell=True)
+
+	def on_lblMessage_linkActivated(self, link):
+		drive = self.param['drive']
+		cmd = fr'start /b c:\windows\explorer.exe {drive}'
+		util.run(cmd, shell=True)
+
+	def showPage(self, page):
+		if page == util.Page.LOGIN:
+			self.pageLogin.init(self.param['host'])
+		self.widget_1_top.setEnabled(page == util.Page.MAIN)
+		self.widget_2_combo.setEnabled(page == util.Page.MAIN)
+		self.stackedWidget.setCurrentIndex(page.value)
+
 
 
 def run():

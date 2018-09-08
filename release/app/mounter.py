@@ -31,7 +31,7 @@ def set_drive_name(name, userhost):
 def set_drive_icon(letter):
 	
 	loc = os.path.dirname(os.path.realpath(__file__))
-	ico = fr'{loc}\assets\golddrive.ico'
+	ico = fr'{loc}\ui\assets\golddrive.ico'
 	
 	logger.info(f'Setting drive icon as {ico}...')
 	
@@ -84,6 +84,7 @@ def mount(sshfs, ssh, drive, userhost, seckey='', port=22, drivename=''):
 	ssh_ok = setupssh.testssh(ssh, userhost, seckey, port)
 	if not ssh_ok:
 		rb.error = 'SSH key authetication wrong'
+		rb.drive_status = 'KEYS_WRONG'
 		return rb
 
 	if drive_in_use(drive):
@@ -121,7 +122,7 @@ def mount(sshfs, ssh, drive, userhost, seckey='', port=22, drivename=''):
 	set_drive_name(drivename, userhost)
 	set_net_use(letter, userhost)
 	set_drive_icon(letter)
-	rb.output = 'CONNECTED'
+	rb.drive_status = 'CONNECTED'
 	return rb
 
 def get_process_id(drive):
@@ -168,8 +169,14 @@ def unmount(drive):
 		if m.startswith(f'##sshfs#{user}@{host}'):
 			util.run(f'reg delete "{e.strip()}" /f')
 
-	rb.output = 'DISCONNECTED'
+	rb.drive_status = 'DISCONNECTED'
 	return rb
+
+def unmount_all():
+	for letter in GOLDLETTERS:
+		drive = f'{letter}:'
+		unmount(drive)
+	return util.ReturnBox()
 
 def drive_in_use(drive):
 	'''return true if net use <drive> show a connection
@@ -204,7 +211,7 @@ def drive_works(drive, user):
 		print(ex)
 		return False
 
-def check_drive_status(drive, user, host):
+def check_drive(drive, user, host):
 	if not (drive and len(drive)==2 and drive.split(':')[0].upper() in GOLDLETTERS):
 		return 'NOT SUPPORTED'
 	elif not drive_in_use(drive):						
