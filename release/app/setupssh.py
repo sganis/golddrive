@@ -70,6 +70,10 @@ def main(ssh, userhost, password, seckey='', port=22):
 		logger.info('Generating new ssh keys...')
 		sk = paramiko.RSAKey.generate(2048)
 		try:
+			sshdir = os.path.dirname(seckey)
+			if not os.path.exists(sshdir):
+				os.makedirs(sshdir)
+				os.chmod(sshdir, 0o700)
 			sk.write_private_key_file(seckey)	
 		except Exception as ex:
 			logger.error(f'{ex}, {seckey}')
