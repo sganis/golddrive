@@ -2,7 +2,8 @@
 
 import sys
 import os
-sys.path.append(fr'{os.path.dirname(__file__)}\..')
+DIR = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(fr'{DIR}\..')
 import util
 
 password 	= os.environ.get('GOLDDRIVE_PASS', '')
@@ -16,6 +17,10 @@ seckey		= seckey.replace('\\','/') # ssh cygwin needs full path of key like c:/u
 sshdir 		= os.path.expandvars("%USERPROFILE%")
 idrsa 		= util.defaultKey(user)
 idrsa_bak 	= fr'{idrsa}.pytest_backup'
-sshfs 		= fr'C:\Program Files\SSHFS-Win\bin\sshfs.exe'
-ssh 		= fr'C:\Program Files\SSHFS-Win\bin\ssh.exe'
+# sshfs 		= fr'C:\Program Files\SSHFS-Win\bin\sshfs.exe'
+# ssh 		= fr'C:\Program Files\SSHFS-Win\bin\ssh.exe'
+path 		= os.path.realpath(fr'{DIR}\..\..\sshfs\bin')
+os.environ['PATH'] += f';{path}'
+sshfs 		= fr'{path}\sshfs.exe'
+ssh 		= fr'{path}\ssh.exe'
 drive 		= 'Y:'

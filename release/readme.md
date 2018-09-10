@@ -1,24 +1,26 @@
-# SSH Drive 0.1
+# golddrive 0.1
 
-Date: 15 Aug 2018
-Contact: sganis (http://github.com/sganis)
+Date: 08/15/2018
+Source code available at http://github.com/sganis/golddrive
 
 Map a network drive to a remote file systems using SSH.
 
 # Dependencies
 
-- WinFsp
-- Sshfs-win
+- WinFsp: https://github.com/billziss-gh/winfsp/releases/download/v1.3/winfsp-1.3.18160.msi
 - Microsoft C++ 2015 Runtime:
   https://www.microsoft.com/en-us/download/details.aspx?id=48145
 
-# Run
+# Project folders
 
-
-
-# Configuration
-
-
+```
+- app: 				main app
+- lib: 				python embedded
+- sshfs: 			sshfs and ssh
+- config.json: 		configuration file
+- golddrive.exe: 	application executable
+- readme.md: 		this file
+```
 
 # Known issues
 
@@ -30,3 +32,5 @@ Map a network drive to a remote file systems using SSH.
 - Login first time with host and password form
 - Connect using key instead of asking password if ssh key is setup already 
 - Create installer
+- Check for WinFSP and prompt to install
+- About software versions: ssh, sshfs, winfsp, and golddrive
