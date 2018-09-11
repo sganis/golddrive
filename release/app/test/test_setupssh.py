@@ -12,18 +12,22 @@ from config import *
 logging.basicConfig(level=logging.INFO)
 
 def setup_module():
-	if os.path.exists(idrsa):		os.rename(idrsa, idrsa_bak)
+	if os.path.exists(idrsa):		
+		os.rename(idrsa, idrsa_bak)
 
 def teardown_module():
-	if os.path.exists(idrsa_bak):	os.rename(idrsa_bak, idrsa)	
+	if os.path.exists(idrsa_bak):	
+		os.rename(idrsa_bak, idrsa)	
 
 # def setup_function():
 # 	if os.path.exists(seckey):		os.remove(seckey)	
 # 	if os.path.exists(idrsa): 		os.remove(idrsa)	
 
 def teardown_function():
-	if os.path.exists(seckey): 		os.remove(seckey)	
-	if os.path.exists(idrsa):		os.remove(idrsa)	
+	if os.path.exists(seckey): 		
+		os.remove(seckey)	
+	if os.path.exists(idrsa):		
+		os.remove(idrsa)	
 
 def test_testssh_no_key():
 	if os.path.exists(seckey):		

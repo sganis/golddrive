@@ -87,7 +87,9 @@ def mount(sshfs, ssh, drive, userhost, seckey='', port=22, drivename=''):
 		rb.drive_status = 'KEYS_WRONG'
 		return rb
 
+
 	status = check_drive(drive, userhost)
+	logger.info(f'status of {drive} in {userhost} is: {status}')
 	if not status == 'DISCONNECTED':
 		rb.error = status
 		rb.drive_status = status
@@ -183,25 +185,25 @@ def unmount_all():
 		unmount(drive)
 	return util.ReturnBox()
 
-def drive_in_use(drive):
-	'''return true if net use <drive> show a connection
-	net use and winfsp fsptool-x64.exe lsvol get the info
-	'''
-	# C:\Program Files (x86)\WinFsp\bin>fsptool-x64.exe lsvol
-	# S:  \Device\Volume{c7095a9e-b1dc-11e8-bb5e-080027ae368e}\sshfs\sag@192.168.100.201
-	# Y:  \Device\Volume{c7095a8b-b1dc-11e8-bb5e-080027ae368e}\sshfs\support@192.168.100.201
-	# C:\Users\sant\Documents\golddrive\release\app>net use Y:
-	# Local name        Y:
-	# Remote name       \\sshfs\support@192.168.100.201
-	# Resource type     Disk
+# def drive_in_use(drive):
+# 	'''return true if net use <drive> show a connection
+# 	net use and winfsp fsptool-x64.exe lsvol get the info
+# 	'''
+# 	# C:\Program Files (x86)\WinFsp\bin>fsptool-x64.exe lsvol
+# 	# S:  \Device\Volume{c7095a9e-b1dc-11e8-bb5e-080027ae368e}\sshfs\sag@192.168.100.201
+# 	# Y:  \Device\Volume{c7095a8b-b1dc-11e8-bb5e-080027ae368e}\sshfs\support@192.168.100.201
+# 	# C:\Users\sant\Documents\golddrive\release\app>net use Y:
+# 	# Local name        Y:
+# 	# Remote name       \\sshfs\support@192.168.100.201
+# 	# Resource type     Disk
 
-	r = util.run(f'net use {drive}', capture=True)
-	return f'{drive}' in r.stdout
+# 	r = util.run(f'net use {drive}', capture=True)
+# 	return f'{drive}' in r.stdout
 
-def drive_is_golddrive(drive, userhost):
+# def drive_is_golddrive(drive, userhost):
 
-	r = util.run(f'net use {drive}', capture=True)
-	return fr'\\sshfs\{userhost}' in r.stdout
+# 	r = util.run(f'net use {drive}', capture=True)
+# 	return fr'\\sshfs\{userhost}' in r.stdout
 
 def drive_works(drive, userhost):
 	'''check if drive is working'''
@@ -217,11 +219,15 @@ def drive_works(drive, userhost):
 		return False
 
 def check_drive(drive, userhost):
+	logger.info(f'checking drive {drive} in {userhost}...')
 	if not (drive and len(drive)==2 and drive.split(':')[0].upper() in GOLDLETTERS):
 		return 'NOT SUPPORTED'
-	elif not drive_in_use(drive):						
+	r = util.run(f'net use {drive}', capture=True)
+	in_use = drive in r.stdout
+	is_golddrive = fr'\\sshfs\{userhost}' in r.stdout
+	if not in_use:						
 		return 'DISCONNECTED'
-	elif not drive_is_golddrive(drive, userhost):	
+	elif not is_golddrive:	
 		return 'IN USE'
 	elif not drive_works(drive, userhost):				
 		return 'BROKEN'

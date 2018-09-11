@@ -33,10 +33,12 @@ def teardown_module():
 def mount():
 	rb = mounter.mount(sshfs, ssh, drive, userhost, seckey, port)
 	assert rb.drive_status == 'CONNECTED' and not rb.error
+	assert mounter.check_drive(drive, userhost) == 'CONNECTED'
 
 def unmount():
 	rb = mounter.unmount(drive)
 	assert rb.drive_status == 'DISCONNECTED'
+	assert mounter.check_drive(drive, userhost) == 'DISCONNECTED'
 
 def test_mount_and_unmount():
 	mount()
@@ -51,25 +53,12 @@ def test_mount_without_ssh():
 
 def test_mount_connected():
 	mount()
-	time.sleep(1)
+	time.sleep(2)
 	rb = mounter.mount(sshfs, ssh, drive, userhost, seckey, port)
 	assert 'CONNECTED' in rb.error
 	unmount()
 
-def test_drive_in_use():
-	mount()
-	assert mounter.drive_in_use(drive)
-	unmount()
-	assert not mounter.drive_in_use(drive)
-	
-def test_drive_is_golddrive():
-	assert not mounter.drive_is_golddrive('C:', userhost)
-	assert not mounter.drive_is_golddrive('E:', userhost)
-	mount()
-	assert mounter.drive_is_golddrive(drive, userhost)
-	unmount()
-	assert not mounter.drive_is_golddrive(drive, userhost)
-	
+
 def test_drive_works():
 	assert not mounter.drive_works(drive, userhost)
 	mount()
@@ -86,7 +75,7 @@ def test_check_drive():
 	assert 'DISCONNECTED' == mounter.check_drive(drive, userhost)
 	mount()
 	assert 'CONNECTED' == mounter.check_drive(drive, userhost)
-	assert 'IN USE' == mounter.check_drive('E:', userhost)
+	# assert 'IN USE' == mounter.check_drive('E:', userhost)
 	unmount()
 	assert 'DISCONNECTED' == mounter.check_drive(drive, userhost)
 	
