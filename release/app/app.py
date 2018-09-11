@@ -242,7 +242,7 @@ class Window(QMainWindow, Ui_MainWindow):
 		p['user'] = d.get('user', getpass.getuser())		
 		p['userhost'] = f"{p['user']}@{p['host']}"
 		p['userhostport'] = f"{p['userhost']}:{p['port']}"
-		p['seckey'] = util.defaultKey(p['user'])
+		p['seckey'] = util.getAppKey(p['user'])
 		
 	# decorator used to trigger only the int overload and not twice
 	@pyqtSlot(int)
