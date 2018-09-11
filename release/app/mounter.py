@@ -70,26 +70,22 @@ def restart_explorer():
 	util.run(fr'taskkill /im explorer.exe /f >nul 2>&1')
 	util.run(fr'start /b c:\windows\explorer.exe')
 
-def mount(sshfs, ssh, drive, userhost, seckey='', port=22, drivename=''):
+def mount(sshfs, ssh, drive, userhost, appkey, port=22, drivename=''):
 
 	logger.info(f'Mounting {drive} {userhost}...')
 	rb = util.ReturnBox()
 
 	letter = drive.strip(':')
-	if not seckey:
-		seckey = util.defaultKey()
 	if not drivename:
 		drivename = 'GOLDDRIVE'
 
-	ssh_ok = setupssh.testssh(ssh, userhost, seckey, port)
-	if not ssh_ok:
+	result = setupssh.testssh(ssh, userhost, appkey, port)
+	if result == 1:
 		rb.error = 'SSH key authetication wrong'
 		rb.drive_status = 'KEYS_WRONG'
 		return rb
 
-
 	status = check_drive(drive, userhost)
-	logger.info(f'status of {drive} in {userhost} is: {status}')
 	if not status == 'DISCONNECTED':
 		rb.error = status
 		rb.drive_status = status
@@ -97,7 +93,7 @@ def mount(sshfs, ssh, drive, userhost, seckey='', port=22, drivename=''):
 
 	cmd = f'''
 		"{sshfs}" {userhost}:/ {drive} 
-		-o IdentityFile={seckey}
+		-o IdentityFile={appkey}
 		-o port={port}
 		-o VolumePrefix=/sshfs/{userhost}
 		-o volname={drivename}-{userhost} 
@@ -185,25 +181,25 @@ def unmount_all():
 		unmount(drive)
 	return util.ReturnBox()
 
-# def drive_in_use(drive):
-# 	'''return true if net use <drive> show a connection
-# 	net use and winfsp fsptool-x64.exe lsvol get the info
-# 	'''
-# 	# C:\Program Files (x86)\WinFsp\bin>fsptool-x64.exe lsvol
-# 	# S:  \Device\Volume{c7095a9e-b1dc-11e8-bb5e-080027ae368e}\sshfs\sag@192.168.100.201
-# 	# Y:  \Device\Volume{c7095a8b-b1dc-11e8-bb5e-080027ae368e}\sshfs\support@192.168.100.201
-# 	# C:\Users\sant\Documents\golddrive\release\app>net use Y:
-# 	# Local name        Y:
-# 	# Remote name       \\sshfs\support@192.168.100.201
-# 	# Resource type     Disk
+def drive_in_use(drive):
+	'''return true if net use <drive> show a connection
+	net use and winfsp fsptool-x64.exe lsvol get the info
+	'''
+	# C:\Program Files (x86)\WinFsp\bin>fsptool-x64.exe lsvol
+	# S:  \Device\Volume{c7095a9e-b1dc-11e8-bb5e-080027ae368e}\sshfs\sag@192.168.100.201
+	# Y:  \Device\Volume{c7095a8b-b1dc-11e8-bb5e-080027ae368e}\sshfs\support@192.168.100.201
+	# C:\Users\sant\Documents\golddrive\release\app>net use Y:
+	# Local name        Y:
+	# Remote name       \\sshfs\support@192.168.100.201
+	# Resource type     Disk
 
-# 	r = util.run(f'net use {drive}', capture=True)
-# 	return f'{drive}' in r.stdout
+	r = util.run(f'net use {drive}', capture=True)
+	return f'{drive}' in r.stdout
 
-# def drive_is_golddrive(drive, userhost):
+def drive_is_golddrive(drive, userhost):
 
-# 	r = util.run(f'net use {drive}', capture=True)
-# 	return fr'\\sshfs\{userhost}' in r.stdout
+	r = util.run(f'net use {drive}', capture=True)
+	return fr'\\sshfs\{userhost}' in r.stdout
 
 def drive_works(drive, userhost):
 	'''check if drive is working'''
@@ -219,15 +215,11 @@ def drive_works(drive, userhost):
 		return False
 
 def check_drive(drive, userhost):
-	logger.info(f'checking drive {drive} in {userhost}...')
 	if not (drive and len(drive)==2 and drive.split(':')[0].upper() in GOLDLETTERS):
 		return 'NOT SUPPORTED'
-	r = util.run(f'net use {drive}', capture=True)
-	in_use = drive in r.stdout
-	is_golddrive = fr'\\sshfs\{userhost}' in r.stdout
-	if not in_use:						
+	elif not drive_in_use(drive):						
 		return 'DISCONNECTED'
-	elif not is_golddrive:	
+	elif not drive_is_golddrive(drive, userhost):	
 		return 'IN USE'
 	elif not drive_works(drive, userhost):				
 		return 'BROKEN'

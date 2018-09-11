@@ -34,9 +34,14 @@ class ReturnBox():
 		self.work_status = None
 		self.object = None
 
-def defaultKey(user):
+def getAppKey(user):
 	sshdir = os.path.expandvars("%USERPROFILE%")
 	seckey = fr'{sshdir}\.ssh\id_rsa-{user}-golddrive'
+	return seckey.replace(f'\\', '/')
+
+def getUserKey():
+	sshdir = os.path.expandvars("%USERPROFILE%")
+	seckey = fr'{sshdir}\.ssh\id_rsa'
 	return seckey.replace(f'\\', '/')
 
 def richText(text):

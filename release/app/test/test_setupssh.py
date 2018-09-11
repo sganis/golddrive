@@ -12,64 +12,80 @@ from config import *
 logging.basicConfig(level=logging.INFO)
 
 def setup_module():
-	if os.path.exists(idrsa):		
-		os.rename(idrsa, idrsa_bak)
+	if os.path.exists(appkey):		
+		os.rename(appkey, appkey_bak)
 
 def teardown_module():
-	if os.path.exists(idrsa_bak):	
-		os.rename(idrsa_bak, idrsa)	
+	if os.path.exists(appkey_bak):	
+		os.rename(appkey_bak, appkey)	
 
 # def setup_function():
-# 	if os.path.exists(seckey):		os.remove(seckey)	
-# 	if os.path.exists(idrsa): 		os.remove(idrsa)	
+# 	if os.path.exists(appkey):		os.remove(appkey)	
+# 	if os.path.exists(appkey): 		os.remove(appkey)	
 
 def teardown_function():
-	if os.path.exists(seckey): 		
-		os.remove(seckey)	
-	if os.path.exists(idrsa):		
-		os.remove(idrsa)	
+	if os.path.exists(appkey): 		
+		os.remove(appkey)	
+	if os.path.exists(appkey):		
+		os.remove(appkey)	
 
-def test_testssh_no_key():
-	if os.path.exists(seckey):		
-		os.remove(seckey)	
-	ok = setupssh.testssh(ssh, userhost, seckey, port)
-	assert not ok
-	
-def test_empty_password():
-	rb = setupssh.main(ssh, userhost, '', seckey, port)
-	assert 'password is empty' in rb.error
+def test_login_password():
+	r = setupssh.login_password(ssh, userhost, password, port)
+	assert r == 0
+
+def test_login_password_no_password():
+	r = setupssh.login_password(ssh, userhost, '', port)
+	assert r == 1
 
 def test_wrong_password():
-	rb = setupssh.main(ssh, userhost, 'secret', seckey, port)
-	assert 'password wrong'  in rb.error
+	r = setupssh.login_password(ssh, userhost, 'badpass', port)
+	assert r == 1
 
-def test_bad_host():
-	rb = setupssh.main(ssh, f'{user}@unknown', 'secret', seckey, port)
-	assert 'not found' in rb.error
+def test_login_bad_host():
+	r = setupssh.login_password(ssh, userhost+'bad', password, port)
+	assert r == 2
+	
+def test_login_bad_port():
+	r = setupssh.login_password(ssh, userhost+'bad', password, 3333)
+	assert r == 2
+	
+def test_testssh():
+	r = setupssh.testssh(ssh, userhost, appkey, port)
+	assert r == 1
+	
+def test_testssh_invalid_key():
+	if os.path.exists(appkey):		
+		os.remove(appkey)	
+	r = setupssh.testssh(ssh, userhost, appkey, port)
+	assert r == 1
 
-def test_setupssh_with_key():
-	rb = setupssh.main(ssh, userhost, password, seckey, port)
-	print (rb.output)
+def test_setupssh_passord():
+	if os.path.exists(appkey):		
+		os.remove(appkey)	
+	rb = setupssh.main(ssh, userhost, password, '', port)
 	assert 'successfull' in rb.output
 
-	rb = setupssh.main(ssh, userhost, password, seckey, port)
-	print (rb.output)
-	assert 'authentication is OK' in rb.output
+	r = setupssh.testssh(ssh, userhost, appkey, port)
+	assert r == 0
 
-	ok = setupssh.testssh(ssh, userhost, seckey, port)
-	assert ok
-	os.remove(seckey)
-
-def test_setupssh_default_key():
-	rb = setupssh.main(ssh, userhost, password, '', port)
-	print (rb.output)
+def test_setupssh_user_key():
+	if os.path.exists(appkey):		
+		os.remove(appkey)	
+	r = setupssh.testssh(ssh, userhost, appkey, port)
+	assert r == 1
+	rb = setupssh.main(ssh, userhost, '', userkey, port)
 	assert 'successfull' in rb.output
+	r = setupssh.testssh(ssh, userhost, appkey, port)
+	assert r == 0
 
-	rb = setupssh.main(ssh, userhost, password, '', port)
-	print (rb.output)
-	assert 'authentication is OK' in rb.output
+def test_generate_keys():
+	rb = setupssh.generate_keys(appkey, userhost)
+	assert rb.output
 
-	ok = setupssh.testssh(ssh, userhost, '', port)
-	assert ok
-	os.remove(idrsa)
-
+def test_has_app_keys():
+	rb = setupssh.generate_keys(appkey, userhost)
+	assert rb.output
+	assert setupssh.has_app_keys(user)
+	os.remove(appkey)
+	assert not setupssh.has_app_keys(user)
+	
