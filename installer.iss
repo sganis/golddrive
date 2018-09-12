@@ -23,26 +23,48 @@ DefaultDirName={localappdata}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 OutputBaseFilename=golddrive-{#MyAppVersion}-x64
-SetupIconFile=C:\Users\san\Documents\golddrive\release\app\ui\assets\golddrive4.ico
+SetupIconFile=release\app\ui\assets\golddrive4.ico
+UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma
 SolidCompression=yes
 PrivilegesRequired=lowest
 OutputDir=installer
+DisableDirPage=yes
+AlwaysShowDirOnReadyPage=no
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
-[Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+;[Tasks]
+;Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; 
+
+[CustomMessages]
+english.InstallingLabel=Installing
+
+[Code]
+procedure InitializeWizard;
+begin
+  with TNewStaticText.Create(WizardForm) do
+  begin
+    Parent := WizardForm.FilenameLabel.Parent;
+    Left := WizardForm.FilenameLabel.Left;
+    Top := WizardForm.FilenameLabel.Top;
+    Width := WizardForm.FilenameLabel.Width;
+    Height := WizardForm.FilenameLabel.Height;
+    Caption := ExpandConstant('{cm:InstallingLabel}');
+  end;
+  WizardForm.FilenameLabel.Visible := False;
+end;
 
 [Files]
-Source: "C:\Users\san\Documents\golddrive\release\golddrive.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\san\Documents\golddrive\release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "release\golddrive.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+;Tasks: desktopicon
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
