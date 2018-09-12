@@ -28,7 +28,7 @@
 		"Y:" : {
 			"drivename" : "Container",
 			"user"  	: "support",
-			"hosts" 	: ["localhost"],
+			"hosts" 	: ["192.168.100.201"],
 			"port"  	: 2222,
 		}
 	}

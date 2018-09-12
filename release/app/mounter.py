@@ -181,50 +181,72 @@ def unmount_all():
 		unmount(drive)
 	return util.ReturnBox()
 
-def drive_in_use(drive):
-	'''return true if net use <drive> show a connection
-	net use and winfsp fsptool-x64.exe lsvol get the info
-	'''
-	# C:\Program Files (x86)\WinFsp\bin>fsptool-x64.exe lsvol
-	# S:  \Device\Volume{c7095a9e-b1dc-11e8-bb5e-080027ae368e}\sshfs\sag@192.168.100.201
-	# Y:  \Device\Volume{c7095a8b-b1dc-11e8-bb5e-080027ae368e}\sshfs\support@192.168.100.201
-	# C:\Users\sant\Documents\golddrive\release\app>net use Y:
-	# Local name        Y:
-	# Remote name       \\sshfs\support@192.168.100.201
-	# Resource type     Disk
+# def drive_in_use(drive):
+# 	'''return true if net use <drive> show a connection
+# 	net use and winfsp fsptool-x64.exe lsvol get the info
+# 	'''
+# 	# C:\Program Files (x86)\WinFsp\bin>fsptool-x64.exe lsvol
+# 	# S:  \Device\Volume{c7095a9e-b1dc-11e8-bb5e-080027ae368e}\sshfs\sag@192.168.100.201
+# 	# Y:  \Device\Volume{c7095a8b-b1dc-11e8-bb5e-080027ae368e}\sshfs\support@192.168.100.201
+# 	# C:\Users\sant\Documents\golddrive\release\app>net use Y:
+# 	# Local name        Y:
+# 	# Remote name       \\sshfs\support@192.168.100.201
+# 	# Resource type     Disk
 
-	r = util.run(f'net use {drive}', capture=True)
-	return f'{drive}' in r.stdout
+# 	r = util.run(f'net use {drive}', capture=True)
+# 	return f'{drive}' in r.stdout
 
-def drive_is_golddrive(drive, userhost):
+# def drive_is_golddrive(drive, userhost):
 
-	r = util.run(f'net use {drive}', capture=True)
-	return fr'\\sshfs\{userhost}' in r.stdout
+# 	r = util.run(f'net use {drive}', capture=True)
+# 	return fr'\\sshfs\{userhost}' in r.stdout
 
 def drive_works(drive, userhost):
 	'''check if drive is working'''
-	try:
-		tempfile = f'{drive}\\tmp\\{userhost}.{time.time()}'
-		with open(tempfile, 'w') as w: 
-			w.write('test')
-		if os.path.exists(tempfile):
-			os.remove(tempfile)
+	tempfile = f'{drive}\\tmp\\{userhost}.{time.time()}'
+	r = util.run(fr'type nul > {tempfile}', 10)
+	if r.returncode == 0:
+		util.run(fr'del {tempfile}', 10)
 		return True
-	except Exception as ex:
-		print(ex)
-		return False
+	return False
+	# try:
+	# 	tempfile = f'{drive}\\tmp\\{userhost}.{time.time()}'
+	# 	with open(tempfile, 'w') as w: 
+	# 		w.write('test')
+	# 	if os.path.exists(tempfile):
+	# 		os.remove(tempfile)
+	# 	return True
+	# except Exception as ex:
+	# 	print(ex)
+	# 	return False
+
+# def check_drive(drive, userhost):
+# 	if not (drive and len(drive)==2 and drive.split(':')[0].upper() in GOLDLETTERS):
+# 		return 'NOT SUPPORTED'
+# 	elif not drive_in_use(drive):						
+# 		return 'DISCONNECTED'
+# 	elif not drive_is_golddrive(drive, userhost):	
+# 		return 'IN USE'
+# 	elif not drive_works(drive, userhost):				
+# 		return 'BROKEN'
+# 	else:											
+# 		return 'CONNECTED' 
 
 def check_drive(drive, userhost):
+	logger.info(f'checking drive {drive} in {userhost}...')
 	if not (drive and len(drive)==2 and drive.split(':')[0].upper() in GOLDLETTERS):
 		return 'NOT SUPPORTED'
-	elif not drive_in_use(drive):						
+	r = util.run(f'net use {drive}', capture=True)
+	in_use = drive in r.stdout
+	is_golddrive = fr'\\sshfs\{userhost}' in r.stdout
+	if not in_use:						
 		return 'DISCONNECTED'
-	elif not drive_is_golddrive(drive, userhost):	
+	elif not is_golddrive:	
 		return 'IN USE'
 	elif not drive_works(drive, userhost):				
 		return 'BROKEN'
-	else:											
-		return 'CONNECTED' 
+	else:
+		return 'CONNECTED'
 
 
 

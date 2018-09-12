@@ -27,6 +27,7 @@ Source code available at http://github.com/sganis/golddrive.
 - Error: Cannot create WinFsp-FUSE file system: unspecified error.
   It is missing this Windows Update: Security Update for Windows 7 for x64-based Systems (KB3033929), available at https://technet.microsoft.com/en-us/library/security/3033929.aspx
 
+  
 # TODO
 
 - Login first time with host and password form
