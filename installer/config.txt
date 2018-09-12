@@ -1,3 +1,0 @@
-Setup=release\golddrive.exe
-Overwrite=1
-Title=Gold Drive Installer
