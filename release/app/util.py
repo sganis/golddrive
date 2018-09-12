@@ -3,6 +3,8 @@ import os
 import re
 import subprocess
 import logging
+import yaml
+import re
 from enum import Enum
 
 logger = logging.getLogger('golddrive')
@@ -33,6 +35,21 @@ class ReturnBox():
 		self.drive_status = None
 		self.work_status = None
 		self.object = None
+
+def loadConfig(path):
+	try:
+		with open(path) as f:
+			js = str(f.read())
+			js = re.sub(r'(?m)^[\t ]*//.*\n?', '', js)
+			js = js.replace('\t','')
+			print(js)
+			config = yaml.load(js)
+			print(config)
+			return config
+	except Exception as ex:
+		logger.error(f'Cannot read config file: {path}. Error: {ex}')
+	return {}
+
 
 def getAppKey(user):
 	sshdir = os.path.expandvars("%USERPROFILE%")

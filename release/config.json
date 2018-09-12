@@ -1,19 +1,24 @@
 {
+	// GoldDrive configuration file.
+	// It's json format with support for comments and trailing commas
 	"sshfs_path" 		: "%GOLDDRIVE%\\sshfs\\bin",
+	"winfsp_installer"	: "%GOLDDRIVE%\\sshfs\\winfsp.msi",
 	"logfile" 			: "%GOLDDRIVE%\\golddrive.log",
+	// "editor" 			: "C:\\Windows\\notepad.exe",
 	"editor" 			: "C:\\Program Files\\Sublime Text 3\\sublime_text.exe",
+	
 	"drives" : {
 		"S:" : {
 			"drivename" : "Simulation",
 			"hosts" 	: ["192.168.100.201", "vlcc30"],
 			"user" 		: "sag",
-			"options" 	: "" 
+			"options" 	: "",
 		},		
 		"I:" : {
 			"drivename" : "IT",
 			"user"  	: "ituser",
 			"hosts" 	: ["S1", "server02"],
-			"port"  	: 333
+			"port"  	: 333,
 		},		
 		"X:" : {
 			"drivename" : "Exploration",
@@ -23,7 +28,7 @@
 			"drivename" : "Container",
 			"user"  	: "support",
 			"hosts" 	: ["localhost"],
-			"port"  	: 2222
+			"port"  	: 2222,
 		}
 	}
 }

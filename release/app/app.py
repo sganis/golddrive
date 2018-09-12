@@ -3,7 +3,6 @@
 import sys
 import os
 import time
-import json
 import subprocess
 import getpass
 import logging
@@ -77,9 +76,14 @@ class Window(QMainWindow, Ui_MainWindow):
 
 		# read config.json
 		self.configfile = fr'{DIR}\..\config.json'
-		self.config = {}
 		self.param = {}
-		self.getConfig(self.configfile)
+		
+		self.config = util.loadConfig(self.configfile)
+		print(self.config)
+		path = os.environ['PATH']
+		sshfs_path = os.path.expandvars(self.config['sshfs_path'])
+		os.environ['PATH'] = fr'{sshfs_path};{path}'	
+
 		self.updateCombo(self.settings.value("cboParam",0))	
 		self.fillParam()
 		self.lblUserHostPort.setText(self.param['userhostport'])
@@ -197,21 +201,11 @@ class Window(QMainWindow, Ui_MainWindow):
 
 	def onConfigFileChanged(self, path):
 		logger.error('Config file has changed, reloading...')
-		self.getConfig(path)
+		self.config = util.loadConfig(path)
 		self.updateCombo(self.settings.value("cboParam",0))
 		self.fillParam()
 		self.lblUserHostPort.setText(self.param['userhostport'])
 		self.checkDriveStatus()
-
-	def getConfig(self, path):
-		try:
-			with open(path) as f:
-				self.config = json.load(f)
-			path = os.environ['PATH']
-			sshfs_path = os.path.expandvars(self.config['sshfs_path'])
-			os.environ['PATH'] = fr'{sshfs_path};{path}'	
-		except Exception as ex:
-			logger.error(f'Cannot read config file: {path}')
 
 	def updateCombo(self, currentIndex):
 		items = []
