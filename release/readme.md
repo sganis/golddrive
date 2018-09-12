@@ -1,9 +1,9 @@
 # golddrive 0.1
 
 Date: 08/15/2018
-Source code available at http://github.com/sganis/golddrive
 
 Map a network drive to a remote file systems using SSH.
+Source code available at http://github.com/sganis/golddrive.
 
 # Dependencies
 

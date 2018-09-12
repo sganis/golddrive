@@ -24,14 +24,17 @@ class BackgroundWorker(QObject):
 
 	def check_keys(self, p):
 		import setupssh	
-		ok = setupssh.testssh(p['ssh'], p['userhost'], 
+		result = setupssh.testssh(p['ssh'], p['userhost'], 
 							p['seckey'], p['port'])
 		rb = util.ReturnBox()
-		if ok:
+		if result == 0:
 			rb.work_status = util.WorkStatus.SUCCESS
 		return rb
 
 	def setup_keys(self, p):
+		rb = self.check_keys(p)
+		if rb.work_status == util.WorkStatus.SUCCESS:
+			return rb
 		import setupssh	
 		return setupssh.main(p['ssh'], p['userhost'], p['password'],
 							p['seckey'], p['port'])

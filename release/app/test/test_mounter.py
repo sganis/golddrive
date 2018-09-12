@@ -14,14 +14,15 @@ from config import *
 logging.basicConfig(level=logging.INFO)
 
 def setup_module():
-	rb = setupssh.main(ssh, userhost, password, seckey, port)
+	rb = setupssh.main(ssh, userhost, password, '', port)
 	assert 'successfull' or 'OK' in rb.output
 	rb = mounter.unmount(drive)
 	assert rb.drive_status == 'DISCONNECTED'
+	assert setupssh.has_app_keys(user)
 
 def teardown_module():
-	if os.path.exists(seckey):		
-		os.remove(seckey)	
+	if os.path.exists(appkey):		
+		os.remove(appkey)	
 	rb = mounter.unmount(drive)
 	assert rb.drive_status == 'DISCONNECTED'
 
@@ -31,7 +32,7 @@ def teardown_module():
 # 	pass
 
 def mount():
-	rb = mounter.mount(sshfs, ssh, drive, userhost, seckey, port)
+	rb = mounter.mount(sshfs, ssh, drive, userhost, appkey, port)
 	assert rb.drive_status == 'CONNECTED' and not rb.error
 	assert mounter.check_drive(drive, userhost) == 'CONNECTED'
 
@@ -45,16 +46,16 @@ def test_mount_and_unmount():
 	unmount()
 
 def test_mount_without_ssh():
-	if os.path.exists(seckey):		
-		os.remove(seckey)		
-	rb = mounter.mount(sshfs, ssh, drive, userhost, seckey, port)
+	if os.path.exists(appkey):		
+		os.remove(appkey)		
+	rb = mounter.mount(sshfs, ssh, drive, userhost, appkey, port)
 	assert 'authetication wrong' in rb.error
 	setup_module()
 
 def test_mount_connected():
 	mount()
 	time.sleep(2)
-	rb = mounter.mount(sshfs, ssh, drive, userhost, seckey, port)
+	rb = mounter.mount(sshfs, ssh, drive, userhost, appkey, port)
 	assert 'CONNECTED' in rb.error
 	unmount()
 
