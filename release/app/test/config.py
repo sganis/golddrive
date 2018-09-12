@@ -11,14 +11,16 @@ host 		= os.environ.get('GOLDDRIVE_HOST', '')
 user 		= os.environ.get('GOLDDRIVE_USER', '')
 port  	 	= os.environ.get('GOLDDRIVE_PORT', '')
 assert password  # env var 'GOLDDRIVE_PASS' empty, run setenv.bat
+
+js 			= util.loadConfig(fr'{DIR}\..\..\config.json')
 userhost 	= f'{user}@{host}'
 sshdir 		= os.path.expandvars("%USERPROFILE%")
 appkey 		= util.getAppKey(user)
 appkey_bak 	= fr'{appkey}.pytest_backup'
 userkey 	= util.getUserKey()
-# sshfs 		= fr'C:\Program Files\SSHFS-Win\bin\sshfs.exe'
+# sshfs 	= fr'C:\Program Files\SSHFS-Win\bin\sshfs.exe'
 # ssh 		= fr'C:\Program Files\SSHFS-Win\bin\ssh.exe'
-path 		= os.path.realpath(fr'{DIR}\..\..\sshfs\bin')
+path 		= js['sshfs_path']
 os.environ['PATH'] += f';{path}'
 sshfs 		= fr'{path}\sshfs.exe'
 ssh 		= fr'{path}\ssh.exe'

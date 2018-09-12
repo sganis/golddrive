@@ -1,7 +1,8 @@
 {
 	// GoldDrive configuration file.
-	// It's json format with support for comments and trailing commas
-	"sshfs_path" 		: "%GOLDDRIVE%\\sshfs\\bin",
+	// It's json format with support for comments, trailing commas, 
+	// and environment variables
+	"sshfs_path" 		: "%GOLDDRIVE%\\sshfs\\v3.4\\bin",
 	"winfsp_installer"	: "%GOLDDRIVE%\\sshfs\\winfsp.msi",
 	"logfile" 			: "%GOLDDRIVE%\\golddrive.log",
 	// "editor" 			: "C:\\Windows\\notepad.exe",

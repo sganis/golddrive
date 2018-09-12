@@ -81,7 +81,7 @@ class Window(QMainWindow, Ui_MainWindow):
 		self.config = util.loadConfig(self.configfile)
 		print(self.config)
 		path = os.environ['PATH']
-		sshfs_path = os.path.expandvars(self.config['sshfs_path'])
+		sshfs_path = self.config.get('sshfs_path','')
 		os.environ['PATH'] = fr'{sshfs_path};{path}'	
 
 		self.updateCombo(self.settings.value("cboParam",0))	
@@ -209,9 +209,9 @@ class Window(QMainWindow, Ui_MainWindow):
 
 	def updateCombo(self, currentIndex):
 		items = []
-		drives = self.config['drives']
+		drives = self.config.get('drives','')
 		for d in drives:
-			items.append(f"   {d}   {drives[d]['drivename']}")
+			items.append(f"   {d}   {drives[d].get('drivename','GOLDDRIVE')}")
 		self.cboParam.blockSignals(True)
 		self.cboParam.clear()
 		self.cboParam.addItems(items)
@@ -220,18 +220,18 @@ class Window(QMainWindow, Ui_MainWindow):
 		
 	def fillParam(self):
 		p = self.param
-		p['ssh'] = os.path.expandvars(fr"{self.config['sshfs_path']}\ssh.exe")
-		p['sshfs'] = os.path.expandvars(fr"{self.config['sshfs_path']}\sshfs.exe")
-		p['editor'] = os.path.expandvars(self.config['editor'])
-		p['logfile'] = os.path.expandvars(self.config['logfile'])
+		p['ssh'] = fr"{self.config.get('sshfs_path','')}\ssh.exe"
+		p['sshfs'] = fr"{self.config.get('sshfs_path','')}\sshfs.exe"
+		p['editor'] = self.config.get('editor','')
+		p['logfile'] = self.config.get('logfile','')
 		currentText = self.cboParam.currentText();
 		if not currentText:
 			return
 		drive = currentText.split()[0].strip()
-		d = self.config['drives'][drive]
+		d = self.config.get('drives','')[drive]
 		p['drive'] = drive
 		p['drivename'] = d.get('drivename', 'Golddrive')
-		p['host'] = d['hosts'][0]
+		p['host'] = d.get('hosts','localhost')[0]
 		p['port'] = d.get('port', 22)
 		p['user'] = d.get('user', getpass.getuser())		
 		p['userhost'] = f"{p['user']}@{p['host']}"

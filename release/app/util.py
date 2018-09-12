@@ -42,9 +42,12 @@ def loadConfig(path):
 			js = str(f.read())
 			js = re.sub(r'(?m)^[\t ]*//.*\n?', '', js)
 			js = js.replace('\t','')
-			print(js)
 			config = yaml.load(js)
-			print(config)
+			for key in config:
+				value = config[key]
+				if r'%' in value:
+					config[key] = os.path.expandvars(value)
+					# print(f'path expanded: {config[key]}')
 			return config
 	except Exception as ex:
 		logger.error(f'Cannot read config file: {path}. Error: {ex}')
