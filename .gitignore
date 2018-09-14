@@ -5,3 +5,4 @@ x64/
 *.VC.opendb
 *.log
 .pytest_cache/
+temp/

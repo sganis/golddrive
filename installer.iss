@@ -23,7 +23,7 @@ DefaultDirName={localappdata}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 OutputBaseFilename=golddrive-{#MyAppVersion}-x64
-SetupIconFile=release\app\ui\assets\golddrive4.ico
+SetupIconFile=golddrive\app\ui\assets\golddrive4.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma
 SolidCompression=yes
@@ -57,8 +57,8 @@ begin
 end;
 
 [Files]
-Source: "release\golddrive.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "golddrive\golddrive.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "golddrive\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

@@ -1,4 +1,4 @@
-# golddrive 0.1
+# Gold Drive 1.0.0
 
 Date: 08/15/2018
 
@@ -14,12 +14,12 @@ Source code available at http://github.com/sganis/golddrive.
 # Project folders
 
 ```
-- app: 				main app
-- lib: 				python embedded
-- sshfs: 			sshfs and ssh
-- config.json: 		configuration file
-- golddrive.exe: 	application executable
-- readme.md: 		this file
+- app:           main app
+- lib:           python embedded
+- sshfs:         sshfs and ssh
+- config.json:   configuration file
+- golddrive.exe: application executable
+- readme.md:     this file
 ```
 
 # Known issues
