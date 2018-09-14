@@ -49,7 +49,7 @@ class Ui_MainWindow(object):
         self.widget_3_settings = QtWidgets.QWidget(self.widget_2_combo)
         self.widget_3_settings.setObjectName("widget_3_settings")
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout(self.widget_3_settings)
-        self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout_2.setContentsMargins(0, 0, 4, 0)
         self.horizontalLayout_2.setSpacing(0)
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)

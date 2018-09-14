@@ -49,7 +49,7 @@ class Ui_About(object):
 
     def retranslateUi(self, About):
         _translate = QtCore.QCoreApplication.translate
-        About.setWindowTitle(_translate("About", "Form"))
+        About.setWindowTitle(_translate("About", "About"))
         self.lblAbout.setText(_translate("About", "About"))
         self.pbAboutOk.setText(_translate("About", "OK"))
 
