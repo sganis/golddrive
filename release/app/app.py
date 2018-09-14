@@ -15,7 +15,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QWidget, QLabel,
 	QComboBox, QApplication, QMainWindow, QMenu)
 
-VERSION = '0.1'
+VERSION = '1.0.0'
 
 from ui.app_ui import Ui_MainWindow
 
@@ -27,6 +27,13 @@ logging.basicConfig(
 	datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger('golddrive')
 
+
+def get_version():
+	pf86 = os.path.expandvars('%ProgramFiles(x86)%')
+	cmd =fr"wmic datafile where name='{pf86}\\WinFsp\\bin\\winfsp-x64.dll\' get Version /format:list"
+	r = util.run(cmd, capture=True)
+	if r.returncode == 0:
+		winfsp = r.stdout.strip().split("=")[1]
 
 
 class Menu(QMenu):

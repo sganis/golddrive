@@ -96,22 +96,26 @@ def mount(sshfs, ssh, drive, userhost, appkey, port=22, drivename=''):
 		-o IdentityFile={appkey}
 		-o port={port}
 		-o VolumePrefix=/sshfs/{userhost}
-		-o volname={drivename}-{userhost} 
+		-o volname={userhost} 
 		-o idmap=user,create_umask=007,mask=007 
-		-o rellinks
-		-o reconnect
+		-o rellinks 
+		-o reconnect 
 		-o FileSystemName=SSHFS 
-		-o StrictHostKeyChecking=no
-		-o UserKnownHostsFile=/dev/null
+		-o compression=no
 		-o ServerAliveInterval=10 
+		-o StrictHostKeyChecking=no	
+		-o UserKnownHostsFile=/dev/null
 		-o no_readahead
-		-o cache=no
 		-o ThreadCount=10
+		-o dir_cache=yes
+		-o dcache_timeout=5
+		-o dcache_clean_interval=300
+		-o KeepFileCache
+		-o FileInfoTimeout=-1
+		-o DirInfoTimeout=5000
+		-o VolumeInfoTimeout=5000
 		'''
 		# -o ServerAliveCountMax=10000
-		# -o FileInfoTimeout=10000 
-		# -o DirInfoTimeout=10000 
-		# -o VolumeInfoTimeout=10000
 		# -o ssh_command='ssh -vv -d'
 		
 	r = util.run(cmd, capture=True)

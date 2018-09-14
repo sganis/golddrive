@@ -68,7 +68,7 @@ def richText(text):
 	t = text.replace('\n','<br/>') #.replace('\'','\\\'')
 	return f'<html><head/><body><p>{t}</p></body></html>'
 
-def run(cmd, capture=False, shell=True, timeout=10):
+def run(cmd, capture=False, shell=True, timeout=300):
 	cmd = re.sub(r'[\n\r\t ]+',' ', cmd).replace('  ',' ').strip()
 	header = 'CMD'
 	if shell:

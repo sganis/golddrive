@@ -27,6 +27,30 @@ Source code available at http://github.com/sganis/golddrive.
 - Error: Cannot create WinFsp-FUSE file system: unspecified error.
   It is missing this Windows Update: Security Update for Windows 7 for x64-based Systems (KB3033929), available at https://technet.microsoft.com/en-us/library/security/3033929.aspx
 
+# Benchmarks
+
+  - SFTPNetDrive:
+  	* Commercial, free for personal use. 
+    * unstable, drive is disconnected on intensive i/o.
+    * Nsoftware, ipworks ssh .net company.
+    * C++ app.
+  - ExpandDrive
+  	* Drive mounted as exfs with 10 TB free
+    * Commercial
+    * stable, 10x slower, 3 MB/s, no cmd line, cloud options.
+    * electron app, 50 USD.
+    * Apparently deletes files without permissions.
+    * overall: good.
+  - NetDrive
+  	* Commercial
+  	* Qt app, requires cloud account
+  - Montain Duck
+    * Commercial
+    * Drive mounted as ntfs without permissions
+    * .Net app
+    * Cannot mount root folder, 2x slower than sshfs-win.
+    * Error messages on intensive i/o, need to reconnect manually.
+
   
 # TODO
 
