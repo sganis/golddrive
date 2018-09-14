@@ -54,5 +54,6 @@ QProgressBar { background: transparent; border:0px;}
 QProgressBar::chunk { background: rgb(14,99,156);}
 QLabel[error="true"] { color : red;}
 QLabel#lblUserHostPort { color : gray; font-size: 10pt;}
-QLabel#lblSettings { font-size: 10pt; }
+QLabel#lblSettings,
+QLabel#lblAbout { font-size: 10pt; }
 

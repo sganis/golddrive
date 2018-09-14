@@ -47,8 +47,15 @@ def loadConfig(path):
 				value = config[key]
 				if r'%' in value:
 					config[key] = os.path.expandvars(value)
-					# print(f'path expanded: {config[key]}')
+			config['ssh'] = fr"{config.get('sshfs_path','')}\ssh.exe"
+			config['sshfs'] = fr"{config.get('sshfs_path','')}\sshfs.exe"
+
+			if not os.path.exists(config['ssh']):
+				logger.error('ssh not found')
+			if not os.path.exists(config['sshfs']):
+				logger.error('sshfs not found')
 			return config
+
 	except Exception as ex:
 		logger.error(f'Cannot read config file: {path}. Error: {ex}')
 	return {}
@@ -68,7 +75,7 @@ def richText(text):
 	t = text.replace('\n','<br/>') #.replace('\'','\\\'')
 	return f'<html><head/><body><p>{t}</p></body></html>'
 
-def run(cmd, capture=False, shell=True, timeout=300):
+def run(cmd, capture=False, shell=True, timeout=30):
 	cmd = re.sub(r'[\n\r\t ]+',' ', cmd).replace('  ',' ').strip()
 	header = 'CMD'
 	if shell:

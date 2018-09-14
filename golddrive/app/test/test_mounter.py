@@ -21,8 +21,6 @@ def setup_module():
 	assert setupssh.has_app_keys(user)
 
 def teardown_module():
-	if os.path.exists(appkey):		
-		os.remove(appkey)	
 	rb = mounter.unmount(drive)
 	assert rb.drive_status == 'DISCONNECTED'
 

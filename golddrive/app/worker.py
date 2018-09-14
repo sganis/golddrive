@@ -5,7 +5,7 @@ import logging
 import util
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, QThread
 
-logger = logging.getLogger('ssh-drive')
+logger = logging.getLogger('golddrive')
 
 
 class BackgroundWorker(QObject):

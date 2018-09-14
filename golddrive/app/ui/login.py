@@ -18,6 +18,10 @@ class Login(QWidget, Ui_Login):
 		self.pbCancel.setProperty("css", True)
 		self.error = ''
 		self.txtHost.setVisible(False)
+		self.main = None
+		
+	def setMain(self, main):
+		self.main = main
 
 	def init(self, host=''):
 		self.txtHost.setText(host)

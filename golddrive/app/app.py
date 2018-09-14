@@ -17,23 +17,16 @@ from PyQt5.QtWidgets import (QWidget, QLabel,
 
 VERSION = '1.0.0'
 
+DIR 	= os.path.abspath(os.path.dirname(__file__))
+
 from ui.app_ui import Ui_MainWindow
 
-DIR = os.path.abspath(os.path.dirname(__file__))
 logging.basicConfig(
 	level=logging.INFO, 
 	filename=fr'{DIR}\..\golddrive.log',
 	format='%(asctime)s: %(name)-10s: %(levelname)-7s: %(message)s',
 	datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger('golddrive')
-
-
-def get_version():
-	pf86 = os.path.expandvars('%ProgramFiles(x86)%')
-	cmd =fr"wmic datafile where name='{pf86}\\WinFsp\\bin\\winfsp-x64.dll\' get Version /format:list"
-	r = util.run(cmd, capture=True)
-	if r.returncode == 0:
-		winfsp = r.stdout.strip().split("=")[1]
 
 
 class Menu(QMenu):
@@ -54,8 +47,10 @@ class Window(QMainWindow, Ui_MainWindow):
 		QMainWindow.__init__(self)
 		self.setupUi(self)
 		self.pbConnect.setProperty("css", True)
+		self.pageLogin.setMain(self)
 		self.pageLogin.loginPressed.connect(self.onLogin)
 		self.pageLogin.cancelPressed.connect(self.showPage)
+		self.pageAbout.setMain(self)
 		self.pageAbout.okPressed.connect(self.showPage)
 
 		self.loaded = False
@@ -226,8 +221,8 @@ class Window(QMainWindow, Ui_MainWindow):
 		
 	def fillParam(self):
 		p = self.param
-		p['ssh'] = fr"{self.config.get('sshfs_path','')}\ssh.exe"
-		p['sshfs'] = fr"{self.config.get('sshfs_path','')}\sshfs.exe"
+		p['ssh'] = self.config.get('sshfs','')
+		p['sshfs'] = self.config.get('sshfs_path','')
 		p['editor'] = self.config.get('editor','')
 		p['logfile'] = self.config.get('logfile','')
 		currentText = self.cboParam.currentText();
@@ -308,7 +303,8 @@ class Window(QMainWindow, Ui_MainWindow):
 	
 	def mnuAbout(self):
 		self.showPage(util.Page.ABOUT)
-		
+		self.pageAbout.showAbout()
+
 	def closeEvent(self, event):	
 		self.settings.setValue("geometry", self.saveGeometry())
 		self.settings.setValue("windowState", self.saveState())			
