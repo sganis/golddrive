@@ -2,11 +2,11 @@
 QPushButton[css="true"] { 
   color: white;
   font-size: 8pt;
-  background: rgb(14,99,156);
+  background: rgb(14,99,156); /*  #0E639C */
   border-radius: 5px;
   padding: 5px;
   border: 0px;
-  width: 60px;
+  width: 70px;
   height: 20px;
 }
 QPushButton#pbConnect { 
@@ -19,24 +19,26 @@ QPushButton#pbConnect {
   width: 180px;
   height: 50px;
 }
-QPushButton[css="true"]:disabled,
-QPushButton#pbConnect:disabled {   
-  border: 1px solid #999999;
-  background-color: #cccccc;
+QPushButton#pbConnect:disabled,
+QPushButton[css="true"]:disabled, 
+QComboBox:!enabled, 
+QLineEdit:!enabled {   
+  border: 1px solid #B2B2B2;
+  background: #DBDBDB;
   color: #666666;
 }
 QPushButton[css="true"]::hover,
-QPushButton#pbConnect::hover {  background: rgb(0,122,204); }
-
+QPushButton#pbConnect::hover {  background: rgb(0,122,204); /* #007ACC */ }
 QPushButton#pbHamburger { 
   border-image: url(:/assets/hamburger.png);
   max-width: 32px;
   max-height: 32px;
 }
 QPushButton#pbHamburger::hover {  border-image: url(:/assets/hamburger_hover.png);}
+QPushButton#pbHamburger::disabled {  border-image: url(:/assets/hamburger_disabled.png);}
 QPushButton::menu-indicator {  image: url(noimage.png);}
 QComboBox, QLineEdit { 
-  padding: 0px; 
+  padding-right: 20px;
   border: 1px solid gainsboro;
   height: 40px;
   border-radius: 5px;
@@ -49,7 +51,9 @@ QComboBox QFrame {
 QComboBox::drop-down {  border: 0px; }
 QComboBox::down-arrow { image: url(:/assets/arrow_down_16.png); margin-right: 20px; }
 QComboBox::hover { background-color: #fefefe; }
-QLineEdit { padding-left: 10px;  padding-right: 10px;}
+QLineEdit {
+  padding-left: 10px; 
+}
 QProgressBar { background: transparent; border:0px;}
 QProgressBar::chunk { background: rgb(14,99,156);}
 QLabel[error="true"] { color : red;}

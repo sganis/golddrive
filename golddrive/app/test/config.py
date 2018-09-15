@@ -19,10 +19,8 @@ js 			= util.loadConfig(fr'{golddrive}\config.json')
 assert js
 
 path 		= js['sshfs_path']
-sshfs 		= fr'{path}\sshfs.exe'
-ssh 		= fr'{path}\ssh.exe'
-assert os.path.exists(sshfs)
-assert os.path.exists(ssh)
+assert os.path.exists(fr'{path}\sshfs.exe')
+assert os.path.exists(fr'{path}\ssh.exe')
 os.environ['PATH'] += f';{path}'
 
 userhost 	= f'{user}@{host}'
@@ -30,9 +28,6 @@ sshdir 		= os.path.expandvars("%USERPROFILE%")
 appkey 		= util.getAppKey(user)
 appkey_bak 	= fr'{appkey}.pytest_backup'
 userkey 	= util.getUserKey()
-# sshfs 	= fr'C:\Program Files\SSHFS-Win\bin\sshfs.exe'
-# ssh 		= fr'C:\Program Files\SSHFS-Win\bin\ssh.exe'
-
 drive 		= 'Y:'
 
 

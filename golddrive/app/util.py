@@ -17,23 +17,28 @@ class DriveStatus(Enum):
 	NOT_SUPPORTED = 5
 	NONE = -1
 
-class WorkStatus(Enum):
-	SUCCESS = 1
-	FAILURE = 2
-	INPUT_REQUIRED = 3
-	NONE = -1
-
 class Page(Enum):
-	MAIN = 0
-	LOGIN = 1
-	ABOUT = 2
+	# match the stackwidget page index
+	MAIN 	 = 0
+	HOST 	 = 1
+	LOGIN 	 = 2
+	ABOUT 	 = 3
+
+class ReturnCode(Enum):
+	OK 			= 0
+	BAD_DRIVE 	= 1
+	BAD_HOST 	= 2
+	BAD_LOGIN 	= 3
+	BAD_SSH 	= 4
+	BAD_MOUNT	= 5
+	NONE 		= -1
 
 class ReturnBox():
 	def __init__(self, out='', err=''):
 		self.output = out
 		self.error = err
 		self.drive_status = None
-		self.work_status = None
+		self.returncode = ReturnCode.NONE
 		self.object = None
 
 def loadConfig(path):
@@ -60,6 +65,34 @@ def loadConfig(path):
 		logger.error(f'Cannot read config file: {path}. Error: {ex}')
 	return {}
 
+def addDriveConfig(**p):
+	'''Add drive to config.json
+	'''
+	logger.info('Adding drive to config file...')
+	drive = p['drive']
+	user, host = p['userhost'].split('@')
+	port = p['port']
+	drivename =	p['drivename']
+	configfile = p['configfile']
+
+	text = ('	"drives" : {\n'
+			f'		"{drive}" : {{\n'
+			f'			"drivename" : "{drivename}",\n'
+			f'			"user" 		: "{user}",\n'
+			f'			"port" 		: "{port}",\n'
+			f'			"hosts" 	: ["{host}"],\n'
+			'		},\n'
+			'	}\n')
+	try:
+		with open(configfile) as r:
+			lines = r.readlines()
+		with open(configfile, 'w') as w:
+			for line in lines:
+				if r'"drives" : {}' in line:
+					line = text
+				w.write(line)
+	except Exception as ex:
+		logger.error(str(ex))
 
 def getAppKey(user):
 	sshdir = os.path.expandvars("%USERPROFILE%")
@@ -75,6 +108,9 @@ def richText(text):
 	t = text.replace('\n','<br/>') #.replace('\'','\\\'')
 	return f'<html><head/><body><p>{t}</p></body></html>'
 
+def makeHyperlink(href, text):
+	return f"<a href='{href}'><span style=\"text-decoration: none; color:#0E639C;\">{text}</span></a>"
+	
 def run(cmd, capture=False, shell=True, timeout=30):
 	cmd = re.sub(r'[\n\r\t ]+',' ', cmd).replace('  ',' ').strip()
 	header = 'CMD'
@@ -99,8 +135,8 @@ def run(cmd, capture=False, shell=True, timeout=30):
 			logger.warning(r)
 		else:
 			logger.error(r)		
-	else:
-		logger.info(r)
+	# else:
+	# 	logger.info(r)
 	if capture:
 		r.stdout = r.stdout.strip()
 		r.stderr = r.stderr.strip()

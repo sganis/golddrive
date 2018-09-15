@@ -11,14 +11,9 @@ logger = logging.getLogger('golddrive')
 
 GOLDLETTERS = 'EGHIJKLMNOPQRSTUVWXYZ'
 
-
-def has_sshfs(sshfs):
-	return os.path.exists(sshfs)
-
-def get_sshfs_version(ssh, sshfs):
-	util.run(f'{sshfs} -v')
-	util.run(f'{ssh} -v')
-
+def drive_is_valid(drive):
+	return (drive and len(drive)==2 and ':' in drive 
+		and drive.split(':')[0] in GOLDLETTERS)
 
 def set_drive_name(name, userhost):
 	logger.info(f'Setting drive name as {name}...')
@@ -26,7 +21,6 @@ def set_drive_name(name, userhost):
 	key = fr'{key}\Explorer\MountPoints2\##sshfs#{userhost}'
 	cmd = f'reg add {key} /v _LabelFromReg /d {name} /f >nul 2>&1'
 	util.run(cmd)
-
 
 def set_drive_icon(letter):
 	
@@ -70,7 +64,18 @@ def restart_explorer():
 	util.run(fr'taskkill /im explorer.exe /f >nul 2>&1')
 	util.run(fr'start /b c:\windows\explorer.exe')
 
-def mount(sshfs, ssh, drive, userhost, appkey, port=22, drivename=''):
+def get_process_id(drive):
+	wmic = fr'c:\windows\system32\wbem\wmic.exe'
+	cmd = f"""{wmic} process where (commandline like '% {drive} %' 
+		and name='sshfs.exe') get processid"""
+	r = util.run(cmd, capture=True)
+	if r.returncode == 0 and r.stdout:
+		pid = r.stdout.split('\n')[-1]
+		return pid
+	else:
+		return '0'
+
+def mount(drive, userhost, appkey, port=22, drivename=''):
 
 	logger.info(f'Mounting {drive} {userhost}...')
 	rb = util.ReturnBox()
@@ -79,11 +84,12 @@ def mount(sshfs, ssh, drive, userhost, appkey, port=22, drivename=''):
 	if not drivename:
 		drivename = 'GOLDDRIVE'
 
-	result = setupssh.testssh(ssh, userhost, appkey, port)
-	if result == 1:
-		rb.error = 'SSH key authetication wrong'
-		rb.drive_status = 'KEYS_WRONG'
-		return rb
+	# result = setupssh.testssh(ssh, userhost, appkey, port)
+	# if result == util.ReturnCode.BAD_LOGIN:
+	# 	rb.error = 'SSH key authetication wrong'
+	# 	rb.drive_status = 'KEYS_WRONG'
+	# 	rb.returncode = result
+	# 	return rb
 
 	status = check_drive(drive, userhost)
 	if not status == 'DISCONNECTED':
@@ -91,8 +97,7 @@ def mount(sshfs, ssh, drive, userhost, appkey, port=22, drivename=''):
 		rb.drive_status = status
 		return rb
 
-	cmd = f'''
-		"{sshfs}" {userhost}:/ {drive} 
+	cmd = f'''sshfs {userhost}:/ {drive} 
 		-o IdentityFile={appkey}
 		-o port={port}
 		-o VolumePrefix=/sshfs/{userhost}
@@ -130,22 +135,18 @@ def mount(sshfs, ssh, drive, userhost, appkey, port=22, drivename=''):
 	set_net_use(letter, userhost)
 	set_drive_icon(letter)
 	rb.drive_status = 'CONNECTED'
+	rb.returncode = util.ReturnCode.OK
 	return rb
 
-def get_process_id(drive):
-	wmic = fr'c:\windows\system32\wbem\wmic.exe'
-	cmd = f"""{wmic} process where (commandline like '% {drive} %' 
-		and name='sshfs.exe') get processid"""
-	r = util.run(cmd, capture=True)
-	if r.returncode == 0 and r.stdout:
-		pid = r.stdout.split('\n')[-1]
-		return pid
-	else:
-		return '0'
-
 def unmount(drive):
+
 	logger.info(f'Unmounting {drive}...')
 	rb = util.ReturnBox()
+
+	if not drive_is_valid(drive):
+		rb.returncode = util.ReturnCode.BAD_DRIVE
+		return rb
+
 	pid = get_process_id(drive)
 	if pid != '0':
 		util.run(f'taskkill /pid {pid} /t /f >nul 2>&1')
@@ -177,13 +178,17 @@ def unmount(drive):
 			util.run(f'reg delete "{e.strip()}" /f')
 
 	rb.drive_status = 'DISCONNECTED'
+	rb.returncode = util.ReturnCode.OK
 	return rb
 
 def unmount_all():
 	for letter in GOLDLETTERS:
 		drive = f'{letter}:'
 		unmount(drive)
-	return util.ReturnBox()
+
+	rb = util.ReturnBox()
+	rb.returncode = util.ReturnCode.OK
+	return rb
 
 # def drive_in_use(drive):
 # 	'''return true if net use <drive> show a connection
@@ -213,37 +218,28 @@ def drive_works(drive, userhost):
 		util.run(fr'del {tempfile}', 10)
 		return True
 	return False
-	# try:
-	# 	tempfile = f'{drive}\\tmp\\{userhost}.{time.time()}'
-	# 	with open(tempfile, 'w') as w: 
-	# 		w.write('test')
-	# 	if os.path.exists(tempfile):
-	# 		os.remove(tempfile)
-	# 	return True
-	# except Exception as ex:
-	# 	print(ex)
-	# 	return False
-
-# def check_drive(drive, userhost):
-# 	if not (drive and len(drive)==2 and drive.split(':')[0].upper() in GOLDLETTERS):
-# 		return 'NOT SUPPORTED'
-# 	elif not drive_in_use(drive):						
-# 		return 'DISCONNECTED'
-# 	elif not drive_is_golddrive(drive, userhost):	
-# 		return 'IN USE'
-# 	elif not drive_works(drive, userhost):				
-# 		return 'BROKEN'
-# 	else:											
-# 		return 'CONNECTED' 
 
 def check_drive(drive, userhost):
 	logger.info(f'checking drive {drive} in {userhost}...')
 	if not (drive and len(drive)==2 and drive.split(':')[0].upper() in GOLDLETTERS):
 		return 'NOT SUPPORTED'
-	r = util.run(f'net use {drive}', capture=True)
-	in_use = drive in r.stdout
-	is_golddrive = fr'\\sshfs\{userhost}' in r.stdout
-	if not in_use:						
+	# r = util.run(f'net use {drive}', capture=True)
+	cmd = (f'wmic logicaldisk where "providername like \'%{userhost}%\' '
+		   f'or caption=\'{drive}\'" get caption,providername')
+	r = util.run(cmd,	capture=True)
+	in_use = f'{drive}' in r.stdout
+	is_golddrive = False
+	host_use = False
+	for line in r.stdout.split('\n'):
+		if fr'\\sshfs\{userhost}' in line:
+			if drive in line:
+				is_golddrive = True
+			else:
+				host_use = True
+			break
+	if host_use:
+		return 'HOST IN USE'
+	elif not in_use:						
 		return 'DISCONNECTED'
 	elif not is_golddrive:	
 		return 'IN USE'
@@ -282,4 +278,4 @@ if __name__ == '__main__':
 		port=22
 		if ':' in userhost:
 			userhost, port = userhost.split(':')		
-		mount(sshfs, ssh, drive, userhost, '', port)
+		mount(drive, userhost, '', port)

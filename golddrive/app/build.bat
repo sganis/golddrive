@@ -12,6 +12,7 @@ set CWD=%CD%
 
 cd %DIR%\ui
 pyuic5 -o app_ui.py --import-from ui app.ui
+pyuic5 -o host_ui.py --import-from ui host.ui
 pyuic5 -o login_ui.py --import-from ui login.ui
 pyuic5 -o about_ui.py --import-from ui about.ui
 pyrcc5 -o assets_rc.py assets.qrc

@@ -47,8 +47,11 @@ class Window(QMainWindow, Ui_MainWindow):
 		QMainWindow.__init__(self)
 		self.setupUi(self)
 		self.pbConnect.setProperty("css", True)
+		self.pageHost.setMain(self)
+		self.pageHost.connectPressed.connect(self.onConnectHost)
+		self.pageHost.cancelPressed.connect(self.showPage)
 		self.pageLogin.setMain(self)
-		self.pageLogin.loginPressed.connect(self.onLogin)
+		self.pageLogin.connectPressed.connect(self.onConnectLogin)
 		self.pageLogin.cancelPressed.connect(self.showPage)
 		self.pageAbout.setMain(self)
 		self.pageAbout.okPressed.connect(self.showPage)
@@ -73,14 +76,13 @@ class Window(QMainWindow, Ui_MainWindow):
 		self.progressBar.setVisible(False)	
 		self.lblMessage.setText("")
 		# self.widgetPassword.setVisible(False)
-		self.command_state = 'ok' # or error
+		self.returncode = util.ReturnCode.NONE
 
 		# read config.json
 		self.configfile = fr'{DIR}\..\config.json'
 		self.param = {}
 		
 		self.config = util.loadConfig(self.configfile)
-		print(self.config)
 		path = os.environ['PATH']
 		sshfs_path = self.config.get('sshfs_path','')
 		os.environ['PATH'] = fr'{sshfs_path};{path}'	
@@ -90,7 +92,6 @@ class Window(QMainWindow, Ui_MainWindow):
 		self.lblUserHostPort.setText(self.param['userhostport'])
 
 		menu = Menu(self.pbHamburger)
-		menu.addAction('&Setup SSH keys', self.mnuSetupSsh)
 		menu.addAction('&Connect', self.mnuConnect)
 		menu.addAction('&Disconnect', self.mnuDisconnect)
 		menu.addAction('Disconnect &all drives', self.mnuDisconnectAll)
@@ -114,15 +115,9 @@ class Window(QMainWindow, Ui_MainWindow):
 		self.lblMessage.linkActivated.connect(self.on_lblMessage_linkActivated)
 		self.loaded = True
 
-	def keyPressEvent(self, event):
-		if event.key() == Qt.Key_Return:
-			print('entre pressed')
-			self.on_pbConnect_released()
-			event.accept()
-
 	def start(self, message):	
 		self.showPage(util.Page.MAIN)
-		self.command_state = 'ok'
+		self.returncode = util.ReturnCode.NONE
 		self.pbConnect.setEnabled(False)
 		self.progressBar.setVisible(True)
 		self.showMessage(message)
@@ -134,15 +129,12 @@ class Window(QMainWindow, Ui_MainWindow):
 		self.showMessage(message)
 		
 	def showMessage(self, message):
-		is_error = self.command_state == 'error'
+		is_error = (self.returncode != util.ReturnCode.OK 
+			and self.returncode != util.ReturnCode.NONE) 
 		self.lblMessage.setText(message)
 		self.lblMessage.setProperty("error", is_error);
 		self.lblMessage.style().unpolish(self.lblMessage);
 		self.lblMessage.style().polish(self.lblMessage);
-		if is_error:
-			logger.error(message)
-		else:
-			logger.info(message)
 
 	def setPbConnectText(self, status):
 		self.pbConnect.setText('&CONNECT')
@@ -150,47 +142,72 @@ class Window(QMainWindow, Ui_MainWindow):
 			self.pbConnect.setText('&DISCONNECT')
 		elif status == 'BROKEN':
 			self.pbConnect.setText('&REPAIR')
-		elif status == 'KEYS_WRONG':
-			self.pbConnect.setText('&SETUP KEYS')
 		elif status == 'IN USE':
 			self.pbConnect.setEnabled(False)
-			
 
 	@pyqtSlot(str, util.ReturnBox)
 	def onWorkDone(self, task, rb):
-		if rb.error:
-			self.command_state = 'error'
-		if task == 'check_keys':
-			if rb.work_status == util.WorkStatus.SUCCESS:
-				self.end('SSH keys are good')
-			else:
-				self.end()
-				self.showPage(util.Page.LOGIN)
 
-		elif task == 'setup_keys':
-			self.progressBar.setVisible(False)
-			if rb.error:
-				self.pageLogin.showError(rb.error)
-			else:
-				self.end(rb.output)
+		self.returncode = rb.returncode
 
-		elif task == 'connect' or task == 'check_drive':
+		if task == 'check_drive':
 			if rb.drive_status == 'CONNECTED':
 				drive = self.param['drive']				
-				msg = util.richText(f"{rb.drive_status}\n\n"
-						f"<a href='open_drive'>Open</a>")
+				link = util.makeHyperlink('open_drive', 'Open')
+				msg = util.richText(f"{rb.drive_status}\n\n{link}")
 			else:
 				msg = rb.drive_status
 				if rb.error:
 					msg = rb.error
 			self.end(msg)
+
+		elif task == 'connect':
+			
+			if rb.returncode == util.ReturnCode.BAD_DRIVE:
+				self.end(rb.error)
+				
+			elif rb.returncode == util.ReturnCode.BAD_HOST:
+				self.showPage(util.Page.HOST)
+				self.pageHost.showError(rb.error)
+				self.progressBar.setVisible(False)
+
+			elif rb.returncode == util.ReturnCode.BAD_LOGIN:
+				self.showPage(util.Page.LOGIN)
+				self.pageLogin.showError(rb.error)
+				self.progressBar.setVisible(False)
+
+			elif rb.returncode == util.ReturnCode.BAD_MOUNT:
+				self.end(rb.error)
+
+			else:
+				assert rb.returncode == util.ReturnCode.OK
+				msg = (f"CONNECTED\n\n{ util.makeHyperlink('open_drive', 'Open') }")
+				self.end(util.richText(msg))
+
+		elif task == 'connect_login':
+			
+			if not rb.returncode == util.ReturnCode.OK:
+				self.pageLogin.showError(rb.error)
+				self.progressBar.setVisible(False)
+
+			elif rb.drive_status == 'CONNECTED':
+				link = util.makeHyperlink('open_drive', 'Open')
+				msg = util.richText(f"{rb.drive_status}\n\n{link}")
+									
+				self.end(msg)
+			else:
+				msg = rb.drive_status
+				if rb.error:
+					msg = rb.error
+				self.end(msg)
+
 		
 		elif (task == 'disconnect' or task == 'repair'):
 			self.end(rb.drive_status)
 
 		elif task == 'restart_explorer':
-			msg = util.richText(f"{rb.output}\n\n"
-					f"<a href='open_drive'>Open</a>")
+			link = util.makeHyperlink('open_drive', 'Open')
+			msg = util.richText(f"{rb.output}\n\n{link}")
 			self.end(msg)
 
 		else:
@@ -221,23 +238,33 @@ class Window(QMainWindow, Ui_MainWindow):
 		
 	def fillParam(self):
 		p = self.param
-		p['ssh'] = self.config.get('sshfs','')
-		p['sshfs'] = self.config.get('sshfs_path','')
-		p['editor'] = self.config.get('editor','')
-		p['logfile'] = self.config.get('logfile','')
+		p['editor'] = self.config.get('editor')
+		p['logfile'] = self.config.get('logfile')
+		p['configfile'] = self.configfile
+		p['user'] = getpass.getuser()		
+		p['appkey'] = util.getAppKey(p['user'])
+		p['userkey'] = util.getUserKey()
+		p['userhostport'] = ''
+		p['port'] = 22
+		p['drive'] = ''
+		p['drivename'] = 'GOLDDRIVE'
+		drives = self.config.get('drives')
+		p['no_host'] = not bool(drives)
+		if not drives:
+			return
 		currentText = self.cboParam.currentText();
 		if not currentText:
 			return
 		drive = currentText.split()[0].strip()
-		d = self.config.get('drives','')[drive]
+		d = drives[drive]
 		p['drive'] = drive
-		p['drivename'] = d.get('drivename', 'Golddrive')
+		p['drivename'] = d.get('drivename', 'GOLDDRIVE').replace(' ','-')
 		p['host'] = d.get('hosts','localhost')[0]
 		p['port'] = d.get('port', 22)
 		p['user'] = d.get('user', getpass.getuser())		
 		p['userhost'] = f"{p['user']}@{p['host']}"
 		p['userhostport'] = f"{p['userhost']}:{p['port']}"
-		p['seckey'] = util.getAppKey(p['user'])
+		p['appkey'] = util.getAppKey(p['user'])
 		
 	# decorator used to trigger only the int overload and not twice
 	@pyqtSlot(int)
@@ -254,25 +281,50 @@ class Window(QMainWindow, Ui_MainWindow):
 			self.checkDriveStatus()
 
 	def checkDriveStatus(self):
+		if self.param['no_host']:
+			return
 		self.start(f"Checking {self.param['drive']}...")
 		self.worker.doWork('check_drive', self.param)
-
-	def mnuSetupSsh(self):
-		user = self.param['user']
-		host = self.param['host']
-		port = self.param['port']
-		self.start(f'Checking ssh keys...')
-		self.worker.doWork('check_keys', self.param)
-		
-	def onLogin(self, host, password):
+	
+	def onConnectHost(self, drive, userhostport):
 		self.progressBar.setVisible(True)
+		self.param['drive'] = drive
+		userhost = userhostport
+		host = userhostport
+		self.param['userhost'] = userhost
 		self.param['host'] = host
+		self.param['port'] = 22
+		if ':' in userhostport:
+			userhost, port = userhostport.split(':')
+			self.param['port'] = port
+			self.param['host'] = userhost
+			host = userhost
+		if '@' in userhost:
+			user, host = userhost.split('@')			
+			self.param['user'] = user
+			self.param['host'] = host
+		else:
+			user = self.param['user']
+		self.param['userhost'] = f'{user}@{host}'
+		self.param['appkey'] = util.getAppKey(user)
+
+		# print(f"user: {self.param['user']}")
+		# print(f"host: {self.param['host']}")
+		# print(f"port: {self.param['port']}")
+		# print(f"userhost: {self.param['userhost']}")
+		self.worker.doWork('connect', self.param)
+	
+	def onConnectLogin(self, password):
+		self.progressBar.setVisible(True)
 		self.param['password'] = password
-		self.worker.doWork('setup_keys', self.param)
+		self.worker.doWork('connect_login', self.param)
 
 	def mnuConnect(self):
-		self.start('Connecting drive...')
-		self.worker.doWork('connect', self.param)
+		if self.param['no_host']:
+			self.showPage(util.Page.HOST)
+		else:
+			self.start('Connecting drive...')
+			self.worker.doWork('connect', self.param)
 
 	def mnuDisconnect(self):
 		self.start('Disconnecting drive...')
@@ -314,13 +366,11 @@ class Window(QMainWindow, Ui_MainWindow):
 		# self.thread.wait()
 
 	def on_pbConnect_released(self):
-		drive = self.param['drive']
-		self.start(f'Checking {drive} ...')
 		task = self.pbConnect.text().lower().replace('&','')
-		if task == 'setup keys':
-			self.mnuSetupSsh()
+		if task == 'connect':
+			self.mnuConnect()
 		else:
-			self.worker.doWork(task, self.param)
+			self.mnuDisconnect()
 
 	def on_lblSettings_linkActivated(self, link):
 		editor = self.param["editor"]
@@ -335,12 +385,24 @@ class Window(QMainWindow, Ui_MainWindow):
 		util.run(cmd, shell=True)
 
 	def showPage(self, page):
+		if page == util.Page.HOST:
+			self.pageHost.init()
 		if page == util.Page.LOGIN:
-			self.pageLogin.init(self.param['host'])
-		self.widget_1_top.setEnabled(page == util.Page.MAIN)
-		self.widget_2_combo.setEnabled(page == util.Page.MAIN)
+			self.pageLogin.init()
+		self.setTopEnabled(page == util.Page.MAIN)
 		self.stackedWidget.setCurrentIndex(page.value)
+		print(f'panel visible: {page}')
 
+	def setTopEnabled(self, enable):
+		self.pbHamburger.setEnabled(enable)
+		self.cboParam.setEnabled(enable)
+		self.lblSettings.setVisible(enable)
+
+	def keyPressEvent(self, event):
+		if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
+			print('enter pressed in app')
+			self.on_pbConnect_released()
+			event.accept()
 
 
 def run():

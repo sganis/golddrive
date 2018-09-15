@@ -120,10 +120,10 @@
              </size>
             </property>
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;#&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;Settings&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;#&quot;&gt;&lt;span style=&quot; text-decoration: none; color:#0E639C;&quot;&gt;Settings&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="alignment">
-             <set>Qt::AlignCenter</set>
+             <set>Qt::AlignHCenter|Qt::AlignTop</set>
             </property>
            </widget>
           </item>
@@ -216,6 +216,7 @@
         </item>
        </layout>
       </widget>
+      <widget class="Host" name="pageHost"/>
       <widget class="Login" name="pageLogin"/>
       <widget class="About" name="pageAbout"/>
      </widget>
@@ -262,6 +263,12 @@
    <class>Login</class>
    <extends>QWidget</extends>
    <header location="global">ui.login</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>Host</class>
+   <extends>QWidget</extends>
+   <header location="global">ui.host</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

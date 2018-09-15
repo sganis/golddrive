@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Login</class>
- <widget class="QWidget" name="Login">
+ <class>Host</class>
+ <widget class="QWidget" name="Host">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>311</width>
-    <height>161</height>
+    <width>313</width>
+    <height>208</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Login</string>
+   <string>Host</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <property name="spacing">
@@ -20,17 +20,55 @@
    <item>
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>Authorization required:</string>
+      <string>Drive</string>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="QLineEdit" name="txtPassword">
-     <property name="echoMode">
-      <enum>QLineEdit::Password</enum>
+    <widget class="QWidget" name="widget" native="true">
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QComboBox" name="cboDrive"/>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>184</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>Server</string>
      </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLineEdit" name="txtHost">
      <property name="placeholderText">
-      <string>Password</string>
+      <string>Hostname or IP address</string>
      </property>
     </widget>
    </item>
@@ -66,14 +104,20 @@
        </spacer>
       </item>
       <item>
-       <widget class="QPushButton" name="pbConnectLogin">
+       <widget class="QPushButton" name="pbConnectHost">
+        <property name="maximumSize">
+         <size>
+          <width>100</width>
+          <height>16777215</height>
+         </size>
+        </property>
         <property name="text">
          <string>CONNECT</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pbCancelLogin">
+       <widget class="QPushButton" name="pbCancelHost">
         <property name="maximumSize">
          <size>
           <width>100</width>
@@ -97,7 +141,7 @@
       </sizepolicy>
      </property>
      <property name="text">
-      <string>Error</string>
+      <string>Hostname can be [user@]host[:port]</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -109,8 +153,6 @@
    </item>
   </layout>
  </widget>
- <resources>
-  <include location="assets.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>

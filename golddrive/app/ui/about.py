@@ -15,29 +15,26 @@ class AboutWorker(QThread):
 	
 	workDone = pyqtSignal(str)
 	
-	def __init__(self, main):
+	def __init__(self):
 		QThread.__init__(self)
-		self.main = main
 	
 	def run(self):
-		config = self.main.config
 		ssh = ''
 		sshfs = ''
 		winfsp = ''
 		
-		r = util.run(f'{config["ssh"]} -V', capture=True)
+		r = util.run(f'ssh -V', capture=True)
 		if r.returncode == 0:
 			m = re.match(r'(OpenSSH[^,]+),[\s]*(OpenSSL[\s]?[\w.]+)', r.stderr)
 			if m:
 				ssh = f'{m.group(1)}\n{m.group(2)}'
 		
-		r = util.run(f'{config["sshfs"]} -V', capture=True)
+		r = util.run(f'sshfs -V', capture=True)
 		if r.returncode == 0:
 			sshfs = f'{r.stdout}'
 		
-		wmic = fr'c:\windows\system32\wbem\wmic.exe'
 		p86 = os.path.expandvars('%ProgramFiles(x86)%')
-		cmd =f"{wmic} datafile where name='{p86}\\WinFsp\\bin\\winfsp-x64.dll' get version /format:list"
+		cmd =f"wmic datafile where name='{p86}\\WinFsp\\bin\\winfsp-x64.dll' get version /format:list"
 		r = util.run(cmd.replace('\\','\\\\'), capture=True)
 		if r.returncode == 0 and '=' in r.stdout:
 			winfsp_ver = r.stdout.split("=")[-1]
@@ -58,13 +55,15 @@ class About(QWidget, Ui_About):
 		self.lblAbout.setText("")
 		self.worker = None
 		self.main = None
+		link = 'http://github.com/sganis/golddrive'
+		link = util.makeHyperlink(link, link)
 		self.about = (f"Golddrive {VERSION}\n"
 				"Map drive to ssh server\n"
-				"<a href='http://github.com/sganis/golddrive'>http://github.com/sganis/golddrive</a>\n")
+				f"{link}\n")
 
 	def showAbout(self):
 		if self.worker is None:
-			self.worker = AboutWorker(self.main)
+			self.worker = AboutWorker()
 			self.worker.workDone.connect(self.onWorkDone)
 		self.lblAbout.setText(util.richText(self.about))
 		self.pbAboutOk.setVisible(False)

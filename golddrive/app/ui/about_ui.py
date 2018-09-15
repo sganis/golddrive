@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_About(object):
     def setupUi(self, About):
         About.setObjectName("About")
-        About.resize(286, 322)
+        About.resize(298, 189)
         self.verticalLayout = QtWidgets.QVBoxLayout(About)
         self.verticalLayout.setObjectName("verticalLayout")
         self.lblIcon = QtWidgets.QLabel(About)

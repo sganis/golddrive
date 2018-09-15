@@ -10,56 +10,80 @@ logging.getLogger("paramiko.transport").setLevel(logging.WARNING)
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 
-def login_password(ssh, userhost, password, port=22):
+def testhost(userhost, port=22):
 	'''
-	Test ssh password authentication
-	Return:
-		0 - Success
-		1 - Bad authentication
-		2 - Bad connection
+	Test if host respond to port
+	Return: True or False
 	'''
-	logger.info(f'Logging in with password for {userhost}...')
-	if not password:
-		return 1
+	logger.info(f'Testing port {port} at {userhost}...')
 	user, host = userhost.split('@')
 	client = paramiko.SSHClient()
 	client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-	result = -1
+	rb = util.ReturnBox()
 	try:
-
 		client.connect(hostname=host, username=user, 
-				password=password, port=port, timeout=10, 
-				look_for_keys=False)	
-		result = 0
+				password='', port=port, timeout=5)	
+		rb.returncode = util.ReturnCode.OK
 	except (paramiko.ssh_exception.AuthenticationException,
 		paramiko.ssh_exception.BadAuthenticationType,
 		paramiko.ssh_exception.PasswordRequiredException):
-		result = 1
+		rb.returncode = util.ReturnCode.OK
 	except Exception as ex:
-		result = 2
+		rb.returncode = util.ReturnCode.BAD_HOST
+		rb.error = str(ex)
 	finally:
 		client.close()
-	return result
+	return rb
 
-def testssh(ssh, userhost, seckey, port=22):
+def testlogin(userhost, password, port=22):
+	'''
+	Test ssh password authentication
+	'''
+	logger.info(f'Logging in with password for {userhost}...')
+	rb = util.ReturnBox()
+	if not password:
+		rb.returncode =util.ReturnCode.BAD_LOGIN
+		rb.error = 'Empty password'
+		return rb
+
+	user, host = userhost.split('@')
+	client = paramiko.SSHClient()
+	client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+	
+	try:
+		client.connect(hostname=host, username=user, 
+				password=password, port=port, timeout=10, 
+				look_for_keys=False)
+		rb.returncode = util.ReturnCode.OK
+	except (paramiko.ssh_exception.AuthenticationException,
+		paramiko.ssh_exception.BadAuthenticationType,
+		paramiko.ssh_exception.PasswordRequiredException) as ex:
+		rb.returncode = util.ReturnCode.BAD_LOGIN
+		rb.error = str(ex)
+	except Exception as ex:
+		rb.returncode = util.ReturnCode.BAD_HOST
+		rb.error = str(ex)
+	finally:
+		client.close()
+	return rb
+
+def testssh(userhost, seckey, port=22):
 	'''
 	Test ssh key authentication
-	Return:
-		0 - Success
-		1 - Bad authentication
-		2 - Bad connection
 	'''
 	logger.info(f'Testing ssh keys for {userhost} using key {seckey}...')
-	# if not seckey:
-	# 	user, host = userhost.split('@')
-	# 	seckey = util.getAppKey(user)
+	
+	rb = testhost(userhost, port)
+	if rb.returncode == util.ReturnCode.BAD_HOST:
+		return rb
 	
 	if not os.path.exists(seckey):
 		seckey_win = seckey.replace('/','\\')
-		logger.info(f'Key does not exist: {seckey_win}')
-		return 1
+		logger.error(f'Key does not exist: {seckey_win}')
+		rb.returncode = util.ReturnCode.BAD_LOGIN
+		return rb
 
-	cmd = f'''"{ssh}" 
+	cmd = f'''ssh
 		-i "{seckey}"
 		-p {port} 
 		-o PasswordAuthentication=no
@@ -67,19 +91,22 @@ def testssh(ssh, userhost, seckey, port=22):
 		-o UserKnownHostsFile=/dev/null
 		-o BatchMode=yes 
 		{userhost} "echo ok"'''
-	r= util.run(cmd, capture=True, timeout=10)
+	r = util.run(cmd, capture=True, timeout=10)
 	
 	if r.stdout == 'ok':
 		# success
-		return 0
+		rb.returncode = util.ReturnCode.OK
 	elif 'Permission denied' in r.stderr:
 		# wrong user or key issue
-		return 1
+		rb.returncode = util.ReturnCode.BAD_LOGIN
+		rb.error = 'Access denied'
 	else:
 		# wrong port: connection refused 
 		# unknown host: connection timeout
 		logger.error(r.stderr)
-		return 2 
+		rb.returncode = util.ReturnCode.BAD_HOST
+		rb.error = r.stderr
+	return rb
 
 def generate_keys(seckey, userhost):
 	logger.info('Generating new ssh keys...')
@@ -116,7 +143,7 @@ def setup_user_keys(userhost, password, port):
 
 	# transfer using password
 
-def main(ssh, userhost, password, userkey='', port=22):
+def main(userhost, password, userkey='', port=22):
 	'''
 	Setup ssh keys, return ReturnBox
 	'''
@@ -136,6 +163,7 @@ def main(ssh, userhost, password, userkey='', port=22):
 	else:
 		rbkey = generate_keys(seckey, userhost)
 		if rbkey.error:
+			rbkey.returncode = util.ReturnCode.BAD_SSH
 			return rbkey
 		else:
 			pubkey = rbkey.output
@@ -147,9 +175,11 @@ def main(ssh, userhost, password, userkey='', port=22):
 		if userkey:
 			# transfer key using user key
 			logger.info('Connecting using user keys...')
+			# print(userkey)
+			# print(open(userkey).read())
 			pkey = paramiko.RSAKey.from_private_key_file(userkey)
 			client.connect(hostname=host, username=user, 
-				pkey=pkey, port=port, timeout=10)
+				pkey=pkey, look_for_keys=False, port=port, timeout=10)
 		else:
 			# use password
 			logger.info('Connecting using password...')
@@ -166,6 +196,7 @@ def main(ssh, userhost, password, userkey='', port=22):
 		if 'getaddrinfo failed' in rb.error:
 			rb.error = f'{host} not found'
 		client.close()
+		rb.returncode = util.ReturnCode.BAD_SSH
 		return rb
 
 	logger.info(f'Publising public key...')
@@ -181,6 +212,7 @@ def main(ssh, userhost, password, userkey='', port=22):
 		stdin, stdout, stderr = client.exec_command(cmd, timeout=10)		
 	except Exception as ex:
 		logger.error(ex)
+		rb.returncode = util.ReturnCode.BAD_SSH
 		rb.error = f'error transfering public key: {ex}'
 		return rb
 	finally:
@@ -189,21 +221,23 @@ def main(ssh, userhost, password, userkey='', port=22):
 	err = stderr.read()
 	if err:
 		logger.error(err)
+		rb.returncode = util.ReturnCode.BAD_SSH
 		rb.error = f'error transfering public key, error: {err}'
 		return rb
 	
-	result = testssh(ssh, userhost, seckey, port)
-	if result == 0:
+	rb = testssh(userhost, seckey, port)
+	if rb.returncode == util.ReturnCode.OK:
 		rb.output = "SSH setup successfull." 
 		logger.info(rb.output)
 	else:
-		message = 'SSH setup failed'
+		message = 'SSH setup test failed'
 		detail = ''
-		if result == 1:
+		if rb.returncode == util.ReturnCode.BAD_LOGIN:
 			detail = ': authentication probem'
 		else:
 			message = ': connection problem'
 		rb.error = message
+		rb.returncode = util.ReturnCode.BAD_SSH
 		logger.error(message + detail)
 	return rb
 

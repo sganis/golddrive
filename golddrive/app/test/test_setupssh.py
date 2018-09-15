@@ -29,54 +29,56 @@ def teardown_function():
 	if os.path.exists(appkey):		
 		os.remove(appkey)	
 
-def test_login_password():
-	r = setupssh.login_password(ssh, userhost, password, port)
-	assert r == 0
+def test_login():
+	rb = setupssh.testlogin(userhost, password, port)
+	assert rb.returncode == util.ReturnCode.OK
 
-def test_login_password_no_password():
-	r = setupssh.login_password(ssh, userhost, '', port)
-	assert r == 1
+def test_login_no_password():
+	rb = setupssh.testlogin(userhost, '', port)
+	assert rb.returncode == util.ReturnCode.BAD_LOGIN
 
 def test_wrong_password():
-	r = setupssh.login_password(ssh, userhost, 'badpass', port)
-	assert r == 1
+	rb = setupssh.testlogin(userhost, 'badpass', port)
+	assert rb.returncode == util.ReturnCode.BAD_LOGIN
 
 def test_login_bad_host():
-	r = setupssh.login_password(ssh, userhost+'bad', password, port)
-	assert r == 2
+	rb = setupssh.testlogin(userhost+'bad', password, port)
+	assert rb.returncode == util.ReturnCode.BAD_HOST
 	
 def test_login_bad_port():
-	r = setupssh.login_password(ssh, userhost+'bad', password, 3333)
-	assert r == 2
+	rb = setupssh.testlogin(userhost+'bad', password, 3333)
+	assert rb.returncode == util.ReturnCode.BAD_HOST
 	
 def test_testssh():
-	r = setupssh.testssh(ssh, userhost, appkey, port)
-	assert r == 1
+	rb = setupssh.testssh(userhost, appkey, port)
+	assert rb.returncode == util.ReturnCode.BAD_LOGIN
 	
 def test_testssh_invalid_key():
 	if os.path.exists(appkey):		
 		os.remove(appkey)	
-	r = setupssh.testssh(ssh, userhost, appkey, port)
-	assert r == 1
+	rb = setupssh.testssh(userhost, appkey, port)
+	assert rb.returncode == util.ReturnCode.BAD_LOGIN
 
 def test_setupssh_passord():
 	if os.path.exists(appkey):		
 		os.remove(appkey)	
-	rb = setupssh.main(ssh, userhost, password, '', port)
+	rb = setupssh.main(userhost, password, '', port)
+	assert rb.returncode == util.ReturnCode.OK
 	assert 'successfull' in rb.output
 
-	r = setupssh.testssh(ssh, userhost, appkey, port)
-	assert r == 0
+	rb = setupssh.testssh(userhost, appkey, port)
+	assert rb.returncode == util.ReturnCode.OK
 
 def test_setupssh_user_key():
 	if os.path.exists(appkey):		
 		os.remove(appkey)	
-	r = setupssh.testssh(ssh, userhost, appkey, port)
-	assert r == 1
-	rb = setupssh.main(ssh, userhost, '', userkey, port)
+	rb = setupssh.testssh(userhost, appkey, port)
+	assert rb.returncode == util.ReturnCode.BAD_LOGIN
+	rb = setupssh.main(userhost, '', userkey, port)
+	assert rb.returncode == util.ReturnCode.OK
 	assert 'successfull' in rb.output
-	r = setupssh.testssh(ssh, userhost, appkey, port)
-	assert r == 0
+	rb = setupssh.testssh(userhost, appkey, port)
+	assert rb.returncode == util.ReturnCode.OK
 
 def test_generate_keys():
 	rb = setupssh.generate_keys(appkey, userhost)
@@ -88,4 +90,9 @@ def test_has_app_keys():
 	assert setupssh.has_app_keys(user)
 	os.remove(appkey)
 	assert not setupssh.has_app_keys(user)
-	
+
+def test_host():
+	rb = setupssh.testhost(userhost, port)
+	assert rb.returncode == util.ReturnCode.OK
+	rb = setupssh.testhost('user@badhost', port)
+	assert rb.returncode == util.ReturnCode.BAD_HOST

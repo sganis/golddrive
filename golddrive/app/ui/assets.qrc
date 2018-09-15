@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/">
+    <file>assets/hamburger_disabled.png</file>
     <file>assets/style.css</file>
     <file>assets/arrow_down_16.png</file>
     <file>assets/hamburger.png</file>

@@ -56,7 +56,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2.addItem(spacerItem)
         self.lblSettings = QtWidgets.QLabel(self.widget_3_settings)
         self.lblSettings.setMaximumSize(QtCore.QSize(150, 16777215))
-        self.lblSettings.setAlignment(QtCore.Qt.AlignCenter)
+        self.lblSettings.setAlignment(QtCore.Qt.AlignHCenter|QtCore.Qt.AlignTop)
         self.lblSettings.setObjectName("lblSettings")
         self.horizontalLayout_2.addWidget(self.lblSettings)
         self.verticalLayout_2.addWidget(self.widget_3_settings)
@@ -99,6 +99,9 @@ class Ui_MainWindow(object):
         self.horizontalLayout.addItem(spacerItem2)
         self.verticalLayout_3.addWidget(self.widget_2)
         self.stackedWidget.addWidget(self.pageMain)
+        self.pageHost = Host()
+        self.pageHost.setObjectName("pageHost")
+        self.stackedWidget.addWidget(self.pageHost)
         self.pageLogin = Login()
         self.pageLogin.setObjectName("pageLogin")
         self.stackedWidget.addWidget(self.pageLogin)
@@ -135,11 +138,12 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.lblSettings.setText(_translate("MainWindow", "<html><head/><body><p><a href=\"#\"><span style=\" text-decoration: underline; color:#0000ff;\">Settings</span></a></p></body></html>"))
+        self.lblSettings.setText(_translate("MainWindow", "<html><head/><body><p><a href=\"#\"><span style=\" text-decoration: none; color:#0E639C;\">Settings</span></a></p></body></html>"))
         self.lblUserHostPort.setText(_translate("MainWindow", "user@host:port"))
         self.lblMessage.setText(_translate("MainWindow", "Message"))
         self.pbConnect.setText(_translate("MainWindow", "CONNECT"))
 
 from ui.about import About
+from ui.host import Host
 from ui.login import Login
 from ui import assets_rc

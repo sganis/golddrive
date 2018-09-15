@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 import time
 import logging
+import getpass
+import mounter
+import setupssh
 import util
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, QThread
 
@@ -18,52 +21,85 @@ class BackgroundWorker(QObject):
 
 	def check_drive(sefl, p):
 		rb = util.ReturnBox()
-		import mounter	
 		rb.drive_status = mounter.check_drive(p['drive'], p['userhost'])
+		if rb.drive_status == 'CONNECTED' or rb.drive_status == 'DISCONNECTED':
+			rb.returncode = util.ReturnCode.OK
 		return rb
 
-	def check_keys(self, p):
-		import setupssh	
-		result = setupssh.testssh(p['ssh'], p['userhost'], 
-							p['seckey'], p['port'])
-		rb = util.ReturnBox()
-		if result == 0:
-			rb.work_status = util.WorkStatus.SUCCESS
+	def mount(self, p):
+		rb = mounter.mount(p['drive'],
+			 				p['userhost'], p['appkey'], p['port'], 
+							p['drivename'])
+		if rb.returncode == util.ReturnCode.OK	and p['no_host']:
+			util.addDriveConfig(**p)
 		return rb
-
-	def setup_keys(self, p):
-		rb = self.check_keys(p)
-		if rb.work_status == util.WorkStatus.SUCCESS:
-			return rb
-		import setupssh	
-		return setupssh.main(p['ssh'], p['userhost'], p['password'],
-							p['seckey'], p['port'])
-
-	def restart_explorer(self, p):
-		import mounter
-		mounter.restart_explorer()
-		return util.ReturnBox('Explorer.exe was restarted','')
 
 	def connect(self, p):
-		import mounter		
-		return mounter.mount(p['sshfs'],p['ssh'], p['drive'],
-			 				p['userhost'], p['seckey'], p['port'], 
-							p['drivename'].replace(' ','-'))
+		rb = util.ReturnBox()
+		# test drive status
+		status = mounter.check_drive(p['drive'], p['userhost'])
+		if status != 'DISCONNECTED':
+			rb.returncode = util.ReturnCode.BAD_DRIVE
+			rb.error = f'{status}'
+			return rb
+		# test ssh with app key
+		rb = setupssh.testssh(p['userhost'], p['appkey'], p['port'])
+		if rb.returncode == util.ReturnCode.BAD_HOST:
+			return rb
+
+		if rb.returncode == util.ReturnCode.BAD_LOGIN:
+			# test login with user keys
+			current_user = getpass.getuser()
+			if not current_user == p['user']:
+				return rb
+			# user is same as logged in user, try user keys	
+			rb = setupssh.testssh( p['userhost'], p['userkey'], p['port'])
+			if not rb.returncode == util.ReturnCode.OK:
+				rb.returncode = util.ReturnCode.BAD_LOGIN
+				rb.error = '' # do not show error, is password required
+				return rb
+			# setup ssh with user key
+			rb = setupssh.main(p['userhost'],'',p['userkey'],p['port'])
+			if not rb.returncode == util.ReturnCode.OK:
+				rb.returncode = util.ReturnCode.BAD_SSH
+				return rb
+
+		assert rb.returncode == util.ReturnCode.OK
+		# app keys are ok, mount
+		return self.mount(p)
+
+	def connect_login(self, p):
+		# test login
+		rb = setupssh.testlogin(p['userhost'], p['password'], p['port'])
+		if not rb.returncode == util.ReturnCode.OK:
+			return rb
+
+		# setup ssh with password
+		rb = setupssh.main(p['userhost'],p['password'],'',p['port'])
+		if not rb.returncode == util.ReturnCode.OK:
+			rb.returncode = util.ReturnCode.BAD_SSH
+			return rb
+		
+		# app keys are ok, mount
+		return self.mount(p)
+
+
 		
 	def disconnect(self, p):
-		import mounter		
 		return mounter.unmount(p['drive'])
 		
 	def disconnect_all(self, p):
-		import mounter		
 		return mounter.unmount_all()
 		
 	def repair(self, p):
-		import mounter		
 		mounter.unmount(p['drive'])
-		return mounter.mount(p['sshfs'],p['ssh'], p['drive'],
-			 				p['userhost'], p['seckey'], p['port'], 
-							p['drivename'].replace(' ','-'))
+		return mounter.mount(p['drive'],
+			 				p['userhost'], p['appkey'], p['port'], 
+							p['drivename'])
+	
+	def restart_explorer(self, p):
+		mounter.restart_explorer()
+		return util.ReturnBox('Explorer.exe was restarted','')
 		
 	# slot decorator is optional, used here 
 	# for documenting argument's type
