@@ -233,6 +233,8 @@ class Window(QMainWindow, Ui_MainWindow):
 		self.cboParam.blockSignals(True)
 		self.cboParam.clear()
 		self.cboParam.addItems(items)
+		if currentIndex > len(items)-1:
+			currentIndex = 0
 		self.cboParam.setCurrentIndex(currentIndex)
 		self.cboParam.blockSignals(False)
 		
@@ -281,7 +283,7 @@ class Window(QMainWindow, Ui_MainWindow):
 			self.checkDriveStatus()
 
 	def checkDriveStatus(self):
-		if self.param['no_host']:
+		if not self.param.get('drive'):
 			return
 		self.start(f"Checking {self.param['drive']}...")
 		self.worker.doWork('check_drive', self.param)
