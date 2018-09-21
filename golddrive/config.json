@@ -3,20 +3,11 @@
 	// It's json format with support for comments, trailing commas, 
 	// and environment variables
 	"sshfs_path" 		: "%GOLDDRIVE%\\sshfs\\v3.4\\bin",
-	"winfsp_installer"	: "%GOLDDRIVE%\\sshfs\\winfsp.msi",
 	"logfile" 			: "%GOLDDRIVE%\\golddrive.log",
 	// "editor" 			: "C:\\Windows\\notepad.exe",
 	"editor" 			: "C:\\Program Files\\Sublime Text 3\\sublime_text.exe",
 	
 	// drive parameters
-	"drives" : {
-		"Z:" : {
-			"drivename" : "GOLDDRIVE",
-			"user" 		: "support",
-			"port" 		: "2222",
-			"hosts" 	: ["192.168.100.201"],
-		},
-	}
 	// "drives" : {
 	// 	"Z:" : {
 	// 		"drivename" : "GOLDDRIVE",
@@ -27,9 +18,11 @@
 	// }
 	// 	"S:" : {
 	// 		"drivename" : "Simulation",
-	// 		"hosts" 	: ["192.168.100.201", "vlcc30"],
+	// 		"hosts" 	: ["localhost", "linux01"],
 	// 		"user" 		: "sag",
 	// 		"options" 	: "",
 	// 	},	
 	// }
+	"drives" : {}
 }
+
