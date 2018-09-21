@@ -21,9 +21,7 @@ DIR 	= os.path.abspath(os.path.dirname(__file__))
 
 from app_ui import Ui_MainWindow
 
-logging.basicConfig(
-	level=logging.INFO, 
-	filename=fr'{DIR}\..\golddrive.log',
+logging.basicConfig(level=logging.ERROR, filename=fr'{DIR}\..\golddrive.log',
 	format='%(asctime)s: %(name)-10s: %(levelname)-7s: %(message)s',
 	datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger('golddrive')
@@ -219,7 +217,7 @@ class Window(QMainWindow, Ui_MainWindow):
 		self.setPbConnectText(rb.drive_status)
 
 	def onConfigFileChanged(self, path):
-		logger.error('Config file has changed, reloading...')
+		logger.info('Config file has changed, reloading...')
 		self.config = util.loadConfig(path)
 		self.updateCombo(self.settings.value("cboParam",0))
 		self.fillParam()
@@ -394,11 +392,12 @@ class Window(QMainWindow, Ui_MainWindow):
 			self.pageLogin.init()
 		self.setTopEnabled(page == util.Page.MAIN)
 		self.stackedWidget.setCurrentIndex(page.value)
-		print(f'panel visible: {page}')
+		# print(f'panel visible: {page}')
 
 	def setTopEnabled(self, enable):
 		self.pbHamburger.setEnabled(enable)
-		self.cboParam.setEnabled(enable)
+		self.cboParam.setVisible(enable)
+		self.cboParam.setEnabled(enable and self.cboParam.count() > 0)
 		self.lblSettings.setVisible(enable)
 
 	def keyPressEvent(self, event):
@@ -425,8 +424,6 @@ if __name__ == '__main__':
 		logging.root.removeHandler(handler)
 	# log to console
 	logging.basicConfig(
-		level=logging.INFO, 
-		format='%(asctime)s: %(name)-10s: %(levelname)-7s: %(message)s',
-		datefmt='%Y-%m-%d %H:%M:%S')
-
+		level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S',
+		format='%(asctime)s: %(name)-10s: %(levelname)-7s: %(message)s')
 	run()

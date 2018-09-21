@@ -65,8 +65,7 @@ def restart_explorer():
 	util.run(fr'start /b c:\windows\explorer.exe')
 
 def get_process_id(drive):
-	wmic = fr'c:\windows\system32\wbem\wmic.exe'
-	cmd = f"""{wmic} process where (commandline like '% {drive} %' 
+	cmd = f"""wmic process where (commandline like '% {drive} %' 
 		and name='sshfs.exe') get processid"""
 	r = util.run(cmd, capture=True)
 	if r.returncode == 0 and r.stdout:
@@ -250,6 +249,15 @@ def check_drive(drive, userhost):
 		return 'BROKEN'
 	else:
 		return 'CONNECTED'
+
+def get_free_drives():
+	used = []
+	cmd = ('wmic logicaldisk get name')
+	r = util.run(cmd, capture=True)
+	for line in r.stdout.split('\n'):
+		if ':' in line:
+			used.append(line.split(':')[0])
+	return [f'{d}:' for d in GOLDLETTERS if d not in used]
 
 
 

@@ -9,30 +9,6 @@
 	"editor" 			: "C:\\Program Files\\Sublime Text 3\\sublime_text.exe",
 	
 	// drive parameters
-	// "drives" : {
-	// 	"S:" : {
-	// 		"drivename" : "Simulation",
-	// 		"hosts" 	: ["192.168.100.201", "vlcc30"],
-	// 		"user" 		: "sag",
-	// 		"options" 	: "",
-	// 	},		
-	// 	"I:" : {
-	// 		"drivename" : "IT",
-	// 		"user"  	: "ituser",
-	// 		"hosts" 	: ["S1", "server02"],
-	// 		"port"  	: 333,
-	// 	},		
-	// 	"X:" : {
-	// 		"drivename" : "Exploration",
-	// 		"hosts" 	: ["explor01", "explor02"]
-	// 	},		
-	// 	"Y:" : {
-	// 		"drivename" : "Container",
-	// 		"user"  	: "support",
-	// 		"hosts" 	: ["192.168.100.201"],
-	// 		"port"  	: 2222,
-	// 	}
-	// }
 	"drives" : {
 		"Z:" : {
 			"drivename" : "GOLDDRIVE",
@@ -40,11 +16,20 @@
 			"port" 		: "2222",
 			"hosts" 	: ["192.168.100.201"],
 		},
-		"S:" : {
-			"drivename" : "Simulation",
-			"hosts" 	: ["192.168.100.201", "vlcc30"],
-			"user" 		: "sag",
-			"options" 	: "",
-		},	
 	}
+	// "drives" : {
+	// 	"Z:" : {
+	// 		"drivename" : "GOLDDRIVE",
+	// 		"user" 		: "support",
+	// 		"port" 		: "2222",
+	// 		"hosts" 	: ["192.168.100.201"],
+	// 	},
+	// }
+	// 	"S:" : {
+	// 		"drivename" : "Simulation",
+	// 		"hosts" 	: ["192.168.100.201", "vlcc30"],
+	// 		"user" 		: "sag",
+	// 		"options" 	: "",
+	// 	},	
+	// }
 }

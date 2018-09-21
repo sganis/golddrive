@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Gold Drive"
-#define MyAppVersion "0.1"
+#define MyAppVersion "1.0.0"
 #define MyAppPublisher "SAG"
 #define MyAppURL "http://github.com/sganis/golddrive"
 #define MyAppExeName "golddrive.exe"
@@ -23,7 +23,7 @@ DefaultDirName={localappdata}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 OutputBaseFilename=golddrive-{#MyAppVersion}-x64
-SetupIconFile=golddrive\app\ui\assets\golddrive4.ico
+SetupIconFile=golddrive\app\icon\golddrive.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma
 SolidCompression=yes

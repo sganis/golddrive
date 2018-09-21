@@ -75,4 +75,12 @@ def test_check_drive():
 	assert 'CONNECTED' == mounter.check_drive(drive, userhost)
 	unmount()
 	assert 'DISCONNECTED' == mounter.check_drive(drive, userhost)
+
+def test_free_drives():
+	'X:' not in mounter.get_free_drives()
+	drive in mounter.get_free_drives()
+	mount()
+	drive not in mounter.get_free_drives()
+	unmount()
+	drive in mounter.get_free_drives()
 	

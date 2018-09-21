@@ -5,9 +5,16 @@ import subprocess
 import logging
 import yaml
 import re
+import getpass
 from enum import Enum
 
 logger = logging.getLogger('golddrive')
+
+IPADDR = r'(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])'
+HOSTNAME = r'(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])'
+PATTERN_HOST = fr'^{HOSTNAME}|{IPADDR}$'
+REGEX_HOST = re.compile(PATTERN_HOST)
+CURRENT_USER = getpass.getuser()
 
 class DriveStatus(Enum):
 	CONNECTED = 1
@@ -110,7 +117,33 @@ def richText(text):
 
 def makeHyperlink(href, text):
 	return f"<a href='{href}'><span style=\"text-decoration: none; color:#0E639C;\">{text}</span></a>"
-	
+
+def getUserHostPort(text):
+	userhostport = text
+	userhost = text
+	host = text
+	port = None
+	user = CURRENT_USER
+	if ':' in text:
+		userhost, port = text.split(':')
+		host = userhost
+	if '@' in userhost:
+		user, host = userhost.split('@')
+	if not REGEX_HOST.match(host):
+		host = '<invalid>'
+	if not user:
+		user = '<invalid>'
+	if port:
+		try:
+			port = int(port)
+			if port < 0 or port > 65635:
+				raise
+		except:
+			port = '<invalid>'
+	else:
+		port = 22
+	return user, host, port
+
 def run(cmd, capture=False, shell=True, timeout=30):
 	cmd = re.sub(r'[\n\r\t ]+',' ', cmd).replace('  ',' ').strip()
 	header = 'CMD'
@@ -142,6 +175,31 @@ def run(cmd, capture=False, shell=True, timeout=30):
 		r.stderr = r.stderr.strip()
 	return r
 	
+def getVersions():
+	ssh = ''
+	sshfs = ''
+	winfsp = ''
+	
+	r = run(f'ssh -V', capture=True)
+	if r.returncode == 0:
+		m = re.match(r'(OpenSSH[^,]+),[\s]*(OpenSSL[\s]?[\w.]+)', r.stderr)
+		if m:
+			ssh = f'{m.group(1)}\n{m.group(2)}'
+	
+	r = run(f'sshfs -V', capture=True)
+	if r.returncode == 0:
+		sshfs = f'{r.stdout}'
+	
+	p86 = os.path.expandvars('%ProgramFiles(x86)%')
+	cmd =f"wmic datafile where name='{p86}\\WinFsp\\bin\\winfsp-x64.dll' get version /format:list"
+	r = run(cmd.replace('\\','\\\\'), capture=True)
+	if r.returncode == 0 and '=' in r.stdout:
+		winfsp_ver = r.stdout.split("=")[-1]
+		winfsp = f'WINFSP {winfsp_ver}'
+
+	result = f'{ssh}\n{sshfs}\n{winfsp}'
+	return result
+
 
 if __name__ == '__main__':
 

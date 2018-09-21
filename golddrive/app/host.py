@@ -50,8 +50,10 @@ class Host(QWidget, Ui_Host):
 		else:
 			self.showError(self.error)
 	
-	# def on_txtHost_returnPressed(self):
-	# 	self.on_pbConnectHost_released()
+	def on_txtHost_textChanged(self):
+		user, host, port = util.getUserHostPort(str(self.txtHost.text()))
+		text = f'{user}@{host}:{port}'
+		self.lblMessage.setText(text)
 
 	def on_pbCancelHost_released(self):
 		self.cancelPressed.emit(util.Page.MAIN)
