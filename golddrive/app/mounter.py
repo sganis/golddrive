@@ -25,7 +25,7 @@ def set_drive_name(name, userhost):
 def set_drive_icon(letter):
 	
 	loc = os.path.dirname(os.path.realpath(__file__))
-	ico = fr'{loc}\ui\assets\golddrive.ico'
+	ico = fr'{loc}\icon\golddrive.ico'
 	
 	logger.info(f'Setting drive icon as {ico}...')
 	

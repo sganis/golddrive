@@ -19,7 +19,7 @@ VERSION = '1.0.0'
 
 DIR 	= os.path.abspath(os.path.dirname(__file__))
 
-from ui.app_ui import Ui_MainWindow
+from app_ui import Ui_MainWindow
 
 logging.basicConfig(
 	level=logging.INFO, 
@@ -59,12 +59,12 @@ class Window(QMainWindow, Ui_MainWindow):
 		self.loaded = False
 		self.setWindowTitle('Gold Drive')
 		app_icon = QIcon()
-		app_icon.addFile(':/assets/icon_16.png', QSize(16,16))
-		app_icon.addFile(':/assets/icon_32.png', QSize(32,32))
-		app_icon.addFile(':/assets/icon_64.png', QSize(64,64))
-		app_icon.addFile(':/assets/icon_128.png', QSize(128,128))
+		app_icon.addFile(':/images/icon_16.png', QSize(16,16))
+		app_icon.addFile(':/images/icon_32.png', QSize(32,32))
+		app_icon.addFile(':/images/icon_64.png', QSize(64,64))
+		app_icon.addFile(':/images/icon_128.png', QSize(128,128))
 		QApplication.setWindowIcon(app_icon)
-		stream = QFile(':/assets/style.css')
+		stream = QFile(':/style/style.css')
 		if stream.open(QIODevice.ReadOnly | QFile.Text):
 			self.setStyleSheet(QTextStream(stream).readAll())
 
