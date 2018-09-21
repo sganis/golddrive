@@ -11,16 +11,6 @@ Source code available at http://github.com/sganis/golddrive.
 - Microsoft C++ 2015 Runtime:
   https://www.microsoft.com/en-us/download/details.aspx?id=48145
 
-# Project folders
-
-```
-- app:           main app
-- lib:           python embedded
-- sshfs:         sshfs and ssh
-- config.json:   configuration file
-- golddrive.exe: application executable
-- readme.md:     this file
-```
 
 # Known issues
 
@@ -30,10 +20,10 @@ Source code available at http://github.com/sganis/golddrive.
 # Benchmarks
 
   - ExpandDrive
-    * Commercial, 10x slower
+    * Commercial, 10x slower, 3 MB/s.
     * Electron app, 50 USD.
     * Drive mounted as exfs with 10 TB free
-    * stable, 10x slower, 3 MB/s, no cmd line, cloud options.
+    * stable, 10x slower, no cmd line, cloud options.
     * Apparently deletes files without permissions.
 
   - Montain Duck
@@ -54,12 +44,3 @@ Source code available at http://github.com/sganis/golddrive.
   	* Qt app
     * Requires cloud account
 
-
-  
-# TODO
-
-- Login first time with host and password form
-- Connect using key instead of asking password if ssh key is setup already 
-- Create installer
-- Check for WinFSP and prompt to install
-- About software versions: ssh, sshfs, winfsp, and golddrive
