@@ -29,27 +29,31 @@ Source code available at http://github.com/sganis/golddrive.
 
 # Benchmarks
 
-  - SFTPNetDrive:
-  	* Commercial, free for personal use. 
-    * unstable, drive is disconnected on intensive i/o.
-    * Nsoftware, ipworks ssh .net company.
-    * C++ app.
   - ExpandDrive
-  	* Drive mounted as exfs with 10 TB free
-    * Commercial
+    * Commercial, 10x slower
+    * Electron app, 50 USD.
+    * Drive mounted as exfs with 10 TB free
     * stable, 10x slower, 3 MB/s, no cmd line, cloud options.
-    * electron app, 50 USD.
     * Apparently deletes files without permissions.
-    * overall: good.
+
+  - Montain Duck
+    * Commercial, unstable, 2x slower
+    * Mono/.Net app
+    * Drive mounted as ntfs without permissions
+    * Cannot mount root folder
+    * Error messages on intensive i/o, need to reconnect manually
+
+  - SFTPNetDrive:
+  	* Commercial, unstable, slow, free for personal use. 
+    * C++ app.
+    * Drive is disconnected on intensive i/o.
+    * Nsoftware, ipworks ssh .net company.
+
   - NetDrive
   	* Commercial
-  	* Qt app, requires cloud account
-  - Montain Duck
-    * Commercial
-    * Drive mounted as ntfs without permissions
-    * .Net app
-    * Cannot mount root folder, 2x slower than sshfs-win.
-    * Error messages on intensive i/o, need to reconnect manually.
+  	* Qt app
+    * Requires cloud account
+
 
   
 # TODO

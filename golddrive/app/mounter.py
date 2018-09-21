@@ -129,6 +129,9 @@ def mount(drive, userhost, appkey, port=22, drivename=''):
 		rb.error = r.stderr
 		if 'mount point in use' in rb.error:
 			rb.error = 'Drive in use'
+		if 'winfsp-x64.dll not found' in rb.error:
+			rb.error = 'WinFSP not installed'
+		rb.returncode = util.ReturnCode.BAD_MOUNT
 		return rb
 	
 	set_drive_name(drivename, userhost)

@@ -180,6 +180,7 @@ class Window(QMainWindow, Ui_MainWindow):
 				self.end(rb.error)
 
 			else:
+				print(rb.returncode)
 				assert rb.returncode == util.ReturnCode.OK
 				msg = (f"CONNECTED\n\n{ util.makeHyperlink('open_drive', 'Open') }")
 				self.end(util.richText(msg))
