@@ -1,23 +1,19 @@
-# Gold Drive 1.0.0
-
-Date: 08/15/2018
+# Gold Drive
 
 Map a network drive to a remote file systems using SSH.
-Source code available at http://github.com/sganis/golddrive.
 
-# Dependencies
+## Dependencies
 
 - WinFsp: https://github.com/billziss-gh/winfsp/releases/download/v1.3/winfsp-1.3.18160.msi
 - Microsoft C++ 2015 Runtime:
   https://www.microsoft.com/en-us/download/details.aspx?id=48145
 
-
-# Known issues
+## Known issues
 
 - Error: Cannot create WinFsp-FUSE file system: unspecified error.
   It is missing this Windows Update: Security Update for Windows 7 for x64-based Systems (KB3033929), available at https://technet.microsoft.com/en-us/library/security/3033929.aspx
 
-# Benchmarks
+## Alternatives and Benchmarks
 
   - ExpandDrive
     * Commercial, 10x slower, 3 MB/s.
@@ -43,4 +39,9 @@ Source code available at http://github.com/sganis/golddrive.
   	* Commercial
   	* Qt app
     * Requires cloud account
+
+## Ciphers
+
+- check server cipher support: `nmap --script ssh2-enum-algos -sV -p <port> <host>`
+- client: `ssh -Q cipher`
 

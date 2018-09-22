@@ -119,6 +119,7 @@ def mount(drive, userhost, appkey, port=22, drivename=''):
 		-o DirInfoTimeout=5000
 		-o VolumeInfoTimeout=5000
 		'''
+		# -o Ciphers=aes128-gcm@openssh.com
 		# -o ServerAliveCountMax=10000
 		# -o ssh_command='ssh -vv -d'
 		

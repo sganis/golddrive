@@ -182,13 +182,14 @@ def getVersions():
 	
 	r = run(f'ssh -V', capture=True)
 	if r.returncode == 0:
-		m = re.match(r'(OpenSSH[^,]+),[\s]*(OpenSSL[\s]?[\w.]+)', r.stderr)
+		m = re.match(r'(OpenSSH[^,]+),[\s]*(OpenSSL[\s]?[\w.]+)[\s]+([\w\s]+)', r.stderr)
 		if m:
-			ssh = f'{m.group(1)}\n{m.group(2)}'
+			ssh = f'{ m.group(1) }\n{ m.group(2) } ({ m.group(3) })'
 	
 	r = run(f'sshfs -V', capture=True)
 	if r.returncode == 0:
-		sshfs = f'{r.stdout}'
+		out = r.stdout.replace('version ','')
+		sshfs = fr"{out}"
 	
 	p86 = os.path.expandvars('%ProgramFiles(x86)%')
 	cmd =f"wmic datafile where name='{p86}\\WinFsp\\bin\\winfsp-x64.dll' get version /format:list"
