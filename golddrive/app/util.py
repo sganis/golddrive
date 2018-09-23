@@ -178,27 +178,40 @@ def run(cmd, capture=False, shell=True, timeout=30):
 def getVersions():
 	ssh = ''
 	sshfs = ''
+	cygwin = ''
 	winfsp = ''
 	
 	r = run(f'ssh -V', capture=True)
 	if r.returncode == 0:
-		m = re.match(r'(OpenSSH[^,]+),[\s]*(OpenSSL[\s]?[\w.]+)[\s]+([\w\s]+)', r.stderr)
-		if m:
-			ssh = f'{ m.group(1) }\n{ m.group(2) } ({ m.group(3) })'
-	
+		# m = re.match(r'(OpenSSH[^,]+),[\s]*(OpenSSL[\s]?[\w.]+)[\s]+([\w\s]+)', r.stderr)
+		# if m:
+		# 	ssh = f'{ m.group(1) }\n{ m.group(2) } ({ m.group(3) })'
+		for c in r.stderr.split(','):
+			if c.strip():
+				ssh += c.strip().replace('  ',' ') + '\n'
+		ssh = ssh.strip()
 	r = run(f'sshfs -V', capture=True)
 	if r.returncode == 0:
 		out = r.stdout.replace('version ','')
 		sshfs = fr"{out}"
 	
+
+	sshfs_path = os.path.dirname(run(f'where sshfs', capture=True).stdout)
+	cmd =f"wmic datafile where name='{ sshfs_path }\\cygwin1.dll' get version /format:list"
+	r = run(cmd.replace('\\','\\\\'), capture=True)
+	if r.returncode == 0 and '=' in r.stdout:
+		ver = r.stdout.split("=")[-1]
+		cygwin = f'Cygwin {ver}'
+
+
 	p86 = os.path.expandvars('%ProgramFiles(x86)%')
 	cmd =f"wmic datafile where name='{p86}\\WinFsp\\bin\\winfsp-x64.dll' get version /format:list"
 	r = run(cmd.replace('\\','\\\\'), capture=True)
 	if r.returncode == 0 and '=' in r.stdout:
-		winfsp_ver = r.stdout.split("=")[-1]
-		winfsp = f'WINFSP {winfsp_ver}'
+		ver = r.stdout.split("=")[-1]
+		winfsp = f'WINFSP {ver}'
 
-	result = f'{ssh}\n{sshfs}\n{winfsp}'
+	result = f'{ssh}\n{sshfs}\n{cygwin}\n{winfsp}'
 	return result
 
 

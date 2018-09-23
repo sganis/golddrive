@@ -2,7 +2,7 @@
 	// GoldDrive configuration file.
 	// It's json format with support for comments, trailing commas, 
 	// and environment variables
-	"sshfs_path" 		: "%GOLDDRIVE%\\sshfs\\v3.4.1\\bin",
+	"sshfs_path" 		: "%GOLDDRIVE%\\sshfs\\v3.5-ssh-win\\bin",
 	"logfile" 			: "%GOLDDRIVE%\\golddrive.log",
 	// "editor" 			: "C:\\Windows\\notepad.exe",
 	"editor" 			: "C:\\Program Files\\Sublime Text 3\\sublime_text.exe",
