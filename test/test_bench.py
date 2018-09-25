@@ -53,15 +53,20 @@ def setup_module():
 
 def teardown_module():
 	for fname in files:
-		os.remove(fr'{remot_dir}\{fname}')
 		os.remove(fr'{local_dir}\{fname}')
+	os.rmdir(local_dir)
+	
 	rb = mounter.unmount(drive)
 	assert rb.drive_status == 'DISCONNECTED'
 
 
+# def robocopy(args):
+# 	# util.run(f'copy {args[0]} {args[1]}', timeout=300)
+# 	util.run(f'robocopy {os.path.dirname(args[0])} {os.path.dirname(args[1])} file_big.bin /njh /njs /ndl /nc /ns', timeout=300)
+
 def copy(args):
 	util.run(f'copy {args[0]} {args[1]}', timeout=300)
-
+	
 def test_copy():
 
 	# if not os.path.exists(remot_dir):
@@ -77,12 +82,29 @@ def test_copy():
 		
 	t = time.time()
 	for fname in files:
-		copy([fr'{remot_dir}\{fname}', fr'{local_dir}\{fname}_2'])
+		copy([fr'{remot_dir}\{fname}', fr'{local_dir}\{fname}'])
 	print(f'read : { round(BYTES/1024/1024/(time.time()-t)) } MB/s')
 	
 	for fname in files:
-		assert md5sum(fr'{local_dir}\{fname}_2') == files[fname]
-		os.remove(fr'{local_dir}\{fname}_2')
+		assert md5sum(fr'{local_dir}\{fname}') == files[fname]
+		os.remove(fr'{remot_dir}\{fname}')
+
+	# t = time.time()
+	# for fname in files:
+	# 	robocopy([fr'{local_dir}\{fname}', fr'{remot_dir}\{fname}'])
+	# print(f'write: { round(BYTES/1024/1024/(time.time()-t)) } MB/s')
+
+	# for fname in files:
+	# 	os.remove(fr'{local_dir}\{fname}')
+		
+	# t = time.time()
+	# for fname in files:
+	# 	robocopy([fr'{remot_dir}\{fname}', fr'{local_dir}\{fname}'])
+	# print(f'read : { round(BYTES/1024/1024/(time.time()-t)) } MB/s')
+	
+	# for fname in files:
+	# 	assert md5sum(fr'{local_dir}\{fname}') == files[fname]
+	# 	os.remove(fr'{remot_dir}\{fname}')
 
 
 	# pool = mp.Pool()

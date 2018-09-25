@@ -190,6 +190,7 @@ def getVersions():
 			if c.strip():
 				ssh += c.strip().replace('  ',' ') + '\n'
 		ssh = ssh.strip()
+		
 	r = run(f'sshfs -V', capture=True)
 	if r.returncode == 0:
 		out = r.stdout.replace('version ','')
