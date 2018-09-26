@@ -13,15 +13,22 @@
 			"drivename" : "GOLDDRIVE",
 			"user" 		: "support",
 			"port" 		: "2222",
-			"hosts" 	: ["192.168.100.201"],
-		},
-		"x:" : {
-			"drivename" : "Simulation",
 			"hosts" 	: ["localhost"],
-			"user" 		: "support",
-			"port" 		: "2222",
-			
-		},	
+		},
 	}
+	// 	"Z:" : {
+	// 		"drivename" : "GOLDDRIVE",
+	// 		"user" 		: "support",
+	// 		"port" 		: "2222",
+	// 		"hosts" 	: ["192.168.100.201"],
+	// 	},
+	// 	"x:" : {
+	// 		"drivename" : "Simulation",
+	// 		"hosts" 	: ["localhost"],
+	// 		"user" 		: "support",
+	// 		"port" 		: "2222",
+			
+	// 	},	
+	// }
 }
 

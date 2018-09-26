@@ -16,7 +16,7 @@ import setupssh
 logging.basicConfig(level=logging.ERROR)
 
 files = {}
-BYTES = 1024*1024*1024
+BYTES = 1024*1024*100
 remot_dir = fr'{drive}\tmp'
 local_dir = fr'{DIR}\temp'
 

@@ -20,7 +20,7 @@ assert js
 path 		= js['sshfs_path']
 assert os.path.exists(fr'{path}\sshfs.exe')
 assert os.path.exists(fr'{path}\ssh.exe')
-os.environ['PATH'] += f';{path}'
+os.environ['PATH'] = f"{path};{ os.environ['PATH'] }"
 
 userhost 	= f'{user}@{host}'
 sshdir 		= os.path.expandvars("%USERPROFILE%")
