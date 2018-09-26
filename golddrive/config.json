@@ -15,12 +15,12 @@
 			"port" 		: "2222",
 			"hosts" 	: ["192.168.100.201"],
 		},
-	// }
-		"S:" : {
+		"x:" : {
 			"drivename" : "Simulation",
-			"hosts" 	: ["192.168.100.201", "linux01"],
-			"user" 		: "sag",
-			"options" 	: "",
+			"hosts" 	: ["localhost"],
+			"user" 		: "support",
+			"port" 		: "2222",
+			
 		},	
 	}
 }
