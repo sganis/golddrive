@@ -1,5 +1,5 @@
 
-FROM microsoft/windowsservercore:1709
+FROM microsoft/windowsservercore@sha256:c06b4bfaf634215ea194e6005450740f3a230b27c510cf8facab1e9c678f3a99
 
 # Install Powershell
 ADD https://github.com/PowerShell/PowerShell/releases/download/v6.0.0/PowerShell-6.0.0-win-x64.zip c:/powershell.zip
