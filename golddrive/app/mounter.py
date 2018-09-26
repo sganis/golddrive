@@ -19,16 +19,14 @@ def set_drive_name(name, userhost):
 	logger.info(f'Setting drive name as {name}...')
 	key = fr'HKCU\Software\Microsoft\Windows\CurrentVersion'
 	key = fr'{key}\Explorer\MountPoints2\##sshfs#{userhost}'
-	cmd = f'reg add {key} /v _LabelFromReg /d {name} /f >nul 2>&1'
-	util.run(cmd)
+	cmd = f'reg add {key} /v _LabelFromReg /d {name} /f'
+	util.run(cmd, capture=True)
 
 def set_drive_icon(letter):
 	
 	loc = os.path.dirname(os.path.realpath(__file__))
-	ico = fr'{loc}\icon\golddrive.ico'
-	
-	logger.info(f'Setting drive icon as {ico}...')
-	
+	ico = fr'{loc}\icon\golddrive.ico'	
+	logger.info(f'Setting drive icon as {ico}...')	
 	explorer = fr'HKCU\Software\Classes\Applications\Explorer.exe'
 	keys = [ 
 		explorer,	
@@ -36,33 +34,27 @@ def set_drive_icon(letter):
 		fr'{explorer}\Drives\{letter}']
 
 	for key in keys:
-		util.run(f'reg add {key} /ve /f >nul 2>&1')
+		util.run(f'reg add {key} /ve /f', capture=True)
 
 	key = fr'{explorer}\Drives\{letter}\DefaultIcon'
-
-	util.run(f'reg add {key} /ve /d "{ico}" /f >nul 2>&1')
+	util.run(f'reg add {key} /ve /d "{ico}" /f', capture=True)
 
 def set_net_use(letter, userhost):
 
 	logger.info(f'Setting net use info...')
 	remotepath = f'\\\\sshfs\\{userhost}\\..\\..'
 	key = fr'HKCU\Network\{letter}'	
-	util.run(f'''reg add {key} /v RemotePath
-					/d "{remotepath}" /f >nul 2>&1''')
-	util.run(f'''reg add {key} /v UserName /d "" /f >nul 2>&1''')
-	util.run(f'''reg add {key} /v ProviderName
-					/d "Windows File System Proxy" /f >nul 2>&1''')
-	util.run(f'''reg add {key} /v ProviderType
-					/d 20737046 /t REG_DWORD /f >nul 2>&1''')
-	util.run(f'''reg add {key} /v ConnectionType 
-					/d 1 /t REG_DWORD / >nul 2>&1''')
-	util.run(f'''reg add {key} /v ConnectFlags 
-					/d 0 /t REG_DWORD / >nul 2>&1''')
+	util.run(f'''reg add {key} /v RemotePath /d "{remotepath}" /f''', capture=True)
+	util.run(f'''reg add {key} /v UserName /d "" /f''', capture=True)
+	util.run(f'''reg add {key} /v ProviderName /d "Windows File System Proxy" /f''', capture=True)
+	util.run(f'''reg add {key} /v ProviderType /d 20737046 /t REG_DWORD /f''', capture=True)
+	util.run(f'''reg add {key} /v ConnectionType /d 1 /t REG_DWORD /f''', capture=True)
+	util.run(f'''reg add {key} /v ConnectFlags /d 0 /t REG_DWORD /f''', capture=True)
 
 def restart_explorer():
 
-	util.run(fr'taskkill /im explorer.exe /f >nul 2>&1')
-	util.run(fr'start /b c:\windows\explorer.exe')
+	util.run(fr'taskkill /im explorer.exe /f', capture=True)
+	util.run(fr'start /b c:\windows\explorer.exe', capture=True)
 
 def get_process_id(drive):
 	cmd = f"""wmic process where (commandline like '% {drive} %' 
@@ -101,6 +93,7 @@ def mount(drive, userhost, appkey, port=22, drivename=''):
 		-o port={port}
 		-o VolumePrefix=/sshfs/{userhost}
 		-o volname={userhost} 
+		-o PasswordAuthentication=no
 		-o idmap=user,create_umask=007,mask=007 
 		-o rellinks 
 		-o reconnect 
@@ -230,6 +223,7 @@ def check_drive(drive, userhost):
 	cmd = (f'wmic logicaldisk where "providername like \'%{userhost}%\' '
 		   f'or caption=\'{drive}\'" get caption,providername')
 	r = util.run(cmd,	capture=True)
+	# print(f'drive must be here: \'{ r.stdout }\'')
 	in_use = f'{drive}' in r.stdout
 	is_golddrive = False
 	host_use = False

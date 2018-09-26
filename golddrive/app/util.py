@@ -146,10 +146,10 @@ def getUserHostPort(text):
 
 def run(cmd, capture=False, shell=True, timeout=30):
 	cmd = re.sub(r'[\n\r\t ]+',' ', cmd).replace('  ',' ').strip()
-	header = 'CMD'
-	if shell:
-		header += ' (SHELL)'
-	logger.info(f'{header}: {cmd}')
+	# header = 'CMD'
+	# if shell:
+	# 	header += ' (SHELL)'
+	# logger.info(f'{header}: {cmd}')
 	try:
 		r = subprocess.run(cmd, 
 			capture_output=capture, 
@@ -157,10 +157,10 @@ def run(cmd, capture=False, shell=True, timeout=30):
 			timeout=timeout, 
 			text=True)
 	except Exception as ex:
-		logger.error(ex)
 		r = subprocess.CompletedProcess(cmd, 1)
 		r.stdout = ''
 		r.stderr = repr(ex)
+		logger.error(r)
 		return r
 
 	if r.returncode != 0:
@@ -168,8 +168,8 @@ def run(cmd, capture=False, shell=True, timeout=30):
 			logger.warning(r)
 		else:
 			logger.error(r)		
-	# else:
-	# 	logger.info(r)
+	else:
+		logger.info(r)
 	if capture:
 		r.stdout = r.stdout.strip()
 		r.stderr = r.stderr.strip()
