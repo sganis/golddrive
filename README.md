@@ -4,7 +4,7 @@ Map a network drive to a remote file systems using SSH.
 
 ## Dependencies
 
-- WinFsp: https://github.com/billziss-gh/winfsp/releases/download/v1.3/winfsp-1.3.18160.msi
+- WinFsp: https://github.com/billziss-gh/winfsp/releases
 - Microsoft C++ 2015 Runtime:
   https://www.microsoft.com/en-us/download/details.aspx?id=48145
 
