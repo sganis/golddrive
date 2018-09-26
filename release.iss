@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Gold Drive"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.1"
 #define MyAppPublisher "SAG"
 #define MyAppURL "http://github.com/sganis/golddrive"
 #define MyAppExeName "golddrive.exe"
@@ -49,7 +49,7 @@ begin
     Parent := WizardForm.FilenameLabel.Parent;
     Left := WizardForm.FilenameLabel.Left;
     Top := WizardForm.FilenameLabel.Top;
-    Width := WizardForm.FilenameLabel.Width;
+    Width := WizardForm.FilenameLabel.Width;     
     Height := WizardForm.FilenameLabel.Height;
     Caption := ExpandConstant('{cm:InstallingLabel}');
   end;
