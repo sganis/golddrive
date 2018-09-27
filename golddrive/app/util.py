@@ -175,6 +175,14 @@ def run(cmd, capture=False, shell=True, timeout=30):
 		r.stderr = r.stderr.strip()
 	return r
 	
+def getAppVersion():
+	try:
+		with open(os.environ['GOLDDRIVE'] + '\\version.txt') as r:
+			return r.read().strip()
+	except:
+		return 'n/a'
+
+
 def getVersions():
 	ssh = ''
 	sshfs = ''

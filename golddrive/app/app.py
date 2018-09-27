@@ -15,8 +15,6 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QWidget, QLabel,
 	QComboBox, QApplication, QMainWindow, QMenu)
 
-VERSION = '1.0.2'
-
 DIR 	= os.path.abspath(os.path.dirname(__file__))
 
 from app_ui import Ui_MainWindow

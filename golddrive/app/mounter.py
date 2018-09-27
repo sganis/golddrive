@@ -119,7 +119,15 @@ def mount(drive, userhost, appkey, port=22, drivename=''):
 
 	cmd = cmd.replace('\n',' ').replace('\r','').replace('\t','') 
 	logger.info(cmd)
-	proc = subprocess.Popen(cmd, shell=True)
+	proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE)
+	time.sleep(1)
+	rc = proc.poll()
+	if rc != None:
+		out, err = proc.communicate()
+		rb.error = f'sshfs process failed to start: {err}'
+		rb.returncode = util.ReturnCode.BAD_MOUNT
+		return rb
+		
 	# r = util.run(cmd, capture=False)
 	# if r.stderr:
 	# 	logger.error(r.stderr)
@@ -190,26 +198,6 @@ def unmount_all():
 	rb.returncode = util.ReturnCode.OK
 	return rb
 
-# def drive_in_use(drive):
-# 	'''return true if net use <drive> show a connection
-# 	net use and winfsp fsptool-x64.exe lsvol get the info
-# 	'''
-# 	# C:\Program Files (x86)\WinFsp\bin>fsptool-x64.exe lsvol
-# 	# S:  \Device\Volume{c7095a9e-b1dc-11e8-bb5e-080027ae368e}\sshfs\sag@192.168.100.201
-# 	# Y:  \Device\Volume{c7095a8b-b1dc-11e8-bb5e-080027ae368e}\sshfs\support@192.168.100.201
-# 	# C:\Users\sant\Documents\golddrive\release\app>net use Y:
-# 	# Local name        Y:
-# 	# Remote name       \\sshfs\support@192.168.100.201
-# 	# Resource type     Disk
-
-# 	r = util.run(f'net use {drive}', capture=True)
-# 	return f'{drive}' in r.stdout
-
-# def drive_is_golddrive(drive, userhost):
-
-# 	r = util.run(f'net use {drive}', capture=True)
-# 	return fr'\\sshfs\{userhost}' in r.stdout
-
 def drive_works(drive, userhost):
 	'''check if drive is working'''
 	tempfile = f'{drive}\\tmp\\{userhost}.{time.time()}'
@@ -226,7 +214,7 @@ def check_drive(drive, userhost):
 	# r = util.run(f'net use {drive}', capture=True)
 	cmd = (f'wmic logicaldisk where "providername like \'%{userhost}%\' '
 		   f'or caption=\'{drive}\'" get caption,providername')
-	r = util.run(cmd,	capture=True)
+	r = util.run(cmd, shell=True, capture=True)
 	# print(f'drive must be here: \'{ r.stdout }\'')
 	in_use = f'{drive}' in r.stdout
 	is_golddrive = False

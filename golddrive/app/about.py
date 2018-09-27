@@ -6,7 +6,6 @@ from PyQt5.QtCore import pyqtSignal, QUrl, QThread
 from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtWidgets import QWidget
 from about_ui import Ui_About
-from app import VERSION
 import util
 import re
 
@@ -36,7 +35,8 @@ class About(QWidget, Ui_About):
 		self.main = None
 		link = 'http://github.com/sganis/golddrive'
 		link = util.makeHyperlink(link, link)
-		self.about = (f"Golddrive {VERSION}\n"
+		version = util.getAppVersion()
+		self.about = (f"Golddrive {version}\n"
 				"Map drive to ssh server\n"
 				f"{link}\n")
 

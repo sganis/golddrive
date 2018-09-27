@@ -1,3 +1,0 @@
-echo running windows ssh-server-win container...
-docker build -t ssh-server-win .
-docker run --rm -d -p 2222:22 -t ssh-server-win
