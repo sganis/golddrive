@@ -9,7 +9,7 @@ setlocal
 set DIR=%~dp0
 set DIR=%DIR:~0,-1%
 set CWD=%CD%
-cd %DIR%\..\golddrive
+cd %DIR%
 
 lib\python.exe app\app.py
 
