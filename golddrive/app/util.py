@@ -146,10 +146,10 @@ def getUserHostPort(text):
 
 def run(cmd, capture=False, shell=True, timeout=30):
 	cmd = re.sub(r'[\n\r\t ]+',' ', cmd).replace('  ',' ').strip()
-	# header = 'CMD'
-	# if shell:
-	# 	header += ' (SHELL)'
-	# logger.info(f'{header}: {cmd}')
+	header = 'CMD'
+	if shell:
+		header += ' (SHELL)'
+	logger.info(f'{header}: {cmd}')
 	try:
 		r = subprocess.run(cmd, 
 			capture_output=capture, 

@@ -89,8 +89,8 @@ def mount(drive, userhost, appkey, port=22, drivename=''):
 		return rb
 
 	cmd = f'''sshfs {userhost}:/ {drive} 
-		-o IdentityFile={appkey}
 		-o port={port}
+		-o IdentityFile={appkey}
 		-o VolumePrefix=/sshfs/{userhost}
 		-o volname={userhost} 
 		-o PasswordAuthentication=no
@@ -111,21 +111,25 @@ def mount(drive, userhost, appkey, port=22, drivename=''):
 		-o FileInfoTimeout=-1
 		-o DirInfoTimeout=5000
 		-o VolumeInfoTimeout=5000
+		-f
 		'''
 		# -o Ciphers=aes128-gcm@openssh.com
 		# -o ServerAliveCountMax=10000
 		# -o ssh_command='ssh -vv -d'
-		
-	r = util.run(cmd, capture=True)
-	if r.stderr:
-		logger.error(r.stderr)
-		rb.error = r.stderr
-		if 'mount point in use' in rb.error:
-			rb.error = 'Drive in use'
-		if 'winfsp-x64.dll not found' in rb.error:
-			rb.error = 'WinFSP not installed'
-		rb.returncode = util.ReturnCode.BAD_MOUNT
-		return rb
+
+	cmd = cmd.replace('\n',' ').replace('\r','').replace('\t','') 
+	logger.info(cmd)
+	proc = subprocess.Popen(cmd, shell=True)
+	# r = util.run(cmd, capture=False)
+	# if r.stderr:
+	# 	logger.error(r.stderr)
+	# 	rb.error = r.stderr
+	# 	if 'mount point in use' in rb.error:
+	# 		rb.error = 'Drive in use'
+	# 	if 'winfsp-x64.dll not found' in rb.error:
+	# 		rb.error = 'WinFSP not installed'
+	# 	rb.returncode = util.ReturnCode.BAD_MOUNT
+	# 	return rb
 	
 	set_drive_name(drivename, userhost)
 	set_net_use(letter, userhost)
