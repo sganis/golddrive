@@ -8,6 +8,8 @@ Map a network drive to a remote file systems using SSH.
 - Microsoft C++ 2015 Runtime:
   https://www.microsoft.com/en-us/download/details.aspx?id=48145
 
+# Development Notes
+
 ## Known issues
 
 - Error: Cannot create WinFsp-FUSE file system: unspecified error.
@@ -44,4 +46,15 @@ Map a network drive to a remote file systems using SSH.
 
 - check server cipher support: `nmap --script ssh2-enum-algos -sV -p <port> <host>`
 - client: `ssh -Q cipher`
+
+## Build libssh2 with visual studio
+- Requirements:
+  * Cmake for windows
+  * Visual studio and SDK 8.1
+- git clone https://github.com/libssh2/libssh2.git
+- cd libssh2
+- mkdir build
+- cd build
+- cmake .. -G"Visual Studio 14 Win64"
+- cmake --build . --config Release (or open project with visual studio)
 
