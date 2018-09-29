@@ -8,6 +8,7 @@ import re
 import getpass
 from enum import Enum
 
+DIR = os.path.abspath(os.path.dirname(__file__))
 logger = logging.getLogger('golddrive')
 
 IPADDR = r'(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])'
@@ -223,6 +224,21 @@ def getVersions():
 	result = f'{ssh}\n{sshfs}\n{cygwin}\n{winfsp}'
 	return result
 
+def setPath(path=None):
+	golddrive = os.path.realpath(fr'{DIR}\..')
+	os.environ['GOLDDRIVE'] = golddrive
+	path = [
+		# fr'{golddrive}\lib\lib\PyQt5\Qt\bin',
+		fr'C:\Windows\system32',
+		fr'C:\Windows\System32\Wbem',		
+	]
+	os.environ['PATH'] = ';'.join(path)
+	print('PATH:')
+	for p in os.environ['PATH'].split(';'):
+		print(p)
+	# print('sys.path:')
+	# for p in sys.path:
+	# 	print(p)
 
 if __name__ == '__main__':
 

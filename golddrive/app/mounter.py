@@ -93,16 +93,16 @@ def mount(drive, userhost, appkey, port=22, drivename=''):
 		-o IdentityFile={appkey}
 		-o VolumePrefix=/sshfs/{userhost}
 		-o volname={userhost} 
-		-o PasswordAuthentication=no
 		-o idmap=user,create_umask=007,mask=007 
-		-o rellinks 
-		-o reconnect 
 		-o FileSystemName=SSHFS 
-		-o compression=no
-		-o ServerAliveInterval=10 
+		-o PasswordAuthentication=no
 		-o StrictHostKeyChecking=no	
 		-o UserKnownHostsFile=/dev/null
-		-o no_readahead
+		-o ServerAliveInterval=10 
+		-o compression=no
+		-o sshfs_sync
+		-o rellinks 
+		-o reconnect 
 		-o ThreadCount=10
 		-o dir_cache=yes
 		-o dcache_timeout=5

@@ -55,6 +55,13 @@ Map a network drive to a remote file systems using SSH.
 - cd libssh2
 - mkdir build
 - cd build
-- cmake .. -G"Visual Studio 14 Win64"
+- cmake .. -G"Visual Studio 14 2015 Win64"
 - cmake --build . --config Release (or open project with visual studio)
 
+## Build libssh2 with openssl
+- Download openssl binaries: http://p-nand-q.com/programming/windows/openssl-1.1.0c-64bit-release-dll-vs2015.7z
+call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
+set Win64OPENSSL_ROOT_DIR=c:\openssl
+set Win64OPENSSL_INCLUDE_DIR=%Win64OPENSSL_ROOT_DIR%\include
+set Win64OPENSSL_LIBRARIES=%Win64OPENSSL_ROOT_DIR%\lib
+cmake .. -G"Visual Studio 14 2015 Win64" -D"BUILD_SHARED_LIBS=1" -D"CMAKE_BUILD_TYPE=Release" -D"CRYPTO_BACKEND=OpenSSL" -D"OPENSSL_USE_STATIC_LIBS=TRUE" -D"OPENSSL_MSVC_STATIC_RT=TRUE"

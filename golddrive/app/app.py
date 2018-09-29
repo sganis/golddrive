@@ -14,12 +14,10 @@ from PyQt5.QtCore import (QObject, pyqtSlot, QFile, Qt,
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QWidget, QLabel,
 	QComboBox, QApplication, QMainWindow, QMenu)
-
-DIR 	= os.path.abspath(os.path.dirname(__file__))
-
 from app_ui import Ui_MainWindow
 
-logging.basicConfig(level=logging.ERROR, filename=fr'{DIR}\..\golddrive.log',
+
+logging.basicConfig(level=logging.INFO, filename=fr'{util.DIR}\..\golddrive.log',
 	format='%(asctime)s: %(name)-10s: %(levelname)-7s: %(message)s',
 	datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger('golddrive')
@@ -75,7 +73,7 @@ class Window(QMainWindow, Ui_MainWindow):
 		self.returncode = util.ReturnCode.NONE
 
 		# read config.json
-		self.configfile = fr'{DIR}\..\config.json'
+		self.configfile = fr'{util.DIR}\..\config.json'
 		self.param = {}
 		
 		self.config = util.loadConfig(self.configfile)
@@ -337,7 +335,7 @@ class Window(QMainWindow, Ui_MainWindow):
 		editor = self.param["editor"]
 		if not os.path.exists(editor):
 			editor = 'C:\\windows\\notepad.exe'
-		cmd = fr'start /b c:\windows\explorer.exe "{DIR}\.."'
+		cmd = fr'start /b c:\windows\explorer.exe "{util.DIR}\.."'
 		util.run(cmd, shell=True)
 
 	def mnuOpenLogFile(self):
@@ -375,7 +373,7 @@ class Window(QMainWindow, Ui_MainWindow):
 		editor = self.param["editor"]
 		if not os.path.exists(editor):
 			editor = 'C:\\windows\\notepad.exe'
-		cmd = fr'start /b "" "{editor}" "{DIR}\..\config.json'
+		cmd = fr'start /b "" "{editor}" "{util.DIR}\..\config.json'
 		util.run(cmd, shell=True)
 
 	def on_lblMessage_linkActivated(self, link):
@@ -406,7 +404,8 @@ class Window(QMainWindow, Ui_MainWindow):
 
 
 def run():
-	os.environ['GOLDDRIVE'] = os.path.realpath(fr'{DIR}\..')
+	# clean PATH environment variable
+	util.setPath()
 	app = QApplication(sys.argv)
 	window = Window()
 	window.show()
