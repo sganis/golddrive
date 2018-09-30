@@ -5,14 +5,18 @@ Map a network drive to a remote file systems using SSH.
 ## Dependencies
 
 - WinFsp: https://github.com/billziss-gh/winfsp/releases
-- Microsoft C++ 2015 Runtime:
-  https://www.microsoft.com/en-us/download/details.aspx?id=48145
+
 - In case of missing dll like: api-ms-win-crt-runtime-l1-1-0.dll, 
   update the Universal C Runtime in Windows (KB2999226): 
   https://support.microsoft.com/en-us/help/2999226/update-for-universal-c-runtime-in-windows
+
 - In case of error: Cannot create WinFsp-FUSE file system: unspecified error.
   It is missing this Windows Update: Availability of SHA-2 Code Signing Support (KB3033929):
   https://technet.microsoft.com/en-us/library/security/3033929.aspx
+
+- Microsoft C++ 2015 Runtime is not needed:
+  https://www.microsoft.com/en-us/download/details.aspx?id=48145
+
 
 # Development Notes
 

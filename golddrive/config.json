@@ -7,13 +7,6 @@
 	"editor" 			: "C:\\Program Files\\Sublime Text 3\\sublime_text.exe",
 	
 	// drive parameters
-	"drives" : {
-		"Z:" : {
-			"drivename" : "GOLDDRIVE",
-			"user" 		: "sag",
-			"port" 		: "22",
-			"hosts" 	: ["192.168.100.201"],
-		},
-	}
+	"drives" : {}
 }
 

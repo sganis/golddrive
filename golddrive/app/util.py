@@ -230,7 +230,8 @@ def setPath(path=None):
 	path = [
 		# fr'{golddrive}\lib\lib\PyQt5\Qt\bin',
 		fr'{golddrive}',
-		fr'{golddrive}\lib',
+		fr'{golddrive}\python',
+		fr'{golddrive}\python\lib',
 		fr'C:\Windows\system32',
 		fr'C:\Windows\System32\Wbem',		
 	]
