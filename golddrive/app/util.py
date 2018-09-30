@@ -229,6 +229,8 @@ def setPath(path=None):
 	os.environ['GOLDDRIVE'] = golddrive
 	path = [
 		# fr'{golddrive}\lib\lib\PyQt5\Qt\bin',
+		fr'{golddrive}',
+		fr'{golddrive}\lib',
 		fr'C:\Windows\system32',
 		fr'C:\Windows\System32\Wbem',		
 	]

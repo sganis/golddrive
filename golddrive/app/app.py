@@ -7,6 +7,7 @@ import subprocess
 import getpass
 import logging
 import util
+util.setPath()
 from worker import Worker
 from PyQt5.QtCore import (QObject, pyqtSlot, QFile, Qt,
 	QThread, QSize, QSettings, QIODevice, QTextStream,
@@ -404,8 +405,6 @@ class Window(QMainWindow, Ui_MainWindow):
 
 
 def run():
-	# clean PATH environment variable
-	util.setPath()
 	app = QApplication(sys.argv)
 	window = Window()
 	window.show()

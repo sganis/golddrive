@@ -20,7 +20,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int 
 	_fullpath(fullpath, buffer, MAX_PATH);
 	std::string exepath = fullpath;
 	std::string apppath = exepath.substr(0, exepath.find_last_of("\\/"));
-	std::string libpath = apppath + "\\lib\\python37.dll";
+	std::string libpath = apppath + "\\python\\python37.dll";
 
 	HINSTANCE hPylib = LoadLibrary(TEXT(libpath.c_str()));
 	if (hPylib == NULL)
