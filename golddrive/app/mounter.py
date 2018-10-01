@@ -193,16 +193,32 @@ def drive_works(drive, userhost):
 		return True
 	return False
 
+def get_free_drives():
+	import string
+	from ctypes import windll
+	used = []
+	bitmask = windll.kernel32.GetLogicalDrives()
+	for letter in string.ascii_uppercase:
+		if bitmask & 1:
+			used.append(letter)
+		bitmask >>= 1
+	# cmd = ('wmic logicaldisk get name')
+	# r = util.run(cmd, capture=True)
+	# for line in r.stdout.split('\n'):
+	# 	if ':' in line:
+	# 		used.append(line.split(':')[0])
+	return [f'{d}:' for d in GOLDLETTERS if d not in used]
+
 def check_drive(drive, userhost):
 	logger.info(f'checking drive {drive} in {userhost}...')
 	if not (drive and len(drive)==2 and drive.split(':')[0].upper() in GOLDLETTERS):
 		return 'NOT SUPPORTED'
-	# r = util.run(f'net use {drive}', capture=True)
-	cmd = (f'wmic logicaldisk where "providername like \'%{userhost}%\' '
-		   f'or caption=\'{drive}\'" get caption,providername')
-	r = util.run(cmd, shell=True, capture=True)
+	r = util.run(f'net use', capture=True)
+	# cmd = (f'wmic logicaldisk where "providername like \'%{userhost}%\' '
+	# 	   f'or caption=\'{drive}\'" get caption,providername')
+	# r = util.run(cmd, shell=True, capture=True)
 	# print(f'drive must be here: \'{ r.stdout }\'')
-	in_use = f'{drive}' in r.stdout
+	in_use = drive not in get_free_drives()
 	is_golddrive = False
 	host_use = False
 	for line in r.stdout.split('\n'):
@@ -223,21 +239,6 @@ def check_drive(drive, userhost):
 	else:
 		return 'CONNECTED'
 
-def get_free_drives():
-	import string
-	from ctypes import windll
-	used = []
-	bitmask = windll.kernel32.GetLogicalDrives()
-	for letter in string.ascii_uppercase:
-		if bitmask & 1:
-			used.append(letter)
-		bitmask >>= 1
-	# cmd = ('wmic logicaldisk get name')
-	# r = util.run(cmd, capture=True)
-	# for line in r.stdout.split('\n'):
-	# 	if ':' in line:
-	# 		used.append(line.split(':')[0])
-	return [f'{d}:' for d in GOLDLETTERS if d not in used]
 
 
 

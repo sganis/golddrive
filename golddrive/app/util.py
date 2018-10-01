@@ -186,16 +186,17 @@ def getAppVersion():
 	except:
 		return 'n/a'
 
-def get_product_version(path):
-	def LOWORD(dword):
-		return dword & 0x0000ffff
-	def HIWORD(dword): 
-		return dword >> 16
-	pe = pefile.PE(path)
-	#print PE.dump_info()
-	ms = pe.VS_FIXEDFILEINFO.ProductVersionMS
-	ls = pe.VS_FIXEDFILEINFO.ProductVersionLS
-	return (HIWORD (ms), LOWORD (ms), HIWORD (ls), LOWORD (ls))
+# def get_product_version(path):
+# 	import pefile
+# 	def LOWORD(dword):
+# 		return dword & 0x0000ffff
+# 	def HIWORD(dword): 
+# 		return dword >> 16
+# 	pe = pefile.PE(path)
+# 	#print PE.dump_info()
+# 	ms = pe.VS_FIXEDFILEINFO.ProductVersionMS
+# 	ls = pe.VS_FIXEDFILEINFO.ProductVersionLS
+# 	return (HIWORD (ms), LOWORD (ms), HIWORD (ls), LOWORD (ls))
 
 def getVersions():
 	ssh = ''
@@ -256,16 +257,6 @@ def setPath(path=None):
 	# print('sys.path:')
 	# for p in sys.path:
 	# 	print(p)
-
-# def tasklist():
-# 	plist = []
-# 	for proc in [p for p in psutil.process_iter(attrs=['pid','name']) if 'explorer' in p.info['name']]:
-# 		try:
-# 			pinfo = proc.as_dict(attrs=['pid', 'name', 'cmdline'])
-# 			plist.append(p)
-# 		except Exception as ex:
-# 			pass
-# 	return plist
 
 def taskkill(plist, timeout=5):
 	def on_terminate(p):
