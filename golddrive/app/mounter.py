@@ -51,20 +51,6 @@ def set_net_use(letter, userhost):
 	util.run(f'''reg add {key} /v ConnectionType /d 1 /t REG_DWORD /f''', capture=True)
 	util.run(f'''reg add {key} /v ConnectFlags /d 0 /t REG_DWORD /f''', capture=True)
 
-def restart_explorer():
-
-	util.run(fr'taskkill /im explorer.exe /f', capture=True)
-	util.run(fr'start /b c:\windows\explorer.exe', capture=True)
-
-def get_process_id(drive):
-	cmd = f"""wmic process where (commandline like '% {drive} %' 
-		and name='sshfs.exe') get processid"""
-	r = util.run(cmd, capture=True)
-	if r.returncode == 0 and r.stdout:
-		pid = r.stdout.split('\n')[-1]
-		return pid
-	else:
-		return '0'
 
 def mount(drive, userhost, appkey, port=22, drivename=''):
 
@@ -93,7 +79,7 @@ def mount(drive, userhost, appkey, port=22, drivename=''):
 		-o IdentityFile={appkey}
 		-o VolumePrefix=/sshfs/{userhost}
 		-o volname={userhost} 
-		-o idmap=user,create_umask=007,mask=007 
+		-o uid=-1,gid=-1,create_umask=007,mask=007 
 		-o FileSystemName=SSHFS 
 		-o PasswordAuthentication=no
 		-o StrictHostKeyChecking=no	
@@ -155,9 +141,7 @@ def unmount(drive):
 		rb.returncode = util.ReturnCode.BAD_DRIVE
 		return rb
 
-	pid = get_process_id(drive)
-	if pid != '0':
-		util.run(f'taskkill /pid {pid} /t /f >nul 2>&1')
+	util.kill_drive(drive)
 	
 	# cleanup
 	letter = drive.split(':')[0].upper()
@@ -172,7 +156,9 @@ def unmount(drive):
 			if len(fields) > 2:
 				remotepath = fields[2].split('\\')
 				if len(remotepath) > 3:
-					user, host = remotepath[3].split('@')
+					userhost = remotepath[3].split('@')
+					if len(userhost) == 2:
+						user, host = userhost
 
 	util.run(f'reg delete "{regkey}" /f >nul 2>&1', )
 
@@ -238,12 +224,19 @@ def check_drive(drive, userhost):
 		return 'CONNECTED'
 
 def get_free_drives():
+	import string
+	from ctypes import windll
 	used = []
-	cmd = ('wmic logicaldisk get name')
-	r = util.run(cmd, capture=True)
-	for line in r.stdout.split('\n'):
-		if ':' in line:
-			used.append(line.split(':')[0])
+	bitmask = windll.kernel32.GetLogicalDrives()
+	for letter in string.ascii_uppercase:
+		if bitmask & 1:
+			used.append(letter)
+		bitmask >>= 1
+	# cmd = ('wmic logicaldisk get name')
+	# r = util.run(cmd, capture=True)
+	# for line in r.stdout.split('\n'):
+	# 	if ':' in line:
+	# 		used.append(line.split(':')[0])
 	return [f'{d}:' for d in GOLDLETTERS if d not in used]
 
 

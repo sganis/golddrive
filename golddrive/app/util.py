@@ -6,6 +6,8 @@ import logging
 import yaml
 import re
 import getpass
+import psutil
+# import pefile
 from enum import Enum
 
 DIR = os.path.abspath(os.path.dirname(__file__))
@@ -117,6 +119,7 @@ def richText(text):
 	return f'<html><head/><body><p>{t}</p></body></html>'
 
 def makeHyperlink(href, text):
+	
 	return f"<a href='{href}'><span style=\"text-decoration: none; color:#0E639C;\">{text}</span></a>"
 
 def getUserHostPort(text):
@@ -169,8 +172,8 @@ def run(cmd, capture=False, shell=True, timeout=30):
 			logger.warning(r)
 		else:
 			logger.error(r)		
-	else:
-		logger.info(r)
+	# else:
+	# 	logger.info(r)
 	if capture:
 		r.stdout = r.stdout.strip()
 		r.stderr = r.stderr.strip()
@@ -183,6 +186,16 @@ def getAppVersion():
 	except:
 		return 'n/a'
 
+def get_product_version(path):
+	def LOWORD(dword):
+		return dword & 0x0000ffff
+	def HIWORD(dword): 
+		return dword >> 16
+	pe = pefile.PE(path)
+	#print PE.dump_info()
+	ms = pe.VS_FIXEDFILEINFO.ProductVersionMS
+	ls = pe.VS_FIXEDFILEINFO.ProductVersionLS
+	return (HIWORD (ms), LOWORD (ms), HIWORD (ls), LOWORD (ls))
 
 def getVersions():
 	ssh = ''
@@ -206,22 +219,23 @@ def getVersions():
 		sshfs = fr"{out}"
 	
 
-	sshfs_path = os.path.dirname(run(f'where sshfs', capture=True).stdout)
-	cmd =f"wmic datafile where name='{ sshfs_path }\\cygwin1.dll' get version /format:list"
-	r = run(cmd.replace('\\','\\\\'), capture=True)
-	if r.returncode == 0 and '=' in r.stdout:
-		ver = r.stdout.split("=")[-1]
-		cygwin = f'Cygwin {ver}'
+	# sshfs_path = os.path.dirname(run(f'where sshfs', capture=True).stdout)
+	# cmd =f"wmic datafile where name='{ sshfs_path }\\cygwin1.dll' get version /format:list"
+	# r = run(cmd.replace('\\','\\\\'), capture=True)
+	# if r.returncode == 0 and '=' in r.stdout:
+	# 	ver = r.stdout.split("=")[-1]
+	# 	cygwin = f'Cygwin {ver}'
 
 
-	p86 = os.path.expandvars('%ProgramFiles(x86)%')
-	cmd =f"wmic datafile where name='{p86}\\WinFsp\\bin\\winfsp-x64.dll' get version /format:list"
-	r = run(cmd.replace('\\','\\\\'), capture=True)
-	if r.returncode == 0 and '=' in r.stdout:
-		ver = r.stdout.split("=")[-1]
-		winfsp = f'WINFSP {ver}'
+	# p86 = os.path.expandvars('%ProgramFiles(x86)%')
+	# cmd =f"wmic datafile where name='{p86}\\WinFsp\\bin\\winfsp-x64.dll' get version /format:list"
+	# r = run(cmd.replace('\\','\\\\'), capture=True)
+	# if r.returncode == 0 and '=' in r.stdout:
+	# 	ver = r.stdout.split("=")[-1]
+	# 	winfsp = f'WINFSP {ver}'
 
-	result = f'{ssh}\n{sshfs}\n{cygwin}\n{winfsp}'
+	# result = f'{ssh}\n{sshfs}\n{cygwin}\n{winfsp}'
+	result = f'{ssh}\n{sshfs}'
 	return result
 
 def setPath(path=None):
@@ -242,6 +256,62 @@ def setPath(path=None):
 	# print('sys.path:')
 	# for p in sys.path:
 	# 	print(p)
+
+# def tasklist():
+# 	plist = []
+# 	for proc in [p for p in psutil.process_iter(attrs=['pid','name']) if 'explorer' in p.info['name']]:
+# 		try:
+# 			pinfo = proc.as_dict(attrs=['pid', 'name', 'cmdline'])
+# 			plist.append(p)
+# 		except Exception as ex:
+# 			pass
+# 	return plist
+
+def taskkill(plist, timeout=5):
+	def on_terminate(p):
+		if p.returncode != 0:
+			logger.error(f"process {p.name()} terminated with exit code {p.returncode}")
+
+	for p in plist:
+		p.terminate()
+	gone, alive = psutil.wait_procs(plist, timeout=timeout, callback=on_terminate)
+	if alive:
+		# send SIGKILL
+		for p in alive:
+			logger.error(f"process {p.name()} survived SIGTERM; trying SIGKILL")
+			p.kill()
+		gone, alive = psutil.wait_procs(alive, timeout=timeout, callback=on_terminate)
+		if alive:
+			# give up
+			for p in alive:
+				logger.error(f"process {p.name()} survived SIGKILL; giving up")
+				return False
+	return True
+
+def restart_explorer():
+	plist = [p for p in psutil.process_iter(attrs=['name']) if 'explorer.exe' in p.info['name']]
+	taskkill(plist)
+
+	# no need to restart, as p.terminate() restarts explorer?
+	# util.run(fr'start /b c:\windows\explorer.exe', capture=True)
+
+def kill_drive(drive):
+	plist = []
+	for p in [p for p in psutil.process_iter(attrs=['name','cmdline'])]:
+		if p.name() == 'sshfs.exe' and f' {drive} ' in ' '.join(p.cmdline()):
+			plist.append(p)
+	taskkill(plist)
+	
+	# wmic is not working in some machines			
+	# cmd = f"""wmic process where (commandline like '% {drive} %' 
+	# 	and name='sshfs.exe') get processid"""
+	# r = util.run(cmd, capture=True)
+	# if r.returncode == 0 and r.stdout:
+	# 	pid = r.stdout.split('\n')[-1]
+	# 	return pid
+	# else:
+	# 	return '0'
+
 
 if __name__ == '__main__':
 

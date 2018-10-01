@@ -98,7 +98,7 @@ class BackgroundWorker(QObject):
 							p['drivename'])
 	
 	def restart_explorer(self, p):
-		mounter.restart_explorer()
+		util.restart_explorer()
 		return util.ReturnBox('Explorer.exe was restarted','')
 		
 	# slot decorator is optional, used here 
