@@ -6,6 +6,7 @@ import logging
 import subprocess
 import setupssh
 import time
+import winreg
 
 logger = logging.getLogger('golddrive')
 
@@ -15,42 +16,76 @@ def drive_is_valid(drive):
 	return (drive and len(drive)==2 and ':' in drive 
 		and drive.split(':')[0] in GOLDLETTERS)
 
+def reg_get(subkey):
+	try:
+		return winreg.OpenKeyEx(winreg.HKEY_CURRENT_USER, subkey, 0, winreg.KEY_ALL_ACCESS)
+	except Exception as ex:
+		logger.error(f'cannot read registry key {subkey}: {ex}')
+		return None
+
+def reg_add(subkey, name, valtype, value):
+	try:
+		reg_key = winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, subkey, 0)
+		with reg_key:
+			winreg.SetValueEx(reg_key, name, 0, valtype, value)
+	except Exception as ex:
+		logger.error(f'cannot add registry key {subkey}: {ex}')
+
+def reg_del(subkey):
+	try:
+		winreg.DeleteKey(winreg.HKEY_CURRENT_USER, subkey)
+	except Exception as ex:
+		logger.error(f'cannot delete registry key {subkey}: {ex}')
+
+
 def set_drive_name(name, userhost):
 	logger.info(f'Setting drive name as {name}...')
-	key = fr'HKCU\Software\Microsoft\Windows\CurrentVersion'
-	key = fr'{key}\Explorer\MountPoints2\##sshfs#{userhost}'
-	cmd = f'reg add {key} /v _LabelFromReg /d {name} /f'
-	util.run(cmd, capture=True)
+	subkey = fr'Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\##sshfs#{userhost}'
+	reg_add(subkey, '_LabelFromReg', winreg.REG_SZ, name)
+	# key = fr'HKCU\Software\Microsoft\Windows\CurrentVersion'
+	# key = fr'{key}\Explorer\MountPoints2\##sshfs#{userhost}'
+	# cmd = f'reg add {key} /v _LabelFromReg /d {name} /f'
+	# util.run(cmd, capture=True)
 
 def set_drive_icon(letter):
-	
+	logger.info(f'Setting registry drive icon...')
 	loc = os.path.dirname(os.path.realpath(__file__))
 	ico = fr'{loc}\icon\golddrive.ico'	
 	logger.info(f'Setting drive icon as {ico}...')	
-	explorer = fr'HKCU\Software\Classes\Applications\Explorer.exe'
-	keys = [ 
-		explorer,	
-		fr'{explorer}\Drives',
-		fr'{explorer}\Drives\{letter}']
+	explorer = fr'Software\Classes\Applications\Explorer.exe'
+	# keys = [ 
+	# 	explorer,	
+	# 	fr'{explorer}\Drives',
+	# 	fr'{explorer}\Drives\{letter}']
 
-	for key in keys:
-		util.run(f'reg add {key} /ve /f', capture=True)
+	# reg_add(fr'{explorer}\Drives\{letter}', '', winreg.REG_SZ, '')
+
+
+	# for subkey in keys:
+	# 	reg_add(subkey, '_LabelFromReg', winreg.REG_SZ, name)
+		# util.run(f'reg add {key} /ve /f', capture=True)
 
 	key = fr'{explorer}\Drives\{letter}\DefaultIcon'
-	util.run(f'reg add {key} /ve /d "{ico}" /f', capture=True)
+	reg_add(key, '', winreg.REG_SZ, ico)
+	# util.run(f'reg add {key} /ve /d "{ico}" /f', capture=True)
 
 def set_net_use(letter, userhost):
-
-	logger.info(f'Setting net use info...')
+	logger.info(f'Setting registry net use info...')
 	remotepath = f'\\\\sshfs\\{userhost}\\..\\..'
-	key = fr'HKCU\Network\{letter}'	
-	util.run(f'''reg add {key} /v RemotePath /d "{remotepath}" /f''', capture=True)
-	util.run(f'''reg add {key} /v UserName /d "" /f''', capture=True)
-	util.run(f'''reg add {key} /v ProviderName /d "Windows File System Proxy" /f''', capture=True)
-	util.run(f'''reg add {key} /v ProviderType /d 20737046 /t REG_DWORD /f''', capture=True)
-	util.run(f'''reg add {key} /v ConnectionType /d 1 /t REG_DWORD /f''', capture=True)
-	util.run(f'''reg add {key} /v ConnectFlags /d 0 /t REG_DWORD /f''', capture=True)
+	key = fr'Network\{letter}'	
+	reg_add(key, 'RemotePath', winreg.REG_SZ, remotepath)
+	reg_add(key, 'UserName', winreg.REG_SZ, '')
+	reg_add(key, 'ProviderName', winreg.REG_SZ, "Windows File System Proxy")
+	reg_add(key, 'ProviderType', winreg.REG_DWORD, 20737046)
+	reg_add(key, 'ConnectionType', winreg.REG_DWORD, 1)
+	reg_add(key, 'ConnectFlags', winreg.REG_DWORD, 0)
 
+	# util.run(f'''reg add {key} /v RemotePath /d "{remotepath}" /f''', capture=True)
+	# util.run(f'''reg add {key} /v UserName /d "" /f''', capture=True)
+	# util.run(f'''reg add {key} /v ProviderName /d "Windows File System Proxy" /f''', capture=True)
+	# util.run(f'''reg add {key} /v ProviderType /d 20737046 /t REG_DWORD /f''', capture=True)
+	# util.run(f'''reg add {key} /v ConnectionType /d 1 /t REG_DWORD /f''', capture=True)
+	# util.run(f'''reg add {key} /v ConnectFlags /d 0 /t REG_DWORD /f''', capture=True)
 
 def mount(drive, userhost, appkey, port=22, drivename=''):
 
@@ -132,6 +167,47 @@ def mount(drive, userhost, appkey, port=22, drivename=''):
 	rb.returncode = util.ReturnCode.OK
 	return rb
 
+def clean_drive(drive):
+	# cleanup registry
+	user = ''
+	host = ''
+	letter = drive.split(':')[0].upper()
+	regkey = fr'Network\{letter}'
+	reg_key = reg_get(regkey)
+	if not reg_key:
+		return
+	try:
+		i = 0
+		while 1:
+			name, value, type = winreg.EnumValue(reg_key, i)
+			if 'RemotePath' in name:
+				user, host = value.split('\\')[3].split('@')
+			i += 1
+	except:
+		pass
+	reg_del(regkey)
+
+	if not user:
+		return
+
+	regkey = fr'Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2'
+	reg_key = reg_get(regkey)
+	if not reg_key:
+		return
+	keys = []
+	try:
+		i = 0
+		while 1:
+			asubkey = winreg.EnumKey(reg_key, i)
+			if asubkey.startswith(f'##sshfs#{user}@{host}'):
+				keys.append(f'{regkey}\\{asubkey}')
+			i += 1
+	except:
+		pass
+
+	for k in keys:
+		reg_del(k)
+
 def unmount(drive):
 
 	logger.info(f'Unmounting {drive}...')
@@ -142,34 +218,7 @@ def unmount(drive):
 		return rb
 
 	util.kill_drive(drive)
-	
-	# cleanup
-	letter = drive.split(':')[0].upper()
-	regkey = fr'HKCU\Network\{letter}'
-	r = util.run(f'reg query "{regkey}"', capture=True)
-	user = ''
-	host = ''
-	for line in r.stdout.split('\n'):
-		# print(line)
-		if 'RemotePath' in line:
-			fields = line.strip().split()
-			if len(fields) > 2:
-				remotepath = fields[2].split('\\')
-				if len(remotepath) > 3:
-					userhost = remotepath[3].split('@')
-					if len(userhost) == 2:
-						user, host = userhost
-
-	util.run(f'reg delete "{regkey}" /f >nul 2>&1', )
-
-	regkey = fr'HKCU\Software\Microsoft\Windows'
-	regkey = fr'{regkey}\CurrentVersion\Explorer\MountPoints2'
-	mounts = []
-	r = util.run(f'reg query {regkey}', capture=True)
-	for e in r.stdout.split('\n'):
-		m = e.split('\\')[-1]
-		if m.startswith(f'##sshfs#{user}@{host}'):
-			util.run(f'reg delete "{e.strip()}" /f')
+	clean_drive(drive)
 
 	rb.drive_status = 'DISCONNECTED'
 	rb.returncode = util.ReturnCode.OK

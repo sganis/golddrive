@@ -9,7 +9,7 @@
 	// drive parameters
 	"drives" : {
 		"Z:" : {
-			"drivename" : "GOLDDRIVE",
+			"drivename" : "San",
 			"user" 		: "support",
 			"port" 		: "2222",
 			"hosts" 	: ["192.168.100.201"],
