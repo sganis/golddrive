@@ -264,7 +264,7 @@ def check_drive(drive, userhost):
 	if not (drive and len(drive)==2 and drive.split(':')[0].upper() in GOLDLETTERS):
 		return 'NOT SUPPORTED'
 	r = util.run(f'net use', capture=True)
-	print(r.stdout)
+	# print(r.stdout)
 	# cmd = (f'wmic logicaldisk where "providername like \'%{userhost}%\' '
 	# 	   f'or caption=\'{drive}\'" get caption,providername')
 	# r = util.run(cmd, shell=True, capture=True)
