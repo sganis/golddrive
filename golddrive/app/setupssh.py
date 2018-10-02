@@ -81,6 +81,7 @@ def testssh(userhost, seckey, port=22):
 		seckey_win = seckey.replace('/','\\')
 		logger.error(f'Key does not exist: {seckey_win}')
 		rb.returncode = util.ReturnCode.BAD_LOGIN
+		rb.error = "No key"
 		return rb
 
 	cmd = f'''ssh

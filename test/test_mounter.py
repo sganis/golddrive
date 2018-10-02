@@ -49,8 +49,9 @@ def test_mount_and_unmount():
 def test_mount_without_ssh():
 	if os.path.exists(appkey):		
 		os.remove(appkey)
-	rb = mounter.mount(drive, userhost, appkey, port)
-	assert 'Connection reset by peer' in rb.error
+	# rb = mounter.mount(drive, userhost, appkey, port)
+	rb = setupssh.testssh(userhost, appkey, port)
+	assert 'No key' in rb.error
 	setup_module()
 
 def test_mount_connected():
