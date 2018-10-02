@@ -7,7 +7,9 @@ import subprocess
 import setupssh
 import time
 import winreg
-
+import string
+from ctypes import windll
+	
 logger = logging.getLogger('golddrive')
 
 GOLDLETTERS = 'EGHIJKLMNOPQRSTUVWXYZ'
@@ -121,33 +123,34 @@ def mount(drive, userhost, appkey, port=22, drivename=''):
 		-o UserKnownHostsFile=/dev/null
 		-o ServerAliveInterval=10 
 		-o compression=no
-		-o sshfs_sync
 		-o rellinks 
 		-o reconnect 
-		-o ThreadCount=10
-		-o dir_cache=yes
-		-o dcache_timeout=5
-		-o dcache_clean_interval=300
-		-o KeepFileCache
-		-o FileInfoTimeout=-1
-		-o DirInfoTimeout=5000
-		-o VolumeInfoTimeout=5000
-		-f
 		'''
+		# -o sshfs_sync
+		# -f
+		# -o ThreadCount=10
+		# -o dir_cache=yes
+		# -o dcache_timeout=5
+		# -o dcache_clean_interval=300
+		# -o KeepFileCache
+		# -o FileInfoTimeout=-1
+		# -o DirInfoTimeout=5000
+		# -o VolumeInfoTimeout=5000
 		# -o Ciphers=aes128-gcm@openssh.com
 		# -o ServerAliveCountMax=10000
 		# -o ssh_command='ssh -vv -d'
 
 	cmd = cmd.replace('\n',' ').replace('\r','').replace('\t','') 
 	logger.info(cmd)
-	proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE)
+	proc = subprocess.Popen(cmd, shell=True, 
+		stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 	time.sleep(1)
-	rc = proc.poll()
-	if rc != None:
-		out, err = proc.communicate()
-		rb.error = f'sshfs process failed to start: {err}'
-		rb.returncode = util.ReturnCode.BAD_MOUNT
-		return rb
+	# rc = proc.poll()
+	# # rc = os.system('start "" /b f'{cmd})
+	# if rc != None:
+	# 	rb.error = f'sshfs process failed to start, exit code {rc}'
+	# 	rb.returncode = util.ReturnCode.BAD_MOUNT
+	# 	return rb
 		
 	# r = util.run(cmd, capture=False)
 	# if r.stderr:
@@ -243,8 +246,6 @@ def drive_works(drive, userhost):
 	return False
 
 def get_free_drives():
-	import string
-	from ctypes import windll
 	used = []
 	bitmask = windll.kernel32.GetLogicalDrives()
 	for letter in string.ascii_uppercase:
@@ -263,11 +264,15 @@ def check_drive(drive, userhost):
 	if not (drive and len(drive)==2 and drive.split(':')[0].upper() in GOLDLETTERS):
 		return 'NOT SUPPORTED'
 	r = util.run(f'net use', capture=True)
+	print(r.stdout)
 	# cmd = (f'wmic logicaldisk where "providername like \'%{userhost}%\' '
 	# 	   f'or caption=\'{drive}\'" get caption,providername')
 	# r = util.run(cmd, shell=True, capture=True)
 	# print(f'drive must be here: \'{ r.stdout }\'')
-	in_use = drive not in get_free_drives()
+	free_drives = get_free_drives()
+	# print(free_drives)
+	in_use = drive not in free_drives
+	# print(in_use)
 	is_golddrive = False
 	host_use = False
 	for line in r.stdout.split('\n'):

@@ -39,6 +39,7 @@ def setup_module():
 	assert setupssh.has_app_keys(user)
 	rb = mounter.mount(drive, userhost, appkey, port)
 	assert rb.drive_status == 'CONNECTED' and not rb.error
+	time.sleep(1)
 	assert mounter.check_drive(drive, userhost) == 'CONNECTED'
 
 	if os.path.exists(local_dir):

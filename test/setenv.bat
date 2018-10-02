@@ -6,8 +6,12 @@
 set DIR=%~dp0
 set DIR=%DIR:~0,-1%
 doskey ll=dir
+
 ::set PATH=C:\Python37;C:\Python37\Scripts;%PATH%
 ::set GOLDDRIVE=%DIR%\..
+
+:: needed for winfsp-tests tool
+set PATH=C:\Program Files (x86)\WinFsp\bin;%PATH%
 
 ECHO 1. localhost
 ECHO 2. 192.168.100.201

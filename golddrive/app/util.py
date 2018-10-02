@@ -64,7 +64,7 @@ def loadConfig(path):
 					config[key] = os.path.expandvars(value)
 			config['ssh'] = fr"{config.get('sshfs_path','')}\ssh.exe"
 			config['sshfs'] = fr"{config.get('sshfs_path','')}\sshfs.exe"
-
+			os.environ['GOLDDRIVE_SSHFS'] = config['sshfs']
 			if not os.path.exists(config['ssh']):
 				logger.error('ssh not found')
 			if not os.path.exists(config['sshfs']):
@@ -219,24 +219,18 @@ def getVersions():
 		out = r.stdout.replace('version ','')
 		sshfs = fr"{out}"
 	
-
 	# sshfs_path = os.path.dirname(run(f'where sshfs', capture=True).stdout)
-	# cmd =f"wmic datafile where name='{ sshfs_path }\\cygwin1.dll' get version /format:list"
-	# r = run(cmd.replace('\\','\\\\'), capture=True)
-	# if r.returncode == 0 and '=' in r.stdout:
-	# 	ver = r.stdout.split("=")[-1]
-	# 	cygwin = f'Cygwin {ver}'
+	import version
+	cygwin_path = f"{ os.path.dirname(os.environ['GOLDDRIVE_SSHFS']) }\\cygwin1.dll"
+	cygwin = version.get_file_version(cygwin_path)
+	if cygwin:
+		cygwin = f'Cygwin {cygwin}'
 
-
-	# p86 = os.path.expandvars('%ProgramFiles(x86)%')
-	# cmd =f"wmic datafile where name='{p86}\\WinFsp\\bin\\winfsp-x64.dll' get version /format:list"
-	# r = run(cmd.replace('\\','\\\\'), capture=True)
-	# if r.returncode == 0 and '=' in r.stdout:
-	# 	ver = r.stdout.split("=")[-1]
-	# 	winfsp = f'WINFSP {ver}'
-
-	# result = f'{ssh}\n{sshfs}\n{cygwin}\n{winfsp}'
-	result = f'{ssh}\n{sshfs}'
+	winfsp_dll = os.path.expandvars('%ProgramFiles(x86)%\\WinFsp\\bin\\winfsp-x64.dll')
+	winfsp = version.get_file_version(winfsp_dll);
+	if winfsp:
+		winfsp = f'WinFSP {winfsp}'
+	result = f'{ssh}\n{sshfs}\n{cygwin}\n{winfsp}'
 	return result
 
 def setPath(path=None):
@@ -248,7 +242,7 @@ def setPath(path=None):
 		fr'{golddrive}\python',
 		fr'{golddrive}\python\lib',
 		fr'C:\Windows\system32',
-		fr'C:\Windows\System32\Wbem',		
+		# fr'C:\Windows\System32\Wbem',		
 	]
 	os.environ['PATH'] = ';'.join(path)
 	print('PATH:')
@@ -264,6 +258,7 @@ def taskkill(plist, timeout=5):
 			logger.error(f"process {p.name()} terminated with exit code {p.returncode}")
 
 	for p in plist:
+		logger.info(f'terminating process {p}')
 		p.terminate()
 	gone, alive = psutil.wait_procs(plist, timeout=timeout, callback=on_terminate)
 	if alive:
@@ -287,6 +282,7 @@ def restart_explorer():
 	# util.run(fr'start /b c:\windows\explorer.exe', capture=True)
 
 def kill_drive(drive):
+	logger.info(f'killing drive {drive}...')
 	plist = []
 	for p in [p for p in psutil.process_iter(attrs=['name','cmdline'])]:
 		if p.name() == 'sshfs.exe' and f' {drive} ' in ' '.join(p.cmdline()):
