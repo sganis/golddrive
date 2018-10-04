@@ -284,9 +284,11 @@ def restart_explorer():
 def kill_drive(drive):
 	logger.info(f'killing drive {drive}...')
 	plist = []
-	for p in [p for p in psutil.process_iter(attrs=['name','cmdline'])]:
-		if p.name() == 'sshfs.exe' and f' {drive} ' in ' '.join(p.cmdline()):
-			plist.append(p)
+	for p in psutil.process_iter(attrs=['cmdline']):
+		if p.info['cmdline']:
+			cmdline = ' '.join(p.info['cmdline'])
+			if 'sshfs' in cmdline and f' {drive} ' in cmdline:
+				plist.append(p)
 	taskkill(plist)
 	
 	# wmic is not working in some machines			
