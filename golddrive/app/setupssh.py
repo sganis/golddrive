@@ -172,25 +172,37 @@ def main(userhost, password, userkey='', port=22):
 	# connect
 	client = paramiko.SSHClient()
 	client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-	try:
-		if userkey:
-			# transfer key using user key
+
+	# transfer key using user key
+	if userkey:
+		try:
 			logger.info('Connecting using user keys...')
-			# print(userkey)
-			# print(open(userkey).read())
 			pkey = paramiko.RSAKey.from_private_key_file(userkey)
-			client.connect(hostname=host, username=user, 
-				pkey=pkey, look_for_keys=False, port=port, timeout=10)
-		else:
-			# use password
+			client.connect(hostname=host, username=user,
+						pkey=pkey, look_for_keys=False, port=port, timeout=10)
+		except paramiko.ssh_exception.AuthenticationException:
+			rb.error = f'User or password wrong'
+			rb.returncode = 1
+		except Exception as ex:
+			rb.error = f'connection error: {ex}'
+			rb.returncode = 2
+	if rb.error:
+		logger.error(rb.error)
+
+	# use password
+	if rb.error or not userkey:
+		rb.error = ''
+		try:
 			logger.info('Connecting using password...')
-			client.connect(hostname=host, username=user, 
-				password=password, port=port, timeout=10,
-				look_for_keys=False)			
-	except paramiko.ssh_exception.AuthenticationException:
-		rb.error = f'User or password wrong'
-	except Exception as ex:
-		rb.error = f'connection error: {ex}'
+			client.connect(hostname=host, username=user,
+							password=password, port=port, timeout=10,
+							look_for_keys=False)     
+		except paramiko.ssh_exception.AuthenticationException:
+			rb.error = f'User or password wrong'
+			rb.returncode = 1
+		except Exception as ex:
+			rb.error = f'connection error: {ex}'
+			rb.returncode = 2
 
 	if rb.error:
 		logger.error(rb.error)
@@ -246,19 +258,15 @@ def main(userhost, password, userkey='', port=22):
 if __name__ == '__main__':
 
 	import sys
-	assert (len(sys.argv) > 2 and 
-		'@' in sys.argv[1]) # usage: prog user@host password
+	import getpass
+	assert (len(sys.argv) > 1 and
+			'@' in sys.argv[1]) # usage: prog user@host
 	userhost = sys.argv[1]
-	password = sys.argv[2]
+	password = getpass.getpass('Linux password: ')
 	port=22
+	userkey = os.path.expandvars(r'%USERPROFILE%\.ssh\id_rsa')
 	if ':' in userhost:
-		userhost, port = userhost.split(':')		
-	
-	ssh_path = fr'C:\Program Files\SSHFS-Win\bin'
-	ssh = fr'{ssh_path}\ssh.exe'
-	path = os.environ['PATH']
-	os.environ['PATH'] = fr'{ssh_path};{path}'
-	logging.basicConfig(level=logging.INFO)
+		userhost, port = userhost.split(':')                             
 	logging.basicConfig(level=logging.INFO)
 
-	main(ssh, userhost, password, '', port)
+	main(userhost, password, userkey, port)
