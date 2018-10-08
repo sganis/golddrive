@@ -122,8 +122,16 @@ def generate_keys(seckey, userhost):
 	except Exception as ex:
 		logger.error(f'{ex}, {seckey}')
 		rb.error = str(ex)
-		return rb
+		return rb	
+	
 	pubkey = f'ssh-rsa {sk.get_base64()} {userhost}'
+	
+	try:
+		with open(seckey + '.pub', 'wb') as w:
+			w.write(pubkey)
+	except:
+		logger.error('Could not save public key')
+
 	rb.output = pubkey
 	return rb
 
@@ -215,14 +223,17 @@ def main(userhost, password, userkey='', port=22):
 	logger.info(f'Publising public key...')
 		
 	# Copy to the target machines.
-	cmd = fr"mkdir -p .ssh && \
-		echo '{pubkey}' >> .ssh/authorized_keys && \
-		chmod 700 .ssh/authorized_keys"
-	# print(cmd)
-
+	cmd = f"exec bash -c \"cd; umask 077; mkdir -p .ssh && {{ [[ `grep -c '{pubkey}' .ssh/authorized_keys` -ne 0 ]] || echo '{pubkey}' >> .ssh/authorized_keys; }} && chmod 600 .ssh/authorized_keys || exit 1\" || exit 1"
 	ok = False
+	
 	try:
-		stdin, stdout, stderr = client.exec_command(cmd, timeout=10)		
+		stdin, stdout, stderr = client.exec_command(cmd, timeout=10)
+		rc = stdout.channel.recv_exit_status()   
+		if rc == 0:
+			logger.info('Key transfer successful')
+			rb.returncode = util.ReturnCode.OK
+		else:
+			logger.error(f'Error transfering public key: exit {rc}')
 	except Exception as ex:
 		logger.error(ex)
 		rb.returncode = util.ReturnCode.BAD_SSH

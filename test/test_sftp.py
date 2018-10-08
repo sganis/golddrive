@@ -13,7 +13,7 @@ results = {}
 
 remotefile = '/tmp/file.bin'
 localfile = 'C:\\Temp\\file.bin'
-md5 = '6e18dce63ed54dae611f4172b5b2c5b6'
+md5 = '9aba09e0fc1d288d7ccd7719f3d0f184'
 host = '192.168.100.201'
 port = 22
 user = 'sag'
@@ -43,6 +43,7 @@ def main():
 	# test data: 
 	# create a 1gb file in server
 	# python -c "import os; w=open('/tmp/file.bin','wb');w.write(os.urandom(1024*1024*1024))"
+	# update md5 = md5sum file.bin
 	pkey = paramiko.RSAKey.from_private_key_file(privatekey)
 	# ssh = paramiko.SSHClient()
 	# ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -79,10 +80,17 @@ def main():
 	set_result('ssh2-python', time.time() - t)
 	subprocess.run(f'del {localfile}', shell=True)
 
+	print('copying with mysshfs...')
+	os.environ['PATH'] = fr'C:\Users\sant\Documents\mysshfs\x64\Release;' + os.environ['PATH']
+	t = time.time()
+	subprocess.run(	f'mysshfs 192.168.100.201 sag ss {remotefile} -k', 	shell=True)
+	set_result('mysshfs', time.time() - t)
+	subprocess.run('del localfile', shell=True)
+
 
 	print('copying with sshfs...')
 	t = time.time()
-	subprocess.run(f'copy Z:\\tmp\\file.bin {localfile}', shell=True)
+	subprocess.run(f'copy Y:\\tmp\\file.bin {localfile}', shell=True)
 	set_result('sshfs', time.time() - t)
 	subprocess.run(f'del {localfile}', shell=True)
 
@@ -96,17 +104,6 @@ def main():
 		shell=True)
 	set_result('openssh sftp', time.time() - t)
 	subprocess.run(f'del {localfile}', shell=True)
-
-
-	print('copying with mysshfs...')
-	os.environ['PATH'] = fr'C:\Users\sant\Documents\mysshfs\x64\Release;' + os.environ['PATH']
-	t = time.time()
-	subprocess.run(
-		f'mysshfs.exe 192.168.100.201 sag ss {remotefile} -k', 
-		shell=True)
-	set_result('mysshfs', time.time() - t)
-	subprocess.run('del localfile', shell=True)
-
 
 	# display results order by fastest
 	sorted_results = sorted(results, key=results.get)

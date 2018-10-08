@@ -1,4 +1,4 @@
-mkdir ssh2 && cd ssh2
+mkdir build && cd build
 
 set OPENSSL_VER=1.0.2p
 set OPENSSL_DIR="C:\OpenSSL"
@@ -9,7 +9,7 @@ set "MSVC=Visual Studio 14 2015 Win64"
 ::https://indy.fulgan.com/SSL/openssl-1.0.2o-x64_86-win64.zip
 
 ECHO "Building with platform %MSVC%"
-cmake .. -G "NMake Makefiles"   ^
+cmake .. -G "NMake Makefiles"   		^
  -DCMAKE_BUILD_TYPE=Release             ^
  -DCRYPTO_BACKEND=OpenSSL               ^
  -G"%MSVC%"                             ^
