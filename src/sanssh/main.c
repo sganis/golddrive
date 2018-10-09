@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
     SOCKET sock;
 	SOCKADDR_IN sin;
 	char pkey[MAX_PATH];
-	int rc;
+	int rc, rc_2;
 	LIBSSH2_SESSION *session;
     LIBSSH2_SFTP *sftp_channel;
     LIBSSH2_SFTP_HANDLE *sftp_handle;
@@ -114,8 +114,6 @@ int main(int argc, char *argv[])
 	
 	printf("username   : %s\n", username);
 	printf("private key: %s\n", pkey);
-
-	
 	
 	// init ssh
     rc = libssh2_init (0);
@@ -136,37 +134,35 @@ int main(int argc, char *argv[])
     }
 
     /* Create a session instance */
-    session = libssh2_session_init();
-    if(!session)
-        return -1;
-
+	session = libssh2_session_init();
+	if (!session)
+		return -1;
+	
     /* Since we have set non-blocking, tell libssh2 we are blocking */
-    libssh2_session_set_blocking(session, 1);
-
+	libssh2_session_set_blocking(session, 1);
+	
     /* ... start it up. This will trade welcome banners, exchange keys,
      * and setup crypto, compression, and MAC layers */
-    rc = libssh2_session_handshake(session, sock);
-    if(rc) {
-        fprintf(stderr, "Failure establishing SSH session: %d\n", rc);
-        return -1;
-    }
+	rc = libssh2_session_handshake(session, sock);
+	if (rc) {
+		fprintf(stderr, "Failure establishing SSH session: %d\n", rc);
+		return -1;
+	}
 	// authenticate
 	rc = libssh2_userauth_publickey_fromfile(session, username, NULL, pkey, NULL);
 	if (rc) {
 	    fprintf(stderr, "\tAuthentication by public key failed!\n");
 	    goto shutdown;
-	} else {
-	    //fprintf(stderr, "\tAuthentication by public key succeeded.\n");
-	}
-
+	} 
+	
     // init sftp channel
-    sftp_channel = libssh2_sftp_init(session);
-
-    if (!sftp_channel) {
-        fprintf(stderr, "Unable to init SFTP session\n");
-        goto shutdown;
-    }
-
+	sftp_channel = libssh2_sftp_init(session);
+	
+	if (!sftp_channel) {
+		fprintf(stderr, "Unable to init SFTP session\n");
+		goto shutdown;
+	}
+	
     /* Request a file via SFTP */
     sftp_handle = libssh2_sftp_open(sftp_channel, remotefile, LIBSSH2_FXF_READ, 0);
     if (!sftp_handle) {
@@ -174,6 +170,7 @@ int main(int argc, char *argv[])
                 libssh2_sftp_last_error(sftp_channel));
         goto shutdown;
     }
+	
     fprintf(stderr, "donwloading %s -> %s...\n", remotefile, localfile);
 	
 	FILE *file;
@@ -186,22 +183,21 @@ int main(int argc, char *argv[])
 	int total = 0;
 	size_t bytesize = sizeof(char);
 	int buf_size = 2 * 1024 * 1024;
+	//int buf_size = 30000 * 120;
 	ULONG tend, tstart;
 	tstart = (ULONG)time(NULL);
 	//fprintf(stdout, "time: %lu\n", tstart);
     do {
-        char *mem = (char*)malloc(buf_size);
-
+		char *mem = (char*)malloc(buf_size);
+	
         /* loop until we fail */
         //fprintf(stderr, "libssh2_sftp_read()!\n");
-        rc = libssh2_sftp_read(sftp_handle, mem, buf_size);
-        if (rc > 0) {
-			//printf("bytes read: %d\n", rc);
-            //write(1, mem, rc);
-			if ((bytesWritten = fwrite(mem, bytesize, rc, file)) == -1)
-			{
-				switch (errno)
-				{
+		rc = libssh2_sftp_read(sftp_handle, mem, buf_size);
+		
+		if (rc > 0) {
+			bytesWritten = fwrite(mem, bytesize, rc, file);	
+			if (bytesWritten == -1)	{
+				switch (errno) {
 				case EBADF:
 					perror("Bad file descriptor!");
 					break;
@@ -212,7 +208,6 @@ int main(int argc, char *argv[])
 					perror("Invalid parameter: buffer was NULL!");
 					break;
 				default:
-					// An unrelated error occured   
 					perror("Unexpected error!");
 				}
 				break;
@@ -222,7 +217,7 @@ int main(int argc, char *argv[])
             break;
         }
 		free(mem);
-    } while (1);
+	} while (1);
 
 	tend = (unsigned long)time(NULL);
 	//fprintf(stdout, "time: %lu\n", tend);
