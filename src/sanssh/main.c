@@ -49,6 +49,14 @@ BOOL FileExists(const char* path)
 		!(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
 }
 
+void usage(const char* prog)
+{
+	printf("My own sftp client!\n");
+	printf("usage: %s [options] <host> <user> <remove file> [public key]\n", prog);
+	printf("options:\n");
+	printf("    -V           show version\n");
+}
+
 int main(int argc, char *argv[])
 {
 	const char *hostname = "";
@@ -65,9 +73,14 @@ int main(int argc, char *argv[])
     LIBSSH2_SFTP *sftp_channel;
     LIBSSH2_SFTP_HANDLE *sftp_handle;
 
+	if (argc == 2 && strcmp(argv[1],"-V") == 0) {
+		printf("sanssh 1.0.0\n");
+		return 0;
+	}
+	
 	if (argc < 4) {
-		printf("usage: %s <ip address> <user> <remove file>\n", argv[0]);
-		exit(1);
+		usage(argv[0]);
+		return 1;
 	}
 
 	// initialize socket
