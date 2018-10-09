@@ -1,4 +1,4 @@
-# test_sftp
+# benchmark different technologies
 import os
 import time
 import paramiko
@@ -18,6 +18,10 @@ host = '192.168.100.201'
 port = 22
 user = 'sag'
 privatekey = os.path.expanduser('~\\.ssh\\id_rsa-sag-golddrive')
+DIR = os.path.dirname(os.path.realpath(__file__))
+
+os.environ['PATH'] = fr'{DIR}\sanssh;' + os.environ['PATH']
+os.environ['PATH'] = fr'{DIR}\openssh;' + os.environ['PATH']
 
 
 def validate(fname, md5):	
@@ -45,21 +49,16 @@ def main():
 	# python -c "import os; w=open('/tmp/file.bin','wb');w.write(os.urandom(1024*1024*1024))"
 	# update md5 = md5sum file.bin
 	pkey = paramiko.RSAKey.from_private_key_file(privatekey)
-	# ssh = paramiko.SSHClient()
-	# ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-	# ssh.connect(hostname=host, port=port, username=user, pkey=pkey)
-	# sftp = ssh.open_sftp()
-
-	# transport = paramiko.Transport((host, port))
-	# transport.connect(username=user, pkey=pkey) 
-	# sftp = paramiko.SFTPClient.from_transport(transport)
-	# print('copying with paramiko...')
-	# t = time.time()
-	# sftp.get(remotefile, localfile)
-	# set_result('paramiko', time.time() - t)
-	# subprocess.run(f'del {localfile}', shell=True)
-	# sftp.close()
-	# transport.close()
+	transport = paramiko.Transport((host, port))
+	transport.connect(username=user, pkey=pkey) 
+	sftp = paramiko.SFTPClient.from_transport(transport)
+	print('copying with paramiko...')
+	t = time.time()
+	sftp.get(remotefile, localfile)
+	set_result('paramiko', time.time() - t)
+	subprocess.run(f'del {localfile}', shell=True)
+	sftp.close()
+	transport.close()
 
 
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -80,11 +79,10 @@ def main():
 	set_result('ssh2-python', time.time() - t)
 	subprocess.run(f'del {localfile}', shell=True)
 
-	print('copying with mysshfs...')
-	os.environ['PATH'] = fr'C:\Users\sant\Documents\mysshfs\x64\Release;' + os.environ['PATH']
+	print('copying with sanssh...')
 	t = time.time()
-	subprocess.run(	f'mysshfs 192.168.100.201 sag ss {remotefile} -k', 	shell=True)
-	set_result('mysshfs', time.time() - t)
+	subprocess.run(	f'sanssh {host} {user} {remotefile} {privatekey}', shell=True)
+	set_result('sanssh', time.time() - t)
 	subprocess.run('del localfile', shell=True)
 
 
@@ -96,7 +94,6 @@ def main():
 
 
 	print('copying with openssh sftp client...')
-	os.environ['PATH'] = os.path.realpath(os.path.dirname(__file__))+'\\..\\tools\\openssh;' + os.environ['PATH']
 	os.chdir('C:\\Temp')
 	t = time.time()
 	subprocess.run(
