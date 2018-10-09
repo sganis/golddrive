@@ -82,7 +82,12 @@ def main():
 # > "c:\Program Files (x86)\WinFsp\bin\fsptool-x64.exe" perm s:\tmp
 # O:S-1-5-21-245312111-887313111-311576111-942225G:DUD:P(A;;FA;;;S-1-5-21-245312111-887313111-311576111-942225)(A;;0x1201af;;;DU)(A;;0x1201af;;;WD) (perm=1990801:1049089:1777)
 
-# > "C:\Program Files (x86)\WinFsp\bin>fsptool-x64.exe perm" s:\tmp\file.txt
+# > "C:\Program Files (x86)\WinFsp\bin\fsptool-x64.exe" id
+# User=S-1-5-21-245312057-887313113-311576111-1063052(DOMAIN\user) (uid=2111628)
+# Owner=S-1-5-21-245312057-887313113-311576111-1063052(DOMAIN\user) (uid=2111628)
+# Group=S-1-5-21-245312057-887313113-311576111-513(DOMAIN\Domain Users) (gid=1049089)
+
+# > "C:\Program Files (x86)\WinFsp\bin>fsptool-x64.exe" perm S:\tmp\file.txt
 # O:S-1-0-65534G:DUD:P(A;;0x1f01bf;;;S-1-0-65534)(A;;0x1200a9;;;DU)(A;;0x120088;;;WD) (perm=65534:1049089:0750)
 
 # > C:\Program Files (x86)\WinFsp\bin>del "s:\tmp\file.txt"
