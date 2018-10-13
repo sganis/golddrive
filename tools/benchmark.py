@@ -102,7 +102,7 @@ def main():
 	subprocess.run(
 		f'echo get {remotefile} |sftp -q -i {privatekey} -B 65536 -R 256 -P {port} {user}@{host}', 
 		shell=True)
-	set_result('openssh sftp', time.time() - t)
+	set_result('openssh', time.time() - t)
 	subprocess.run(f'del {localfile}', shell=True)
 
 	# display results order by fastest

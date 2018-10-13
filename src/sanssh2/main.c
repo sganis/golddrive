@@ -23,12 +23,6 @@ int main(int argc, char *argv[])
 	char pkey[MAX_PATH];
 	int rc;
 	char *errmsg;
-	
-	SOCKET sock;
-	SOCKADDR_IN sin;
-	LIBSSH2_SESSION *session;
-	LIBSSH2_SFTP *sftp;
-	
 
 	if (argc == 2 && strcmp(argv[1],"-V") == 0) {
 		printf("sanssh2 1.0.2\n");
@@ -40,29 +34,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	// initialize windows socket
-	WSADATA wsadata;
-	int err;
-	err = WSAStartup(MAKEWORD(2, 0), &wsadata);
-	if (err != 0) {
-		fprintf(stderr, "WSAStartup failed with error: %d\n", err);
-		return 1;
-	}
-	
-	// resolve hostname
 	hostname = argv[1];
-	HOSTENT *he;
-	he = gethostbyname(hostname);
-	if (!he) {
-		fprintf(stderr, "host not found\n");
-		return 1;
-	}
-	sin.sin_addr.s_addr = **(int**)he->h_addr_list;
-	sin.sin_family = AF_INET;
-	sin.sin_port = htons(22);
-	printf("host       : %s\n", hostname);
-	//printf("IP         : %s\n", inet_ntoa(sin.sin_addr));
-
     username = argv[2];
 	remotefile = argv[3];
 	localfile = argv[4];
@@ -76,84 +48,25 @@ int main(int argc, char *argv[])
 		strcpy_s(pkey, MAX_PATH, profile);
 		strcat_s(pkey, MAX_PATH, "\\.ssh\\id_rsa");
 	}
-
 	if (!file_exists(pkey)) {
 		printf("error: cannot read private key: %s\n", pkey);
 		exit(1);
 	}
-	
+	printf("host       : %s\n", hostname);
 	printf("username   : %s\n", username);
 	printf("private key: %s\n", pkey);
 	
-	// init ssh
-    rc = libssh2_init(0);
-    if (rc) {
-		int err = libssh2_session_last_error(session, &errmsg, NULL, 0);		
-		assert(rc == err);
-        fprintf(stderr, "ssh initialization failed: (%d) %s\n", err, errmsg);
-        return 1;
-    }
-
-    /* The application code is responsible for creating the socket
-     * and establishing the connection  */
-    sock = socket(AF_INET, SOCK_STREAM, 0);
-
-    if (connect(sock, (SOCKADDR*)(&sin), sizeof(SOCKADDR_IN)) != 0) {
-        fprintf(stderr, "failed to connect!\n");
-        return -1;
-    }
-
-    /* Create a session instance */
-	session = libssh2_session_init();
-	if (!session)
-		return -1;
-
-	/* non-blocking */
-	//libssh2_session_set_blocking(session, 0);
-	/* blocking */
-	libssh2_session_set_blocking(session, 1);
-
-	/* ... start it up. This will trade welcome banners, exchange keys,
-	* and setup crypto, compression, and MAC layers	*/
-	rc = libssh2_session_handshake(session, sock);
-	//while ((rc = libssh2_session_handshake(session, sock)) == LIBSSH2_ERROR_EAGAIN);
-	if (rc) {
-		fprintf(stderr, "Failure establishing SSH session: %d\n", rc);
-		return -1;
+	char error[ERROR_LEN];
+	SANSSH* sanssh = san_init(hostname, username, pkey, error);
+	if (!sanssh) {
+		fprintf(stderr, "Error initializing sanssh2: %s\n", error);
+		return 1;
 	}
-
-	// authenticate
-	rc = libssh2_userauth_publickey_fromfile(session, username, NULL, pkey, NULL);
-	//while ((rc = libssh2_userauth_publickey_fromfile(
-	//	session, username, NULL, pkey, NULL)) == LIBSSH2_ERROR_EAGAIN);
-	if (rc) {
-	    fprintf(stderr, "\tAuthentication by public key failed: %d\n", rc);
-	    goto shutdown;
-	} 
-
-	// init sftp channel
-	sftp = libssh2_sftp_init(session);
-	if (!sftp) {
-		fprintf(stderr, "Unable to init SFTP session\n");
-		goto shutdown;
-	}
-	/* do {
-		sftp = libssh2_sftp_init(session);
-		if ((!sftp) && (libssh2_session_last_errno(session) !=
-			LIBSSH2_ERROR_EAGAIN)) {
-			fprintf(stderr, "Unable to init SFTP session\n");
-			goto shutdown;
-		}
-	} while (!sftp); */
-
-	/* default mode is blocking */
-	//libssh2_session_set_blocking(session, 1);
-
 	// read in blocking mode
 	//san_read(session, sftp, remotefile, localfile);
 	
 	// read in non-blocking mode
-	san_read_async(sock, session, sftp, remotefile, localfile);
+	san_read_async(sanssh, remotefile, localfile);
 
 	
 	//const char* path = "/tmp/sftp_folder";
@@ -203,15 +116,8 @@ int main(int argc, char *argv[])
 	//
 	//printf("duration: %d secs.\n", time(NULL) - start);
 
-	/* close sftp chanel */
-	libssh2_sftp_shutdown(sftp);
-
-shutdown:
-    libssh2_session_disconnect(session, "sanssh2 disconnected");
-    libssh2_session_free(session);
-    libssh2_exit();
-	closesocket(sock);
-	WSACleanup();
-	fprintf(stderr, "done.\n");
+	/* close */
+	san_finalize(sanssh);
+	
 	return 0;
 }
