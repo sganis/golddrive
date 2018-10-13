@@ -34,8 +34,8 @@ SANSSH * san_init(const char* hostname,	const char* username,
 	HOSTENT *he;
 	int port = 22;
 	SOCKET sock;
-	LIBSSH2_SESSION* ssh;
-	LIBSSH2_SFTP* sftp;
+	LIBSSH2_SESSION* ssh = NULL;
+	LIBSSH2_SFTP* sftp = NULL;
 
 	// initialize windows socket
 	WSADATA wsadata;

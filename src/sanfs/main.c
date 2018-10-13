@@ -43,23 +43,19 @@ static int fs_getattr(
 
 static int fs_mkdir(const char *path, fuse_mode_t mode)
 {
-	debug("mkdir %s\n", path);
-
-    fs_fullpath(path);
+	fs_fullpath(path);
     return -1 != mkdir(path, mode) ? 0 : -errno;
 }
 
 static int fs_unlink(const char *path)
 {
     fs_fullpath(path);
-
     return -1 != unlink(path) ? 0 : -errno;
 }
 
 static int fs_rmdir(const char *path)
 {
     fs_fullpath(path);
-
     return -1 != rmdir(path) ? 0 : -errno;
 }
 
@@ -67,7 +63,6 @@ static int fs_rename(const char *oldpath, const char *newpath, unsigned int flag
 {
     fs_fullpath(newpath);
     fs_fullpath(oldpath);
-
     return -1 != rename(oldpath, newpath) ? 0 : -errno;
 }
 
@@ -76,13 +71,11 @@ static int fs_truncate(const char *path, fuse_off_t size, struct fuse_file_info 
     if (0 == fi)
     {
         fs_fullpath(path);
-
         return -1 != truncate(path, size) ? 0 : -errno;
     }
     else
     {
         int fd = fi_fd(fi);
-
         return -1 != ftruncate(fd, size) ? 0 : -errno;
     }
 }
@@ -108,7 +101,6 @@ static int fs_read(const char *path, char *buf, size_t size, fuse_off_t off,
     struct fuse_file_info *fi)
 {
     int fd = fi_fd(fi);
-
     int nb;
     return -1 != (nb = pread(fd, buf, size, off)) ? nb : -errno;
 }
@@ -117,7 +109,6 @@ static int fs_write(const char *path, const char *buf, size_t size, fuse_off_t o
     struct fuse_file_info *fi)
 {
     int fd = fi_fd(fi);
-
     int nb;
     return -1 != (nb = pwrite(fd, buf, size, off)) ? nb : -errno;
 }
@@ -131,7 +122,6 @@ static int fs_statfs(const char *path, struct fuse_statvfs *stbuf)
 static int fs_release(const char *path, struct fuse_file_info *fi)
 {
     int fd = fi_fd(fi);
-
     close(fd);
     return 0;
 }
@@ -139,14 +129,12 @@ static int fs_release(const char *path, struct fuse_file_info *fi)
 static int fs_fsync(const char *path, int datasync, struct fuse_file_info *fi)
 {
     int fd = fi_fd(fi);
-
     return -1 != fsync(fd) ? 0 : -errno;
 }
 
 static int fs_opendir(const char *path, struct fuse_file_info *fi)
 {
     fs_fullpath(path);
-
     DIR *dirp;
     return 0 != (dirp = opendir(path)) ? (fi_setdirp(fi, dirp), 0) : -errno;
 }
@@ -186,7 +174,6 @@ static int fs_readdir(const char *path, void *buf,
 static int fs_releasedir(const char *path, struct fuse_file_info *fi)
 {
     DIR *dirp = fi_dirp(fi);
-
     return -1 != closedir(dirp) ? 0 : -errno;
 }
 
@@ -195,7 +182,6 @@ static int fs_releasedir(const char *path, struct fuse_file_info *fi)
 static int fs_create(const char *path, fuse_mode_t mode, struct fuse_file_info *fi)
 {
     fs_fullpath(path);
-
     int fd;
     return -1 != (fd = open(path, fi->flags, mode)) ? (fi_setfd(fi, fd), 0) : -errno;
 }
@@ -203,7 +189,6 @@ static int fs_create(const char *path, fuse_mode_t mode, struct fuse_file_info *
 static int fs_utimens(const char *path, const struct fuse_timespec tv[2], struct fuse_file_info *fi)
 {
     fs_fullpath(path);
-
     return -1 != utimensat(AT_FDCWD, path, tv, AT_SYMLINK_NOFOLLOW) ? 0 : -errno;
 }
 
