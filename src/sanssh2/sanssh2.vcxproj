@@ -167,6 +167,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.c" />
+    <ClCompile Include="sanssh2.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="sanssh2.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

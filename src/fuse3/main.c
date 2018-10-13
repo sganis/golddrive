@@ -6,7 +6,7 @@
 #include <fuse.h>
 //#include "winposix.h"
 //#include "fake.h"
-#include "pyutil.h"
+//#include "pyutil.h"
 
 
 //CRITICAL_SECTION CriticalSection;

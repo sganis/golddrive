@@ -21,6 +21,7 @@ privatekey = os.path.expanduser('~\\.ssh\\id_rsa-sag-golddrive')
 DIR = os.path.dirname(os.path.realpath(__file__))
 
 os.environ['PATH'] = fr'{DIR}\sanssh;' + os.environ['PATH']
+os.environ['PATH'] = fr'{DIR}\sanssh2;' + os.environ['PATH']
 os.environ['PATH'] = fr'{DIR}\openssh;' + os.environ['PATH']
 
 
@@ -60,31 +61,33 @@ def main():
 	sftp.close()
 	transport.close()
 
-
+	print('copying with ssh2-python...')
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	sock.connect((host, 22))
 	s = Session()
 	s.handshake(sock)
 	s.userauth_publickey_fromfile(user, privatekey)   
 	sftp = s.sftp_init()
-	print('copying with ssh2-python...')
 	t = time.time()
 	with sftp.open(remotefile, 
 		LIBSSH2_FXF_READ, LIBSSH2_SFTP_S_IRUSR) as r, \
 		open(localfile,'wb') as w:
 		for size, data in r:
 			w.write(data)
-			# print(f'size: {size}')
-			# return
 	set_result('ssh2-python', time.time() - t)
 	subprocess.run(f'del {localfile}', shell=True)
 
 	print('copying with sanssh...')
 	t = time.time()
-	subprocess.run(	f'sanssh {host} {user} {remotefile} {privatekey}', shell=True)
+	subprocess.run(	f'sanssh {host} {user} {remotefile} {localfile} {privatekey}', shell=True)
 	set_result('sanssh', time.time() - t)
 	subprocess.run('del localfile', shell=True)
 
+	print('copying with sanssh2...')
+	t = time.time()
+	subprocess.run(	f'sanssh2 {host} {user} {remotefile} {localfile} {privatekey}', shell=True)
+	set_result('sanssh2', time.time() - t)
+	subprocess.run('del localfile', shell=True)
 
 	print('copying with sshfs...')
 	t = time.time()
@@ -93,7 +96,7 @@ def main():
 	subprocess.run(f'del {localfile}', shell=True)
 
 
-	print('copying with openssh sftp client...')
+	print('copying with openssh...')
 	os.chdir('C:\\Temp')
 	t = time.time()
 	subprocess.run(
