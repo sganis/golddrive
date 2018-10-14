@@ -17,6 +17,9 @@ Map a network drive to a remote file systems using SSH.
 - Microsoft C++ 2015 Runtime is not needed:
   https://www.microsoft.com/en-us/download/details.aspx?id=48145
 
+- Development: Visual Studio 2015, ISO available at:
+  https://go.microsoft.com/fwlink/?LinkId=615434&clcid=0x409
+
 
 # Development Notes
 

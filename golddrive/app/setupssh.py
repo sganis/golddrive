@@ -223,7 +223,8 @@ def main(userhost, password, userkey='', port=22):
 	logger.info(f'Publising public key...')
 		
 	# Copy to the target machines.
-	cmd = f"exec bash -c \"cd; umask 077; mkdir -p .ssh && {{ [[ `grep -c '{pubkey}' .ssh/authorized_keys` -ne 0 ]] || echo '{pubkey}' >> .ssh/authorized_keys; }} && chmod 600 .ssh/authorized_keys || exit 1\" || exit 1"
+	cmd = f"exec bash -c \"cd; umask 077; mkdir -p .ssh && echo '{pubkey}' >> .ssh/authorized_keys && chmod 600 .ssh/authorized_keys || exit 1\" || exit 1"
+	print (cmd)
 	ok = False
 	
 	try:
