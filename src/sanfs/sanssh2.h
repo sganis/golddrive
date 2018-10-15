@@ -40,6 +40,8 @@ static const char *sftp_errors[] = {
 			thread_id, __func__,__LINE__, rc, sftperr, sftp_errors[sftperr], path); \
 }
 
+#define INVALID_HANDLE ((LIBSSH2_SFTP_HANDLE*)(LONG_PTR)-1)
+
 typedef struct _SANSSH {
 	SOCKET socket;
 	LIBSSH2_SESSION *ssh;
@@ -56,13 +58,14 @@ struct dirent
 };
 struct _DIR
 {
-	LIBSSH2_SFTP_HANDLE *h, *fh;
+	LIBSSH2_SFTP_HANDLE *h;
 	struct dirent de;
 	char path[];
 };
 
 int file_exists(const char* path);
 int waitsocket(SANSSH *sanssh);
+void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs);
 SANSSH *san_init(const char *hostname, const char *username, 
 	const char *pkey, char *error);
 int san_finalize(SANSSH *sanssh);

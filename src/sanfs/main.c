@@ -49,7 +49,7 @@ static int fs_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_fil
 
 static int fs_statfs(const char *path, struct fuse_statvfs *stbuf)
 {
-	debug(path);
+	//debug(path);
 	return san_statvfs(sanssh, path, stbuf);
 }
 static int fs_opendir(const char *path, struct fuse_file_info *fi)
@@ -59,6 +59,9 @@ static int fs_opendir(const char *path, struct fuse_file_info *fi)
 	DIR *dirp = san_opendir(sanssh, path);
 	if (dirp) {
 		rc = (fi_setdirp(fi, dirp), 0);
+	}
+	else {
+		rc = -errno;
 	}
 	return rc;
 }
@@ -85,9 +88,10 @@ static int fs_readdir(const char *path, void *buf,	fuse_fill_dir_t filler, fuse_
 
 static int fs_releasedir(const char *path, struct fuse_file_info *fi)
 {
-	debug(path);
+	//debug(path);
 	DIR *dirp = fi_dirp(fi);
-	return -1 != san_closedir(dirp) ? 0 : -errno;
+	int rc = san_closedir(dirp);
+	return rc;
 }
 
 static int fs_mkdir(const char *path, fuse_mode_t mode)
@@ -231,7 +235,7 @@ static struct fuse_operations fs_ops =
 
 static void usage(void)
 {
-    fprintf(stderr, "usage: " PROGNAME " [FUSE options] rootdir mountpoint\n");
+    fprintf(stderr, "usage: " PROGNAME " [FUSE options] host user drive [pkey]\n");
     exit(2);
 }
 char **new_argv(int count, ...)
