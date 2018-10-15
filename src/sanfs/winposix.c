@@ -33,12 +33,12 @@
 #include <fuse.h>
 #include "winposix.h"
 
-struct _DIR
-{
-    HANDLE h, fh;
-    struct dirent de;
-    char path[];
-};
+//struct _DIR
+//{
+//    HANDLE h, fh;
+//    struct dirent de;
+//    char path[];
+//};
 
 #if defined(FSP_FUSE_USE_STAT_EX)
 static inline uint32_t MapFileAttributesToFlags(UINT32 FileAttributes)
@@ -88,80 +88,80 @@ static inline int error(void)
     return -1;
 }
 
-char *realpath(const char *path, char *resolved)
-{
-    char *result;
-
-    if (0 == resolved)
-    {
-        result = malloc(PATH_MAX); /* sets errno */
-        if (0 == result)
-            return 0;
-    }
-    else
-        result = resolved;
-
-    int err = 0;
-    DWORD len = GetFullPathNameA(path, PATH_MAX, result, 0);
-    if (0 == len)
-        err = GetLastError();
-    else if (PATH_MAX < len)
-        err = ERROR_INVALID_PARAMETER;
-
-    if (0 == err)
-    {
-        HANDLE h = CreateFileA(result,
-            FILE_READ_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-            0,
-            OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
-        if (INVALID_HANDLE_VALUE != h)
-            CloseHandle(h);
-        else
-            err = GetLastError();
-    }
-
-    if (0 != err)
-    {
-        if (result != resolved)
-            free(result);
-
-        errno = maperror(err);
-        result = 0;
-    }
-
-    return result;
-}
-
-int statvfs(const char *path, struct fuse_statvfs *stbuf)
-{
-    char root[PATH_MAX];
-    DWORD
-        VolumeSerialNumber,
-        MaxComponentLength,
-        SectorsPerCluster,
-        BytesPerSector,
-        NumberOfFreeClusters,
-        TotalNumberOfClusters;
-
-    if (!GetVolumePathNameA(path, root, PATH_MAX) ||
-        !GetVolumeInformationA(root, 0, 0, &VolumeSerialNumber, &MaxComponentLength, 0, 0, 0) ||
-        !GetDiskFreeSpaceA(root, &SectorsPerCluster, &BytesPerSector,
-            &NumberOfFreeClusters, &TotalNumberOfClusters))
-    {
-        return error();
-    }
-
-    memset(stbuf, 0, sizeof *stbuf);
-    stbuf->f_bsize = SectorsPerCluster * BytesPerSector;
-    stbuf->f_frsize = SectorsPerCluster * BytesPerSector;
-    stbuf->f_blocks = TotalNumberOfClusters;
-    stbuf->f_bfree = NumberOfFreeClusters;
-    stbuf->f_bavail = TotalNumberOfClusters;
-    stbuf->f_fsid = VolumeSerialNumber;
-    stbuf->f_namemax = MaxComponentLength;
-
-    return 0;
-}
+//char *realpath(const char *path, char *resolved)
+//{
+//    char *result;
+//
+//    if (0 == resolved)
+//    {
+//        result = malloc(PATH_MAX); /* sets errno */
+//        if (0 == result)
+//            return 0;
+//    }
+//    else
+//        result = resolved;
+//
+//    int err = 0;
+//    DWORD len = GetFullPathNameA(path, PATH_MAX, result, 0);
+//    if (0 == len)
+//        err = GetLastError();
+//    else if (PATH_MAX < len)
+//        err = ERROR_INVALID_PARAMETER;
+//
+//    if (0 == err)
+//    {
+//        HANDLE h = CreateFileA(result,
+//            FILE_READ_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+//            0,
+//            OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
+//        if (INVALID_HANDLE_VALUE != h)
+//            CloseHandle(h);
+//        else
+//            err = GetLastError();
+//    }
+//
+//    if (0 != err)
+//    {
+//        if (result != resolved)
+//            free(result);
+//
+//        errno = maperror(err);
+//        result = 0;
+//    }
+//
+//    return result;
+//}
+//
+//int statvfs(const char *path, struct fuse_statvfs *stbuf)
+//{
+//    char root[PATH_MAX];
+//    DWORD
+//        VolumeSerialNumber,
+//        MaxComponentLength,
+//        SectorsPerCluster,
+//        BytesPerSector,
+//        NumberOfFreeClusters,
+//        TotalNumberOfClusters;
+//
+//    if (!GetVolumePathNameA(path, root, PATH_MAX) ||
+//        !GetVolumeInformationA(root, 0, 0, &VolumeSerialNumber, &MaxComponentLength, 0, 0, 0) ||
+//        !GetDiskFreeSpaceA(root, &SectorsPerCluster, &BytesPerSector,
+//            &NumberOfFreeClusters, &TotalNumberOfClusters))
+//    {
+//        return error();
+//    }
+//
+//    memset(stbuf, 0, sizeof *stbuf);
+//    stbuf->f_bsize = SectorsPerCluster * BytesPerSector;
+//    stbuf->f_frsize = SectorsPerCluster * BytesPerSector;
+//    stbuf->f_blocks = TotalNumberOfClusters;
+//    stbuf->f_bfree = NumberOfFreeClusters;
+//    stbuf->f_bavail = TotalNumberOfClusters;
+//    stbuf->f_fsid = VolumeSerialNumber;
+//    stbuf->f_namemax = MaxComponentLength;
+//
+//    return 0;
+//}
 
 int popen(const char *path, int oflag, ...)
 {
@@ -185,29 +185,29 @@ int popen(const char *path, int oflag, ...)
     return (int)(intptr_t)h;
 }
 
-int fstat(int fd, struct fuse_stat *stbuf)
-{
-    HANDLE h = (HANDLE)(intptr_t)fd;
-    BY_HANDLE_FILE_INFORMATION FileInfo;
-
-    if (!GetFileInformationByHandle(h, &FileInfo))
-        return error();
-
-    memset(stbuf, 0, sizeof *stbuf);
-    stbuf->st_mode = 0777 |
-        ((FileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? 0040000/* S_IFDIR */ : 0);
-    stbuf->st_nlink = 1;
-    stbuf->st_size = ((UINT64)FileInfo.nFileSizeHigh << 32) | ((UINT64)FileInfo.nFileSizeLow);
-    FspPosixFileTimeToUnixTime(*(PUINT64)&FileInfo.ftCreationTime, (void *)&stbuf->st_birthtim);
-    FspPosixFileTimeToUnixTime(*(PUINT64)&FileInfo.ftLastAccessTime, (void *)&stbuf->st_atim);
-    FspPosixFileTimeToUnixTime(*(PUINT64)&FileInfo.ftLastWriteTime, (void *)&stbuf->st_mtim);
-    FspPosixFileTimeToUnixTime(*(PUINT64)&FileInfo.ftLastWriteTime, (void *)&stbuf->st_ctim);
-#if defined(FSP_FUSE_USE_STAT_EX)
-    stbuf->st_flags = MapFileAttributesToFlags(FileInfo.dwFileAttributes);
-#endif
-
-    return 0;
-}
+//int fstat(int fd, struct fuse_stat *stbuf)
+//{
+//    HANDLE h = (HANDLE)(intptr_t)fd;
+//    BY_HANDLE_FILE_INFORMATION FileInfo;
+//
+//    if (!GetFileInformationByHandle(h, &FileInfo))
+//        return error();
+//
+//    memset(stbuf, 0, sizeof *stbuf);
+//    stbuf->st_mode = 0777 |
+//        ((FileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? 0040000/* S_IFDIR */ : 0);
+//    stbuf->st_nlink = 1;
+//    stbuf->st_size = ((UINT64)FileInfo.nFileSizeHigh << 32) | ((UINT64)FileInfo.nFileSizeLow);
+//    FspPosixFileTimeToUnixTime(*(PUINT64)&FileInfo.ftCreationTime, (void *)&stbuf->st_birthtim);
+//    FspPosixFileTimeToUnixTime(*(PUINT64)&FileInfo.ftLastAccessTime, (void *)&stbuf->st_atim);
+//    FspPosixFileTimeToUnixTime(*(PUINT64)&FileInfo.ftLastWriteTime, (void *)&stbuf->st_mtim);
+//    FspPosixFileTimeToUnixTime(*(PUINT64)&FileInfo.ftLastWriteTime, (void *)&stbuf->st_ctim);
+//#if defined(FSP_FUSE_USE_STAT_EX)
+//    stbuf->st_flags = MapFileAttributesToFlags(FileInfo.dwFileAttributes);
+//#endif
+//
+//    return 0;
+//}
 
 int ftruncate(int fd, fuse_off_t size)
 {
@@ -276,48 +276,48 @@ int close(int fd)
     return 0;
 }
 
-int lstat(const char *path, struct fuse_stat *stbuf)
-{
-    HANDLE h = CreateFileA(path,
-        FILE_READ_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-        0,
-        OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
-    if (INVALID_HANDLE_VALUE == h)
-        return error();
+//int lstat(const char *path, struct fuse_stat *stbuf)
+//{
+//    HANDLE h = CreateFileA(path,
+//        FILE_READ_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+//        0,
+//        OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
+//    if (INVALID_HANDLE_VALUE == h)
+//        return error();
+//
+//    int res = fstat((int)(intptr_t)h, stbuf);
+//
+//    CloseHandle(h);
+//
+//    return res;
+//}
 
-    int res = fstat((int)(intptr_t)h, stbuf);
+//int chmod(const char *path, fuse_mode_t mode)
+//{
+//    /* we do not support file security */
+//    return 0;
+//}
 
-    CloseHandle(h);
+//int lchown(const char *path, fuse_uid_t uid, fuse_gid_t gid)
+//{
+//    /* we do not support file security */
+//    return 0;
+//}
 
-    return res;
-}
-
-int chmod(const char *path, fuse_mode_t mode)
-{
-    /* we do not support file security */
-    return 0;
-}
-
-int lchown(const char *path, fuse_uid_t uid, fuse_gid_t gid)
-{
-    /* we do not support file security */
-    return 0;
-}
-
-int lchflags(const char *path, uint32_t flags)
-{
-#if defined(FSP_FUSE_USE_STAT_EX)
-    UINT32 FileAttributes = MapFlagsToFileAttributes(flags);
-
-    if (0 == FileAttributes)
-        FileAttributes = FILE_ATTRIBUTE_NORMAL;
-
-    if (!SetFileAttributesA(path, FileAttributes))
-        return error();
-#endif
-
-    return 0;
-}
+//int lchflags(const char *path, uint32_t flags)
+//{
+//#if defined(FSP_FUSE_USE_STAT_EX)
+//    UINT32 FileAttributes = MapFlagsToFileAttributes(flags);
+//
+//    if (0 == FileAttributes)
+//        FileAttributes = FILE_ATTRIBUTE_NORMAL;
+//
+//    if (!SetFileAttributesA(path, FileAttributes))
+//        return error();
+//#endif
+//
+//    return 0;
+//}
 
 int truncate(const char *path, fuse_off_t size)
 {
@@ -435,100 +435,100 @@ int rmdir(const char *path)
     return 0;
 }
 
-DIR *opendir(const char *path)
-{
-    HANDLE h = CreateFileA(path,
-        FILE_READ_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-        0,
-        OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
-    if (INVALID_HANDLE_VALUE == h)
-        return error0();
+//DIR *opendir(const char *path)
+//{
+//    HANDLE h = CreateFileA(path,
+//        FILE_READ_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+//        0,
+//        OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
+//    if (INVALID_HANDLE_VALUE == h)
+//        return error0();
+//
+//    size_t pathlen = strlen(path);
+//    if (0 < pathlen && '/' == path[pathlen - 1])
+//        pathlen--;
+//
+//    DIR *dirp = malloc(sizeof *dirp + pathlen + 3); /* sets errno */
+//    if (0 == dirp)
+//    {
+//        CloseHandle(h);
+//        return 0;
+//    }
+//
+//    memset(dirp, 0, sizeof *dirp);
+//    dirp->h = h;
+//    dirp->fh = INVALID_HANDLE_VALUE;
+//    memcpy(dirp->path, path, pathlen);
+//    dirp->path[pathlen + 0] = '/';
+//    dirp->path[pathlen + 1] = '*';
+//    dirp->path[pathlen + 2] = '\0';
+//
+//    return dirp;
+//}
+//
+//int dirfd(DIR *dirp)
+//{
+//    return (int)(intptr_t)dirp->h;
+//}
 
-    size_t pathlen = strlen(path);
-    if (0 < pathlen && '/' == path[pathlen - 1])
-        pathlen--;
+//void rewinddir(DIR *dirp)
+//{
+//    if (INVALID_HANDLE_VALUE != dirp->fh)
+//    {
+//        FindClose(dirp->fh);
+//        dirp->fh = INVALID_HANDLE_VALUE;
+//    }
+//}
 
-    DIR *dirp = malloc(sizeof *dirp + pathlen + 3); /* sets errno */
-    if (0 == dirp)
-    {
-        CloseHandle(h);
-        return 0;
-    }
+//struct dirent *readdir(DIR *dirp)
+//{
+//    WIN32_FIND_DATAA FindData;
+//    struct fuse_stat *stbuf = &dirp->de.d_stat;
+//
+//    if (INVALID_HANDLE_VALUE == dirp->fh)
+//    {
+//        dirp->fh = FindFirstFileA(dirp->path, &FindData);
+//        if (INVALID_HANDLE_VALUE == dirp->fh)
+//            return error0();
+//    }
+//    else
+//    {
+//        if (!FindNextFileA(dirp->fh, &FindData))
+//        {
+//            if (ERROR_NO_MORE_FILES == GetLastError())
+//                return 0;
+//            return error0();
+//        }
+//    }
+//
+//    memset(stbuf, 0, sizeof *stbuf);
+//    stbuf->st_mode = 0777 |
+//        ((FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? 0040000/* S_IFDIR */ : 0);
+//    stbuf->st_nlink = 1;
+//    stbuf->st_size = ((UINT64)FindData.nFileSizeHigh << 32) | ((UINT64)FindData.nFileSizeLow);
+//    FspPosixFileTimeToUnixTime(*(PUINT64)&FindData.ftCreationTime, (void *)&stbuf->st_birthtim);
+//    FspPosixFileTimeToUnixTime(*(PUINT64)&FindData.ftLastAccessTime, (void *)&stbuf->st_atim);
+//    FspPosixFileTimeToUnixTime(*(PUINT64)&FindData.ftLastWriteTime, (void *)&stbuf->st_mtim);
+//    FspPosixFileTimeToUnixTime(*(PUINT64)&FindData.ftLastWriteTime, (void *)&stbuf->st_ctim);
+//#if defined(FSP_FUSE_USE_STAT_EX)
+//    stbuf->st_flags = MapFileAttributesToFlags(FindData.dwFileAttributes);
+//#endif
+//
+//    strcpy(dirp->de.d_name, FindData.cFileName);
+//
+//    return &dirp->de;
+//}
 
-    memset(dirp, 0, sizeof *dirp);
-    dirp->h = h;
-    dirp->fh = INVALID_HANDLE_VALUE;
-    memcpy(dirp->path, path, pathlen);
-    dirp->path[pathlen + 0] = '/';
-    dirp->path[pathlen + 1] = '*';
-    dirp->path[pathlen + 2] = '\0';
-
-    return dirp;
-}
-
-int dirfd(DIR *dirp)
-{
-    return (int)(intptr_t)dirp->h;
-}
-
-void rewinddir(DIR *dirp)
-{
-    if (INVALID_HANDLE_VALUE != dirp->fh)
-    {
-        FindClose(dirp->fh);
-        dirp->fh = INVALID_HANDLE_VALUE;
-    }
-}
-
-struct dirent *readdir(DIR *dirp)
-{
-    WIN32_FIND_DATAA FindData;
-    struct fuse_stat *stbuf = &dirp->de.d_stat;
-
-    if (INVALID_HANDLE_VALUE == dirp->fh)
-    {
-        dirp->fh = FindFirstFileA(dirp->path, &FindData);
-        if (INVALID_HANDLE_VALUE == dirp->fh)
-            return error0();
-    }
-    else
-    {
-        if (!FindNextFileA(dirp->fh, &FindData))
-        {
-            if (ERROR_NO_MORE_FILES == GetLastError())
-                return 0;
-            return error0();
-        }
-    }
-
-    memset(stbuf, 0, sizeof *stbuf);
-    stbuf->st_mode = 0777 |
-        ((FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? 0040000/* S_IFDIR */ : 0);
-    stbuf->st_nlink = 1;
-    stbuf->st_size = ((UINT64)FindData.nFileSizeHigh << 32) | ((UINT64)FindData.nFileSizeLow);
-    FspPosixFileTimeToUnixTime(*(PUINT64)&FindData.ftCreationTime, (void *)&stbuf->st_birthtim);
-    FspPosixFileTimeToUnixTime(*(PUINT64)&FindData.ftLastAccessTime, (void *)&stbuf->st_atim);
-    FspPosixFileTimeToUnixTime(*(PUINT64)&FindData.ftLastWriteTime, (void *)&stbuf->st_mtim);
-    FspPosixFileTimeToUnixTime(*(PUINT64)&FindData.ftLastWriteTime, (void *)&stbuf->st_ctim);
-#if defined(FSP_FUSE_USE_STAT_EX)
-    stbuf->st_flags = MapFileAttributesToFlags(FindData.dwFileAttributes);
-#endif
-
-    strcpy(dirp->de.d_name, FindData.cFileName);
-
-    return &dirp->de;
-}
-
-int closedir(DIR *dirp)
-{
-    if (INVALID_HANDLE_VALUE != dirp->fh)
-        FindClose(dirp->fh);
-
-    CloseHandle(dirp->h);
-    free(dirp);
-
-    return 0;
-}
+//int closedir(DIR *dirp)
+//{
+//    if (INVALID_HANDLE_VALUE != dirp->fh)
+//        FindClose(dirp->fh);
+//
+//    CloseHandle(dirp->h);
+//    free(dirp);
+//
+//    return 0;
+//}
 
 static int maperror(int winerrno)
 {

@@ -1,13 +1,8 @@
 #include "sanssh2.h"
 #include <stdio.h>
+#include <assert.h>
 
-void usage(const char* prog)
-{
-	printf("Sanssh2 - sftp client using libssh2\n");
-	printf("usage: %s [options] <host> <user> <remote file> <local file> [public key]\n", prog);
-	printf("options:\n");
-	printf("    -V           show version\n");
-}
+
 int file_exists(const char* path)
 {
 	DWORD attr = GetFileAttributesA(path);
@@ -308,25 +303,202 @@ int san_rmdir(SANSSH *sanssh, const char * path)
 	}
 	return rc;
 }
-int san_stat(SANSSH *sanssh, const char * path,	LIBSSH2_SFTP_ATTRIBUTES *attrs)
+int san_stat(SANSSH *sanssh, const char * path, struct fuse_stat *stbuf)
+{
+	return san_lstat(sanssh, path, stbuf);
+}
+int san_lstat(SANSSH *sanssh, const char * path, struct fuse_stat *stbuf)
 {
 	int rc = 0;
-	rc = libssh2_sftp_stat(sanssh->sftp, path, attrs);
+	LIBSSH2_SFTP_ATTRIBUTES attrs;
+	rc = libssh2_sftp_lstat(sanssh->sftp, path, &attrs);
 	if (rc) {
-		fprintf(stderr, "libssh2_sftp_stat failed: rc=%d, error=%ld\n",
-			rc, libssh2_sftp_last_error(sanssh->sftp));
+		sftp_error(sanssh, path, rc);
 	}
+	else {
+		memset(stbuf, 0, sizeof *stbuf);
+		stbuf->st_uid = attrs.uid;
+		stbuf->st_gid = attrs.gid;
+		stbuf->st_mode = attrs.permissions;
+		stbuf->st_size = attrs.filesize;
+		stbuf->st_birthtim.tv_sec = attrs.mtime;
+		stbuf->st_atim.tv_sec = attrs.atime;
+		stbuf->st_mtim.tv_sec = attrs.mtime;
+		stbuf->st_ctim.tv_sec = attrs.mtime;
+		// eventually we must support nlink
+		stbuf->st_nlink = 1;
+	}
+
 	return rc;
 }
-int san_lstat(SANSSH *sanssh, const char * path, LIBSSH2_SFTP_ATTRIBUTES *attrs)
+int san_statvfs(SANSSH *sanssh, const char * path, struct fuse_statvfs *stbuf)
 {
 	int rc = 0;
-	rc = libssh2_sftp_lstat(sanssh->sftp, path, attrs);
+	LIBSSH2_SFTP_STATVFS stvfs;
+	rc = libssh2_sftp_statvfs(sanssh->sftp, path, strlen(path), &stvfs);
 	if (rc) {
-		fprintf(stderr, "libssh2_sftp_lstat failed: rc=%d, error=%ld\n",
-			rc, libssh2_sftp_last_error(sanssh->sftp));
+		sftp_error(sanssh, path, rc);
 	}
+	memset(stbuf, 0, sizeof *stbuf);
+	stbuf->f_bsize = stvfs.f_bsize;
+	stbuf->f_frsize = stvfs.f_frsize;
+	stbuf->f_blocks = stvfs.f_blocks;
+	stbuf->f_bfree = stvfs.f_bfree;
+	stbuf->f_bavail = stvfs.f_bavail;
+	stbuf->f_fsid = stvfs.f_fsid;
+	stbuf->f_namemax = stvfs.f_namemax;
 	return rc;
+}
+DIR * san_opendir(SANSSH *sanssh, const char *path)
+{
+	LIBSSH2_SFTP_HANDLE * handle;
+	handle = libssh2_sftp_opendir(sanssh->sftp, path);
+	if (!handle) {
+		fprintf(stderr, "Unable to open directory:\n");
+		sftp_error(sanssh, path, 0);
+	}
+	
+	size_t pathlen = strlen(path);
+	if (0 < pathlen && '/' == path[pathlen - 1])
+		pathlen--;
+
+	DIR *dirp = malloc(sizeof *dirp + pathlen + 3); /* sets errno */
+	if (0 == dirp)
+		return 0;
+	
+	memset(dirp, 0, sizeof *dirp);
+	dirp->h = handle;
+	dirp->fh = 0;
+	memcpy(dirp->path, path, pathlen);
+	dirp->path[pathlen + 0] = '/';
+	dirp->path[pathlen + 1] = '*';
+	dirp->path[pathlen + 2] = '\0';
+
+	return dirp;
+
+}
+int san_dirfd(DIR *dirp)
+{
+	return (int)dirp->h;
+}
+void san_rewinddir(DIR *dirp)
+{
+	if (dirp->fh)
+	{
+		san_close_handle(dirp->fh);
+		dirp->fh = 0;
+	}
+}
+//int san_readdir(SANSSH *sanssh, const char *path)
+//{
+//	int rc = 0;
+//	LIBSSH2_SFTP_HANDLE *handle;
+//	handle = libssh2_sftp_opendir(sanssh->sftp, path);
+//	if (!handle) {
+//		fprintf(stderr, "Unable to open dir with SFTP\n");
+//		return libssh2_sftp_last_error(sanssh->sftp);
+//	}
+//	do {
+//		char mem[512];
+//		char longentry[512];
+//		LIBSSH2_SFTP_ATTRIBUTES attrs;
+//		rc = libssh2_sftp_readdir_ex(handle, mem, sizeof(mem),
+//			longentry, sizeof(longentry), &attrs);
+//		if (rc > 0) {
+//			/* rc is the length of the file name in the mem buffer */
+//			char filetype[4];
+//			get_filetype(attrs.permissions, &filetype);
+//			if (longentry[0] != '\0') {
+//				printf("%3s %10ld %5ld %5ld %s\n",
+//					filetype, attrs.filesize, attrs.uid, attrs.gid,
+//					longentry);
+//			}
+//			else {
+//				if (attrs.flags & LIBSSH2_SFTP_ATTR_PERMISSIONS) {
+//					/* this should check what permissions it is
+//					and print the output accordingly */
+//					printf("--fix----- ");
+//				}
+//				else {
+//					printf("---------- ");
+//				}
+//				if (attrs.flags & LIBSSH2_SFTP_ATTR_UIDGID) {
+//					printf("%4ld %4ld ", attrs.uid, attrs.gid);
+//				}
+//				else {
+//					printf("   -    - ");
+//				}
+//				if (attrs.flags & LIBSSH2_SFTP_ATTR_SIZE) {
+//					printf("%8ld ", attrs.filesize);
+//				}
+//				printf("%s\n", mem);
+//			}
+//		}
+//		else {
+//			break;
+//		}
+//	} while (1);
+//
+//	libssh2_sftp_closedir(handle);
+//}
+
+struct dirent *san_readdir(DIR *dirp)
+{
+	struct fuse_stat *stbuf = &dirp->de.d_stat;
+
+	//if (!dirp->fh)
+	//{
+	//	handle = libssh2_sftp_opendir(sanssh->sftp, path);
+	//	if (!handle) {
+	//		fprintf(stderr, "Unable to open dir with SFTP\n");
+	//		return libssh2_sftp_last_error(sanssh->sftp);
+	//	}
+	//}
+	//else
+	//{
+	//	if (!FindNextFileA(dirp->fh, &FindData))
+	//	{
+	//		if (ERROR_NO_MORE_FILES == GetLastError())
+	//			return 0;
+	//		return error0();
+	//	}
+	//}
+	memset(stbuf, 0, sizeof *stbuf);
+	int rc;
+	char mem[512];
+	char longentry[512];
+	LIBSSH2_SFTP_ATTRIBUTES attrs;
+	assert(dirp->fh);
+	rc = libssh2_sftp_readdir_ex(dirp->fh, mem, sizeof(mem), longentry, sizeof(longentry), &attrs);
+	if (rc > 0) {
+		printf("readdir: %s\n", mem);
+		/* rc is the length of the file name in the mem buffer */
+		//char filetype[4];
+		//get_filetype(attrs.permissions, &filetype);
+		if (longentry[0] != '\0') {
+			//printf("%3s %10ld %5ld %5ld %s\n",
+			//	filetype, attrs.filesize, attrs.uid, attrs.gid,
+			//	longentry);
+		}
+		else {
+			// no valid file stat
+		}
+
+	}
+
+	strcpy(dirp->de.d_name, mem);
+
+	return &dirp->de;
+}
+int san_closedir(DIR *dirp)
+{
+	if (dirp->fh)
+		san_close_handle(dirp->fh);
+
+	san_close_handle(dirp->h);
+	free(dirp);
+
+	return 0;
 }
 void print_stat(const char* path, LIBSSH2_SFTP_ATTRIBUTES *attrs)
 {
@@ -339,16 +511,7 @@ void print_stat(const char* path, LIBSSH2_SFTP_ATTRIBUTES *attrs)
 	printf("atime: %ld\n", attrs->atime);
 	printf("mtime: %ld\n", attrs->mtime);
 }
-int san_statvfs(SANSSH *sanssh, const char * path, LIBSSH2_SFTP_STATVFS *st)
-{
-	int rc = 0;
-	rc = libssh2_sftp_statvfs(sanssh->sftp, path, strlen(path), st);
-	if (rc) {
-		fprintf(stderr, "libssh2_sftp_statvfs failed: rc=%d, error=%ld\n",
-			rc, libssh2_sftp_last_error(sanssh->sftp));
-	}
-	return rc;
-}
+
 void print_statvfs(const char* path, LIBSSH2_SFTP_STATVFS *st)
 {
 	printf("path:    %s\n", path);
@@ -374,15 +537,6 @@ LIBSSH2_SFTP_HANDLE * san_open(SANSSH *sanssh, const char *path, long mode)
 		LIBSSH2_SFTP_S_IRGRP | LIBSSH2_SFTP_S_IROTH);
 	if (!handle) {
 		fprintf(stderr, "Unable to open file\n");
-	}
-	return handle;
-}
-LIBSSH2_SFTP_HANDLE * san_opendir(SANSSH *sanssh, const char *path)
-{
-	LIBSSH2_SFTP_HANDLE * handle;
-	handle = libssh2_sftp_opendir(sanssh->sftp, path);
-	if (!handle) {
-		fprintf(stderr, "Unable to open directory\n");
 	}
 	return handle;
 }
@@ -420,58 +574,6 @@ int san_realpath(SANSSH *sanssh, const char *path, char *target)
 			rc, libssh2_sftp_last_error(sanssh->sftp));
 	}
 	return rc;
-}
-int san_readdir(SANSSH *sanssh, const char *path)
-{
-	int rc = 0;
-	LIBSSH2_SFTP_HANDLE *handle;
-	handle = libssh2_sftp_opendir(sanssh->sftp, path);
-	if (!handle) {
-		fprintf(stderr, "Unable to open dir with SFTP\n");
-		return libssh2_sftp_last_error(sanssh->sftp);
-	}
-	do {
-		char mem[512];
-		char longentry[512];
-		LIBSSH2_SFTP_ATTRIBUTES attrs;
-		rc = libssh2_sftp_readdir_ex(handle, mem, sizeof(mem),
-			longentry, sizeof(longentry), &attrs);
-		if (rc > 0) {
-			/* rc is the length of the file name in the mem buffer */
-			char filetype[4];
-			get_filetype(attrs.permissions, &filetype);
-			if (longentry[0] != '\0') {
-				printf("%3s %10ld %5ld %5ld %s\n",
-					filetype, attrs.filesize, attrs.uid, attrs.gid,
-					longentry);
-			}
-			else {
-				if (attrs.flags & LIBSSH2_SFTP_ATTR_PERMISSIONS) {
-					/* this should check what permissions it is
-					and print the output accordingly */
-					printf("--fix----- ");
-				}
-				else {
-					printf("---------- ");
-				}
-				if (attrs.flags & LIBSSH2_SFTP_ATTR_UIDGID) {
-					printf("%4ld %4ld ", attrs.uid, attrs.gid);
-				}
-				else {
-					printf("   -    - ");
-				}
-				if (attrs.flags & LIBSSH2_SFTP_ATTR_SIZE) {
-					printf("%8ld ", attrs.filesize);
-				}
-				printf("%s\n", mem);
-			}
-		}
-		else {
-			break;
-		}
-	} while (1);
-
-	libssh2_sftp_closedir(handle);
 }
 int run_command(SANSSH *sanssh,	const char *cmd, char *out, char *err)
 {

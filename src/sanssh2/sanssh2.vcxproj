@@ -22,7 +22,7 @@
     <ProjectGuid>{A372215A-26C4-4725-B758-010711DAAD23}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>mysshfs</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
     <ProjectName>sanssh2</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

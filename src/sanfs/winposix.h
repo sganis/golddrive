@@ -34,12 +34,18 @@
 #define AT_FDCWD                        -2
 #define AT_SYMLINK_NOFOLLOW             2
 
-typedef struct _DIR DIR;
-struct dirent
-{
-    struct fuse_stat d_stat;
-    char d_name[255];
-};
+//typedef struct _DIR DIR;
+//struct dirent
+//{
+//	struct fuse_stat d_stat;
+//	char d_name[255];
+//};
+//struct _DIR
+//{
+//	HANDLE h, fh;
+//	struct dirent de;
+//	char path[];
+//};
 
 char *realpath(const char *path, char *resolved);
 int statvfs(const char *path, struct fuse_statvfs *stbuf);
@@ -62,11 +68,11 @@ int unlink(const char *path);
 int rename(const char *oldpath, const char *newpath);
 int mkdir(const char *path, fuse_mode_t mode);
 int rmdir(const char *path);
-DIR *opendir(const char *path);
-int dirfd(DIR *dirp);
-void rewinddir(DIR *dirp);
-struct dirent *readdir(DIR *dirp);
-int closedir(DIR *dirp);
+//DIR *opendir(const char *path);
+//int dirfd(DIR *dirp);
+//void rewinddir(DIR *dirp);
+//struct dirent *readdir(DIR *dirp);
+//int closedir(DIR *dirp);
 long WinFspLoad(void);
 #undef fuse_main
 #define fuse_main(argc, argv, ops, data)\
