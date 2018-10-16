@@ -1,8 +1,22 @@
-#include "sanssh2.h"
 #include <stdio.h>
 #include <assert.h>
+#include "util.h"
+#include "sanssh2.h"
+#include "cache.h"
+
+extern CRITICAL_SECTION g_critical_section;
+extern size_t			g_sftp_calls;
+extern size_t			g_sftp_cached_calls;
 
 
+void lock()
+{
+	EnterCriticalSection(&g_critical_section);
+}
+void unlock()
+{
+	LeaveCriticalSection(&g_critical_section);
+}
 int file_exists(const char* path)
 {
 	DWORD attr = GetFileAttributesA(path);
@@ -322,22 +336,52 @@ int san_stat(SANSSH *sanssh, const char * path, struct fuse_stat *stbuf)
 int san_lstat(SANSSH *sanssh, const char * path, struct fuse_stat *stbuf)
 {
 	int rc = 0;
-	LIBSSH2_SFTP_ATTRIBUTES attrs;
-	rc = libssh2_sftp_lstat(sanssh->sftp, path, &attrs);
-	if (rc) {
-		sftp_error(sanssh, path, rc);
+	LIBSSH2_SFTP_ATTRIBUTES *attrs = NULL;
+	CACHE_ATTRIBUTES* cattrs = NULL;
+#if USE_CACHE
+	cattrs = cache_attributes_find(path);
+#endif
+	if (!cattrs) {
+		debug(path);
+		attrs = malloc(sizeof(LIBSSH2_SFTP_ATTRIBUTES));
+		lock();
+		rc = libssh2_sftp_lstat(sanssh->sftp, path, attrs);
+		unlock();
+		
+		if (rc) {
+			sftp_error(sanssh, path, rc);
+			free(attrs);
+		}
+		else {
+#if USE_CACHE
+			// added to cache
+			cattrs = malloc(sizeof(CACHE_ATTRIBUTES));
+			strcpy(cattrs->path, path);
+			cattrs->attrs = attrs;
+			cache_attributes_add(cattrs);
+#endif
+		}
 	}
 	else {
-		copy_attributes(stbuf, &attrs);
+		debug_cached(cattrs->path);
+		attrs = cattrs->attrs;
+		g_sftp_cached_calls++;
 	}
 
+	copy_attributes(stbuf, attrs);
+
+	// stats	
+	g_sftp_calls++;
+	printf("sftp calls cached/total: %ld/%ld\n", g_sftp_cached_calls, g_sftp_calls);
 	return rc;
 }
 int san_statvfs(SANSSH *sanssh, const char * path, struct fuse_statvfs *stbuf)
 {
 	int rc = 0;
 	LIBSSH2_SFTP_STATVFS stvfs;
+	lock();
 	rc = libssh2_sftp_statvfs(sanssh->sftp, path, strlen(path), &stvfs);
+	unlock();
 	if (rc) {
 		sftp_error(sanssh, path, rc);
 	}
@@ -354,9 +398,10 @@ int san_statvfs(SANSSH *sanssh, const char * path, struct fuse_statvfs *stbuf)
 DIR * san_opendir(SANSSH *sanssh, const char *path)
 {
 	LIBSSH2_SFTP_HANDLE * handle;
+	lock();
 	handle = libssh2_sftp_opendir(sanssh->sftp, path);
+	unlock();
 	if (!handle) {
-		fprintf(stderr, "Unable to open directory:\n");
 		sftp_error(sanssh, path, 0);
 	}
 	
@@ -384,112 +429,62 @@ int san_dirfd(DIR *dirp)
 }
 void san_rewinddir(DIR *dirp)
 {
+	lock();
 	libssh2_sftp_rewind(dirp->h);
+	unlock();
 }
-//int san_readdir(SANSSH *sanssh, const char *path)
-//{
-//	int rc = 0;
-//	LIBSSH2_SFTP_HANDLE *handle;
-//	handle = libssh2_sftp_opendir(sanssh->sftp, path);
-//	if (!handle) {
-//		fprintf(stderr, "Unable to open dir with SFTP\n");
-//		return libssh2_sftp_last_error(sanssh->sftp);
-//	}
-//	do {
-//		char mem[512];
-//		char longentry[512];
-//		LIBSSH2_SFTP_ATTRIBUTES attrs;
-//		rc = libssh2_sftp_readdir_ex(handle, mem, sizeof(mem),
-//			longentry, sizeof(longentry), &attrs);
-//		if (rc > 0) {
-//			/* rc is the length of the file name in the mem buffer */
-//			char filetype[4];
-//			get_filetype(attrs.permissions, &filetype);
-//			if (longentry[0] != '\0') {
-//				printf("%3s %10ld %5ld %5ld %s\n",
-//					filetype, attrs.filesize, attrs.uid, attrs.gid,
-//					longentry);
-//			}
-//			else {
-//				if (attrs.flags & LIBSSH2_SFTP_ATTR_PERMISSIONS) {
-//					/* this should check what permissions it is
-//					and print the output accordingly */
-//					printf("--fix----- ");
-//				}
-//				else {
-//					printf("---------- ");
-//				}
-//				if (attrs.flags & LIBSSH2_SFTP_ATTR_UIDGID) {
-//					printf("%4ld %4ld ", attrs.uid, attrs.gid);
-//				}
-//				else {
-//					printf("   -    - ");
-//				}
-//				if (attrs.flags & LIBSSH2_SFTP_ATTR_SIZE) {
-//					printf("%8ld ", attrs.filesize);
-//				}
-//				printf("%s\n", mem);
-//			}
-//		}
-//		else {
-//			break;
-//		}
-//	} while (1);
-//
-//	libssh2_sftp_closedir(handle);
-//}
-
 struct dirent *san_readdir(DIR *dirp)
 {
 	struct fuse_stat *stbuf = &dirp->de.d_stat;
-
-	//if (INVALID_HANDLE == dirp->fh)
-	//{
-	//	dirp->fh = libssh2_sftp_opendir(sanssh->sftp, dirp->path);
-	//	if (!dirp->fh) {
-	//		dirp->fh = INVALID_HANDLE;
-	//		fprintf(stderr, "Unable to open dir with SFTP\n");
-	//		return libssh2_sftp_last_error(sanssh->sftp);
-	//	}
-	////}
-	////else
-	////{
-	////	if (!FindNextFileA(dirp->fh, &FindData))
-	////	{
-	////		if (ERROR_NO_MORE_FILES == GetLastError())
-	////			return 0;
-	////		return error0();
-	////	}
-	////}
-
 	int rc;
 	char fname[512];
 	char longentry[512];
-	LIBSSH2_SFTP_ATTRIBUTES attrs;
-	assert(dirp->h);
-	rc = libssh2_sftp_readdir_ex(dirp->h, fname, sizeof(fname),
-		longentry, sizeof(longentry), &attrs);
-	if (rc > 0) {
-		//printf("readdir: %s\n", fname);
-		/* rc is the length of the file name in the mem buffer */
-		//char filetype[4];
-		//get_filetype(attrs.permissions, &filetype);
-		if (longentry[0] != '\0') {
-			//printf("%3s %10ld %5ld %5ld %s\n",
-			//	filetype, attrs.filesize, attrs.uid, attrs.gid,
-			//	longentry);
+	LIBSSH2_SFTP_ATTRIBUTES* attrs;
+	CACHE_ATTRIBUTES* cattrs = NULL;
+//#if USE_CACHE
+//	cattrs = cache_attributes_find(dirp->path);
+//#endif
+	if (!cattrs) {
+		debug(dirp->path);
+		attrs = malloc(sizeof(LIBSSH2_SFTP_ATTRIBUTES));
+		assert(dirp->h);
+		lock();
+		rc = libssh2_sftp_readdir_ex(dirp->h, fname, sizeof(fname), longentry, sizeof(longentry), attrs);
+		unlock();
+		if (rc > 0) {
+			if (strcmp(fname, "bin") == 0) {
+				// bin dir
+				//printf("bin:\n");
+			}
+//#if USE_CACHE
+//			// added to cache
+//			cattrs = malloc(sizeof(CACHE_ATTRIBUTES));
+//			strcpy(cattrs->path, dirp->path);
+//			cattrs->attrs = attrs;
+//			cache_attributes_add(cattrs);
+//#endif
 		}
 		else {
-			// no valid file stat
+			// no more files
+			return 0;
 		}
 	}
 	else {
-		// no more files
-		return 0;
+		debug_cached(cattrs->path);
+		attrs = cattrs->attrs;
+		g_sftp_cached_calls++;
 	}
-	copy_attributes(stbuf, &attrs);
+	
+	copy_attributes(stbuf, attrs);
 	strcpy(dirp->de.d_name, fname);
+
+	// stats	
+	g_sftp_calls++;
+	printf("sftp calls cached/total: %ld/%ld\n", g_sftp_cached_calls, g_sftp_calls);
+
+
 	return &dirp->de;
+
 }
 int san_closedir(DIR *dirp)
 {
@@ -508,7 +503,6 @@ void print_stat(const char* path, LIBSSH2_SFTP_ATTRIBUTES *attrs)
 	printf("atime: %ld\n", attrs->atime);
 	printf("mtime: %ld\n", attrs->mtime);
 }
-
 void print_statvfs(const char* path, LIBSSH2_SFTP_STATVFS *st)
 {
 	printf("path:    %s\n", path);
@@ -539,7 +533,11 @@ LIBSSH2_SFTP_HANDLE * san_open(SANSSH *sanssh, const char *path, long mode)
 }
 int san_close_handle(LIBSSH2_SFTP_HANDLE *handle)
 {
-	return libssh2_sftp_close_handle(handle);
+	int rc;
+	lock();
+	rc = libssh2_sftp_close_handle(handle);
+	unlock();
+	return rc;
 }
 int san_rename(SANSSH *sanssh, const char *source, const char *destination)
 {

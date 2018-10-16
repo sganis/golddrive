@@ -4,20 +4,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fuse.h>
+#include "util.h"
 #include "sanssh2.h"
+#include "cache.h"
 #include "winposix.h"
 
-CRITICAL_SECTION gCriticalSection;
-//HANDLE gMutex;
+/* global variables */
+CRITICAL_SECTION	g_critical_section;
+CACHE_ATTRIBUTES *	g_attributes_map;
+size_t				g_sftp_calls;
+size_t				g_sftp_cached_calls;
+SANSSH *			sanssh;
 
-#define debug(...) {						\
-	int thread_id = GetCurrentThreadId();	\
-	printf("%d: DEBUG: %s: %d: ", thread_id, __func__, __LINE__);				\
-	printf(__VA_ARGS__);					\
-	printf("\n");							\
-}
-
-#define PROGNAME                        "sanfs"
+/* macros */
 #define concat_path(ptfs, fn, fp)       (sizeof fp > (unsigned)snprintf(fp, sizeof fp, "%s%s", ptfs->rootdir, fn))
 #define fi_dirbit                       (0x8000000000000000ULL)
 #define fi_fh(fi, MASK)                 ((fi)->fh & (MASK))
@@ -34,22 +33,20 @@ CRITICAL_SECTION gCriticalSection;
         return -ENAMETOOLONG;           \
     n = full ## n
 
-typedef struct {
+typedef struct _PTFS {
     const char *rootdir;
 } PTFS;
 
-// global
-SANSSH* sanssh;
+
 
 static int fs_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_file_info *fi)
 {
-	debug(path);
 	return san_lstat(sanssh, path, stbuf);
 }
 
 static int fs_statfs(const char *path, struct fuse_statvfs *stbuf)
 {
-	//debug(path);
+	debug(path);
 	return san_statvfs(sanssh, path, stbuf);
 }
 static int fs_opendir(const char *path, struct fuse_file_info *fi)
@@ -182,9 +179,6 @@ static int fs_fsync(const char *path, int datasync, struct fuse_file_info *fi)
     return -1 != fsync(fd) ? 0 : -errno;
 }
 
-
-
-
 static int fs_create(const char *path, fuse_mode_t mode, struct fuse_file_info *fi)
 {
 	debug(path);
@@ -197,7 +191,17 @@ static int fs_utimens(const char *path, const struct fuse_timespec tv[2], struct
 	debug(path);
     return -1 != utimensat(AT_FDCWD, path, tv, AT_SYMLINK_NOFOLLOW) ? 0 : -errno;
 }
+static int fs_chmod(const char *path, fuse_mode_t mode, struct fuse_file_info *fi)
+{
+	// not supported
+	return -1;
+}
 
+static int fs_chown(const char *path, fuse_uid_t uid, fuse_gid_t gid, struct fuse_file_info *fi)
+{
+	// not supported
+	return -1;
+}
 static void *fs_init(struct fuse_conn_info *conn, struct fuse_config *conf)
 {
 	conn->want |= (conn->capable & FUSE_CAP_READDIRPLUS);
@@ -216,8 +220,8 @@ static struct fuse_operations fs_ops =
     .unlink = fs_unlink,
     .rmdir = fs_rmdir,
     .rename = fs_rename,
-    //.chmod = fs_chmod,
-    //.chown = fs_chown,
+    .chmod = fs_chmod,
+    .chown = fs_chown,
     .truncate = fs_truncate,
     .open = fs_open,
     .read = fs_read,
@@ -233,9 +237,9 @@ static struct fuse_operations fs_ops =
     .utimens = fs_utimens,
 };
 
-static void usage(void)
+static void usage(const char* prog)
 {
-    fprintf(stderr, "usage: " PROGNAME " [FUSE options] host user drive [pkey]\n");
+    fprintf(stderr, "usage: %s [FUSE options] host user drive [pkey]\n", prog);
     exit(2);
 }
 char **new_argv(int count, ...)
@@ -303,76 +307,24 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	PTFS ptfs = { 0 };
-	char name[] = "";
-	ptfs.rootdir = malloc(strlen(name) + 1);
-	strcpy(ptfs.rootdir, name);
-
-	// fuse arguments
-	argc = 3;
-	argv = new_argv(argc, argv[0], "--VolumePrefix=/some/path", drive);
-	
-
- //   if (3 <= argc && '-' != argv[argc - 2][0] && '-' != argv[argc - 1][0])
- //   {
- //       ptfs.rootdir = realpath(argv[argc - 2], 0); /* memory freed at process end */
-
-	//	// test 
-	//	char name[] = "";
-	//	ptfs.rootdir = malloc(strlen(name) + 1);
-	//	strcpy(ptfs.rootdir, name);
-
- //       argv[argc - 2] = argv[argc - 1];
- //       argc--;
- //   }
-
-	//if (0 == ptfs.rootdir) {
-	//	for (int argi = 1; argc > argi; argi++)	{
-	//		//int strncmp(const char *a, const char *b, size_t length);
-	//		//char *strchr(const char *s, int c);
-	//		char *p = 0;
-
-	//		if (0 == strncmp("--UNC=", argv[argi], sizeof "--UNC=" - 1))
-	//			p = argv[argi] + sizeof "--UNC=" - 1;
-	//		else if (0 == strncmp("--VolumePrefix=", argv[argi], sizeof "--VolumePrefix=" - 1))
-	//			p = argv[argi] + sizeof "--VolumePrefix=" - 1;
-
-	//		if (0 != p && '\\' != p[1])
-	//		{
-	//			p = strchr(p + 1, '\\');
-	//			if (0 != p 
-	//				&& 	(('A' <= p[1] && p[1] <= 'Z') || ('a' <= p[1] && p[1] <= 'z'))
-	//				&&	'$' == p[2])
-	//			{
-	//				p[2] = ':';
-	//				ptfs.rootdir = realpath(p + 1, 0); /* memory freed at process end */
-	//				p[2] = '$';
-	//				break;
-	//			}
-	//		}
-	//	}
-	//}
-
- //   if (0 == ptfs.rootdir)
- //       usage();
-
-
-
 	printf("main thread: %d\n", GetCurrentThreadId());
 
-	// Initialize the critical section one time only.
-	if (!InitializeCriticalSectionAndSpinCount(&gCriticalSection, 0x00000400))
+	// Initialize global variables
+	if (!InitializeCriticalSectionAndSpinCount(&g_critical_section, 0x00000400))
 		return 1;
+	g_attributes_map = NULL;
+	g_sftp_calls = 0;
+	g_sftp_cached_calls = 0;
 
-	//gMutex = CreateMutex(
-	//	NULL,              // default security attributes
-	//	FALSE,             // initially not owned
-	//	NULL);             // unnamed mutex
-	//if (gMutex == NULL)
-	//{
-	//	printf("CreateMutex error: %d\n", GetLastError());
-	//	return 1;
+	// fuse arguments
+	PTFS ptfs = { 0 };
+	const char name[] = "";
+	ptfs.rootdir = malloc(strlen(name) + 1);
+	strcpy(ptfs.rootdir, name);
+	argc = 3;
+	argv = new_argv(argc, argv[0], "--VolumePrefix=/some/path", drive);
 
+	// debug arguments
 	for (int i = 0; i < argc; i++)
 		printf("arg %d = %s\n", i, argv[i]);
 
@@ -380,7 +332,9 @@ int main(int argc, char *argv[])
     rc = fuse_main(argc, argv, &fs_ops, &ptfs);
 
 	// Release resources used by the critical section object.
-	DeleteCriticalSection(&gCriticalSection);
-	//CloseHandle(gMutex);
+	DeleteCriticalSection(&g_critical_section);
+	
+	// clear cache
+
 	return rc;
 }

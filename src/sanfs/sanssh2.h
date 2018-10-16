@@ -3,6 +3,7 @@
 #include <libssh2_sftp.h>
 #include <fuse.h>
 
+
 #define BUFFER_SIZE 32767
 #define ERROR_LEN MAXERRORLENGTH
 /* SFTP Status Codes (returned by libssh2_sftp_last_error() ) */
@@ -50,18 +51,17 @@ typedef struct _SANSSH {
 	char error[ERROR_LEN];
 } SANSSH;
 
-typedef struct _DIR DIR;
+//typedef struct _DIR DIR;
 struct dirent
 {
 	struct fuse_stat d_stat;
 	char d_name[255];
 };
-struct _DIR
-{
+typedef struct _DIR {
 	LIBSSH2_SFTP_HANDLE *h;
 	struct dirent de;
 	char path[];
-};
+} DIR;
 
 int file_exists(const char* path);
 int waitsocket(SANSSH *sanssh);

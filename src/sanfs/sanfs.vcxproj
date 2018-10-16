@@ -186,7 +186,10 @@
     <ClCompile Include="winposix.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="cache.h" />
     <ClInclude Include="sanssh2.h" />
+    <ClInclude Include="uthash.h" />
+    <ClInclude Include="util.h" />
     <ClInclude Include="winposix.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
