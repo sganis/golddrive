@@ -25,13 +25,13 @@ SANSSH *			g_sanssh;
 										san_dirfd((DIR *)(size_t)fi_fh(fi, ~fi_dirbit)) : \
 										(int)fi_fh(fi, ~fi_dirbit))
 #define fi_dirp(fi)                     ((DIR *)(size_t)fi_fh(fi, ~fi_dirbit))
-#define fi_setfd(fi, fd)                (fi_setfh(fi, fd, 0))
+#define fi_setfd(fi, handle)            (fi_setfh(fi, handle, 0))
 #define fi_setdirp(fi, dirp)            (fi_setfh(fi, dirp, fi_dirbit))
-#define fs_fullpath(n)					\
-    char full ## n[PATH_MAX];           \
-    if (!concat_path(((PTFS *)fuse_get_context()->private_data), n, full ## n))\
-        return -ENAMETOOLONG;           \
-    n = full ## n
+//#define fs_fullpath(n)					\
+//    char full ## n[PATH_MAX];           \
+//    if (!concat_path(((PTFS *)fuse_get_context()->private_data), n, full ## n))\
+//        return -ENAMETOOLONG;           \
+//    n = full ## n
 
 typedef struct _PTFS {
     const char *rootdir;
@@ -133,27 +133,26 @@ static int fs_truncate(const char *path, fuse_off_t size, struct fuse_file_info 
 static int fs_open(const char *path, struct fuse_file_info *fi)
 {
 	debug(path);
-	int fd;
-	//return -1 != (fd = open(path, fi->flags)) ? (fi_setfd(fi, fd), 0) : -errno;
-	fd = popen(path, fi->flags);
-	if (-1 != fd) 
-	{
-		int rc = (fi_setfd(fi, fd), 0);
+	LIBSSH2_SFTP_HANDLE * handle = NULL;
+	handle = san_open(path, fi->flags);
+	if (handle) {
+		int rc = (fi_setfd(fi, handle), 0);
 		return rc;
-	}
-	else 
-	{
+	} else {
 		return -errno;
 	}
 }
 
-static int fs_read(const char *path, char *buf, size_t size, fuse_off_t off,
-    struct fuse_file_info *fi)
+static int fs_read(const char *path, char *buf, size_t size, 
+	fuse_off_t off, struct fuse_file_info *fi)
 {
-	debug(path);
-    int fd = fi_fd(fi);
-    int nb;
-    return -1 != (nb = pread(fd, buf, size, off)) ? nb : -errno;
+	//debug(path);
+    size_t fd = fi_fd(fi);
+    int nb = san_read(fd, buf, size, off);
+	if (nb >= 0)
+		return nb;
+	else
+		return -errno;
 }
 
 static int fs_write(const char *path, const char *buf, size_t size, fuse_off_t off,
@@ -168,8 +167,8 @@ static int fs_write(const char *path, const char *buf, size_t size, fuse_off_t o
 static int fs_release(const char *path, struct fuse_file_info *fi)
 {
 	debug(path);
-    int fd = fi_fd(fi);
-    close(fd);
+    uint64_t fd = fi_fd(fi);
+    san_close_handle(fd);
     return 0;
 }
 
