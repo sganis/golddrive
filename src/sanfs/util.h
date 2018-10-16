@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#define USE_CACHE 1
+#define USE_CACHE 0
 
 #define debug(...) {						\
 	int thread_id = GetCurrentThreadId();	\

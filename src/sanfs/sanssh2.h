@@ -69,8 +69,7 @@ void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs);
 SANSSH *san_init(const char *hostname, const char *username, 
 	const char *pkey, char *error);
 int san_finalize(SANSSH *sanssh);
-int san_stat(SANSSH *sanssh, const char *path, struct fuse_stat *stbuf);
-int san_lstat(SANSSH *sanssh, const char *path, struct fuse_stat *stbuf);
+int san_stat(const char *path, struct fuse_stat *stbuf, int follow_links);
 int san_statvfs(SANSSH *sanssh, const char *path, struct fuse_statvfs *st);
 DIR *san_opendir(SANSSH *sanssh, const char *path);
 int san_dirfd(DIR *dirp);
@@ -83,7 +82,7 @@ int san_rmdir(SANSSH *sanssh, const char *path);
 int san_close_handle(LIBSSH2_SFTP_HANDLE *handle);
 int san_rename(SANSSH *sanssh, const char *source, const char *destination);
 int san_delete(SANSSH *sanssh, const char *filename);
-int san_realpath(SANSSH *sanssh, const char *path, char *target);
+int san_realpath(const char *path, char *target);
 int san_read(SANSSH *sanssh, const char * remotefile, const char * localfile);
 int san_read_async(SANSSH *sanssh, const char * remotefile, const char * localfile);
 LIBSSH2_SFTP_HANDLE * san_open(SANSSH *sanssh, const char *path, long mode);

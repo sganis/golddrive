@@ -41,7 +41,7 @@ typedef struct _PTFS {
 
 static int fs_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_file_info *fi)
 {
-	return san_lstat(sanssh, path, stbuf);
+	return san_stat(path, stbuf, 0);
 }
 
 static int fs_statfs(const char *path, struct fuse_statvfs *stbuf)

@@ -7,7 +7,7 @@
 extern CRITICAL_SECTION g_critical_section;
 extern size_t			g_sftp_calls;
 extern size_t			g_sftp_cached_calls;
-
+extern SANSSH*			sanssh;
 
 void lock()
 {
@@ -329,11 +329,11 @@ int san_rmdir(SANSSH *sanssh, const char * path)
 	}
 	return rc;
 }
-int san_stat(SANSSH *sanssh, const char * path, struct fuse_stat *stbuf)
-{
-	return san_lstat(sanssh, path, stbuf);
-}
-int san_lstat(SANSSH *sanssh, const char * path, struct fuse_stat *stbuf)
+//int san_stat(SANSSH *sanssh, const char * path, struct fuse_stat *stbuf)
+//{
+//	return san_lstat(sanssh, path, stbuf);
+//}
+int san_stat(const char * path, struct fuse_stat *stbuf, int follow_links)
 {
 	int rc = 0;
 	LIBSSH2_SFTP_ATTRIBUTES *attrs = NULL;
@@ -345,9 +345,11 @@ int san_lstat(SANSSH *sanssh, const char * path, struct fuse_stat *stbuf)
 		debug(path);
 		attrs = malloc(sizeof(LIBSSH2_SFTP_ATTRIBUTES));
 		lock();
-		rc = libssh2_sftp_lstat(sanssh->sftp, path, attrs);
-		unlock();
-		
+		if(follow_links)
+			rc = libssh2_sftp_stat(sanssh->sftp, path, attrs);
+		else
+			rc = libssh2_sftp_lstat(sanssh->sftp, path, attrs);
+		unlock();		
 		if (rc) {
 			sftp_error(sanssh, path, rc);
 			free(attrs);
@@ -372,7 +374,11 @@ int san_lstat(SANSSH *sanssh, const char * path, struct fuse_stat *stbuf)
 
 	// stats	
 	g_sftp_calls++;
-	printf("sftp calls cached/total: %ld/%ld\n", g_sftp_cached_calls, g_sftp_calls);
+	printf("sftp calls cached/total: %ld/%ld (%.1f%% cached)\n",
+			g_sftp_cached_calls, g_sftp_calls,
+			(g_sftp_cached_calls * 100 / (double)g_sftp_calls));
+
+
 	return rc;
 }
 int san_statvfs(SANSSH *sanssh, const char * path, struct fuse_statvfs *stbuf)
@@ -409,7 +415,7 @@ DIR * san_opendir(SANSSH *sanssh, const char *path)
 	if (0 < pathlen && '/' == path[pathlen - 1])
 		pathlen--;
 
-	DIR *dirp = malloc(sizeof *dirp + pathlen + 3); /* sets errno */
+	DIR *dirp = malloc(sizeof *dirp + pathlen + 2); /* sets errno */
 	if (0 == dirp)
 		return 0;
 	
@@ -417,8 +423,7 @@ DIR * san_opendir(SANSSH *sanssh, const char *path)
 	dirp->h = handle;
 	memcpy(dirp->path, path, pathlen);
 	dirp->path[pathlen + 0] = '/';
-	dirp->path[pathlen + 1] = '*';
-	dirp->path[pathlen + 2] = '\0';
+	dirp->path[pathlen + 1] = '\0';
 
 	return dirp;
 
@@ -439,48 +444,57 @@ struct dirent *san_readdir(DIR *dirp)
 	int rc;
 	char fname[512];
 	char longentry[512];
-	LIBSSH2_SFTP_ATTRIBUTES* attrs;
-	CACHE_ATTRIBUTES* cattrs = NULL;
-//#if USE_CACHE
-//	cattrs = cache_attributes_find(dirp->path);
-//#endif
-	if (!cattrs) {
-		debug(dirp->path);
-		attrs = malloc(sizeof(LIBSSH2_SFTP_ATTRIBUTES));
-		assert(dirp->h);
-		lock();
-		rc = libssh2_sftp_readdir_ex(dirp->h, fname, sizeof(fname), longentry, sizeof(longentry), attrs);
-		unlock();
-		if (rc > 0) {
-			if (strcmp(fname, "bin") == 0) {
-				// bin dir
-				//printf("bin:\n");
+	LIBSSH2_SFTP_ATTRIBUTES attrs;
+	assert(dirp->h);
+	lock();
+	rc = libssh2_sftp_readdir_ex(dirp->h, fname, sizeof(fname), longentry, sizeof(longentry), &attrs);
+	unlock();
+	g_sftp_calls++;
+
+	if (rc > 0) {
+		if (strcmp(fname, "bin") == 0) {
+			// bin dir
+			printf("bin:\n");
+
+
+		}
+		// resolve symbolic links
+		if (attrs.permissions & LIBSSH2_SFTP_S_IFLNK) {
+			printf("is link: %s\n", fname);
+			char fullpath[MAX_PATH];
+			char realpath[MAX_PATH];
+			strcpy(fullpath, dirp->path);
+			size_t pathlen = strlen(dirp->path);
+			if (!(pathlen > 0 && dirp->path[pathlen - 1] == '/'))
+				strcat(fullpath, "/");
+			strcat(fullpath, fname);
+			printf("fullpath: %s\n", fullpath);
+			int realpathlen = san_realpath(fullpath, realpath);
+			printf("realpath: %s\n", realpath);
+			int r;
+			memset(&attrs, 0, sizeof attrs);
+			lock();
+			r = libssh2_sftp_lstat(sanssh->sftp, realpath, &attrs);
+			unlock();
+			if (r) {
+				sftp_error(sanssh, realpath, r);
 			}
-//#if USE_CACHE
-//			// added to cache
-//			cattrs = malloc(sizeof(CACHE_ATTRIBUTES));
-//			strcpy(cattrs->path, dirp->path);
-//			cattrs->attrs = attrs;
-//			cache_attributes_add(cattrs);
-//#endif
 		}
-		else {
-			// no more files
-			return 0;
-		}
+
+		
 	}
 	else {
-		debug_cached(cattrs->path);
-		attrs = cattrs->attrs;
-		g_sftp_cached_calls++;
+		// no more files
+		return 0;
 	}
 	
-	copy_attributes(stbuf, attrs);
+	copy_attributes(stbuf, &attrs);
 	strcpy(dirp->de.d_name, fname);
 
 	// stats	
-	g_sftp_calls++;
-	printf("sftp calls cached/total: %ld/%ld\n", g_sftp_cached_calls, g_sftp_calls);
+	printf("sftp calls cached/total: %ld/%ld (%.1f%% cached)\n",
+			g_sftp_cached_calls, g_sftp_calls, 
+			(g_sftp_cached_calls*100/(double)g_sftp_calls));
 
 
 	return &dirp->de;
@@ -560,13 +574,14 @@ int san_delete(SANSSH *sanssh, const char *filename)
 	}
 	return rc;
 }
-int san_realpath(SANSSH *sanssh, const char *path, char *target)
+int san_realpath(const char *path, char *target)
 {
 	int rc;
+	lock();
 	rc = libssh2_sftp_realpath(sanssh->sftp, path, target, MAX_PATH);
+	unlock();
 	if (rc < 0) {
-		fprintf(stderr, "libssh2_sftp_readlink failed: rc=%d, error=%ld\n",
-			rc, libssh2_sftp_last_error(sanssh->sftp));
+		sftp_error(sanssh, path, rc);
 	}
 	return rc;
 }
