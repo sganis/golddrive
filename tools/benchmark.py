@@ -21,7 +21,7 @@ privatekey = os.path.expanduser('~\\.ssh\\id_rsa-sag-golddrive')
 DIR = os.path.dirname(os.path.realpath(__file__))
 
 os.environ['PATH'] = fr'{DIR}\sanssh;' + os.environ['PATH']
-os.environ['PATH'] = fr'{DIR}\sanssh2;' + os.environ['PATH']
+# os.environ['PATH'] = fr'{DIR}\sanssh-libssh;' + os.environ['PATH']
 os.environ['PATH'] = fr'{DIR}\openssh;' + os.environ['PATH']
 
 
@@ -83,11 +83,11 @@ def main():
 	set_result('sanssh', time.time() - t)
 	subprocess.run('del localfile', shell=True)
 
-	print('copying with sanssh2...')
-	t = time.time()
-	subprocess.run(	f'sanssh2 {host} {user} {remotefile} {localfile} {privatekey}', shell=True)
-	set_result('sanssh2', time.time() - t)
-	subprocess.run('del localfile', shell=True)
+	# print('copying with sanssh-libssh...')
+	# t = time.time()
+	# subprocess.run(	f'sanssh-libssh {host} {user} {remotefile} {localfile} {privatekey}', shell=True)
+	# set_result('sanssh-libssh', time.time() - t)
+	# subprocess.run('del localfile', shell=True)
 
 	print('copying with sshfs...')
 	t = time.time()

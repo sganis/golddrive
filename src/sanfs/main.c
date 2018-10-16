@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <fuse.h>
 #include "util.h"
-#include "sanssh2.h"
+#include "sanssh.h"
 #include "cache.h"
 #include "winposix.h"
 
@@ -14,7 +14,7 @@ CRITICAL_SECTION	g_critical_section;
 CACHE_ATTRIBUTES *	g_attributes_map;
 size_t				g_sftp_calls;
 size_t				g_sftp_cached_calls;
-SANSSH *			sanssh;
+SANSSH *			g_sanssh;
 
 /* macros */
 #define concat_path(ptfs, fn, fp)       (sizeof fp > (unsigned)snprintf(fp, sizeof fp, "%s%s", ptfs->rootdir, fn))
@@ -47,13 +47,13 @@ static int fs_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_fil
 static int fs_statfs(const char *path, struct fuse_statvfs *stbuf)
 {
 	debug(path);
-	return san_statvfs(sanssh, path, stbuf);
+	return san_statvfs(path, stbuf);
 }
 static int fs_opendir(const char *path, struct fuse_file_info *fi)
 {
 	debug(path);
 	int rc = 0;
-	DIR *dirp = san_opendir(sanssh, path);
+	DIR *dirp = san_opendir(path);
 	if (dirp) {
 		rc = (fi_setdirp(fi, dirp), 0);
 	}
@@ -301,9 +301,9 @@ int main(int argc, char *argv[])
 	printf("private key: %s\n", pkey);
 
 	char error[ERROR_LEN];
-	sanssh = san_init(hostname, username, pkey, error);
-	if (!sanssh) {
-		fprintf(stderr, "Error initializing sanssh2: %s\n", error);
+	g_sanssh = san_init(hostname, username, pkey, error);
+	if (!g_sanssh) {
+		fprintf(stderr, "Error initializing sanssh: %s\n", error);
 		return 1;
 	}
 
@@ -322,7 +322,7 @@ int main(int argc, char *argv[])
 	ptfs.rootdir = malloc(strlen(name) + 1);
 	strcpy(ptfs.rootdir, name);
 	argc = 3;
-	argv = new_argv(argc, argv[0], "--VolumePrefix=/some/path", drive);
+	argv = new_argv(argc, argv[0], "--VolumePrefix=/linux/root", drive);
 
 	// debug arguments
 	for (int i = 0; i < argc; i++)
