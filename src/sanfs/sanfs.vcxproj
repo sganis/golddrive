@@ -183,6 +183,7 @@
   <ItemGroup>
     <ClCompile Include="main.c" />
     <ClCompile Include="sanssh.c" />
+    <ClCompile Include="util.c" />
     <ClCompile Include="winposix.c" />
   </ItemGroup>
   <ItemGroup>

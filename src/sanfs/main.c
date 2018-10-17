@@ -41,7 +41,13 @@ typedef struct _PTFS {
 
 static int fs_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_file_info *fi)
 {
-	return san_stat(path, stbuf, 0);
+	if (0 == fi) {
+		return san_stat(path, stbuf);
+	} else {
+		int fd = fi_fd(fi);
+		return san_fstat(fd, stbuf);
+	}
+	// check if errno is needed ?
 }
 
 static int fs_statfs(const char *path, struct fuse_statvfs *stbuf)
@@ -55,7 +61,7 @@ static int fs_opendir(const char *path, struct fuse_file_info *fi)
 	int rc = -1;
 	DIR *dirp = san_opendir(path);
 	if (dirp) {
-		printf("%ld: handle open:   %ld\n",GetCurrentThreadId(), dirp->handle);
+		//printf("%ld: handle open:   %ld\n",GetCurrentThreadId(), dirp->handle);
 		rc = (fi_setdirp(fi, dirp), 0);
 	}
 	return rc;
@@ -88,26 +94,26 @@ static int fs_releasedir(const char *path, struct fuse_file_info *fi)
 	if (!dirp)
 		return 0;
 	int rc = san_closedir(dirp);
-	printf("%ld: handle closed: %ld\n", GetCurrentThreadId(), dirp->handle);
+	//printf("%ld: handle closed: %ld\n", GetCurrentThreadId(), dirp->handle);
 	return rc;
 }
 
 static int fs_mkdir(const char *path, fuse_mode_t mode)
 {
 	debug(path);
-	return -1 != mkdir(path, mode) ? 0 : -errno;
+	return san_mkdir(path, mode);
 }
 
 static int fs_unlink(const char *path)
 {
 	debug(path); 
-	return -1 != unlink(path) ? 0 : -errno;
+	return san_unlink(path);
 }
 
 static int fs_rmdir(const char *path)
 {
 	debug(path); 
-	return -1 != rmdir(path) ? 0 : -errno;
+	return san_rmdir(path);
 }
 
 static int fs_rename(const char *oldpath, const char *newpath, unsigned int flags)
@@ -311,7 +317,25 @@ int main(int argc, char *argv[])
 	printf("private key: %s\n", pkey);
 
 	char error[ERROR_LEN];
+	size_t t = time_ms();
 	g_sanssh = san_init(hostname, username, pkey, error);
+	printf("time to create session 1: %d secs\n", time_ms() - t);
+	//t = time_ms();
+	//SANSSH* ssh2 = san_init(hostname, username, pkey, error);
+	//printf("time to create session 2: %d secs\n", time_ms() - t);
+	//t = time_ms();
+	//SANSSH* ssh3 = san_init(hostname, username, pkey, error);
+	//printf("time to create session 3: %d secs\n", time_ms() - t);
+	//t = time_ms();
+	//SANSSH* ssh4 = san_init(hostname, username, pkey, error);
+	//printf("time to create session 3: %d secs\n", time_ms() - t);
+	//t = time_ms();
+	//SANSSH* ssh5 = san_init(hostname, username, pkey, error);
+	//printf("time to create session 3: %d secs\n", time_ms() - t);
+	//t = time_ms();
+	//SANSSH* ssh6 = san_init(hostname, username, pkey, error);
+	//printf("time to create session 3: %d secs\n", time_ms() - t);
+
 	if (!g_sanssh) {
 		fprintf(stderr, "Error initializing sanssh: %s\n", error);
 		return 1;
@@ -353,11 +377,13 @@ int main(int argc, char *argv[])
 	const char name[] = "";
 	ptfs.rootdir = malloc(strlen(name) + 1);
 	strcpy(ptfs.rootdir, name);
-	argc = 4;
+	argc = 6;
 	argv = new_argv(argc, argv[0], 
-		"-oVolumePrefix=/sanfs/root",
-		"-ouid=-1,gid=-1,rellinks",
+		"-o","VolumePrefix=/sanfs/root",
+		"-o", "uid=-1,gid=-1,rellinks",
 		drive);
+	//argv = new_argv(2, argv[0], "-h");
+
 
 	// debug arguments
 	for (int i = 0; i < argc; i++)
@@ -366,10 +392,9 @@ int main(int argc, char *argv[])
 	// run fuse main
     rc = fuse_main(argc, argv, &fs_ops, &ptfs);
 
-	// Release resources used by the critical section object.
+	// cleanup
 	DeleteCriticalSection(&g_critical_section);
-	
-	// clear cache
+	san_finalize();
 
 	return rc;
 }

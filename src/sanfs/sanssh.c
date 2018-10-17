@@ -147,7 +147,7 @@ SANSSH * san_init(const char* hostname,	const char* username,
 int san_finalize()
 {
 	libssh2_sftp_shutdown(g_sanssh->sftp);
-	libssh2_session_disconnect(g_sanssh->ssh, "g_sanssh2 disconnected");
+	libssh2_session_disconnect(g_sanssh->ssh, "g_sanssh disconnected");
 	libssh2_session_free(g_sanssh->ssh);
 	libssh2_exit();
 	closesocket(g_sanssh->socket);
@@ -185,25 +185,50 @@ int san_mkdir(const char * path)
 		LIBSSH2_SFTP_S_IRWXG |
 		LIBSSH2_SFTP_S_IROTH | LIBSSH2_SFTP_S_IXOTH);
 	if (rc) {
-		fprintf(stderr, "libssh2_sftp_mkdir failed: rc=%d, error=%ld\n",
-			rc, libssh2_sftp_last_error(g_sanssh->sftp));
+		sftp_error(g_sanssh, path, rc);
 	}
-	return rc;
+	return rc ? -1 : 0;
 }
 
 int san_rmdir(const char * path)
 {
-	int rc = 0;
+	int rc;
 	rc = libssh2_sftp_rmdir(g_sanssh->sftp, path);
 	if (rc) {
-		fprintf(stderr, "libssh2_sftp_rmdir failed: rc=%d, error=%ld\n",
-			rc, libssh2_sftp_last_error(g_sanssh->sftp));
+		sftp_error(g_sanssh, path, rc);
 	}
-	return rc;
+	return rc ? -1 : 0;
+}
+int san_fstat(int fd, struct fuse_stat *stbuf)
+{
+	int rc = 0;
+	LIBSSH2_SFTP_ATTRIBUTES *attrs = NULL;
+	attrs = malloc(sizeof(LIBSSH2_SFTP_ATTRIBUTES));
+	lock();
+	rc = libssh2_sftp_fstat(fd, attrs);
+	unlock();
+	if (rc) {
+		rc = libssh2_sftp_last_error(g_sanssh->sftp);
+	}
+	else {
+		copy_attributes(stbuf, attrs);
+	}
+	free(attrs);
+
+#if DEBUG
+	// stats	
+	g_sftp_calls++;
+	printf("sftp calls cached/total: %ld/%ld (%.1f%% cached)\n",
+		g_sftp_cached_calls, g_sftp_calls,
+		(g_sftp_cached_calls * 100 / (double)g_sftp_calls));
+#endif
+	errno = rc;
+	return -rc;
 }
 
 int san_stat(const char * path, struct fuse_stat *stbuf)
 {
+	
 	int rc = 0;
 	LIBSSH2_SFTP_ATTRIBUTES *attrs = NULL;
 	CACHE_ATTRIBUTES* cattrs = NULL;
@@ -218,6 +243,7 @@ int san_stat(const char * path, struct fuse_stat *stbuf)
 		rc = libssh2_sftp_stat(g_sanssh->sftp, path, attrs);
 		unlock();		
 		if (rc) {
+			rc = libssh2_sftp_last_error(g_sanssh->sftp);
 			sftp_error(g_sanssh, path, rc);
 			free(attrs);
 		}
@@ -246,8 +272,8 @@ int san_stat(const char * path, struct fuse_stat *stbuf)
 			g_sftp_cached_calls, g_sftp_calls,
 			(g_sftp_cached_calls * 100 / (double)g_sftp_calls));
 #endif
-
-	return rc;
+	errno = rc;
+	return -rc;
 }
 
 int san_statvfs(const char * path, struct fuse_statvfs *stbuf)
@@ -323,19 +349,15 @@ struct dirent *san_readdir(DIR *dirp)
 	lock();
 	rc = libssh2_sftp_readdir_ex(dirp->handle, fname, sizeof(fname),
 		longentry, sizeof(longentry), &attrs);
-	unlock();
+	
 	g_sftp_calls++;
 
 	if (rc > 0) {
 		//if (strcmp(fname, "bin") == 0) {
-		//	// bin dir
 		//	printf("bin:\n");
-
-
 		//}
 		// resolve symbolic links
 		if (attrs.permissions & LIBSSH2_SFTP_S_IFLNK) {
-			//printf("is link: %s\n", fname);
 			char fullpath[MAX_PATH];
 			char realpath[MAX_PATH];
 			strcpy(fullpath, dirp->path);
@@ -344,16 +366,22 @@ struct dirent *san_readdir(DIR *dirp)
 				strcat(fullpath, "/");
 			strcat(fullpath, fname);
 			//printf("fullpath: %s\n", fullpath);
-			int realpathlen = san_realpath(fullpath, realpath);
-			//printf("realpath: %s\n", realpath);
-			int r;
 			memset(&attrs, 0, sizeof attrs);
-			lock();
-			r = libssh2_sftp_lstat(g_sanssh->sftp, realpath, &attrs);
-			unlock();
-			if (r) {
-				sftp_error(g_sanssh, realpath, r);
+			rc = libssh2_sftp_stat(g_sanssh->sftp, fullpath, &attrs);
+			if (rc) {
+				sftp_error(g_sanssh, fullpath, rc);
 			}
+			////printf("fullpath: %s\n", fullpath);
+			//int realpathlen = san_realpath(fullpath, realpath);
+			////printf("realpath: %s\n", realpath);
+			//int r;
+			//memset(&attrs, 0, sizeof attrs);
+			//lock();
+			//r = libssh2_sftp_lstat(g_sanssh->sftp, realpath, &attrs);
+			//unlock();
+			//if (r) {
+			//	sftp_error(g_sanssh, realpath, r);
+			//}
 		}
 
 		
@@ -362,7 +390,7 @@ struct dirent *san_readdir(DIR *dirp)
 		// no more files
 		return 0;
 	}
-	
+	unlock();
 	copy_attributes(stbuf, &attrs);
 	strcpy(dirp->de.d_name, fname);
 #if DEBUG
@@ -425,49 +453,33 @@ LIBSSH2_SFTP_HANDLE * san_open(const char *path, long mode)
 	if (!handle) {
 		sftp_error(g_sanssh, path, 0);
 	}
+	char msg[100];
+	sprintf(msg, "%ld: handle %ld open\n", GetCurrentThreadId(), handle);
+	debug(msg);
 	return handle;
 }
 
 int san_read(size_t handle, void *buf, size_t nbyte, fuse_off_t offset)
 {
-	(LIBSSH2_SFTP_HANDLE *)handle;
-
-	//OVERLAPPED Overlapped = { 0 };
-	//DWORD BytesTransferred;
-	//Overlapped.Offset = (DWORD)offset;
-	//Overlapped.OffsetHigh = (DWORD)(offset >> 32);
-	//if (!ReadFile(h, buf, (DWORD)nbyte, &BytesTransferred, &Overlapped)){
-	//	if (ERROR_HANDLE_EOF == GetLastError())
-	//		return 0;
-	//	return error();
-	//}
 	size_t thread = GetCurrentThreadId();
+	int curpos;
 	lock();
-	if (offset) {
-		int curpos = libssh2_sftp_tell64(handle);
-		if(offset != curpos)
-			libssh2_sftp_seek64(handle, offset);
-	}
-	unlock();
+	curpos = libssh2_sftp_tell64(handle);
+	if (offset != curpos)
+		libssh2_sftp_seek64(handle, offset);
 	//printf("thread buffer size    offset         bytes read     bytes written  total bytes\n");
 	int bytesread;
 	size_t total = 0;
 	size_t size = nbyte;
 	size_t off = 0;
-	
-	while (size) {
-		char *mem = malloc(size);
-		lock();
+	char *mem = malloc(size);
+	while (size) {		
 		bytesread = libssh2_sftp_read(handle, mem, size);
-		unlock();
 		if (bytesread < 0) {
 			fprintf(stderr, "Unable to read file\n");
 			return -1;
 		} else if (bytesread == 0) {
-			free(mem);
-			return total;
-			//fprintf(stderr, "host has disconnected\n");
-			//return -1;
+			break;			
 		}
 		//memcpy(buffer, selectedText + offset, size);
 		//return strlen(selectedText) - offset;
@@ -477,8 +489,10 @@ int san_read(size_t handle, void *buf, size_t nbyte, fuse_off_t offset)
 		//printf("%-7ld%-15d%-15ld%-15d%-15d%-15ld\n",thread,
 		//	size, offset, bytesread, bytesread, total);
 		size -= bytesread;
-		free(mem);
 	}
+	unlock();
+	free(mem);
+
 	return total;
 }
 
@@ -578,35 +592,33 @@ int san_rename(const char *source, const char *destination)
 	int rc;
 	rc = libssh2_sftp_rename(g_sanssh->sftp, source, destination);
 	if (rc) {
-		fprintf(stderr, "libssh2_sftp_rename failed: rc=%d, error=%ld\n",
-			rc, libssh2_sftp_last_error(g_sanssh->sftp));
+		sftp_error(g_sanssh, source, rc);
 	}
-	return rc;
+	return rc ? -1 : 0;
 
 }
 
-int san_delete(const char *filename)
+int san_unlink(const char *path)
 {
 	int rc;
-	rc = libssh2_sftp_unlink(g_sanssh->sftp, filename);
+	rc = libssh2_sftp_unlink(g_sanssh->sftp, path);
 	if (rc) {
-		fprintf(stderr, "libssh2_sftp_unlink failed: rc=%d, error=%ld\n",
-			rc, libssh2_sftp_last_error(g_sanssh->sftp));
-	}
-	return rc;
-}
-
-int san_realpath(const char *path, char *target)
-{
-	int rc;
-	lock();
-	rc = libssh2_sftp_realpath(g_sanssh->sftp, path, target, MAX_PATH);
-	unlock();
-	if (rc < 0) {
 		sftp_error(g_sanssh, path, rc);
 	}
-	return rc;
+	return rc ? -1 : 0;
 }
+
+//int san_realpath(const char *path, char *target)
+//{
+//	int rc;
+//	lock();
+//	rc = libssh2_sftp_realpath(g_sanssh->sftp, path, target, MAX_PATH);
+//	unlock();
+//	if (rc < 0) {
+//		sftp_error(g_sanssh, path, rc);
+//	}
+//	return rc;
+//}
 
 int run_command(const char *cmd, char *out, char *err)
 {

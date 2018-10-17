@@ -76,3 +76,37 @@ set Win64OPENSSL_INCLUDE_DIR=%Win64OPENSSL_ROOT_DIR%\include
 set Win64OPENSSL_LIBRARIES=%Win64OPENSSL_ROOT_DIR%\lib
 cmake .. -G"Visual Studio 14 2015 Win64" -D"BUILD_SHARED_LIBS=1" -D"CMAKE_BUILD_TYPE=Release" -D"CRYPTO_BACKEND=OpenSSL" -D"OPENSSL_USE_STATIC_LIBS=TRUE" -D"OPENSSL_MSVC_STATIC_RT=TRUE"
 ```
+
+## WinFsp command line options
+```
+usage: sanfs mountpoint [options]
+
+    -o opt,[opt...]        mount options
+    -h   --help            print help
+    -V   --version         print version
+
+FUSE options:
+    -d   -o debug          enable debug output (implies -f)
+    -f                     foreground operation
+    -s                     disable multi-threaded operation
+
+WinFsp-FUSE options:
+    -o umask=MASK              set file permissions (octal)
+    -o create_umask=MASK       set newly created file permissions (octal)
+    -o uid=N                   set file owner (-1 for mounting user id)
+    -o gid=N                   set file group (-1 for mounting user group)
+    -o rellinks                interpret absolute symlinks as volume relative
+    -o volname=NAME            set volume label
+    -o VolumePrefix=UNC        set UNC prefix (/Server/Share)
+        --VolumePrefix=UNC     set UNC prefix (\Server\Share)
+    -o FileSystemName=NAME     set file system name
+    -o DebugLog=FILE           debug log file (requires -d)
+
+WinFsp-FUSE advanced options:
+    -o FileInfoTimeout=N       metadata timeout (millis, -1 for data caching)
+    -o DirInfoTimeout=N        directory info timeout (millis)
+    -o VolumeInfoTimeout=N     volume info timeout (millis)
+    -o KeepFileCache           do not discard cache when files are closed
+    -o ThreadCount             number of file system dispatcher threads
+```
+

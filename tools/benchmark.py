@@ -49,52 +49,12 @@ def main():
 	# create a 1gb file in server
 	# python -c "import os; w=open('/tmp/file.bin','wb');w.write(os.urandom(1024*1024*1024))"
 	# update md5 = md5sum file.bin
-	pkey = paramiko.RSAKey.from_private_key_file(privatekey)
-	transport = paramiko.Transport((host, port))
-	transport.connect(username=user, pkey=pkey) 
-	sftp = paramiko.SFTPClient.from_transport(transport)
-	print('copying with paramiko...')
-	t = time.time()
-	sftp.get(remotefile, localfile)
-	set_result('paramiko', time.time() - t)
-	subprocess.run(f'del {localfile}', shell=True)
-	sftp.close()
-	transport.close()
-
-	print('copying with ssh2-python...')
-	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	sock.connect((host, 22))
-	s = Session()
-	s.handshake(sock)
-	s.userauth_publickey_fromfile(user, privatekey)   
-	sftp = s.sftp_init()
-	t = time.time()
-	with sftp.open(remotefile, 
-		LIBSSH2_FXF_READ, LIBSSH2_SFTP_S_IRUSR) as r, \
-		open(localfile,'wb') as w:
-		for size, data in r:
-			w.write(data)
-	set_result('ssh2-python', time.time() - t)
-	subprocess.run(f'del {localfile}', shell=True)
-
-	print('copying with sanssh...')
-	t = time.time()
-	subprocess.run(	f'sanssh {host} {user} {remotefile} {localfile} {privatekey}', shell=True)
-	set_result('sanssh', time.time() - t)
-	subprocess.run('del localfile', shell=True)
-
-	# print('copying with sanssh-libssh...')
-	# t = time.time()
-	# subprocess.run(	f'sanssh-libssh {host} {user} {remotefile} {localfile} {privatekey}', shell=True)
-	# set_result('sanssh-libssh', time.time() - t)
-	# subprocess.run('del localfile', shell=True)
 
 	print('copying with sshfs...')
 	t = time.time()
 	subprocess.run(f'copy Y:\\tmp\\file.bin {localfile}', shell=True)
 	set_result('sshfs', time.time() - t)
 	subprocess.run(f'del {localfile}', shell=True)
-
 
 	print('copying with openssh...')
 	os.chdir('C:\\Temp')
@@ -105,6 +65,52 @@ def main():
 	set_result('openssh', time.time() - t)
 	subprocess.run(f'del {localfile}', shell=True)
 
+	print('copying with sanfs...')
+	t = time.time()
+	subprocess.run(f'copy X:\\tmp\\file.bin {localfile}', shell=True)
+	set_result('sanfs', time.time() - t)
+	subprocess.run(f'del {localfile}', shell=True)
+
+	# print('copying with paramiko...')
+	# pkey = paramiko.RSAKey.from_private_key_file(privatekey)
+	# transport = paramiko.Transport((host, port))
+	# transport.connect(username=user, pkey=pkey) 
+	# sftp = paramiko.SFTPClient.from_transport(transport)
+	# t = time.time()
+	# sftp.get(remotefile, localfile)
+	# set_result('paramiko', time.time() - t)
+	# subprocess.run(f'del {localfile}', shell=True)
+	# sftp.close()
+	# transport.close()
+
+	# print('copying with ssh2-python...')
+	# sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	# sock.connect((host, 22))
+	# s = Session()
+	# s.handshake(sock)
+	# s.userauth_publickey_fromfile(user, privatekey)   
+	# sftp = s.sftp_init()
+	# t = time.time()
+	# with sftp.open(remotefile, 
+	# 	LIBSSH2_FXF_READ, LIBSSH2_SFTP_S_IRUSR) as r, \
+	# 	open(localfile,'wb') as w:
+	# 	for size, data in r:
+	# 		w.write(data)
+	# set_result('ssh2-python', time.time() - t)
+	# subprocess.run(f'del {localfile}', shell=True)
+
+	print('copying with sanssh...')
+	t = time.time()
+	subprocess.run(	f'sanssh {host} {user} {remotefile} {localfile} {privatekey}', shell=True)
+	set_result('sanssh', time.time() - t)
+	subprocess.run(f'del localfile', shell=True)
+
+	# print('copying with sanssh-libssh...')
+	# t = time.time()
+	# subprocess.run(	f'sanssh-libssh {host} {user} {remotefile} {localfile} {privatekey}', shell=True)
+	# set_result('sanssh-libssh', time.time() - t)
+	# subprocess.run('del localfile', shell=True)
+
 	# display results order by fastest
 	sorted_results = sorted(results, key=results.get)
 	slowest = sorted_results[0]
@@ -112,6 +118,8 @@ def main():
 		rel = round(results[r]/results[slowest],1)
 		rel = rel if rel != 1.0 else 'Ref'
 		print(f'{r:<14}: {results[r]:>4} MB/s {rel}x')
+
+
 
 
 if __name__ == '__main__':

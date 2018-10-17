@@ -70,6 +70,7 @@ SANSSH *san_init(const char *hostname, const char *username,
 	const char *pkey, char *error);
 int san_finalize();
 int san_stat(const char *path, struct fuse_stat *stbuf);
+int san_fstat(int fd, struct fuse_stat *stbuf);
 int san_statvfs(const char *path, struct fuse_statvfs *st);
 DIR *san_opendir(const char *path);
 int san_dirfd(DIR *dirp);
@@ -81,8 +82,8 @@ int san_mkdir(const char *path);
 int san_rmdir(const char *path);
 int san_close_handle(LIBSSH2_SFTP_HANDLE *handle);
 int san_rename(const char *source, const char *destination);
-int san_delete(const char *filename);
-int san_realpath(const char *path, char *target);
+int san_unlink(const char *path);
+//int san_realpath(const char *path, char *target);
 //int san_read(const char * remotefile, const char * localfile);
 int san_read(size_t handle, void *buf, size_t nbyte, fuse_off_t offset);
 int san_read_async(const char * remotefile, const char * localfile);

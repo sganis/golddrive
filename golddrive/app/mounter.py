@@ -125,6 +125,8 @@ def mount(drive, userhost, appkey, port=22, drivename=''):
 		-o compression=no
 		-o rellinks 
 		-o reconnect 
+		-o max_read=65536
+		-o max_write=65536
 		'''
 		# -o sshfs_sync
 		# -f

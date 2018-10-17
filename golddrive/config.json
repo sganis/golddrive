@@ -9,10 +9,10 @@
 	// drive parameters
 	"drives" : {
 		"Y:" : {
-			"drivename" : "Centos Box",
-			"user" 		: "support",
+			"drivename" : "Box",
+			"user" 		: "sag",
 			"port" 		: "22",
-			"hosts" 	: ["192.168.8.103"],
+			"hosts" 	: ["192.168.100.201"],
 		},
 	}
 }
