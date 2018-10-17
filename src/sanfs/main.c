@@ -17,7 +17,7 @@ size_t				g_sftp_cached_calls;
 SANSSH *			g_sanssh;
 
 /* macros */
-#define concat_path(ptfs, fn, fp)       (sizeof fp > (unsigned)snprintf(fp, sizeof fp, "%s%s", ptfs->rootdir, fn))
+//#define concat_path(ptfs, fn, fp)       (sizeof fp > (unsigned)snprintf(fp, sizeof fp, "%s%s", ptfs->rootdir, fn))
 #define fi_dirbit                       (0x8000000000000000ULL)
 #define fi_fh(fi, MASK)                 ((fi)->fh & (MASK))
 #define fi_setfh(fi, FH, MASK)          ((fi)->fh = (size_t)(FH) | (MASK))
@@ -52,13 +52,11 @@ static int fs_statfs(const char *path, struct fuse_statvfs *stbuf)
 static int fs_opendir(const char *path, struct fuse_file_info *fi)
 {
 	debug(path);
-	int rc = 0;
+	int rc = -1;
 	DIR *dirp = san_opendir(path);
 	if (dirp) {
+		printf("%ld: handle open:   %ld\n",GetCurrentThreadId(), dirp->handle);
 		rc = (fi_setdirp(fi, dirp), 0);
-	}
-	else {
-		rc = -errno;
 	}
 	return rc;
 }
@@ -85,9 +83,12 @@ static int fs_readdir(const char *path, void *buf,	fuse_fill_dir_t filler, fuse_
 
 static int fs_releasedir(const char *path, struct fuse_file_info *fi)
 {
-	//debug(path);
+	debug(path);
 	DIR *dirp = fi_dirp(fi);
+	if (!dirp)
+		return 0;
 	int rc = san_closedir(dirp);
+	printf("%ld: handle closed: %ld\n", GetCurrentThreadId(), dirp->handle);
 	return rc;
 }
 
@@ -161,9 +162,13 @@ static int fs_read(const char *path, char *buf, size_t size,
 static int fs_write(const char *path, const char *buf, size_t size, fuse_off_t off,
     struct fuse_file_info *fi)
 {
-    int fd = fi_fd(fi);
-    int nb;
-    return -1 != (nb = pwrite(fd, buf, size, off)) ? nb : -errno;
+	debug(path);
+	errno = OSS_UNIMPLEMENTED;
+	return -1;
+
+    //int fd = fi_fd(fi);
+    //int nb;
+    //return -1 != (nb = pwrite(fd, buf, size, off)) ? nb : -errno;
 }
 
 
@@ -184,8 +189,11 @@ static int fs_fsync(const char *path, int datasync, struct fuse_file_info *fi)
 static int fs_create(const char *path, fuse_mode_t mode, struct fuse_file_info *fi)
 {
 	debug(path);
-    int fd;
-    return -1 != (fd = open(path, fi->flags, mode)) ? (fi_setfd(fi, fd), 0) : -errno;
+	errno = OSS_UNIMPLEMENTED;
+	return -1;
+
+    //int fd;
+    //return -1 != (fd = open(path, fi->flags, mode)) ? (fi_setfd(fi, fd), 0) : -errno;
 }
 
 static int fs_utimens(const char *path, const struct fuse_timespec tv[2], struct fuse_file_info *fi)
@@ -195,22 +203,22 @@ static int fs_utimens(const char *path, const struct fuse_timespec tv[2], struct
 }
 static int fs_chmod(const char *path, fuse_mode_t mode, struct fuse_file_info *fi)
 {
-	// not supported
+	errno = OSS_UNIMPLEMENTED;
 	return -1;
 }
 
 static int fs_chown(const char *path, fuse_uid_t uid, fuse_gid_t gid, struct fuse_file_info *fi)
 {
-	// not supported
+	errno = OSS_UNIMPLEMENTED;
 	return -1;
 }
 static void *fs_init(struct fuse_conn_info *conn, struct fuse_config *conf)
 {
 	conn->want |= (conn->capable & FUSE_CAP_READDIRPLUS);
 
-#if defined(FSP_FUSE_CAP_CASE_INSENSITIVE)
-	conn->want |= (conn->capable & FSP_FUSE_CAP_CASE_INSENSITIVE);
-#endif
+//#if defined(FSP_FUSE_CAP_CASE_INSENSITIVE)
+//	conn->want |= (conn->capable & FSP_FUSE_CAP_CASE_INSENSITIVE);
+//#endif
 
 	return fuse_get_context()->private_data;
 }
@@ -318,13 +326,38 @@ int main(int argc, char *argv[])
 	g_sftp_calls = 0;
 	g_sftp_cached_calls = 0;
 
+	// get uid
+	char cmd[100], out[100], err[100];
+	int uid=-1, gid=-1;
+	sprintf(cmd, "id -u %s\n", username);
+	rc = run_command(cmd, out, err);
+	if (rc == 0) {
+		// trim newline
+		//trim_str(out, strlen(out));
+		out[strcspn(out, "\r\n")] = 0;
+		uid = atoi(out);
+		printf("uid=%d\n", uid);
+	}
+	// get gid
+	sprintf(cmd, "id -g %s\n", username);
+	rc = run_command(cmd, out, err);
+	if (rc == 0) {
+		out[strcspn(out, "\r\n")] = 0;
+		gid = atoi(out);
+		printf("gid=%d\n", gid);
+	}
+		
+
 	// fuse arguments
 	PTFS ptfs = { 0 };
 	const char name[] = "";
 	ptfs.rootdir = malloc(strlen(name) + 1);
 	strcpy(ptfs.rootdir, name);
-	argc = 3;
-	argv = new_argv(argc, argv[0], "--VolumePrefix=/linux/root", drive);
+	argc = 4;
+	argv = new_argv(argc, argv[0], 
+		"-oVolumePrefix=/sanfs/root",
+		"-ouid=-1,gid=-1,rellinks",
+		drive);
 
 	// debug arguments
 	for (int i = 0; i < argc; i++)

@@ -279,6 +279,7 @@ DIR * san_opendir(const char *path)
 	unlock();
 	if (!handle) {
 		sftp_error(g_sanssh, path, 0);
+		return 0;
 	}
 	
 	size_t pathlen = strlen(path);
@@ -632,6 +633,7 @@ int run_command(const char *cmd, char *out, char *err)
 	}
 
 	/* read stdout */
+	out[0] = '\0';
 	for (;;) {
 		do {
 			char buffer[0x4000];
@@ -649,6 +651,7 @@ int run_command(const char *cmd, char *out, char *err)
 	}
 
 	/* read stderr */
+	err[0] = '\0';
 	for (;;) {
 		do {
 			char buffer[0x4000];
