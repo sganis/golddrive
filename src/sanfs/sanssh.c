@@ -239,12 +239,13 @@ int san_stat(const char * path, struct fuse_stat *stbuf)
 
 	copy_attributes(stbuf, attrs);
 
+#if DEBUG
 	// stats	
 	g_sftp_calls++;
 	printf("sftp calls cached/total: %ld/%ld (%.1f%% cached)\n",
 			g_sftp_cached_calls, g_sftp_calls,
 			(g_sftp_cached_calls * 100 / (double)g_sftp_calls));
-
+#endif
 
 	return rc;
 }
@@ -289,7 +290,7 @@ DIR * san_opendir(const char *path)
 		return 0;
 	
 	memset(dirp, 0, sizeof *dirp);
-	dirp->h = handle;
+	dirp->handle = handle;
 	memcpy(dirp->path, path, pathlen);
 	dirp->path[pathlen + 0] = '/';
 	dirp->path[pathlen + 1] = '\0';
@@ -300,13 +301,13 @@ DIR * san_opendir(const char *path)
 
 int san_dirfd(DIR *dirp)
 {
-	return (int)dirp->h;
+	return (int)dirp->handle;
 }
 
 void san_rewinddir(DIR *dirp)
 {
 	lock();
-	libssh2_sftp_rewind(dirp->h);
+	libssh2_sftp_rewind(dirp->handle);
 	unlock();
 }
 
@@ -317,22 +318,23 @@ struct dirent *san_readdir(DIR *dirp)
 	char fname[512];
 	char longentry[512];
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
-	assert(dirp->h);
+	assert(dirp->handle);
 	lock();
-	rc = libssh2_sftp_readdir_ex(dirp->h, fname, sizeof(fname), longentry, sizeof(longentry), &attrs);
+	rc = libssh2_sftp_readdir_ex(dirp->handle, fname, sizeof(fname),
+		longentry, sizeof(longentry), &attrs);
 	unlock();
 	g_sftp_calls++;
 
 	if (rc > 0) {
-		if (strcmp(fname, "bin") == 0) {
-			// bin dir
-			printf("bin:\n");
+		//if (strcmp(fname, "bin") == 0) {
+		//	// bin dir
+		//	printf("bin:\n");
 
 
-		}
+		//}
 		// resolve symbolic links
 		if (attrs.permissions & LIBSSH2_SFTP_S_IFLNK) {
-			printf("is link: %s\n", fname);
+			//printf("is link: %s\n", fname);
 			char fullpath[MAX_PATH];
 			char realpath[MAX_PATH];
 			strcpy(fullpath, dirp->path);
@@ -340,9 +342,9 @@ struct dirent *san_readdir(DIR *dirp)
 			if (!(pathlen > 0 && dirp->path[pathlen - 1] == '/'))
 				strcat(fullpath, "/");
 			strcat(fullpath, fname);
-			printf("fullpath: %s\n", fullpath);
+			//printf("fullpath: %s\n", fullpath);
 			int realpathlen = san_realpath(fullpath, realpath);
-			printf("realpath: %s\n", realpath);
+			//printf("realpath: %s\n", realpath);
 			int r;
 			memset(&attrs, 0, sizeof attrs);
 			lock();
@@ -362,12 +364,12 @@ struct dirent *san_readdir(DIR *dirp)
 	
 	copy_attributes(stbuf, &attrs);
 	strcpy(dirp->de.d_name, fname);
-
+#if DEBUG
 	// stats	
 	printf("sftp calls cached/total: %ld/%ld (%.1f%% cached)\n",
 			g_sftp_cached_calls, g_sftp_calls, 
 			(g_sftp_cached_calls*100/(double)g_sftp_calls));
-
+#endif
 
 	return &dirp->de;
 
@@ -375,7 +377,7 @@ struct dirent *san_readdir(DIR *dirp)
 
 int san_closedir(DIR *dirp)
 {
-	int rc = san_close_handle(dirp->h);
+	int rc = san_close_handle(dirp->handle);
 	free(dirp);
 	return rc;
 }
@@ -424,6 +426,7 @@ LIBSSH2_SFTP_HANDLE * san_open(const char *path, long mode)
 	}
 	return handle;
 }
+
 int san_read(size_t handle, void *buf, size_t nbyte, fuse_off_t offset)
 {
 	(LIBSSH2_SFTP_HANDLE *)handle;
@@ -437,10 +440,20 @@ int san_read(size_t handle, void *buf, size_t nbyte, fuse_off_t offset)
 	//		return 0;
 	//	return error();
 	//}
-
+	size_t thread = GetCurrentThreadId();
+	lock();
+	if (offset) {
+		int curpos = libssh2_sftp_tell64(handle);
+		if(offset != curpos)
+			libssh2_sftp_seek64(handle, offset);
+	}
+	unlock();
+	//printf("thread buffer size    offset         bytes read     bytes written  total bytes\n");
 	int bytesread;
 	size_t total = 0;
 	size_t size = nbyte;
+	size_t off = 0;
+	
 	while (size) {
 		char *mem = malloc(size);
 		lock();
@@ -450,13 +463,18 @@ int san_read(size_t handle, void *buf, size_t nbyte, fuse_off_t offset)
 			fprintf(stderr, "Unable to read file\n");
 			return -1;
 		} else if (bytesread == 0) {
-			fprintf(stderr, "host has disconnected\n");
-			return -1;
+			free(mem);
+			return total;
+			//fprintf(stderr, "host has disconnected\n");
+			//return -1;
 		}
 		//memcpy(buffer, selectedText + offset, size);
 		//return strlen(selectedText) - offset;
-		memcpy(buf, mem, bytesread);
+		memcpy((char*)buf + off, mem, bytesread);
 		total += bytesread;
+		off += bytesread;
+		//printf("%-7ld%-15d%-15ld%-15d%-15d%-15ld\n",thread,
+		//	size, offset, bytesread, bytesread, total);
 		size -= bytesread;
 		free(mem);
 	}

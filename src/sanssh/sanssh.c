@@ -1,4 +1,4 @@
-#include "sanssh2.h"
+#include "sanssh.h"
 #include <stdio.h>
 
 void usage(const char* prog)
@@ -176,22 +176,26 @@ int san_read(SANSSH *sanssh, const char * remotefile, const char * localfile)
 		fprintf(stderr, "error opening %s for writing\n", localfile);
 		return;
 	}
-	int rc;
+	int bytesread;
 	size_t total = 0;
 	size_t bytesize = sizeof(char);
+	size_t byteswritten = 0;
 	int bufsize = 2 * 1024 * 1024;
+	//int bufsize = 64 * 1024;
 	int start;
 	int duration;
 
 	fprintf(stderr, "donwloading %s -> %s...\n", remotefile, localfile);
+	printf("buffer size    bytes read     bytes written  total bytes\n");
 	start = time(NULL);
 	char *mem = (char*)malloc(bufsize);
 	for (;;) {
-		rc = libssh2_sftp_read(handle, mem, bufsize);
-		if (rc == 0)
+		bytesread = libssh2_sftp_read(handle, mem, bufsize);
+		if (bytesread == 0)
 			break;
-		fwrite(mem, bytesize, rc, file);
-		total += rc;
+		byteswritten = fwrite(mem, bytesize, bytesread, file);
+		total += bytesread;
+		printf("%-15d%-15d%-15ld%-15ld\n", bufsize, bytesread, byteswritten, total);
 	}
 	free(mem);
 	duration = time(NULL) - start;

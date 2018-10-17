@@ -147,7 +147,10 @@ static int fs_read(const char *path, char *buf, size_t size,
 	fuse_off_t off, struct fuse_file_info *fi)
 {
 	//debug(path);
-    size_t fd = fi_fd(fi);
+	//printf("thread req size  offset    path\n");
+	//printf("%-7ld%-10ld%-10ld%s\n", GetCurrentThreadId(), size, off, path);
+
+	size_t fd = fi_fd(fi);
     int nb = san_read(fd, buf, size, off);
 	if (nb >= 0)
 		return nb;
@@ -238,7 +241,7 @@ static struct fuse_operations fs_ops =
 
 static void usage(const char* prog)
 {
-    fprintf(stderr, "usage: %s [FUSE options] host user drive [pkey]\n", prog);
+    fprintf(stderr, "usage: %s host user drive [pkey]\n", prog);
     exit(2);
 }
 char **new_argv(int count, ...)

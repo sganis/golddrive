@@ -58,7 +58,7 @@ struct dirent
 	char d_name[255];
 };
 typedef struct _DIR {
-	LIBSSH2_SFTP_HANDLE *h;
+	LIBSSH2_SFTP_HANDLE *handle;
 	struct dirent de;
 	char path[];
 } DIR;

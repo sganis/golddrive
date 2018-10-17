@@ -5,12 +5,12 @@
  *
  * Download a file from remote ssh server.
  *
- * usage: sanssh hostname user /tmp/file [private key]
+ * usage: sanssh hostname user /tmp/file.bin c:\temp\file.bin [private key]
  * private key defaults to %USERPROFILE%\.ssh\id_rsa
  */
-#include "sanssh2.h"
 #include <stdio.h>
 #include <assert.h>
+#include "sanssh.h"
 
 
 int main(int argc, char *argv[])
@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 	char *errmsg;
 
 	if (argc == 2 && strcmp(argv[1],"-V") == 0) {
-		printf("sanssh2 1.0.2\n");
+		printf("sanssh 1.0.0\n");
 		return 0;
 	}
 	
@@ -63,10 +63,10 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	// read in blocking mode
-	//san_read(session, sftp, remotefile, localfile);
+	san_read(sanssh, remotefile, localfile);
 	
 	// read in non-blocking mode
-	san_read_async(sanssh, remotefile, localfile);
+	//san_read_async(sanssh, remotefile, localfile);
 
 	
 	//const char* path = "/tmp/sftp_folder";
