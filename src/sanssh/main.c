@@ -5,7 +5,7 @@
  *
  * Download a file from remote ssh server.
  *
- * usage: sanssh hostname user /tmp/file.bin c:\temp\file.bin [private key]
+ * usage: sanssh hostname port user /tmp/file.bin c:\temp\file.bin [private key]
  * private key defaults to %USERPROFILE%\.ssh\id_rsa
  */
 #include <stdio.h>
@@ -36,14 +36,14 @@ int main(int argc, char *argv[])
 	}
 
 	hostname = argv[1];
-	port = argv[2];
+	port = atoi(argv[2]);
 	username = argv[3];
 	remotefile = argv[4];
 	localfile = argv[5];
 
 	// get public key
-	if (argc > 5) {
-		strcpy_s(pkey, MAX_PATH, argv[5]);
+	if (argc > 6) {
+		strcpy_s(pkey, MAX_PATH, argv[6]);
 	} else {
 		char profile[BUFFER_SIZE];
 		ExpandEnvironmentStringsA("%USERPROFILE%", profile, BUFFER_SIZE);
@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 	printf("host       : %s\n", hostname);
-	printf("port       : %s\n", port);
+	printf("port       : %d\n", port);
 	printf("username   : %s\n", username);
 	printf("private key: %s\n", pkey);
 	

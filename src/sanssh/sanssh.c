@@ -185,7 +185,7 @@ int san_read(SANSSH *sanssh, const char * remotefile, const char * localfile)
 	int duration;
 
 	fprintf(stderr, "donwloading %s -> %s...\n", remotefile, localfile);
-	printf("buffer size    bytes read     bytes written  total bytes\n");
+	//printf("buffer size    bytes read     bytes written  total bytes\n");
 	start = time(NULL);
 	char *mem = (char*)malloc(bufsize);
 	for (;;) {
@@ -194,7 +194,7 @@ int san_read(SANSSH *sanssh, const char * remotefile, const char * localfile)
 			break;
 		byteswritten = fwrite(mem, bytesize, bytesread, file);
 		total += bytesread;
-		printf("%-15d%-15d%-15ld%-15ld\n", bufsize, bytesread, byteswritten, total);
+		//printf("%-15d%-15d%-15ld%-15ld\n", bufsize, bytesread, byteswritten, total);
 	}
 	free(mem);
 	duration = time(NULL) - start;
