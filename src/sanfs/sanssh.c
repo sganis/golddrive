@@ -46,14 +46,13 @@ void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs)
 	stbuf->st_ctim.tv_sec = attrs->mtime;
 	stbuf->st_nlink = 1;
 }
-SANSSH * san_init(const char* hostname,	const char* username, 
-	const char* pkey, char* error)
+SANSSH * san_init(const char* hostname,	int port, 
+	const char* username, const char* pkey, char* error)
 {
 	int rc;
 	char *errmsg;
 	SOCKADDR_IN sin;
 	HOSTENT *he;
-	int port = 22;
 	SOCKET sock;
 	LIBSSH2_SESSION* ssh = NULL;
 	LIBSSH2_SFTP* sftp = NULL;

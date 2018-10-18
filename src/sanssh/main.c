@@ -15,11 +15,12 @@
 
 int main(int argc, char *argv[])
 {
-	const char *hostname = "";
-	const char *username = "";
-	const char *password = "";
-	const char *remotefile = "";
-	const char *localfile = "";
+	char *hostname = "";
+	int port = 22;
+	char *username = "";
+	char *password = "";
+	char *remotefile = "";
+	char *localfile = "";
 	char pkey[MAX_PATH];
 	int rc;
 	char *errmsg;
@@ -29,15 +30,16 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 	
-	if (argc < 5) {
+	if (argc < 6) {
 		usage(argv[0]);
 		return 1;
 	}
 
 	hostname = argv[1];
-    username = argv[2];
-	remotefile = argv[3];
-	localfile = argv[4];
+	port = argv[2];
+	username = argv[3];
+	remotefile = argv[4];
+	localfile = argv[5];
 
 	// get public key
 	if (argc > 5) {
@@ -53,11 +55,12 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 	printf("host       : %s\n", hostname);
+	printf("port       : %s\n", port);
 	printf("username   : %s\n", username);
 	printf("private key: %s\n", pkey);
 	
 	char error[ERROR_LEN];
-	SANSSH* sanssh = san_init(hostname, username, pkey, error);
+	SANSSH* sanssh = san_init(hostname, port, username, pkey, error);
 	if (!sanssh) {
 		fprintf(stderr, "Error initializing sanssh2: %s\n", error);
 		return 1;

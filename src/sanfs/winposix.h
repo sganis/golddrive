@@ -34,6 +34,24 @@
 #define AT_FDCWD                        -2
 #define AT_SYMLINK_NOFOLLOW             2
 
+int ftruncate(int fd, fuse_off_t size);
+int pwrite(int fd, const void *buf, size_t nbyte, fuse_off_t offset);
+int fsync(int fd);
+int close(int fd);
+int truncate(const char *path, fuse_off_t size);
+int utime(const char *path, const struct fuse_utimbuf *timbuf);
+int utimensat(int dirfd, const char *path, const struct fuse_timespec times[2], int flag);
+int setcrtime(const char *path, const struct fuse_timespec *tv);
+int unlink(const char *path);
+int rename(const char *oldpath, const char *newpath);
+int mkdir(const char *path, fuse_mode_t mode);
+int rmdir(const char *path);
+
+long WinFspLoad(void);
+#undef fuse_main
+#define fuse_main(argc, argv, ops, data)\
+    (WinFspLoad(), fuse_main_real(argc, argv, ops, sizeof *(ops), data))
+
 //typedef struct _DIR DIR;
 //struct dirent
 //{
@@ -47,35 +65,20 @@
 //	char path[];
 //};
 
-char *realpath(const char *path, char *resolved);
-int statvfs(const char *path, struct fuse_statvfs *stbuf);
-int popen(const char *path, int oflag, ...);
-int fstat(int fd, struct fuse_stat *stbuf);
-int ftruncate(int fd, fuse_off_t size);
-int pread(int fd, void *buf, size_t nbyte, fuse_off_t offset);
-int pwrite(int fd, const void *buf, size_t nbyte, fuse_off_t offset);
-int fsync(int fd);
-int close(int fd);
-int lstat(const char *path, struct fuse_stat *stbuf);
-int chmod(const char *path, fuse_mode_t mode);
-int lchown(const char *path, fuse_uid_t uid, fuse_gid_t gid);
-int lchflags(const char *path, uint32_t flags);
-int truncate(const char *path, fuse_off_t size);
-int utime(const char *path, const struct fuse_utimbuf *timbuf);
-int utimensat(int dirfd, const char *path, const struct fuse_timespec times[2], int flag);
-int setcrtime(const char *path, const struct fuse_timespec *tv);
-int unlink(const char *path);
-int rename(const char *oldpath, const char *newpath);
-int mkdir(const char *path, fuse_mode_t mode);
-int rmdir(const char *path);
+//char *realpath(const char *path, char *resolved);
+//int statvfs(const char *path, struct fuse_statvfs *stbuf);
+//int popen(const char *path, int oflag, ...);
+//int fstat(int fd, struct fuse_stat *stbuf);
 //DIR *opendir(const char *path);
 //int dirfd(DIR *dirp);
 //void rewinddir(DIR *dirp);
 //struct dirent *readdir(DIR *dirp);
 //int closedir(DIR *dirp);
-long WinFspLoad(void);
-#undef fuse_main
-#define fuse_main(argc, argv, ops, data)\
-    (WinFspLoad(), fuse_main_real(argc, argv, ops, sizeof *(ops), data))
+//int lstat(const char *path, struct fuse_stat *stbuf);
+//int chmod(const char *path, fuse_mode_t mode);
+//int lchown(const char *path, fuse_uid_t uid, fuse_gid_t gid);
+//int lchflags(const char *path, uint32_t flags);
+//int pread(int fd, void *buf, size_t nbyte, fuse_off_t offset);
+
 
 #endif

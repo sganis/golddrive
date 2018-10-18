@@ -277,8 +277,9 @@ char **new_argv(int count, ...)
 
 int main(int argc, char *argv[])
 {
-	const char *hostname = "";
-	const char *username = "";
+	char *host = "";
+	char *user = "";
+	int port = 22;
 	char drive[3];
 	char pkey[MAX_PATH];
 	char *errmsg;
@@ -289,18 +290,19 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	if (argc < 4) {
+	if (argc < 5) {
 		usage(argv[0]);
 		return 1;
 	}
 
-	hostname = argv[1];
-	username = argv[2];
-	strcpy(drive, argv[3]);
+	host = argv[1];
+	port = atoi(argv[2]);
+	user = argv[3];
+	strcpy(drive, argv[4]);
 	
 	// get public key
-	if (argc > 4) {
-		strcpy_s(pkey, MAX_PATH, argv[4]);
+	if (argc > 5) {
+		strcpy_s(pkey, MAX_PATH, argv[5]);
 	}
 	else {
 		char profile[BUFFER_SIZE];
@@ -312,13 +314,14 @@ int main(int argc, char *argv[])
 		printf("error: cannot read private key: %s\n", pkey);
 		exit(1);
 	}
-	printf("host       : %s\n", hostname);
-	printf("username   : %s\n", username);
+	printf("host       : %s\n", host);
+	printf("port       : %d\n", port);
+	printf("user       : %s\n", user);
 	printf("private key: %s\n", pkey);
 
 	char error[ERROR_LEN];
 	size_t t = time_ms();
-	g_sanssh = san_init(hostname, username, pkey, error);
+	g_sanssh = san_init(host, port, user, pkey, error);
 	printf("time to create session 1: %d secs\n", time_ms() - t);
 	//t = time_ms();
 	//SANSSH* ssh2 = san_init(hostname, username, pkey, error);
@@ -353,7 +356,7 @@ int main(int argc, char *argv[])
 	// get uid
 	char cmd[100], out[100], err[100];
 	int uid=-1, gid=-1;
-	sprintf(cmd, "id -u %s\n", username);
+	sprintf(cmd, "id -u %s\n", user);
 	rc = run_command(cmd, out, err);
 	if (rc == 0) {
 		// trim newline
@@ -363,7 +366,7 @@ int main(int argc, char *argv[])
 		printf("uid=%d\n", uid);
 	}
 	// get gid
-	sprintf(cmd, "id -g %s\n", username);
+	sprintf(cmd, "id -g %s\n", user);
 	rc = run_command(cmd, out, err);
 	if (rc == 0) {
 		out[strcspn(out, "\r\n")] = 0;
@@ -377,10 +380,9 @@ int main(int argc, char *argv[])
 	const char name[] = "";
 	ptfs.rootdir = malloc(strlen(name) + 1);
 	strcpy(ptfs.rootdir, name);
-	argc = 6;
+	argc = 3;
 	argv = new_argv(argc, argv[0], 
-		"-o","VolumePrefix=/sanfs/root",
-		"-o", "uid=-1,gid=-1,rellinks",
+		"-oVolumePrefix=/sanfs/linux,uid=-1,gid=-1,rellinks",
 		drive);
 	//argv = new_argv(2, argv[0], "-h");
 

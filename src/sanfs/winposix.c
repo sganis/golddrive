@@ -40,39 +40,39 @@
 //    char path[];
 //};
 
-#if defined(FSP_FUSE_USE_STAT_EX)
-static inline uint32_t MapFileAttributesToFlags(UINT32 FileAttributes)
-{
-    uint32_t flags = 0;
-
-    if (FileAttributes & FILE_ATTRIBUTE_READONLY)
-        flags |= FSP_FUSE_UF_READONLY;
-    if (FileAttributes & FILE_ATTRIBUTE_HIDDEN)
-        flags |= FSP_FUSE_UF_HIDDEN;
-    if (FileAttributes & FILE_ATTRIBUTE_SYSTEM)
-        flags |= FSP_FUSE_UF_SYSTEM;
-    if (FileAttributes & FILE_ATTRIBUTE_ARCHIVE)
-        flags |= FSP_FUSE_UF_ARCHIVE;
-
-    return flags;
-}
-
-static inline UINT32 MapFlagsToFileAttributes(uint32_t flags)
-{
-    UINT32 FileAttributes = 0;
-
-    if (flags & FSP_FUSE_UF_READONLY)
-        FileAttributes |= FILE_ATTRIBUTE_READONLY;
-    if (flags & FSP_FUSE_UF_HIDDEN)
-        FileAttributes |= FILE_ATTRIBUTE_HIDDEN;
-    if (flags & FSP_FUSE_UF_SYSTEM)
-        FileAttributes |= FILE_ATTRIBUTE_SYSTEM;
-    if (flags & FSP_FUSE_UF_ARCHIVE)
-        FileAttributes |= FILE_ATTRIBUTE_ARCHIVE;
-
-    return FileAttributes;
-}
-#endif
+//#if defined(FSP_FUSE_USE_STAT_EX)
+//static inline uint32_t MapFileAttributesToFlags(UINT32 FileAttributes)
+//{
+//    uint32_t flags = 0;
+//
+//    if (FileAttributes & FILE_ATTRIBUTE_READONLY)
+//        flags |= FSP_FUSE_UF_READONLY;
+//    if (FileAttributes & FILE_ATTRIBUTE_HIDDEN)
+//        flags |= FSP_FUSE_UF_HIDDEN;
+//    if (FileAttributes & FILE_ATTRIBUTE_SYSTEM)
+//        flags |= FSP_FUSE_UF_SYSTEM;
+//    if (FileAttributes & FILE_ATTRIBUTE_ARCHIVE)
+//        flags |= FSP_FUSE_UF_ARCHIVE;
+//
+//    return flags;
+//}
+//
+//static inline UINT32 MapFlagsToFileAttributes(uint32_t flags)
+//{
+//    UINT32 FileAttributes = 0;
+//
+//    if (flags & FSP_FUSE_UF_READONLY)
+//        FileAttributes |= FILE_ATTRIBUTE_READONLY;
+//    if (flags & FSP_FUSE_UF_HIDDEN)
+//        FileAttributes |= FILE_ATTRIBUTE_HIDDEN;
+//    if (flags & FSP_FUSE_UF_SYSTEM)
+//        FileAttributes |= FILE_ATTRIBUTE_SYSTEM;
+//    if (flags & FSP_FUSE_UF_ARCHIVE)
+//        FileAttributes |= FILE_ATTRIBUTE_ARCHIVE;
+//
+//    return FileAttributes;
+//}
+//#endif
 
 static int maperror(int winerrno);
 
@@ -163,27 +163,27 @@ static inline int error(void)
 //    return 0;
 //}
 
-int popen(const char *path, int oflag, ...)
-{
-    static DWORD da[] = { GENERIC_READ, GENERIC_WRITE, GENERIC_READ | GENERIC_WRITE, 0 };
-    static DWORD cd[] = { OPEN_EXISTING, OPEN_ALWAYS, TRUNCATE_EXISTING, CREATE_ALWAYS };
-    DWORD DesiredAccess = 0 == (oflag & _O_APPEND) ?
-        da[oflag & (_O_RDONLY | _O_WRONLY | _O_RDWR)] :
-        (da[oflag & (_O_RDONLY | _O_WRONLY | _O_RDWR)] & ~FILE_WRITE_DATA) | FILE_APPEND_DATA;
-    DWORD CreationDisposition = (_O_CREAT | _O_EXCL) == (oflag & (_O_CREAT | _O_EXCL)) ?
-        CREATE_NEW :
-        cd[(oflag & (_O_CREAT | _O_TRUNC)) >> 8];
-
-    HANDLE h = CreateFileA(path,
-        DesiredAccess, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-        0/* default security */,
-        CreationDisposition, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS, 0);
-
-    if (INVALID_HANDLE_VALUE == h)
-        return error();
-
-    return (int)(intptr_t)h;
-}
+//int popen(const char *path, int oflag, ...)
+//{
+//    static DWORD da[] = { GENERIC_READ, GENERIC_WRITE, GENERIC_READ | GENERIC_WRITE, 0 };
+//    static DWORD cd[] = { OPEN_EXISTING, OPEN_ALWAYS, TRUNCATE_EXISTING, CREATE_ALWAYS };
+//    DWORD DesiredAccess = 0 == (oflag & _O_APPEND) ?
+//        da[oflag & (_O_RDONLY | _O_WRONLY | _O_RDWR)] :
+//        (da[oflag & (_O_RDONLY | _O_WRONLY | _O_RDWR)] & ~FILE_WRITE_DATA) | FILE_APPEND_DATA;
+//    DWORD CreationDisposition = (_O_CREAT | _O_EXCL) == (oflag & (_O_CREAT | _O_EXCL)) ?
+//        CREATE_NEW :
+//        cd[(oflag & (_O_CREAT | _O_TRUNC)) >> 8];
+//
+//    HANDLE h = CreateFileA(path,
+//        DesiredAccess, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+//        0/* default security */,
+//        CreationDisposition, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS, 0);
+//
+//    if (INVALID_HANDLE_VALUE == h)
+//        return error();
+//
+//    return (int)(intptr_t)h;
+//}
 
 //int fstat(int fd, struct fuse_stat *stbuf)
 //{
@@ -222,24 +222,24 @@ int ftruncate(int fd, fuse_off_t size)
     return 0;
 }
 
-int pread(int fd, void *buf, size_t nbyte, fuse_off_t offset)
-{
-    HANDLE h = (HANDLE)(intptr_t)fd;
-    OVERLAPPED Overlapped = { 0 };
-    DWORD BytesTransferred;
-
-    Overlapped.Offset = (DWORD)offset;
-    Overlapped.OffsetHigh = (DWORD)(offset >> 32);
-
-    if (!ReadFile(h, buf, (DWORD)nbyte, &BytesTransferred, &Overlapped))
-    {
-        if (ERROR_HANDLE_EOF == GetLastError())
-            return 0;
-        return error();
-    }
-
-    return BytesTransferred;
-}
+//int pread(int fd, void *buf, size_t nbyte, fuse_off_t offset)
+//{
+//    HANDLE h = (HANDLE)(intptr_t)fd;
+//    OVERLAPPED Overlapped = { 0 };
+//    DWORD BytesTransferred;
+//
+//    Overlapped.Offset = (DWORD)offset;
+//    Overlapped.OffsetHigh = (DWORD)(offset >> 32);
+//
+//    if (!ReadFile(h, buf, (DWORD)nbyte, &BytesTransferred, &Overlapped))
+//    {
+//        if (ERROR_HANDLE_EOF == GetLastError())
+//            return 0;
+//        return error();
+//    }
+//
+//    return BytesTransferred;
+//}
 
 int pwrite(int fd, const void *buf, size_t nbyte, fuse_off_t offset)
 {

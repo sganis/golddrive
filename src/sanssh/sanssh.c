@@ -4,7 +4,7 @@
 void usage(const char* prog)
 {
 	printf("Sanssh2 - sftp client using libssh2\n");
-	printf("usage: %s [options] <host> <user> <remote file> <local file> [public key]\n", prog);
+	printf("usage: %s [options] <host> <port> <user> <remote file> <local file> [public key]\n", prog);
 	printf("options:\n");
 	printf("    -V           show version\n");
 }
@@ -25,14 +25,13 @@ void get_filetype(unsigned long perm, char* filetype)
 	else									strcpy(filetype, "NAN");
 }
 
-SANSSH * san_init(const char* hostname,	const char* username, 
+SANSSH * san_init(const char* hostname,	int port, const char* username, 
 	const char* pkey, char* error)
 {
 	int rc;
 	char *errmsg;
 	SOCKADDR_IN sin;
 	HOSTENT *he;
-	int port = 22;
 	SOCKET sock;
 	LIBSSH2_SESSION* ssh;
 	LIBSSH2_SFTP* sftp;

@@ -68,17 +68,17 @@ def test_setupssh_passord():
 	rb = setupssh.testssh(userhost, appkey, port)
 	assert rb.returncode == util.ReturnCode.OK
 
-@pytest.mark.skip(reason="no way of currently testing this")
-def test_setupssh_user_key():
-	if os.path.exists(appkey):		
-		os.remove(appkey)	
-	rb = setupssh.testssh(userhost, appkey, port)
-	assert rb.returncode == util.ReturnCode.BAD_LOGIN
-	rb = setupssh.main(userhost, '', userkey, port)
-	assert rb.returncode == util.ReturnCode.OK
-	assert 'successfull' in rb.output
-	rb = setupssh.testssh(userhost, appkey, port)
-	assert rb.returncode == util.ReturnCode.OK
+# @pytest.mark.skip(reason="no way of currently testing this")
+# def test_setupssh_user_key():
+# 	if os.path.exists(appkey):		
+# 		os.remove(appkey)	
+# 	rb = setupssh.testssh(userhost, appkey, port)
+# 	assert rb.returncode == util.ReturnCode.BAD_LOGIN
+# 	rb = setupssh.main(userhost, '', userkey, port)
+# 	assert rb.returncode == util.ReturnCode.OK
+# 	assert 'successfull' in rb.output
+# 	rb = setupssh.testssh(userhost, appkey, port)
+# 	assert rb.returncode == util.ReturnCode.OK
 
 def test_generate_keys():
 	rb = setupssh.generate_keys(appkey, userhost)

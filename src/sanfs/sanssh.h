@@ -66,7 +66,7 @@ typedef struct _DIR {
 int file_exists(const char* path);
 int waitsocket();
 void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs);
-SANSSH *san_init(const char *hostname, const char *username, 
+SANSSH *san_init(const char *hostname, int port, const char *username, 
 	const char *pkey, char *error);
 int san_finalize();
 int san_stat(const char *path, struct fuse_stat *stbuf);

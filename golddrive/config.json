@@ -9,10 +9,10 @@
 	// drive parameters
 	"drives" : {
 		"Y:" : {
-			"drivename" : "Box",
-			"user" 		: "sag",
-			"port" 		: "22",
-			"hosts" 	: ["192.168.100.201"],
+			"drivename" : "Docker",
+			"user" 		: "support",
+			"port" 		: "2222",
+			"hosts" 	: ["192.168.99.100"],
 		},
 	}
 }
