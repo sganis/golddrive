@@ -34,23 +34,16 @@
 #define AT_FDCWD                        -2
 #define AT_SYMLINK_NOFOLLOW             2
 
-int ftruncate(int fd, fuse_off_t size);
-int pwrite(int fd, const void *buf, size_t nbyte, fuse_off_t offset);
-int fsync(int fd);
-int close(int fd);
-int truncate(const char *path, fuse_off_t size);
+//int pwrite(int fd, const void *buf, size_t nbyte, fuse_off_t offset);
 int utime(const char *path, const struct fuse_utimbuf *timbuf);
 int utimensat(int dirfd, const char *path, const struct fuse_timespec times[2], int flag);
 int setcrtime(const char *path, const struct fuse_timespec *tv);
-int unlink(const char *path);
-int rename(const char *oldpath, const char *newpath);
-int mkdir(const char *path, fuse_mode_t mode);
-int rmdir(const char *path);
 
 long WinFspLoad(void);
 #undef fuse_main
 #define fuse_main(argc, argv, ops, data)\
     (WinFspLoad(), fuse_main_real(argc, argv, ops, sizeof *(ops), data))
+
 
 //typedef struct _DIR DIR;
 //struct dirent
@@ -79,6 +72,14 @@ long WinFspLoad(void);
 //int lchown(const char *path, fuse_uid_t uid, fuse_gid_t gid);
 //int lchflags(const char *path, uint32_t flags);
 //int pread(int fd, void *buf, size_t nbyte, fuse_off_t offset);
+//int close(int fd);
+//int truncate(const char *path, fuse_off_t size);
+//int ftruncate(int fd, fuse_off_t size);
+//int unlink(const char *path);
+//int mkdir(const char *path, fuse_mode_t mode);
+//int rmdir(const char *path);
+//int rename(const char *oldpath, const char *newpath);
+//int fsync(int fd);
 
 
 #endif

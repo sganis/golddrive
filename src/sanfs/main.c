@@ -18,14 +18,15 @@ SANSSH *			g_sanssh;
 
 /* macros */
 //#define concat_path(ptfs, fn, fp)       (sizeof fp > (unsigned)snprintf(fp, sizeof fp, "%s%s", ptfs->rootdir, fn))
+
 #define fi_dirbit                       (0x8000000000000000ULL)
 #define fi_fh(fi, MASK)                 ((fi)->fh & (MASK))
 #define fi_setfh(fi, FH, MASK)          ((fi)->fh = (size_t)(FH) | (MASK))
 #define fi_fd(fi)                       (fi_fh(fi, fi_dirbit) ? \
 										san_dirfd((DIR *)(size_t)fi_fh(fi, ~fi_dirbit)) : \
-										(int)fi_fh(fi, ~fi_dirbit))
+										(size_t)fi_fh(fi, ~fi_dirbit))
 #define fi_dirp(fi)                     ((DIR *)(size_t)fi_fh(fi, ~fi_dirbit))
-#define fi_setfd(fi, handle)            (fi_setfh(fi, handle, 0))
+#define fi_setfd(fi, fd)                (fi_setfh(fi, fd, 0))
 #define fi_setdirp(fi, dirp)            (fi_setfh(fi, dirp, fi_dirbit))
 //#define fs_fullpath(n)					\
 //    char full ## n[PATH_MAX];           \
@@ -41,23 +42,26 @@ typedef struct _PTFS {
 
 static int fs_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_file_info *fi)
 {
+	debug("%s\n", path);
+	int rc;
 	if (0 == fi) {
-		return san_stat(path, stbuf);
+		rc = san_stat(path, stbuf);
 	} else {
-		int fd = fi_fd(fi);
-		return san_fstat(fd, stbuf);
+		size_t fd = fi_fd(fi);
+		rc = san_fstat(fd, stbuf);
 	}
-	// check if errno is needed ?
+	debug("end %d %s\n", rc, path);
+	return rc;
 }
 
 static int fs_statfs(const char *path, struct fuse_statvfs *stbuf)
 {
-	debug(path);
+	debug("%s\n", path);
 	return san_statvfs(path, stbuf);
 }
 static int fs_opendir(const char *path, struct fuse_file_info *fi)
 {
-	debug(path);
+	debug("%s\n", path);
 	int rc = -1;
 	DIR *dirp = san_opendir(path);
 	if (dirp) {
@@ -70,26 +74,25 @@ static int fs_opendir(const char *path, struct fuse_file_info *fi)
 static int fs_readdir(const char *path, void *buf,	fuse_fill_dir_t filler, fuse_off_t off,
 	struct fuse_file_info *fi, enum fuse_readdir_flags flags)
 {
-	debug(path);
+	debug("%s\n", path);
 	DIR *dirp = fi_dirp(fi);
 	struct dirent *de;
 
 	san_rewinddir(dirp);
 
 	for (;;) {
-		errno = 0;
 		if (0 == (de = san_readdir(dirp)))
 			break;
 		if (0 != filler(buf, de->d_name, &de->d_stat, 0, FUSE_FILL_DIR_PLUS))
 			return -ENOMEM;
 	}
-	return -errno;
+	return 0;
 
 }
 
 static int fs_releasedir(const char *path, struct fuse_file_info *fi)
 {
-	debug(path);
+	debug("%s\n", path);
 	DIR *dirp = fi_dirp(fi);
 	if (!dirp)
 		return 0;
@@ -100,53 +103,52 @@ static int fs_releasedir(const char *path, struct fuse_file_info *fi)
 
 static int fs_mkdir(const char *path, fuse_mode_t mode)
 {
-	debug(path);
+	debug("%s\n", path);
 	return san_mkdir(path, mode);
+	debug("end", path);
 }
 
 static int fs_unlink(const char *path)
 {
-	debug(path); 
+	debug("%s\n", path);
 	return san_unlink(path);
+	debug("end", path);
 }
 
 static int fs_rmdir(const char *path)
 {
-	debug(path); 
+	debug("%s\n", path);
 	return san_rmdir(path);
+	debug("end", path);
 }
 
 static int fs_rename(const char *oldpath, const char *newpath, unsigned int flags)
 {
-	debug(oldpath);
-	debug(newpath);
-	return -1 != rename(oldpath, newpath) ? 0 : -errno;
+	debug("%s\n", oldpath);
+	debug("%s\n", newpath);
+	return san_rename(oldpath, newpath);
 }
 
 static int fs_truncate(const char *path, fuse_off_t size, struct fuse_file_info *fi)
 {
-    //if (0 == fi)
-    //{
-    //    fs_fullpath(path);
-    //    return -1 != san_truncate(path, size) ? 0 : -errno;
-    //}
-    //else
-    //{
-    //    int fd = fi_fd(fi);
-    //    return -1 != ftruncate(fd, size) ? 0 : -errno;
-    //}
+    if (0 == fi)  {
+        return san_truncate(path, size);
+    } else {
+		size_t fd = fi_fd(fi);
+        return san_ftruncate(fd, size);
+    }
 }
 
 static int fs_open(const char *path, struct fuse_file_info *fi)
 {
-	debug(path);
+	debug("%s\n", path);
 	LIBSSH2_SFTP_HANDLE * handle = NULL;
 	handle = san_open(path, fi->flags);
 	if (handle) {
 		int rc = (fi_setfd(fi, handle), 0);
 		return rc;
 	} else {
-		return -errno;
+		return -1;
 	}
 }
 
@@ -162,14 +164,13 @@ static int fs_read(const char *path, char *buf, size_t size,
 	if (nb >= 0)
 		return nb;
 	else
-		return -errno;
+		return -1;
 }
 
-static int fs_write(const char *path, const char *buf, size_t size, fuse_off_t off,
-    struct fuse_file_info *fi)
+static int fs_write(const char *path, const char *buf, size_t size, 
+	fuse_off_t off,  struct fuse_file_info *fi)
 {
-	debug(path);
-	errno = OSS_UNIMPLEMENTED;
+	debug("%s\n", path);
 	return -1;
 
     //int fd = fi_fd(fi);
@@ -180,22 +181,21 @@ static int fs_write(const char *path, const char *buf, size_t size, fuse_off_t o
 
 static int fs_release(const char *path, struct fuse_file_info *fi)
 {
-	debug(path);
-    uint64_t fd = fi_fd(fi);
+	debug("%s\n", path);
+	size_t fd = fi_fd(fi);
     san_close_handle(fd);
     return 0;
 }
 
 static int fs_fsync(const char *path, int datasync, struct fuse_file_info *fi)
 {
-    int fd = fi_fd(fi);
-    return -1 != fsync(fd) ? 0 : -errno;
+	size_t fd = fi_fd(fi);
+    return san_fsync(fd);
 }
 
 static int fs_create(const char *path, fuse_mode_t mode, struct fuse_file_info *fi)
 {
-	debug(path);
-	errno = OSS_UNIMPLEMENTED;
+	debug("%s\n", path);
 	return -1;
 
     //int fd;
@@ -204,18 +204,17 @@ static int fs_create(const char *path, fuse_mode_t mode, struct fuse_file_info *
 
 static int fs_utimens(const char *path, const struct fuse_timespec tv[2], struct fuse_file_info *fi)
 {
-	debug(path);
-    return -1 != utimensat(AT_FDCWD, path, tv, AT_SYMLINK_NOFOLLOW) ? 0 : -errno;
+	debug("%s\n", path);
+	return -1;
+    //return san_utimensat(AT_FDCWD, path, tv, AT_SYMLINK_NOFOLLOW);
 }
 static int fs_chmod(const char *path, fuse_mode_t mode, struct fuse_file_info *fi)
 {
-	errno = OSS_UNIMPLEMENTED;
 	return -1;
 }
 
 static int fs_chown(const char *path, fuse_uid_t uid, fuse_gid_t gid, struct fuse_file_info *fi)
 {
-	errno = OSS_UNIMPLEMENTED;
 	return -1;
 }
 static void *fs_init(struct fuse_conn_info *conn, struct fuse_config *conf)

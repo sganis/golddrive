@@ -208,20 +208,6 @@ static inline int error(void)
 //
 //    return 0;
 //}
-
-int ftruncate(int fd, fuse_off_t size)
-{
-    HANDLE h = (HANDLE)(intptr_t)fd;
-    FILE_END_OF_FILE_INFO EndOfFileInfo;
-
-    EndOfFileInfo.EndOfFile.QuadPart = size;
-
-    if (!SetFileInformationByHandle(h, FileEndOfFileInfo, &EndOfFileInfo, sizeof EndOfFileInfo))
-        return error();
-
-    return 0;
-}
-
 //int pread(int fd, void *buf, size_t nbyte, fuse_off_t offset)
 //{
 //    HANDLE h = (HANDLE)(intptr_t)fd;
@@ -241,40 +227,40 @@ int ftruncate(int fd, fuse_off_t size)
 //    return BytesTransferred;
 //}
 
-int pwrite(int fd, const void *buf, size_t nbyte, fuse_off_t offset)
-{
-    HANDLE h = (HANDLE)(intptr_t)fd;
-    OVERLAPPED Overlapped = { 0 };
-    DWORD BytesTransferred;
+//int pwrite(int fd, const void *buf, size_t nbyte, fuse_off_t offset)
+//{
+//    HANDLE h = (HANDLE)(intptr_t)fd;
+//    OVERLAPPED Overlapped = { 0 };
+//    DWORD BytesTransferred;
+//
+//    Overlapped.Offset = (DWORD)offset;
+//    Overlapped.OffsetHigh = (DWORD)(offset >> 32);
+//
+//    if (!WriteFile(h, buf, (DWORD)nbyte, &BytesTransferred, &Overlapped))
+//        return error();
+//
+//    return BytesTransferred;
+//}
 
-    Overlapped.Offset = (DWORD)offset;
-    Overlapped.OffsetHigh = (DWORD)(offset >> 32);
+//int fsync(int fd)
+//{
+//    HANDLE h = (HANDLE)(intptr_t)fd;
+//
+//    if (!FlushFileBuffers(h))
+//        return error();
+//
+//    return 0;
+//}
 
-    if (!WriteFile(h, buf, (DWORD)nbyte, &BytesTransferred, &Overlapped))
-        return error();
-
-    return BytesTransferred;
-}
-
-int fsync(int fd)
-{
-    HANDLE h = (HANDLE)(intptr_t)fd;
-
-    if (!FlushFileBuffers(h))
-        return error();
-
-    return 0;
-}
-
-int close(int fd)
-{
-    HANDLE h = (HANDLE)(intptr_t)fd;
-
-    if (!CloseHandle(h))
-        return error();
-
-    return 0;
-}
+//int close(int fd)
+//{
+//    HANDLE h = (HANDLE)(intptr_t)fd;
+//
+//    if (!CloseHandle(h))
+//        return error();
+//
+//    return 0;
+//}
 
 //int lstat(const char *path, struct fuse_stat *stbuf)
 //{
@@ -319,21 +305,33 @@ int close(int fd)
 //    return 0;
 //}
 
-int truncate(const char *path, fuse_off_t size)
-{
-    HANDLE h = CreateFileA(path,
-        FILE_WRITE_DATA, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-        0,
-        OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
-    if (INVALID_HANDLE_VALUE == h)
-        return error();
-
-    int res = ftruncate((int)(intptr_t)h, size);
-
-    CloseHandle(h);
-
-    return res;
-}
+//int truncate(const char *path, fuse_off_t size)
+//{
+//    HANDLE h = CreateFileA(path,
+//        FILE_WRITE_DATA, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+//        0,
+//        OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
+//    if (INVALID_HANDLE_VALUE == h)
+//        return error();
+//
+//    int res = ftruncate((int)(intptr_t)h, size);
+//
+//    CloseHandle(h);
+//
+//    return res;
+//}
+//int ftruncate(int fd, fuse_off_t size)
+//{
+//	HANDLE h = (HANDLE)(intptr_t)fd;
+//	FILE_END_OF_FILE_INFO EndOfFileInfo;
+//
+//	EndOfFileInfo.EndOfFile.QuadPart = size;
+//
+//	if (!SetFileInformationByHandle(h, FileEndOfFileInfo, &EndOfFileInfo, sizeof EndOfFileInfo))
+//		return error();
+//
+//	return 0;
+//}
 
 int utime(const char *path, const struct fuse_utimbuf *timbuf)
 {
@@ -403,37 +401,37 @@ int setcrtime(const char *path, const struct fuse_timespec *tv)
     return res;
 }
 
-int unlink(const char *path)
-{
-    if (!DeleteFileA(path))
-        return error();
+//int unlink(const char *path)
+//{
+//    if (!DeleteFileA(path))
+//        return error();
+//
+//    return 0;
+//}
 
-    return 0;
-}
+//int rename(const char *oldpath, const char *newpath)
+//{
+//    if (!MoveFileExA(oldpath, newpath, MOVEFILE_REPLACE_EXISTING))
+//        return error();
+//
+//    return 0;
+//}
 
-int rename(const char *oldpath, const char *newpath)
-{
-    if (!MoveFileExA(oldpath, newpath, MOVEFILE_REPLACE_EXISTING))
-        return error();
-
-    return 0;
-}
-
-int mkdir(const char *path, fuse_mode_t mode)
-{
-    if (!CreateDirectoryA(path, 0/* default security */))
-        return error();
-
-    return 0;
-}
-
-int rmdir(const char *path)
-{
-    if (!RemoveDirectoryA(path))
-        return error();
-
-    return 0;
-}
+//int mkdir(const char *path, fuse_mode_t mode)
+//{
+//    if (!CreateDirectoryA(path, 0/* default security */))
+//        return error();
+//
+//    return 0;
+//}
+//
+//int rmdir(const char *path)
+//{
+//    if (!RemoveDirectoryA(path))
+//        return error();
+//
+//    return 0;
+//}
 
 //DIR *opendir(const char *path)
 //{

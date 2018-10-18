@@ -3,19 +3,18 @@
 #include <stdarg.h>
 
 #define USE_CACHE	0
-#define DEBUG		0
+#define DEBUG		1
 #if DEBUG
-#define debug(...) {						\
-	int thread_id = GetCurrentThreadId();	\
+
+#define debug(format, ...) {										\
+	int thread_id = GetCurrentThreadId();							\
 	printf("%d: DEBUG: %s: %d: ", thread_id, __func__, __LINE__);	\
-	printf(__VA_ARGS__);					\
-	printf("\n");							\
+	printf(format, __VA_ARGS__);									\
 }
-#define debug_cached(...) {						\
-	int thread_id = GetCurrentThreadId();	\
+#define debug_cached(format, ...) {									\
+	int thread_id = GetCurrentThreadId();							\
 	printf("%d: DEBUG: %s: %d: CACHED: ", thread_id, __func__, __LINE__);	\
-	printf(__VA_ARGS__);					\
-	printf("\n");							\
+	printf(format, __VA_ARGS__);									\
 }
 #else
 #define debug(...) {}
