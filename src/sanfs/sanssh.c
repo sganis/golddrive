@@ -9,6 +9,12 @@ extern size_t			g_sftp_calls;
 extern size_t			g_sftp_cached_calls;
 extern SANSSH*			g_sanssh;
 
+long WinFspLoad(void)
+{
+	return FspLoad(0);
+}
+
+
 void lock()
 {
 	EnterCriticalSection(&g_critical_section);
@@ -177,43 +183,21 @@ int waitsocket()
 	rc = select(g_sanssh->socket + 1, readfd, writefd, NULL, &timeout);
 	return rc;
 }
-
-int san_mkdir(const char * path)
-{
-	int rc;
-	rc = libssh2_sftp_mkdir(g_sanssh->sftp, path,
-		LIBSSH2_SFTP_S_IRWXU |
-		LIBSSH2_SFTP_S_IRWXG |
-		LIBSSH2_SFTP_S_IROTH | LIBSSH2_SFTP_S_IXOTH);
-	if (rc) {
-		san_error(path);
-	}
-	return rc ? -1 : 0;
-}
-
-int san_rmdir(const char * path)
-{
-	int rc;
-	rc = libssh2_sftp_rmdir(g_sanssh->sftp, path);
-	if (rc) {
-		san_error(path);
-	}
-	return rc ? -1 : 0;
-}
 int san_fstat(size_t fd, struct fuse_stat *stbuf)
 {
 	int rc = 0;
 	LIBSSH2_SFTP_ATTRIBUTES *attrs = NULL;
 	attrs = malloc(sizeof(LIBSSH2_SFTP_ATTRIBUTES));
+	
 	lock();
 	rc = libssh2_sftp_fstat(fd, attrs);
-	unlock();
 	if (rc) {
 		rc = libssh2_sftp_last_error(g_sanssh->sftp);
 	}
 	else {
 		copy_attributes(stbuf, attrs);
 	}
+	unlock();	
 	free(attrs);
 
 #if DEBUG
@@ -228,7 +212,6 @@ int san_fstat(size_t fd, struct fuse_stat *stbuf)
 
 int san_stat(const char * path, struct fuse_stat *stbuf)
 {
-	
 	int rc = 0;
 	LIBSSH2_SFTP_ATTRIBUTES *attrs = NULL;
 	CACHE_ATTRIBUTES* cattrs = NULL;
@@ -236,12 +219,10 @@ int san_stat(const char * path, struct fuse_stat *stbuf)
 	cattrs = cache_attributes_find(path);
 #endif
 	if (!cattrs) {
-		debug(path);
 		attrs = malloc(sizeof(LIBSSH2_SFTP_ATTRIBUTES));
 		lock();
 		// allways follow links
 		rc = libssh2_sftp_stat(g_sanssh->sftp, path, attrs);
-		unlock();		
 		if (rc) {
 			san_error(path);
 			free(attrs);
@@ -255,6 +236,7 @@ int san_stat(const char * path, struct fuse_stat *stbuf)
 			cache_attributes_add(cattrs);
 #endif
 		}
+		unlock();		
 	}
 	else {
 		debug_cached(cattrs->path);
@@ -263,13 +245,14 @@ int san_stat(const char * path, struct fuse_stat *stbuf)
 	}
 
 	copy_attributes(stbuf, attrs);
+	print_permissions(path, attrs);
 
 #if DEBUG
 	// stats	
 	g_sftp_calls++;
 	printf("sftp calls cached/total: %ld/%ld (%.1f%% cached)\n",
-			g_sftp_cached_calls, g_sftp_calls,
-			(g_sftp_cached_calls * 100 / (double)g_sftp_calls));
+		g_sftp_cached_calls, g_sftp_calls,
+		(g_sftp_cached_calls * 100 / (double)g_sftp_calls));
 #endif
 	return rc;
 }
@@ -293,6 +276,29 @@ int san_statvfs(const char * path, struct fuse_statvfs *stbuf)
 	stbuf->f_fsid = stvfs.f_fsid;
 	stbuf->f_namemax = stvfs.f_namemax;
 	return rc;
+}
+
+int san_mkdir(const char * path)
+{
+	int rc;
+	rc = libssh2_sftp_mkdir(g_sanssh->sftp, path,
+		LIBSSH2_SFTP_S_IRWXU |
+		LIBSSH2_SFTP_S_IRWXG |
+		LIBSSH2_SFTP_S_IROTH | LIBSSH2_SFTP_S_IXOTH);
+	if (rc) {
+		san_error(path);
+	}
+	return rc ? -1 : 0;
+}
+
+int san_rmdir(const char * path)
+{
+	int rc;
+	rc = libssh2_sftp_rmdir(g_sanssh->sftp, path);
+	if (rc) {
+		san_error(path);
+	}
+	return rc ? -1 : 0;
 }
 
 DIR * san_opendir(const char *path)
@@ -348,7 +354,7 @@ struct dirent *san_readdir(DIR *dirp)
 	lock();
 	rc = libssh2_sftp_readdir_ex(dirp->handle, fname, sizeof(fname),
 		longentry, sizeof(longentry), &attrs);
-	
+	unlock();
 	g_sftp_calls++;
 
 	if (rc > 0) {
@@ -366,7 +372,9 @@ struct dirent *san_readdir(DIR *dirp)
 			strcat(fullpath, fname);
 			//printf("fullpath: %s\n", fullpath);
 			memset(&attrs, 0, sizeof attrs);
+			lock();
 			rc = libssh2_sftp_stat(g_sanssh->sftp, fullpath, &attrs);
+			unlock();
 			if (rc) {
 				san_error(fullpath);
 			}
@@ -382,14 +390,12 @@ struct dirent *san_readdir(DIR *dirp)
 			//	sftp_error(g_sanssh, realpath, r);
 			//}
 		}
-
-		
 	}
 	else {
 		// no more files
 		return 0;
 	}
-	unlock();
+	
 	copy_attributes(stbuf, &attrs);
 	strcpy(dirp->de.d_name, fname);
 #if DEBUG
@@ -408,6 +414,27 @@ int san_closedir(DIR *dirp)
 	int rc = san_close_handle(dirp->handle);
 	free(dirp);
 	return rc;
+}
+
+void mode_human(unsigned long mode, char* human)
+{
+	human[0] = mode & LIBSSH2_SFTP_S_IRUSR ? 'r' : '-';
+	human[1] = mode & LIBSSH2_SFTP_S_IWUSR ? 'w' : '-';
+	human[2] = mode & LIBSSH2_SFTP_S_IXUSR ? 'x' : '-';
+	human[3] = mode & LIBSSH2_SFTP_S_IRGRP ? 'r' : '-';
+	human[4] = mode & LIBSSH2_SFTP_S_IWGRP ? 'w' : '-';
+	human[5] = mode & LIBSSH2_SFTP_S_IXGRP ? 'x' : '-';
+	human[6] = mode & LIBSSH2_SFTP_S_IROTH ? 'r' : '-';
+	human[7] = mode & LIBSSH2_SFTP_S_IWOTH ? 'w' : '-';
+	human[8] = mode & LIBSSH2_SFTP_S_IXOTH ? 'x' : '-';
+	human[9] = '\0';
+}
+
+void print_permissions(const char* path, LIBSSH2_SFTP_ATTRIBUTES *attrs)
+{
+	char perm[10];
+	mode_human(attrs->permissions, perm);
+	printf("%s %d %d %s\n", perm, attrs->uid, attrs->gid, path);
 }
 
 void print_stat(const char* path, LIBSSH2_SFTP_ATTRIBUTES *attrs)
@@ -582,6 +609,7 @@ int san_close_handle(LIBSSH2_SFTP_HANDLE *handle)
 	rc = libssh2_sftp_close_handle(handle);
 	unlock();
 	debug("handle %ld closed\n", handle);
+	handle = NULL;
 	return rc;
 }
 
@@ -636,7 +664,7 @@ int san_ftruncate(int fd, fuse_off_t size)
 
 	//return 0;
 }
-int san_fsync(int fd)
+int san_fsync(size_t fd)
 {
 	//HANDLE h = (HANDLE)(intptr_t)fd;
 
@@ -645,7 +673,76 @@ int san_fsync(int fd)
 
 	return 0;
 }
+int utime(const char *path, const struct fuse_utimbuf *timbuf)
+{
+	return -1;
+	//if (0 == timbuf)
+	//	return utimensat(AT_FDCWD, path, 0, AT_SYMLINK_NOFOLLOW);
+	//else
+	//{
+	//	struct fuse_timespec times[2];
+	//	times[0].tv_sec = timbuf->actime;
+	//	times[0].tv_nsec = 0;
+	//	times[1].tv_sec = timbuf->modtime;
+	//	times[1].tv_nsec = 0;
+	//	return utimensat(AT_FDCWD, path, times, AT_SYMLINK_NOFOLLOW);
+	//}
+}
 
+int utimensat(int dirfd, const char *path, const struct fuse_timespec times[2], int flag)
+{
+	return -1;
+	///* ignore dirfd and assume that it is always AT_FDCWD */
+	///* ignore flag and assume that it is always AT_SYMLINK_NOFOLLOW */
+
+	//HANDLE h = CreateFileA(path,
+	//	FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+	//	0,
+	//	OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
+	//if (INVALID_HANDLE_VALUE == h)
+	//	return error();
+
+	//UINT64 LastAccessTime, LastWriteTime;
+	//if (0 == times)
+	//{
+	//	FILETIME FileTime;
+	//	GetSystemTimeAsFileTime(&FileTime);
+	//	LastAccessTime = LastWriteTime = *(PUINT64)&FileTime;
+	//}
+	//else
+	//{
+	//	FspPosixUnixTimeToFileTime((void *)&times[0], &LastAccessTime);
+	//	FspPosixUnixTimeToFileTime((void *)&times[1], &LastWriteTime);
+	//}
+
+	//int res = SetFileTime(h,
+	//	0, (PFILETIME)&LastAccessTime, (PFILETIME)&LastWriteTime) ? 0 : error();
+
+	//CloseHandle(h);
+
+	//return res;
+}
+
+int setcrtime(const char *path, const struct fuse_timespec *tv)
+{
+	return -1;
+	//HANDLE h = CreateFileA(path,
+	//	FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+	//	0,
+	//	OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
+	//if (INVALID_HANDLE_VALUE == h)
+	//	return error();
+
+	//UINT64 CreationTime;
+	//FspPosixUnixTimeToFileTime((void *)tv, &CreationTime);
+
+	//int res = SetFileTime(h,
+	//	(PFILETIME)&CreationTime, 0, 0) ? 0 : error();
+
+	//CloseHandle(h);
+
+	//return res;
+}
 //int san_realpath(const char *path, char *target)
 //{
 //	int rc;

@@ -22,27 +22,27 @@
 #ifndef WINPOSIX_H_INCLUDED
 #define WINPOSIX_H_INCLUDED
 
-#define O_RDONLY                        _O_RDONLY
-#define O_WRONLY                        _O_WRONLY
-#define O_RDWR                          _O_RDWR
-#define O_APPEND                        _O_APPEND
-#define O_CREAT                         _O_CREAT
-#define O_EXCL                          _O_EXCL
-#define O_TRUNC                         _O_TRUNC
-
-#define PATH_MAX                        1024
-#define AT_FDCWD                        -2
-#define AT_SYMLINK_NOFOLLOW             2
+//#define O_RDONLY                        _O_RDONLY
+//#define O_WRONLY                        _O_WRONLY
+//#define O_RDWR                          _O_RDWR
+//#define O_APPEND                        _O_APPEND
+//#define O_CREAT                         _O_CREAT
+//#define O_EXCL                          _O_EXCL
+//#define O_TRUNC                         _O_TRUNC
+//
+//#define PATH_MAX                        1024
+//#define AT_FDCWD                        -2
+//#define AT_SYMLINK_NOFOLLOW             2
 
 //int pwrite(int fd, const void *buf, size_t nbyte, fuse_off_t offset);
-int utime(const char *path, const struct fuse_utimbuf *timbuf);
-int utimensat(int dirfd, const char *path, const struct fuse_timespec times[2], int flag);
-int setcrtime(const char *path, const struct fuse_timespec *tv);
+//int utime(const char *path, const struct fuse_utimbuf *timbuf);
+//int utimensat(int dirfd, const char *path, const struct fuse_timespec times[2], int flag);
+//int setcrtime(const char *path, const struct fuse_timespec *tv);
 
-long WinFspLoad(void);
-#undef fuse_main
-#define fuse_main(argc, argv, ops, data)\
-    (WinFspLoad(), fuse_main_real(argc, argv, ops, sizeof *(ops), data))
+//long WinFspLoad(void);
+//#undef fuse_main
+//#define fuse_main(argc, argv, ops, data)\
+//    (WinFspLoad(), fuse_main_real(argc, argv, ops, sizeof *(ops), data))
 
 
 //typedef struct _DIR DIR;

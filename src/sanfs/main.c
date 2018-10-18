@@ -16,23 +16,6 @@ size_t				g_sftp_calls;
 size_t				g_sftp_cached_calls;
 SANSSH *			g_sanssh;
 
-/* macros */
-//#define concat_path(ptfs, fn, fp)       (sizeof fp > (unsigned)snprintf(fp, sizeof fp, "%s%s", ptfs->rootdir, fn))
-
-#define fi_dirbit                       (0x8000000000000000ULL)
-#define fi_fh(fi, MASK)                 ((fi)->fh & (MASK))
-#define fi_setfh(fi, FH, MASK)          ((fi)->fh = (size_t)(FH) | (MASK))
-#define fi_fd(fi)                       (fi_fh(fi, fi_dirbit) ? \
-										san_dirfd((DIR *)(size_t)fi_fh(fi, ~fi_dirbit)) : \
-										(size_t)fi_fh(fi, ~fi_dirbit))
-#define fi_dirp(fi)                     ((DIR *)(size_t)fi_fh(fi, ~fi_dirbit))
-#define fi_setfd(fi, fd)                (fi_setfh(fi, fd, 0))
-#define fi_setdirp(fi, dirp)            (fi_setfh(fi, dirp, fi_dirbit))
-//#define fs_fullpath(n)					\
-//    char full ## n[PATH_MAX];           \
-//    if (!concat_path(((PTFS *)fuse_get_context()->private_data), n, full ## n))\
-//        return -ENAMETOOLONG;           \
-//    n = full ## n
 
 typedef struct _PTFS {
     const char *rootdir;
@@ -379,9 +362,10 @@ int main(int argc, char *argv[])
 	const char name[] = "";
 	ptfs.rootdir = malloc(strlen(name) + 1);
 	strcpy(ptfs.rootdir, name);
-	argc = 3;
+	argc = 5;
 	argv = new_argv(argc, argv[0], 
 		"-oVolumePrefix=/sanfs/linux,uid=-1,gid=-1,rellinks",
+		"-s","-oThreadCount=1",
 		drive);
 	//argv = new_argv(2, argv[0], "-h");
 

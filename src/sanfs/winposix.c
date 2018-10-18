@@ -28,10 +28,10 @@
  * file names and security.
  */
 
-#include <winfsp/winfsp.h>
-#include <fcntl.h>
-#include <fuse.h>
-#include "winposix.h"
+//#include <winfsp/winfsp.h>
+//#include <fcntl.h>
+//#include <fuse.h>
+//#include "winposix.h"
 
 //struct _DIR
 //{
@@ -73,20 +73,20 @@
 //    return FileAttributes;
 //}
 //#endif
-
-static int maperror(int winerrno);
-
-static inline void *error0(void)
-{
-    errno = maperror(GetLastError());
-    return 0;
-}
-
-static inline int error(void)
-{
-    errno = maperror(GetLastError());
-    return -1;
-}
+//
+//static int maperror(int winerrno);
+//
+//static inline void *error0(void)
+//{
+//    errno = maperror(GetLastError());
+//    return 0;
+//}
+//
+//static inline int error(void)
+//{
+//    errno = maperror(GetLastError());
+//    return -1;
+//}
 
 //char *realpath(const char *path, char *resolved)
 //{
@@ -333,73 +333,73 @@ static inline int error(void)
 //	return 0;
 //}
 
-int utime(const char *path, const struct fuse_utimbuf *timbuf)
-{
-    if (0 == timbuf)
-        return utimensat(AT_FDCWD, path, 0, AT_SYMLINK_NOFOLLOW);
-    else
-    {
-        struct fuse_timespec times[2];
-        times[0].tv_sec = timbuf->actime;
-        times[0].tv_nsec = 0;
-        times[1].tv_sec = timbuf->modtime;
-        times[1].tv_nsec = 0;
-        return utimensat(AT_FDCWD, path, times, AT_SYMLINK_NOFOLLOW);
-    }
-}
-
-int utimensat(int dirfd, const char *path, const struct fuse_timespec times[2], int flag)
-{
-    /* ignore dirfd and assume that it is always AT_FDCWD */
-    /* ignore flag and assume that it is always AT_SYMLINK_NOFOLLOW */
-
-    HANDLE h = CreateFileA(path,
-        FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-        0,
-        OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
-    if (INVALID_HANDLE_VALUE == h)
-        return error();
-
-    UINT64 LastAccessTime, LastWriteTime;
-    if (0 == times)
-    {
-        FILETIME FileTime;
-        GetSystemTimeAsFileTime(&FileTime);
-        LastAccessTime = LastWriteTime = *(PUINT64)&FileTime;
-    }
-    else
-    {
-        FspPosixUnixTimeToFileTime((void *)&times[0], &LastAccessTime);
-        FspPosixUnixTimeToFileTime((void *)&times[1], &LastWriteTime);
-    }
-
-    int res = SetFileTime(h,
-        0, (PFILETIME)&LastAccessTime, (PFILETIME)&LastWriteTime) ? 0 : error();
-
-    CloseHandle(h);
-
-    return res;
-}
-
-int setcrtime(const char *path, const struct fuse_timespec *tv)
-{
-    HANDLE h = CreateFileA(path,
-        FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-        0,
-        OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
-    if (INVALID_HANDLE_VALUE == h)
-        return error();
-
-    UINT64 CreationTime;
-    FspPosixUnixTimeToFileTime((void *)tv, &CreationTime);
-
-    int res = SetFileTime(h,
-        (PFILETIME)&CreationTime, 0, 0) ? 0 : error();
-
-    CloseHandle(h);
-
-    return res;
-}
+//int utime(const char *path, const struct fuse_utimbuf *timbuf)
+//{
+//    if (0 == timbuf)
+//        return utimensat(AT_FDCWD, path, 0, AT_SYMLINK_NOFOLLOW);
+//    else
+//    {
+//        struct fuse_timespec times[2];
+//        times[0].tv_sec = timbuf->actime;
+//        times[0].tv_nsec = 0;
+//        times[1].tv_sec = timbuf->modtime;
+//        times[1].tv_nsec = 0;
+//        return utimensat(AT_FDCWD, path, times, AT_SYMLINK_NOFOLLOW);
+//    }
+//}
+//
+//int utimensat(int dirfd, const char *path, const struct fuse_timespec times[2], int flag)
+//{
+//    /* ignore dirfd and assume that it is always AT_FDCWD */
+//    /* ignore flag and assume that it is always AT_SYMLINK_NOFOLLOW */
+//
+//    HANDLE h = CreateFileA(path,
+//        FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+//        0,
+//        OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
+//    if (INVALID_HANDLE_VALUE == h)
+//        return error();
+//
+//    UINT64 LastAccessTime, LastWriteTime;
+//    if (0 == times)
+//    {
+//        FILETIME FileTime;
+//        GetSystemTimeAsFileTime(&FileTime);
+//        LastAccessTime = LastWriteTime = *(PUINT64)&FileTime;
+//    }
+//    else
+//    {
+//        FspPosixUnixTimeToFileTime((void *)&times[0], &LastAccessTime);
+//        FspPosixUnixTimeToFileTime((void *)&times[1], &LastWriteTime);
+//    }
+//
+//    int res = SetFileTime(h,
+//        0, (PFILETIME)&LastAccessTime, (PFILETIME)&LastWriteTime) ? 0 : error();
+//
+//    CloseHandle(h);
+//
+//    return res;
+//}
+//
+//int setcrtime(const char *path, const struct fuse_timespec *tv)
+//{
+//    HANDLE h = CreateFileA(path,
+//        FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+//        0,
+//        OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
+//    if (INVALID_HANDLE_VALUE == h)
+//        return error();
+//
+//    UINT64 CreationTime;
+//    FspPosixUnixTimeToFileTime((void *)tv, &CreationTime);
+//
+//    int res = SetFileTime(h,
+//        (PFILETIME)&CreationTime, 0, 0) ? 0 : error();
+//
+//    CloseHandle(h);
+//
+//    return res;
+//}
 
 //int unlink(const char *path)
 //{
@@ -528,109 +528,109 @@ int setcrtime(const char *path, const struct fuse_timespec *tv)
 //    return 0;
 //}
 
-static int maperror(int winerrno)
-{
-    switch (winerrno)
-    {
-    case ERROR_INVALID_FUNCTION:
-        return EINVAL;
-    case ERROR_FILE_NOT_FOUND:
-        return ENOENT;
-    case ERROR_PATH_NOT_FOUND:
-        return ENOENT;
-    case ERROR_TOO_MANY_OPEN_FILES:
-        return EMFILE;
-    case ERROR_ACCESS_DENIED:
-        return EACCES;
-    case ERROR_INVALID_HANDLE:
-        return EBADF;
-    case ERROR_ARENA_TRASHED:
-        return ENOMEM;
-    case ERROR_NOT_ENOUGH_MEMORY:
-        return ENOMEM;
-    case ERROR_INVALID_BLOCK:
-        return ENOMEM;
-    case ERROR_BAD_ENVIRONMENT:
-        return E2BIG;
-    case ERROR_BAD_FORMAT:
-        return ENOEXEC;
-    case ERROR_INVALID_ACCESS:
-        return EINVAL;
-    case ERROR_INVALID_DATA:
-        return EINVAL;
-    case ERROR_INVALID_DRIVE:
-        return ENOENT;
-    case ERROR_CURRENT_DIRECTORY:
-        return EACCES;
-    case ERROR_NOT_SAME_DEVICE:
-        return EXDEV;
-    case ERROR_NO_MORE_FILES:
-        return ENOENT;
-    case ERROR_LOCK_VIOLATION:
-        return EACCES;
-    case ERROR_BAD_NETPATH:
-        return ENOENT;
-    case ERROR_NETWORK_ACCESS_DENIED:
-        return EACCES;
-    case ERROR_BAD_NET_NAME:
-        return ENOENT;
-    case ERROR_FILE_EXISTS:
-        return EEXIST;
-    case ERROR_CANNOT_MAKE:
-        return EACCES;
-    case ERROR_FAIL_I24:
-        return EACCES;
-    case ERROR_INVALID_PARAMETER:
-        return EINVAL;
-    case ERROR_NO_PROC_SLOTS:
-        return EAGAIN;
-    case ERROR_DRIVE_LOCKED:
-        return EACCES;
-    case ERROR_BROKEN_PIPE:
-        return EPIPE;
-    case ERROR_DISK_FULL:
-        return ENOSPC;
-    case ERROR_INVALID_TARGET_HANDLE:
-        return EBADF;
-    case ERROR_WAIT_NO_CHILDREN:
-        return ECHILD;
-    case ERROR_CHILD_NOT_COMPLETE:
-        return ECHILD;
-    case ERROR_DIRECT_ACCESS_HANDLE:
-        return EBADF;
-    case ERROR_NEGATIVE_SEEK:
-        return EINVAL;
-    case ERROR_SEEK_ON_DEVICE:
-        return EACCES;
-    case ERROR_DIR_NOT_EMPTY:
-        return ENOTEMPTY;
-    case ERROR_NOT_LOCKED:
-        return EACCES;
-    case ERROR_BAD_PATHNAME:
-        return ENOENT;
-    case ERROR_MAX_THRDS_REACHED:
-        return EAGAIN;
-    case ERROR_LOCK_FAILED:
-        return EACCES;
-    case ERROR_ALREADY_EXISTS:
-        return EEXIST;
-    case ERROR_FILENAME_EXCED_RANGE:
-        return ENOENT;
-    case ERROR_NESTING_NOT_ALLOWED:
-        return EAGAIN;
-    case ERROR_NOT_ENOUGH_QUOTA:
-        return ENOMEM;
-    default:
-        if (ERROR_WRITE_PROTECT <= winerrno && winerrno <= ERROR_SHARING_BUFFER_EXCEEDED)
-            return EACCES;
-        else if (ERROR_INVALID_STARTING_CODESEG <= winerrno && winerrno <= ERROR_INFLOOP_IN_RELOC_CHAIN)
-            return ENOEXEC;
-        else
-            return EINVAL;
-    }
-}
+//static int maperror(int winerrno)
+//{
+//    switch (winerrno)
+//    {
+//    case ERROR_INVALID_FUNCTION:
+//        return EINVAL;
+//    case ERROR_FILE_NOT_FOUND:
+//        return ENOENT;
+//    case ERROR_PATH_NOT_FOUND:
+//        return ENOENT;
+//    case ERROR_TOO_MANY_OPEN_FILES:
+//        return EMFILE;
+//    case ERROR_ACCESS_DENIED:
+//        return EACCES;
+//    case ERROR_INVALID_HANDLE:
+//        return EBADF;
+//    case ERROR_ARENA_TRASHED:
+//        return ENOMEM;
+//    case ERROR_NOT_ENOUGH_MEMORY:
+//        return ENOMEM;
+//    case ERROR_INVALID_BLOCK:
+//        return ENOMEM;
+//    case ERROR_BAD_ENVIRONMENT:
+//        return E2BIG;
+//    case ERROR_BAD_FORMAT:
+//        return ENOEXEC;
+//    case ERROR_INVALID_ACCESS:
+//        return EINVAL;
+//    case ERROR_INVALID_DATA:
+//        return EINVAL;
+//    case ERROR_INVALID_DRIVE:
+//        return ENOENT;
+//    case ERROR_CURRENT_DIRECTORY:
+//        return EACCES;
+//    case ERROR_NOT_SAME_DEVICE:
+//        return EXDEV;
+//    case ERROR_NO_MORE_FILES:
+//        return ENOENT;
+//    case ERROR_LOCK_VIOLATION:
+//        return EACCES;
+//    case ERROR_BAD_NETPATH:
+//        return ENOENT;
+//    case ERROR_NETWORK_ACCESS_DENIED:
+//        return EACCES;
+//    case ERROR_BAD_NET_NAME:
+//        return ENOENT;
+//    case ERROR_FILE_EXISTS:
+//        return EEXIST;
+//    case ERROR_CANNOT_MAKE:
+//        return EACCES;
+//    case ERROR_FAIL_I24:
+//        return EACCES;
+//    case ERROR_INVALID_PARAMETER:
+//        return EINVAL;
+//    case ERROR_NO_PROC_SLOTS:
+//        return EAGAIN;
+//    case ERROR_DRIVE_LOCKED:
+//        return EACCES;
+//    case ERROR_BROKEN_PIPE:
+//        return EPIPE;
+//    case ERROR_DISK_FULL:
+//        return ENOSPC;
+//    case ERROR_INVALID_TARGET_HANDLE:
+//        return EBADF;
+//    case ERROR_WAIT_NO_CHILDREN:
+//        return ECHILD;
+//    case ERROR_CHILD_NOT_COMPLETE:
+//        return ECHILD;
+//    case ERROR_DIRECT_ACCESS_HANDLE:
+//        return EBADF;
+//    case ERROR_NEGATIVE_SEEK:
+//        return EINVAL;
+//    case ERROR_SEEK_ON_DEVICE:
+//        return EACCES;
+//    case ERROR_DIR_NOT_EMPTY:
+//        return ENOTEMPTY;
+//    case ERROR_NOT_LOCKED:
+//        return EACCES;
+//    case ERROR_BAD_PATHNAME:
+//        return ENOENT;
+//    case ERROR_MAX_THRDS_REACHED:
+//        return EAGAIN;
+//    case ERROR_LOCK_FAILED:
+//        return EACCES;
+//    case ERROR_ALREADY_EXISTS:
+//        return EEXIST;
+//    case ERROR_FILENAME_EXCED_RANGE:
+//        return ENOENT;
+//    case ERROR_NESTING_NOT_ALLOWED:
+//        return EAGAIN;
+//    case ERROR_NOT_ENOUGH_QUOTA:
+//        return ENOMEM;
+//    default:
+//        if (ERROR_WRITE_PROTECT <= winerrno && winerrno <= ERROR_SHARING_BUFFER_EXCEEDED)
+//            return EACCES;
+//        else if (ERROR_INVALID_STARTING_CODESEG <= winerrno && winerrno <= ERROR_INFLOOP_IN_RELOC_CHAIN)
+//            return ENOEXEC;
+//        else
+//            return EINVAL;
+//    }
+//}
 
-long WinFspLoad(void)
-{
-    return FspLoad(0);
-}
+//long WinFspLoad(void)
+//{
+//    return FspLoad(0);
+//}

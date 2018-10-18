@@ -1,14 +1,26 @@
 #pragma once
 #include <libssh2.h>
 #include <libssh2_sftp.h>
+#include <winfsp/winfsp.h>
 #include <fuse.h>
 
 #define BUFFER_SIZE 32767
 #define ERROR_LEN MAXERRORLENGTH
+#define O_RDONLY                        _O_RDONLY
+#define O_WRONLY                        _O_WRONLY
+#define O_RDWR                          _O_RDWR
+#define O_APPEND                        _O_APPEND
+#define O_CREAT                         _O_CREAT
+#define O_EXCL                          _O_EXCL
+#define O_TRUNC                         _O_TRUNC
 
-/* SSH error codes */
+#define PATH_MAX                        1024
+#define AT_FDCWD                        -2
+#define AT_SYMLINK_NOFOLLOW             2
+
+/* SSH Status Codes (returned by libssh2_ssh_last_error() */
 static const char * ssh_errors[] = {
-	"OK"
+	"OK",
 	"SOCKET_NONE",
 	"BANNER_RECV",
 	"BANNER_SEND",
@@ -59,7 +71,6 @@ static const char * ssh_errors[] = {
 	"UNKNOWN"
 };
 
-
 /* SFTP Status Codes (returned by libssh2_sftp_last_error() ) */
 static const char *sftp_errors[] = {
 	"OK",
@@ -86,21 +97,51 @@ static const char *sftp_errors[] = {
 	"LINK_LOOP",
 	"UNKNOWN"
 };
-#define san_error(path) {						\
-	int thread_id = GetCurrentThreadId();				\
-	int err = libssh2_session_last_errno(g_sanssh);		\
-	if (err < 0 || err > 47) err = 48;					\
-	char* msg = ssh_errors[err];						\
-	if (err == LIBSSH2_ERROR_SFTP_PROTOCOL) {			\
-		err = libssh2_sftp_last_error(g_sanssh->sftp);	\
-		if (err <0 || err>21)	err = 22;				\
-		msg = sftp_errors[err];							\
-	}													\
-	fprintf(stderr, "%d :ERROR: %s: %d: [sftp %ld: %s], path: %s\n", \
-			thread_id, __func__,__LINE__, err, msg, path); \
+//#define san_error(path) {						\
+//	int thread_id = GetCurrentThreadId();				\
+//	int err = libssh2_session_last_errno(g_sanssh);		\
+//	if (err < 0 || err > 47) err = 48;					\
+//	char* msg = ssh_errors[err];						\
+//	if (err == LIBSSH2_ERROR_SFTP_PROTOCOL) {			\
+//		err = libssh2_sftp_last_error(g_sanssh->sftp);	\
+//		if (err <0 || err>21)	err = 22;				\
+//		msg = sftp_errors[err];							\
+//	}													\
+//	fprintf(stderr, "%d :ERROR: %s: %d: [sftp %ld: %s], path: %s\n", \
+//			thread_id, __func__,__LINE__, err, msg, path); \
+//}
+#define san_error(path) {												\
+	int thread_id = GetCurrentThreadId();								\
+	int err = libssh2_sftp_last_error(g_sanssh->sftp);					\
+	if (err < 0 || err > 21) err = 22;									\
+	fprintf(stderr, "%d :ERROR: %s: %d: [sftp %ld: %s], path: %s\n",	\
+			thread_id, __func__,__LINE__, err, sftp_errors[err], path); \
 }
 
-#define INVALID_HANDLE ((LIBSSH2_SFTP_HANDLE*)(LONG_PTR)-1)
+//#define INVALID_HANDLE ((LIBSSH2_SFTP_HANDLE*)(LONG_PTR)-1)
+/* macros */
+//#define concat_path(ptfs, fn, fp)       (sizeof fp > (unsigned)snprintf(fp, sizeof fp, "%s%s", ptfs->rootdir, fn))
+#define fi_dirbit                       (0x8000000000000000ULL)
+#define fi_fh(fi, MASK)                 ((fi)->fh & (MASK))
+#define fi_setfh(fi, FH, MASK)          ((fi)->fh = (size_t)(FH) | (MASK))
+#define fi_fd(fi)                       (fi_fh(fi, fi_dirbit) ? \
+										san_dirfd((DIR *)(size_t)fi_fh(fi, ~fi_dirbit)) : \
+										(size_t)fi_fh(fi, ~fi_dirbit))
+#define fi_dirp(fi)                     ((DIR *)(size_t)fi_fh(fi, ~fi_dirbit))
+#define fi_setfd(fi, fd)                (fi_setfh(fi, fd, 0))
+#define fi_setdirp(fi, dirp)            (fi_setfh(fi, dirp, fi_dirbit))
+//#define fs_fullpath(n)					\
+//    char full ## n[PATH_MAX];           \
+//    if (!concat_path(((PTFS *)fuse_get_context()->private_data), n, full ## n))\
+//        return -ENAMETOOLONG;           \
+//    n = full ## n
+
+long WinFspLoad(void);
+
+#undef fuse_main
+#define fuse_main(argc, argv, ops, data)\
+    (WinFspLoad(), fuse_main_real(argc, argv, ops, sizeof *(ops), data))
+
 
 typedef struct _SANSSH {
 	SOCKET socket;
@@ -110,12 +151,11 @@ typedef struct _SANSSH {
 	char error[ERROR_LEN];
 } SANSSH;
 
-//typedef struct _DIR DIR;
-struct dirent
-{
+struct dirent {
 	struct fuse_stat d_stat;
 	char d_name[255];
 };
+
 typedef struct _DIR {
 	LIBSSH2_SFTP_HANDLE *handle;
 	struct dirent de;
@@ -125,8 +165,7 @@ typedef struct _DIR {
 int file_exists(const char* path);
 int waitsocket();
 void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs);
-SANSSH *san_init(const char *hostname, int port, const char *username, 
-	const char *pkey);
+SANSSH *san_init(const char *host, int port, const char *user, const char *pkey);
 int san_finalize();
 int san_stat(const char *path, struct fuse_stat *stbuf);
 int san_fstat(size_t fd, struct fuse_stat *stbuf);
@@ -145,10 +184,16 @@ int san_rename(const char *source, const char *destination);
 int san_unlink(const char *path);
 int san_fsync(size_t fd);
 //int san_realpath(const char *path, char *target);
-//int san_read(const char * remotefile, const char * localfile);
 int san_read(size_t handle, void *buf, size_t nbyte, fuse_off_t offset);
 int san_read_async(const char * remotefile, const char * localfile);
 LIBSSH2_SFTP_HANDLE * san_open(const char *path, long mode);
+
+int utime(const char *path, const struct fuse_utimbuf *timbuf);
+int utimensat(int dirfd, const char *path, const struct fuse_timespec times[2], int flag);
+int setcrtime(const char *path, const struct fuse_timespec *tv);
+
+void mode_human(unsigned long mode, char* human);
+void print_permissions(const char* path, LIBSSH2_SFTP_ATTRIBUTES *attrs);
 void print_stat(const char* path, LIBSSH2_SFTP_ATTRIBUTES *attrs);
 void print_statvfs(const char* path, LIBSSH2_SFTP_STATVFS *st);
 void get_filetype(unsigned long perm, char* filetype);
