@@ -4,7 +4,7 @@ environment:
   WINFSP: winfsp-1.4.18270
 install:
 - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
-- start /wait msiexec /i %WINFSP%.msi /qn
+- start /wait msiexec /i %WINFSP%.msi /qn ADDLOCAL=ALL
 - ps: Restart-Computer -Force
 - ps: Start-Sleep -s 60
 build:
