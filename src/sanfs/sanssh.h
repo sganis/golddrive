@@ -123,11 +123,11 @@ static const char *sftp_errors[] = {
 //#define concat_path(ptfs, fn, fp)       (sizeof fp > (unsigned)snprintf(fp, sizeof fp, "%s%s", ptfs->rootdir, fn))
 #define fi_dirbit                       (0x8000000000000000ULL)
 #define fi_fh(fi, MASK)                 ((fi)->fh & (MASK))
-#define fi_setfh(fi, FH, MASK)          ((fi)->fh = (size_t)(FH) | (MASK))
+#define fi_setfh(fi, FH, MASK)          ((fi)->fh = (ssize_t)(FH) | (MASK))
 #define fi_fd(fi)                       (fi_fh(fi, fi_dirbit) ? \
-										san_dirfd((DIR *)(size_t)fi_fh(fi, ~fi_dirbit)) : \
-										(size_t)fi_fh(fi, ~fi_dirbit))
-#define fi_dirp(fi)                     ((DIR *)(size_t)fi_fh(fi, ~fi_dirbit))
+										san_dirfd((DIR *)(ssize_t)fi_fh(fi, ~fi_dirbit)) : \
+										(ssize_t)fi_fh(fi, ~fi_dirbit))
+#define fi_dirp(fi)                     ((DIR *)(ssize_t)fi_fh(fi, ~fi_dirbit))
 #define fi_setfd(fi, fd)                (fi_setfh(fi, fd, 0))
 #define fi_setdirp(fi, dirp)            (fi_setfh(fi, dirp, fi_dirbit))
 //#define fs_fullpath(n)					\
@@ -171,23 +171,23 @@ void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs);
 SANSSH *san_init(const char *host, int port, const char *user, const char *pkey);
 int san_finalize();
 int san_stat(const char *path, struct fuse_stat *stbuf);
-int san_fstat(size_t fd, struct fuse_stat *stbuf);
+int san_fstat(ssize_t fd, struct fuse_stat *stbuf);
 int san_statvfs(const char *path, struct fuse_statvfs *st);
 DIR *san_opendir(const char *path);
-size_t san_dirfd(DIR *dirp);
+ssize_t san_dirfd(DIR *dirp);
 void san_rewinddir(DIR *dirp);
 struct dirent *san_readdir(DIR *dirp);
 int san_closedir(DIR *dirp);
 int san_truncate(const char *path, fuse_off_t size);
-int san_ftruncate(int fd, fuse_off_t size);
-int san_mkdir(const char *path);
+int san_ftruncate(ssize_t fd, fuse_off_t size);
+int san_mkdir(const char *path, fuse_mode_t mode);
 int san_rmdir(const char *path);
 int san_close_handle(LIBSSH2_SFTP_HANDLE *handle);
 int san_rename(const char *source, const char *destination);
 int san_unlink(const char *path);
-int san_fsync(size_t fd);
+int san_fsync(ssize_t fd);
 //int san_realpath(const char *path, char *target);
-int san_read(size_t handle, void *buf, size_t nbyte, fuse_off_t offset);
+ssize_t san_read(ssize_t fd, void *buf, size_t nbyte, fuse_off_t offset);
 int san_read_async(const char * remotefile, const char * localfile);
 LIBSSH2_SFTP_HANDLE * san_open(const char *path, long mode);
 

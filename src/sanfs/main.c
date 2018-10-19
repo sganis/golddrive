@@ -18,7 +18,7 @@ SANSSH *			g_sanssh;
 
 
 typedef struct _PTFS {
-    const char *rootdir;
+    char *rootdir;
 } PTFS;
 
 
@@ -143,9 +143,9 @@ static int fs_read(const char *path, char *buf, size_t size,
 	//printf("%-7ld%-10ld%-10ld%s\n", GetCurrentThreadId(), size, off, path);
 
 	size_t fd = fi_fd(fi);
-    int nb = san_read(fd, buf, size, off);
+	ssize_t nb = san_read(fd, buf, size, off);
 	if (nb >= 0)
-		return nb;
+		return (int)nb;
 	else
 		return -1;
 }
@@ -300,10 +300,9 @@ int main(int argc, char *argv[])
 	printf("user       : %s\n", user);
 	printf("private key: %s\n", pkey);
 
-	char error[ERROR_LEN];
 	size_t t = time_ms();
-	g_sanssh = san_init(host, port, user, pkey, error);
-	printf("time to create session 1: %ld secs\n", time_ms() - t);
+	g_sanssh = san_init(host, port, user, pkey);
+	printf("time to create session 1: %zd secs\n", time_ms() - t);
 	//t = time_ms();
 	//SANSSH* ssh2 = san_init(hostname, username, pkey, error);
 	//printf("time to create session 2: %d secs\n", time_ms() - t);
@@ -321,7 +320,6 @@ int main(int argc, char *argv[])
 	//printf("time to create session 3: %d secs\n", time_ms() - t);
 
 	if (!g_sanssh) {
-		fprintf(stderr, "Error initializing sanssh: %s\n", error);
 		return 1;
 	}
 
@@ -356,11 +354,12 @@ int main(int argc, char *argv[])
 	}
 		
 
-	// fuse arguments
+	// fuse arguments, is this needed?
 	PTFS ptfs = { 0 };
-	const char name[] = "";
+	char name[] = "";
 	ptfs.rootdir = malloc(strlen(name) + 1);
 	strcpy(ptfs.rootdir, name);
+
 	argc = 4;
 	argv = new_argv(argc, argv[0], 
 		"-oVolumePrefix=/sanfs/linux,uid=-1,gid=-1,rellinks",
