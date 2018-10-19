@@ -9,6 +9,6 @@ install:
 - ps: Start-Sleep -s 60
 build:
   project: src\golddrive.sln
-  verbosity: minimal
+  verbosity: quiet
 
 
