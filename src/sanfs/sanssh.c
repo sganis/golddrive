@@ -1,3 +1,4 @@
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <stdio.h>
 #include <assert.h>
 #include "util.h"
@@ -31,14 +32,14 @@ int file_exists(const char* path)
 }
 void get_filetype(unsigned long perm, char* filetype)
 {
-	if (LIBSSH2_SFTP_S_ISLNK(perm))			strcpy(filetype, "LNK");
-	else if (LIBSSH2_SFTP_S_ISREG(perm))	strcpy(filetype, "REG");
-	else if (LIBSSH2_SFTP_S_ISDIR(perm))	strcpy(filetype, "DIR");
-	else if (LIBSSH2_SFTP_S_ISCHR(perm))	strcpy(filetype, "CHR");
-	else if (LIBSSH2_SFTP_S_ISBLK(perm))	strcpy(filetype, "BLK");
-	else if (LIBSSH2_SFTP_S_ISFIFO(perm))	strcpy(filetype, "FIF");
-	else if (LIBSSH2_SFTP_S_ISSOCK(perm))	strcpy(filetype, "SOC");
-	else									strcpy(filetype, "NAN");
+	if (LIBSSH2_SFTP_S_ISLNK(perm))			strcpy_s(filetype, 4, "LNK");
+	else if (LIBSSH2_SFTP_S_ISREG(perm))	strcpy_s(filetype, 4, "REG");
+	else if (LIBSSH2_SFTP_S_ISDIR(perm))	strcpy_s(filetype, 4, "DIR");
+	else if (LIBSSH2_SFTP_S_ISCHR(perm))	strcpy_s(filetype, 4, "CHR");
+	else if (LIBSSH2_SFTP_S_ISBLK(perm))	strcpy_s(filetype, 4, "BLK");
+	else if (LIBSSH2_SFTP_S_ISFIFO(perm))	strcpy_s(filetype, 4, "FIF");
+	else if (LIBSSH2_SFTP_S_ISSOCK(perm))	strcpy_s(filetype, 4, "SOC");
+	else									strcpy_s(filetype, 4, "NAN");
 }
 void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs)
 {
@@ -190,11 +191,12 @@ int san_fstat(ssize_t fd, struct fuse_stat *stbuf)
 	LIBSSH2_SFTP_ATTRIBUTES *attrs = NULL;
 	LIBSSH2_SFTP_HANDLE* handle = (LIBSSH2_SFTP_HANDLE*)fd;
 	attrs = malloc(sizeof(LIBSSH2_SFTP_ATTRIBUTES));
-	
+	debug("LIBSSH2_SFTP_HANDLE: %zd\n", (ssize_t)handle);
 	lock();
 	rc = libssh2_sftp_fstat(handle, attrs);
 	if (rc) {
-		rc = libssh2_sftp_last_error(g_sanssh->sftp);
+		debug("ERROR: cannot get fstat from handle: %zd\n", (ssize_t)handle);
+		san_error("handle");
 	}
 	else {
 		copy_attributes(stbuf, attrs);
@@ -323,15 +325,17 @@ DIR * san_opendir(const char *path)
 		san_error(path);
 		return 0;
 	}
-	debug("LIBSSH2_SFTP_HANDLE: %zd: %s\n", (size_t)handle, path);
+	debug("LIBSSH2_SFTP_HANDLE: %zd open %s\n", (ssize_t)handle, path);
 
 	size_t pathlen = strlen(path);
 	if (0 < pathlen && '/' == path[pathlen - 1])
 		pathlen--;
 
 	DIR *dirp = malloc(sizeof *dirp + pathlen + 2); /* sets errno */
-	if (0 == dirp)
+	if (0 == dirp) {
+		san_close_handle(handle);
 		return 0;
+	}
 	
 	memset(dirp, 0, sizeof *dirp);
 	dirp->handle = handle;
@@ -371,11 +375,11 @@ struct dirent *san_readdir(DIR *dirp)
 		// resolve symbolic links
 		if (attrs.permissions & LIBSSH2_SFTP_S_IFLNK) {
 			char fullpath[MAX_PATH];
-			strcpy(fullpath, dirp->path);
+			strcpy_s(fullpath, MAX_PATH, dirp->path);
 			int pathlen = (int)strlen(dirp->path);
 			if (!(pathlen > 0 && dirp->path[pathlen - 1] == '/'))
-				strcat(fullpath, "/");
-			strcat(fullpath, fname);
+				strcat_s(fullpath, 2, "/");
+			strcat_s(fullpath, FILENAME_MAX, fname);
 			memset(&attrs, 0, sizeof attrs);
 			lock();
 			//rc = libssh2_sftp_stat(g_sanssh->sftp, fullpath, &attrs);
@@ -404,7 +408,7 @@ struct dirent *san_readdir(DIR *dirp)
 	}
 	
 	copy_attributes(stbuf, &attrs);
-	strcpy(dirp->de.d_name, fname);
+	strcpy_s(dirp->de.d_name, FILENAME_MAX, fname);
 #if DEBUG
 	// stats	
 	debug("sftp calls cached/total: %zd/%zd (%.1f%% cached)\n",
@@ -418,9 +422,9 @@ struct dirent *san_readdir(DIR *dirp)
 
 int san_closedir(DIR *dirp)
 {
-	int rc = san_close_handle(dirp->handle);
+	san_close_handle(dirp->handle);
 	free(dirp);
-	return rc;
+	return 0;
 }
 
 void mode_human(unsigned long mode, char* human)
@@ -489,7 +493,7 @@ LIBSSH2_SFTP_HANDLE * san_open(const char *path, long mode)
 	if (!handle) {
 		san_error(path);
 	}
-	debug("handle %zd open\n", (size_t)handle);
+	debug("LIBSSH2_SFTP_HANDLE: %zd: %s\n", (ssize_t)handle, path);
 	return handle;
 }
 
@@ -497,6 +501,7 @@ ssize_t san_read(ssize_t fd, void *buf, size_t nbyte, fuse_off_t offset)
 {
 	size_t thread = GetCurrentThreadId();
 	LIBSSH2_SFTP_HANDLE* handle = (LIBSSH2_SFTP_HANDLE*)fd;
+	debug("LIBSSH2_SFTP_HANDLE: %zd read from descriptor\n", fd);
 	size_t curpos;
 	lock();
 	curpos = libssh2_sftp_tell64(handle);
@@ -608,7 +613,7 @@ int san_close_handle(LIBSSH2_SFTP_HANDLE *handle)
 	lock();
 	rc = libssh2_sftp_close_handle(handle);
 	unlock();
-	debug("handle %zd closed\n", (ssize_t)handle);
+	debug("LIBSSH2_SFTP_HANDLE: %zd closed\n", (ssize_t)handle);
 	handle = NULL;
 	return rc;
 }

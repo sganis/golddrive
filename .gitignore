@@ -7,3 +7,5 @@ x64/
 .pytest_cache/
 temp/
 release/
+.filters
+.user

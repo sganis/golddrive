@@ -279,7 +279,7 @@ int main(int argc, char *argv[])
 	host = argv[1];
 	port = atoi(argv[2]);
 	user = argv[3];
-	strcpy(drive, argv[4]);
+	strcpy_s(drive, 3, argv[4]);
 	
 	// get public key
 	if (argc > 5) {
@@ -335,7 +335,7 @@ int main(int argc, char *argv[])
 	// get uid
 	char cmd[100], out[100], err[100];
 	int uid=-1, gid=-1;
-	sprintf(cmd, "id -u %s\n", user);
+	snprintf(cmd,sizeof(cmd), "id -u %s\n", user);
 	rc = run_command(cmd, out, err);
 	if (rc == 0) {
 		// trim newline
@@ -345,7 +345,7 @@ int main(int argc, char *argv[])
 		printf("uid=%d\n", uid);
 	}
 	// get gid
-	sprintf(cmd, "id -g %s\n", user);
+	snprintf(cmd, sizeof(cmd), "id -g %s\n", user);
 	rc = run_command(cmd, out, err);
 	if (rc == 0) {
 		out[strcspn(out, "\r\n")] = 0;
@@ -358,7 +358,7 @@ int main(int argc, char *argv[])
 	PTFS ptfs = { 0 };
 	char name[] = "";
 	ptfs.rootdir = malloc(strlen(name) + 1);
-	strcpy(ptfs.rootdir, name);
+	strcpy_s(ptfs.rootdir, 255, name);
 
 	argc = 4;
 	argv = new_argv(argc, argv[0], 

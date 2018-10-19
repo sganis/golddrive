@@ -118,23 +118,17 @@ static const char *sftp_errors[] = {
 			thread_id, __func__,__LINE__, err, sftp_errors[err], path); \
 }
 
-//#define INVALID_HANDLE ((LIBSSH2_SFTP_HANDLE*)(LONG_PTR)-1)
 /* macros */
-//#define concat_path(ptfs, fn, fp)       (sizeof fp > (unsigned)snprintf(fp, sizeof fp, "%s%s", ptfs->rootdir, fn))
 #define fi_dirbit                       (0x8000000000000000ULL)
 #define fi_fh(fi, MASK)                 ((fi)->fh & (MASK))
 #define fi_setfh(fi, FH, MASK)          ((fi)->fh = (ssize_t)(FH) | (MASK))
 #define fi_fd(fi)                       (fi_fh(fi, fi_dirbit) ? \
 										san_dirfd((DIR *)(ssize_t)fi_fh(fi, ~fi_dirbit)) : \
 										(ssize_t)fi_fh(fi, ~fi_dirbit))
-#define fi_dirp(fi)                     ((DIR *)(ssize_t)fi_fh(fi, ~fi_dirbit))
 #define fi_setfd(fi, fd)                (fi_setfh(fi, fd, 0))
+#define fi_dirp(fi)                     ((DIR *)(ssize_t)fi_fh(fi, ~fi_dirbit))
 #define fi_setdirp(fi, dirp)            (fi_setfh(fi, dirp, fi_dirbit))
-//#define fs_fullpath(n)					\
-//    char full ## n[PATH_MAX];           \
-//    if (!concat_path(((PTFS *)fuse_get_context()->private_data), n, full ## n))\
-//        return -ENAMETOOLONG;           \
-//    n = full ## n
+
 
 /* count the number of threads in this app */
 /* n is the -o ThreadCount=n arg, c is number of cores*/
@@ -156,13 +150,13 @@ typedef struct _SANSSH {
 
 struct dirent {
 	struct fuse_stat d_stat;
-	char d_name[255];
+	char d_name[FILENAME_MAX];
 };
 
 typedef struct _DIR {
 	LIBSSH2_SFTP_HANDLE *handle;
 	struct dirent de;
-	char path[];
+	char path[PATH_MAX];
 } DIR;
 
 int file_exists(const char* path);
