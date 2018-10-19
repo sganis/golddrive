@@ -1,0 +1,9 @@
+version: 1.0.{build}
+image: Visual Studio 2017
+environment:
+  WINFSP: winfsp-1.4.18270
+install:
+- appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
+- start /wait msiexec /i %WINFSP%.msi
+- ps: Restart-Computer -Force
+- ps: Start-Sleep -s 60

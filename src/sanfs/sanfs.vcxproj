@@ -181,6 +181,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="cache.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="sanssh.c" />
     <ClCompile Include="util.c" />

@@ -4,7 +4,6 @@
 #include "sanssh.h"
 #include "cache.h"
 
-extern CRITICAL_SECTION g_critical_section;
 extern size_t			g_sftp_calls;
 extern size_t			g_sftp_cached_calls;
 extern SANSSH*			g_sanssh;
@@ -14,15 +13,17 @@ long WinFspLoad(void)
 	return FspLoad(0);
 }
 
+int san_threads(int n, int c)
+{
+	// guess number of threads in this app
+	// n: ThreadCount arg
+	// c: number of cores
+	// w: winfsp threads = n < 1 ? c : max(2, n) + 1
+	// t: total = w + c + main thread
+	return (n < 1 ? c : max(2, n)) + c + 2;
+}
 
-void lock()
-{
-	EnterCriticalSection(&g_critical_section);
-}
-void unlock()
-{
-	LeaveCriticalSection(&g_critical_section);
-}
+
 int file_exists(const char* path)
 {
 	DWORD attr = GetFileAttributesA(path);
@@ -203,7 +204,7 @@ int san_fstat(size_t fd, struct fuse_stat *stbuf)
 #if DEBUG
 	// stats	
 	g_sftp_calls++;
-	printf("sftp calls cached/total: %ld/%ld (%.1f%% cached)\n",
+	debug("sftp calls cached/total: %ld/%ld (%.1f%% cached)\n",
 		g_sftp_cached_calls, g_sftp_calls,
 		(g_sftp_cached_calls * 100 / (double)g_sftp_calls));
 #endif
@@ -245,12 +246,12 @@ int san_stat(const char * path, struct fuse_stat *stbuf)
 	}
 
 	copy_attributes(stbuf, attrs);
-	print_permissions(path, attrs);
+	//print_permissions(path, attrs);
 
 #if DEBUG
 	// stats	
 	g_sftp_calls++;
-	printf("sftp calls cached/total: %ld/%ld (%.1f%% cached)\n",
+	debug("sftp calls cached/total: %ld/%ld (%.1f%% cached)\n",
 		g_sftp_cached_calls, g_sftp_calls,
 		(g_sftp_cached_calls * 100 / (double)g_sftp_calls));
 #endif
@@ -311,7 +312,7 @@ DIR * san_opendir(const char *path)
 		san_error(path);
 		return 0;
 	}
-	printf("LIBSSH2_SFTP_HANDLE: %ld: %s\n", handle, path);
+	debug("LIBSSH2_SFTP_HANDLE: %ld: %s\n", handle, path);
 
 	size_t pathlen = strlen(path);
 	if (0 < pathlen && '/' == path[pathlen - 1])
@@ -348,12 +349,10 @@ struct dirent *san_readdir(DIR *dirp)
 	struct fuse_stat *stbuf = &dirp->de.d_stat;
 	int rc;
 	char fname[512];
-	char longentry[512];
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
 	assert(dirp->handle);
 	lock();
-	rc = libssh2_sftp_readdir_ex(dirp->handle, fname, sizeof(fname),
-		longentry, sizeof(longentry), &attrs);
+	rc = libssh2_sftp_readdir(dirp->handle, fname, sizeof(fname), &attrs);
 	unlock();
 	g_sftp_calls++;
 
@@ -400,7 +399,7 @@ struct dirent *san_readdir(DIR *dirp)
 	strcpy(dirp->de.d_name, fname);
 #if DEBUG
 	// stats	
-	printf("sftp calls cached/total: %ld/%ld (%.1f%% cached)\n",
+	debug("sftp calls cached/total: %ld/%ld (%.1f%% cached)\n",
 			g_sftp_cached_calls, g_sftp_calls, 
 			(g_sftp_cached_calls*100/(double)g_sftp_calls));
 #endif
@@ -500,7 +499,7 @@ int san_read(size_t handle, void *buf, size_t nbyte, fuse_off_t offset)
 	while (size) {		
 		bytesread = libssh2_sftp_read(handle, mem, size);
 		if (bytesread < 0) {
-			fprintf(stderr, "Unable to read file\n");
+			debug("ERROR: Unable to read file\n");
 			return -1;
 		} else if (bytesread == 0) {
 			break;			
@@ -563,7 +562,7 @@ int san_read_async(const char * remotefile, const char * localfile)
 
 	FILE *file;
 	if (fopen_s(&file, localfile, "wb")) {
-		fprintf(stderr, "error opening %s for writing\n", localfile);
+		debug("ERROR: cannot open file %s for writing\n", localfile);
 		return -3;
 	}
 
@@ -764,8 +763,8 @@ int run_command(const char *cmd, char *out, char *err)
 	char *errmsg;
 	channel = libssh2_channel_open_session(g_sanssh->ssh);
 	if (!channel) {
-		int rc = libssh2_session_last_error(g_sanssh->ssh, &errmsg, NULL, 0);
-		fprintf(stderr, "Unable to init ssh chanel: (%d) %s\n", rc, errmsg);
+		rc = libssh2_session_last_error(g_sanssh->ssh, &errmsg, NULL, 0);
+		debug("ERROR: unable to init ssh chanel, rc=%d, %s\n", rc, errmsg);
 		return 1;
 	}
 
@@ -775,7 +774,8 @@ int run_command(const char *cmd, char *out, char *err)
 		waitsocket(g_sanssh);
 
 	if (rc != 0) {
-		fprintf(stderr, "Error\n");
+		rc = libssh2_session_last_error(g_sanssh->ssh, &errmsg, NULL, 0);
+		debug("ERROR: unable to execute command, rc=%d, %s\n", rc, errmsg);
 		return 1;
 	}
 

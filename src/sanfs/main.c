@@ -33,7 +33,10 @@ static int fs_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_fil
 		size_t fd = fi_fd(fi);
 		rc = san_fstat(fd, stbuf);
 	}
-	debug("end %d %s\n", rc, path);
+	//debug("end %d %s\n", rc, path);
+	char perm[10];
+	mode_human(stbuf->st_mode, perm);
+	debug("%s %d %d %s\n", perm, stbuf->st_uid, stbuf->st_gid, path);
 	return rc;
 }
 
@@ -88,21 +91,18 @@ static int fs_mkdir(const char *path, fuse_mode_t mode)
 {
 	debug("%s\n", path);
 	return san_mkdir(path, mode);
-	debug("end", path);
 }
 
 static int fs_unlink(const char *path)
 {
 	debug("%s\n", path);
 	return san_unlink(path);
-	debug("end", path);
 }
 
 static int fs_rmdir(const char *path)
 {
 	debug("%s\n", path);
 	return san_rmdir(path);
-	debug("end", path);
 }
 
 static int fs_rename(const char *oldpath, const char *newpath, unsigned int flags)
@@ -165,7 +165,7 @@ static int fs_write(const char *path, const char *buf, size_t size,
 static int fs_release(const char *path, struct fuse_file_info *fi)
 {
 	debug("%s\n", path);
-	size_t fd = fi_fd(fi);
+	LIBSSH2_SFTP_HANDLE* fd = (LIBSSH2_SFTP_HANDLE*)fi_fd(fi);
     san_close_handle(fd);
     return 0;
 }
@@ -304,7 +304,7 @@ int main(int argc, char *argv[])
 	char error[ERROR_LEN];
 	size_t t = time_ms();
 	g_sanssh = san_init(host, port, user, pkey, error);
-	printf("time to create session 1: %d secs\n", time_ms() - t);
+	printf("time to create session 1: %ld secs\n", time_ms() - t);
 	//t = time_ms();
 	//SANSSH* ssh2 = san_init(hostname, username, pkey, error);
 	//printf("time to create session 2: %d secs\n", time_ms() - t);
@@ -362,10 +362,10 @@ int main(int argc, char *argv[])
 	const char name[] = "";
 	ptfs.rootdir = malloc(strlen(name) + 1);
 	strcpy(ptfs.rootdir, name);
-	argc = 5;
+	argc = 4;
 	argv = new_argv(argc, argv[0], 
 		"-oVolumePrefix=/sanfs/linux,uid=-1,gid=-1,rellinks",
-		"-s","-oThreadCount=1",
+		"-oThreadCount=5",
 		drive);
 	//argv = new_argv(2, argv[0], "-h");
 
@@ -373,6 +373,9 @@ int main(int argc, char *argv[])
 	// debug arguments
 	for (int i = 0; i < argc; i++)
 		printf("arg %d = %s\n", i, argv[i]);
+
+	// number of threads
+	printf("Threads needed: %d\n", san_threads(5, get_number_of_processors()));
 
 	// run fuse main
     rc = fuse_main(argc, argv, &fs_ops, &ptfs);

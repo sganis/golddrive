@@ -21,5 +21,8 @@
 #define debug_cached(...) {}
 #endif
 
+void lock();
+void unlock();
+int get_number_of_processors();
 size_t time_ms();
-inline void trim_str(char* str, int len);
+void trim_str(char* str, int len);

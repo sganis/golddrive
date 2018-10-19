@@ -136,6 +136,9 @@ static const char *sftp_errors[] = {
 //        return -ENAMETOOLONG;           \
 //    n = full ## n
 
+/* count the number of threads in this app */
+/* n is the -o ThreadCount=n arg, c is number of cores*/
+int san_threads(int n, int c);
 long WinFspLoad(void);
 
 #undef fuse_main

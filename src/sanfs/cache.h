@@ -2,6 +2,8 @@
 #include <libssh2_sftp.h>
 #include "uthash.h"
 
+#define CACHE_TTL 5 /* secs */
+
 /* cached stat */
 typedef struct _CACHE_ATTRIBUTES {
 	char path[256];             /* key (string is WITHIN the structure) */
@@ -11,12 +13,36 @@ typedef struct _CACHE_ATTRIBUTES {
 
 extern CACHE_ATTRIBUTES *g_attributes_map;
 
-inline void cache_attributes_add(CACHE_ATTRIBUTES *value)
+// cache function
+// function fetch(key, ttl) {
+//		value <- cache_read(key)
+//		if (!value) {
+//			value <- recompute_value()
+//			cache_write(key, value, ttl)
+//		}
+//		return value
+// }
+/* cache function with probabilistic early expiration */
+// function fetch(key, ttl, beta = 1) {
+//		value, delta, expiry <- cache_read(key)
+//		if (!value || time() - delta * beta * log(rand(0, 1)) >= expiry) {
+//			start <- time()
+//			value <- recompute_value()
+//			delta <- time() - start
+//			cache_write(key, (value, delta), ttl)
+//		}
+//		return value
+// }
+
+
+inline void cache_attributes_write(CACHE_ATTRIBUTES *value)
 {
+	lock();
 	HASH_ADD_STR(g_attributes_map, path, value);
+	unlock();
 }
 
-inline CACHE_ATTRIBUTES * cache_attributes_find(const char* name)
+inline CACHE_ATTRIBUTES * cache_attributes_read(const char* name)
 {
 	CACHE_ATTRIBUTES *value = NULL;
 	HASH_FIND_STR(g_attributes_map, name, value);
