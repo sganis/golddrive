@@ -264,7 +264,6 @@ int main(int argc, char *argv[])
 	int port = 22;
 	char drive[3];
 	char pkey[MAX_PATH];
-	char *errmsg;
 	int rc;
 
 	if (argc == 2 && strcmp(argv[1], "-V") == 0) {

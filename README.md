@@ -1,3 +1,5 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/x6cc6xew8amyv3s6?svg=true)](https://ci.appveyor.com/project/sganis/golddrive)
+
 # Gold Drive
 
 Map a network drive to a remote file systems using SSH.
