@@ -7,3 +7,8 @@ install:
 - start /wait msiexec /i %WINFSP%.msi /qn
 - ps: Restart-Computer -Force
 - ps: Start-Sleep -s 60
+build:
+  project: src\golddrive.sln
+  verbosity: minimal
+
+
