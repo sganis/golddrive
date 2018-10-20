@@ -9,3 +9,7 @@ temp/
 release/
 .filters
 .user
+*/build/
+*/ipch/
+
+
