@@ -4,11 +4,11 @@ environment:
   WINFSP: winfsp-1.4.18270
 install:
 - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
-- cmd: @echo Installing %WINFSP% and rebooting...
+- ps: Write-host "Installing $Env:WINFSP..."
 - start /wait msiexec /i %WINFSP%.msi /qn ADDLOCAL=ALL
 - ps: Restart-Computer -Force
 - ps: Start-Sleep -s 60
-- cmd: @echo Reboot complete.
+- ps: Write-host "Reboot complete."
 build:
   project: src\golddrive.sln
   verbosity: minimal
