@@ -8,9 +8,9 @@ environment:
   GOLDDRIVE_PORT: 2222
   WINFSP: winfsp-1.4.18270
 install:
-- ps: appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
+- appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
 - ps: Write-host "Installing $Env:WINFSP..."
-- ps: start /wait msiexec /i %WINFSP%.msi /qn ADDLOCAL=ALL
+- start /wait msiexec /i %WINFSP%.msi /qn ADDLOCAL=ALL
 - ps: Restart-Computer -Force
 - ps: Start-Sleep -s 60
 - ps: Write-host "Reboot complete."
@@ -18,8 +18,8 @@ build:
   project: src\golddrive.sln
   verbosity: minimal
 after_build:
-- cmd: docker version
-- cmd: cd docker
-- cmd: docker build -t ssh-server .
-- cmd: docker run --rm -d -p 2222:22 -t ssh-server
+- docker version
+- cd docker
+- docker build -t ssh-server .
+- docker run --rm -d -p 2222:22 -t ssh-server
 
