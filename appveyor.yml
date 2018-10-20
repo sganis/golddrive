@@ -1,25 +1,36 @@
 version: 1.0.{build}
-image: Visual Studio 2015
+image: 
+- Visual Studio 2015
+- Ubuntu
 platform: x64
 environment:
-  GOLDDRIVE_HOST: localhost
+  GOLDDRIVE_HOST: linux
   GOLDDRIVE_PASS: support
   GOLDDRIVE_USER: support
   GOLDDRIVE_PORT: 2222
   WINFSP: winfsp-1.4.18270
+hosts:
+  localhost: 127.0.0.1
+  linux: 127.0.0.2
 install:
-- appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
-- ps: Write-host "Installing $Env:WINFSP..."
-- start /wait msiexec /i %WINFSP%.msi /qn ADDLOCAL=ALL
-- ps: Restart-Computer -Force
-- ps: Start-Sleep -s 60
-- ps: Write-host "Reboot complete."
+  - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
+  - ps: Write-host "Installing $Env:WINFSP..."
+  - start /wait msiexec /i %WINFSP%.msi /qn ADDLOCAL=ALL
+  - ps: Restart-Computer -Force
+  - ps: Start-Sleep -s 60
+  - ps: Write-host "Reboot complete."
 build:
   project: src\golddrive.sln
   verbosity: minimal
-after_build:
-- docker version
-- cd docker
-- docker build -t ssh-server .
-- docker run --rm -d -p 2222:22 -t ssh-server
+for:
+-
+  matrix:
+    only:
+      - image: Ubuntu
+  build_script:
+  - echo Ubuntu build script
+  - docker version
+  - cd docker
+  - docker build -t ssh-server .
+  - docker run --rm -d -p 2222:22 -t ssh-server
 
