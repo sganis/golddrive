@@ -35,19 +35,8 @@ extern CACHE_ATTRIBUTES *g_attributes_map;
 // }
 
 
-inline void cache_attributes_write(CACHE_ATTRIBUTES *value)
-{
-	lock();
-	HASH_ADD_STR(g_attributes_map, path, value);
-	unlock();
-}
-
-inline CACHE_ATTRIBUTES * cache_attributes_read(const char* name)
-{
-	CACHE_ATTRIBUTES *value = NULL;
-	HASH_FIND_STR(g_attributes_map, name, value);
-	return value;
-}
+void cache_attributes_write(CACHE_ATTRIBUTES *value);
+CACHE_ATTRIBUTES * cache_attributes_read(const char* name);
 
 
 //int main(int argc, char *argv[]) {

@@ -4,7 +4,7 @@
 
 #define USE_CACHE	0
 #define STATS		0
-#define DEBUG		1
+#define DEBUG		0
 #if DEBUG
 
 #define debug(format, ...) {										\
@@ -23,8 +23,8 @@
 #define debug_cached(...) {}
 #endif
 
-void lock();
-void unlock();
-int get_number_of_processors();
-size_t time_ms();
+void lock(void);
+void unlock(void);
+int get_number_of_processors(void);
+size_t time_ms(void);
 void trim_str(char* str, int len);

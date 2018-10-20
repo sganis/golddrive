@@ -3,6 +3,7 @@
 #include <libssh2_sftp.h>
 #include <winfsp/winfsp.h>
 #include <fuse.h>
+#include "uthash.h"
 
 #define BUFFER_SIZE 32767
 #define ERROR_LEN MAXERRORLENGTH
@@ -17,9 +18,6 @@
 #define PATH_MAX                        1024
 #define AT_FDCWD                        -2
 #define AT_SYMLINK_NOFOLLOW             2
-
-#define SFTP_HANDLE_MAXLEN 256 /* according to spec! */
-
 
 /* SSH Status Codes (returned by libssh2_ssh_last_error() */
 static const char * ssh_errors[] = {
@@ -100,26 +98,27 @@ static const char *sftp_errors[] = {
 	"LINK_LOOP",
 	"UNKNOWN"
 };
-//#define san_error(path) {						\
-//	int thread_id = GetCurrentThreadId();				\
-//	int err = libssh2_session_last_errno(g_sanssh);		\
-//	if (err < 0 || err > 47) err = 48;					\
-//	char* msg = ssh_errors[err];						\
-//	if (err == LIBSSH2_ERROR_SFTP_PROTOCOL) {			\
-//		err = libssh2_sftp_last_error(g_sanssh->sftp);	\
-//		if (err <0 || err>21)	err = 22;				\
-//		msg = sftp_errors[err];							\
-//	}													\
-//	fprintf(stderr, "%d :ERROR: %s: %d: [sftp %ld: %s], path: %s\n", \
-//			thread_id, __func__,__LINE__, err, msg, path); \
-//}
-#define san_error(path) {												\
-	int thread_id = GetCurrentThreadId();								\
-	int err = libssh2_sftp_last_error(g_sanssh->sftp);					\
-	if (err < 0 || err > 21) err = 22;									\
-	fprintf(stderr, "%d :ERROR: %s: %d: [sftp %ld: %s], path: %s\n",	\
-			thread_id, __func__,__LINE__, err, sftp_errors[err], path); \
+#define san_error(path) {								\
+	int thread_id = GetCurrentThreadId();				\
+	SANSSH* sanssh = get_sanssh();						\
+	int err = libssh2_session_last_errno(sanssh->ssh);	\
+	if (err > 0 || err < -47) err = -48;					\
+	const char* msg = ssh_errors[-err];					\
+	if (err == LIBSSH2_ERROR_SFTP_PROTOCOL) {			\
+		err = libssh2_sftp_last_error(sanssh->sftp);	\
+		if (err <0 || err>21) err = 22;					\
+		msg = sftp_errors[err];							\
+	} 													\
+	fprintf(stderr, "%zd: %d :ERROR: %s: %d: [rc=%d: %s], path: %s\n",	\
+				time_ms(), thread_id, __func__,__LINE__, err, msg, path); \
 }
+//#define san_error(path) {												\
+//	int thread_id = GetCurrentThreadId();								\
+//	int err = libssh2_sftp_last_error(get_sanssh()->sftp);					\
+//	if (err < 0 || err > 21) err = 22;									\
+//	fprintf(stderr, "%d :ERROR: %s: %d: [sftp %ld: %s], path: %s\n",	\
+//			thread_id, __func__,__LINE__, err, sftp_errors[err], path); \
+//}
 
 /* macros */
 #define fi_dirbit                       (0x8000000000000000ULL)
@@ -142,14 +141,24 @@ long WinFspLoad(void);
 #define fuse_main(argc, argv, ops, data)\
     (WinFspLoad(), fuse_main_real(argc, argv, ops, sizeof *(ops), data))
 
+typedef struct _CMD_ARGS {
+	char host[64];
+	int port;
+	char user[20];
+	char pkey[MAX_PATH];
+} CMD_ARGS;
+extern  CMD_ARGS * g_cmd_args;
 
 typedef struct _SANSSH {
+	int thread_id;				/* key */
 	SOCKET socket;
 	LIBSSH2_SESSION *ssh;
 	LIBSSH2_SFTP *sftp;
 	int rc;
 	char error[ERROR_LEN];
+	UT_hash_handle hh;			/* makes this structure hashable */
 } SANSSH;
+extern SANSSH *g_sanssh_pool;
 
 struct dirent {
 	struct fuse_stat d_stat;
@@ -163,7 +172,7 @@ typedef struct _DIR {
 } DIR;
 
 int file_exists(const char* path);
-int waitsocket();
+int waitsocket(SANSSH* sanssh);
 void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs);
 SANSSH *san_init(const char *host, int port, const char *user, const char *pkey);
 int san_finalize();
@@ -183,7 +192,7 @@ int san_close(int fd);
 int san_rename(const char *source, const char *destination);
 int san_unlink(const char *path);
 int san_fsync(int fd);
-size_t san_read(int fd, void *buf, size_t nbyte, fuse_off_t offset);
+ssize_t san_read(int fd, void *buf, size_t nbyte, fuse_off_t offset);
 int san_read_async(const char * remotefile, const char * localfile);
 int san_open(const char *path, long mode);
 int utime(const char *path, const struct fuse_utimbuf *timbuf);
@@ -196,3 +205,7 @@ void print_statvfs(const char* path, LIBSSH2_SFTP_STATVFS *st);
 void get_filetype(unsigned long perm, char* filetype);
 int run_command(const char *cmd, char *out, char *err);
 
+// connection pool
+void sanssh_pool_add(SANSSH *value);
+SANSSH * sanssh_pool_find(int thread_id);
+inline SANSSH* get_sanssh(void);

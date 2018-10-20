@@ -14,8 +14,9 @@ CRITICAL_SECTION	g_critical_section;
 CACHE_ATTRIBUTES *	g_attributes_map;
 size_t				g_sftp_calls;
 size_t				g_sftp_cached_calls;
-SANSSH *			g_sanssh;
-
+//SANSSH *			g_sanssh;
+SANSSH *			g_sanssh_pool;
+CMD_ARGS *			g_cmd_args;
 
 typedef struct _PTFS {
     char *rootdir;
@@ -92,11 +93,11 @@ static int fs_mkdir(const char *path, fuse_mode_t mode)
 	return san_mkdir(path, mode);
 }
 
-static int fs_unlink(const char *path)
-{
-	debug("%s\n", path);
-	return san_unlink(path);
-}
+//static int fs_unlink(const char *path)
+//{
+//	debug("%s\n", path);
+//	return san_unlink(path);
+//}
 
 static int fs_rmdir(const char *path)
 {
@@ -213,7 +214,7 @@ static struct fuse_operations fs_ops =
 {
     .getattr = fs_getattr,
     .mkdir = fs_mkdir,
-    .unlink = fs_unlink,
+    .unlink = san_unlink,
     .rmdir = fs_rmdir,
     .rename = fs_rename,
     .chmod = fs_chmod,
@@ -298,30 +299,6 @@ int main(int argc, char *argv[])
 	printf("user       : %s\n", user);
 	printf("private key: %s\n", pkey);
 
-	size_t t = time_ms();
-	g_sanssh = san_init(host, port, user, pkey);
-	printf("time to create session 1: %zd secs\n", time_ms() - t);
-	//t = time_ms();
-	//SANSSH* ssh2 = san_init(hostname, username, pkey, error);
-	//printf("time to create session 2: %d secs\n", time_ms() - t);
-	//t = time_ms();
-	//SANSSH* ssh3 = san_init(hostname, username, pkey, error);
-	//printf("time to create session 3: %d secs\n", time_ms() - t);
-	//t = time_ms();
-	//SANSSH* ssh4 = san_init(hostname, username, pkey, error);
-	//printf("time to create session 3: %d secs\n", time_ms() - t);
-	//t = time_ms();
-	//SANSSH* ssh5 = san_init(hostname, username, pkey, error);
-	//printf("time to create session 3: %d secs\n", time_ms() - t);
-	//t = time_ms();
-	//SANSSH* ssh6 = san_init(hostname, username, pkey, error);
-	//printf("time to create session 3: %d secs\n", time_ms() - t);
-
-	if (!g_sanssh) {
-		return 1;
-	}
-
-	printf("main thread: %d\n", GetCurrentThreadId());
 
 	// Initialize global variables
 	if (!InitializeCriticalSectionAndSpinCount(&g_critical_section, 0x00000400))
@@ -329,6 +306,20 @@ int main(int argc, char *argv[])
 	g_attributes_map = NULL;
 	g_sftp_calls = 0;
 	g_sftp_cached_calls = 0;
+
+	g_cmd_args = malloc(sizeof(CMD_ARGS));
+	strcpy_s(g_cmd_args->host, 65, host);
+	g_cmd_args->port = port;
+	strcpy_s(g_cmd_args->user, 21, user);
+	strcpy_s(g_cmd_args->pkey, MAX_PATH, pkey);
+
+
+	//g_sanssh = san_init(host, port, user, pkey);
+	SANSSH* sanssh = get_sanssh();
+	if (!sanssh) {
+		return 1;
+	}
+
 
 	// get uid
 	char cmd[100], out[100], err[100];
@@ -358,10 +349,10 @@ int main(int argc, char *argv[])
 	ptfs.rootdir = malloc(strlen(name) + 1);
 	strcpy_s(ptfs.rootdir, 255, name);
 
-	argc = 4;
+	argc = 3;
 	argv = new_argv(argc, argv[0], 
 		"-oVolumePrefix=/sanfs/linux,uid=-1,gid=-1,rellinks",
-		"-oThreadCount=5",
+		//"-oThreadCount=5",
 		drive);
 	//argv = new_argv(2, argv[0], "-h");
 

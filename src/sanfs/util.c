@@ -3,16 +3,16 @@
 
 extern CRITICAL_SECTION g_critical_section;
 
-void lock()
+void lock(void)
 {
 	EnterCriticalSection(&g_critical_section);
 }
-void unlock()
+void unlock(void)
 {
 	LeaveCriticalSection(&g_critical_section);
 }
 
-size_t time_ms()
+size_t time_ms(void)
 {
 	FILETIME ft;
 	LARGE_INTEGER li;
@@ -27,7 +27,7 @@ size_t time_ms()
 	return ret;
 }
 
-int get_number_of_processors()
+int get_number_of_processors(void)
 {
 	SYSTEM_INFO sysinfo;
 	GetSystemInfo(&sysinfo);

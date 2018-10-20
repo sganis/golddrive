@@ -13,7 +13,7 @@ results = {}
 
 remotefile = '/tmp/file.bin'
 localfile = 'C:\\Temp\\file.bin'
-md5 = '1a49c6c6e5a882c45a90744790fa1ff1'
+md5 = '9aba09e0fc1d288d7ccd7719f3d0f184'
 host = os.environ['GOLDDRIVE_HOST']
 user = os.environ['GOLDDRIVE_USER']
 port = int(os.environ['GOLDDRIVE_PORT'])
@@ -51,11 +51,11 @@ def main():
 	# python -c "import os; w=open('/tmp/file.bin','wb');w.write(os.urandom(1024*1024*1024))"
 	# update md5 = md5sum file.bin
 
-	print('\n### sanssh ###')
-	t = time.time()
-	subprocess.run(	f'sanssh {host} {port} {user} {remotefile} {localfile} {privatekey}', shell=True)
-	set_result('sanssh', time.time() - t)
-	subprocess.run(f'del {localfile}', shell=True)
+	# print('\n### sanssh ###')
+	# t = time.time()
+	# subprocess.run(	f'sanssh {host} {port} {user} {remotefile} {localfile} {privatekey}', shell=True)
+	# set_result('sanssh', time.time() - t)
+	# subprocess.run(f'del {localfile}', shell=True)
 
 	print('\n### sshfs ###')
 	t = time.time()
@@ -63,14 +63,14 @@ def main():
 	set_result('sshfs', time.time() - t)
 	subprocess.run(f'del {localfile}', shell=True)
 
-	print('\n### openssh ###')
-	os.chdir('C:\\Temp')
-	t = time.time()
-	subprocess.run(
-		f'echo get {remotefile} |sftp -q -i {privatekey} -B 65536 -R 256 -P {port} {user}@{host}', 
-		shell=True)
-	set_result('openssh', time.time() - t)
-	subprocess.run(f'del {localfile}', shell=True)
+	# print('\n### openssh ###')
+	# os.chdir('C:\\Temp')
+	# t = time.time()
+	# subprocess.run(
+	# 	f'echo get {remotefile} |sftp -q -i {privatekey} -B 65536 -R 256 -P {port} {user}@{host}', 
+	# 	shell=True)
+	# set_result('openssh', time.time() - t)
+	# subprocess.run(f'del {localfile}', shell=True)
 
 	print('\n### sanfs ###')
 	t = time.time()
@@ -78,33 +78,33 @@ def main():
 	set_result('sanfs', time.time() - t)
 	subprocess.run(f'del {localfile}', shell=True)
 
-	print('\n### paramiko ###')
-	pkey = paramiko.RSAKey.from_private_key_file(privatekey)
-	transport = paramiko.Transport((host, port))
-	transport.connect(username=user, pkey=pkey) 
-	sftp = paramiko.SFTPClient.from_transport(transport)
-	t = time.time()
-	sftp.get(remotefile, localfile)
-	set_result('paramiko', time.time() - t)
-	subprocess.run(f'del {localfile}', shell=True)
-	sftp.close()
-	transport.close()
+	# print('\n### paramiko ###')
+	# pkey = paramiko.RSAKey.from_private_key_file(privatekey)
+	# transport = paramiko.Transport((host, port))
+	# transport.connect(username=user, pkey=pkey) 
+	# sftp = paramiko.SFTPClient.from_transport(transport)
+	# t = time.time()
+	# sftp.get(remotefile, localfile)
+	# set_result('paramiko', time.time() - t)
+	# subprocess.run(f'del {localfile}', shell=True)
+	# sftp.close()
+	# transport.close()
 
-	print('\n### ssh2-python ###')
-	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	sock.connect((host, port))
-	s = Session()
-	s.handshake(sock)
-	s.userauth_publickey_fromfile(user, privatekey)   
-	sftp = s.sftp_init()
-	t = time.time()
-	with sftp.open(remotefile, 
-		LIBSSH2_FXF_READ, LIBSSH2_SFTP_S_IRUSR) as r, \
-		open(localfile,'wb') as w:
-		for size, data in r:
-			w.write(data)
-	set_result('ssh2-python', time.time() - t)
-	subprocess.run(f'del {localfile}', shell=True)
+	# print('\n### ssh2-python ###')
+	# sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	# sock.connect((host, port))
+	# s = Session()
+	# s.handshake(sock)
+	# s.userauth_publickey_fromfile(user, privatekey)   
+	# sftp = s.sftp_init()
+	# t = time.time()
+	# with sftp.open(remotefile, 
+	# 	LIBSSH2_FXF_READ, LIBSSH2_SFTP_S_IRUSR) as r, \
+	# 	open(localfile,'wb') as w:
+	# 	for size, data in r:
+	# 		w.write(data)
+	# set_result('ssh2-python', time.time() - t)
+	# subprocess.run(f'del {localfile}', shell=True)
 
 
 
