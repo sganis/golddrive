@@ -5,10 +5,10 @@ environment:
 install:
 - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
 - start /wait msiexec /i %WINFSP%.msi /qn ADDLOCAL=ALL
-- appveyor AddMessage "Rebooting..." -Category Information
+- cmd: echo Rebooting...
 - ps: Restart-Computer -Force
 - ps: Start-Sleep -s 60
-- appveyor AddMessage "Reboot complete" -Category Information
+- cmd: echo Reboot complete.
 build:
   project: src\golddrive.sln
   verbosity: minimal
