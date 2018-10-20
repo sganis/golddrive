@@ -23,7 +23,6 @@ build:
   project: src\golddrive.sln
   verbosity: minimal
 test_script:
-- cmd: ping linux -t
 for:
 -
   matrix:
