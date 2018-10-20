@@ -1,16 +1,26 @@
 version: 1.0.{build}
 image: Visual Studio 2015
+platform: x64
 environment:
+  GOLDDRIVE_HOST: localhost
+  GOLDDRIVE_PASS: support
+  GOLDDRIVE_USER: support
+  GOLDDRIVE_PORT: 2222
   WINFSP: winfsp-1.4.18270
 install:
-- appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
-- ps: Write-host "Installing $Env:WINFSP..."
-- start /wait msiexec /i %WINFSP%.msi /qn ADDLOCAL=ALL
-- ps: Restart-Computer -Force
-- ps: Start-Sleep -s 60
-- ps: Write-host "Reboot complete."
+- ps: >-
+    appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
+    Write-host "Installing $Env:WINFSP..."
+    start /wait msiexec /i %WINFSP%.msi /qn ADDLOCAL=ALL
+    Restart-Computer -Force
+    Start-Sleep -s 60
+    Write-host "Reboot complete."
 build:
   project: src\golddrive.sln
   verbosity: minimal
-
+after_build:
+- cmd: >-
+    docker version
+    cd docker
+    docker build -t ssh-server .
 

@@ -14,6 +14,12 @@
 			"port" 		: "2222",
 			"hosts" 	: ["192.168.99.100"],
 		},
+		"T:" : {
+			"drivename" : "rebex",
+			"user" 		: "demo",
+			"port" 		: "22",
+			"hosts" 	: ["test.rebex.net"],
+		},
 	}
 }
 
