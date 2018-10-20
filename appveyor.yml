@@ -14,11 +14,10 @@ hosts:
   linux: 127.0.0.2
 install:
   - cmd: appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
-  - ps: Write-host "Installing $Env:WINFSP..."
   - cmd: start /wait msiexec /i %WINFSP%.msi /qn ADDLOCAL=ALL
-  - ps: Restart-Computer -Force
-  - ps: Start-Sleep -s 60
-  - ps: Write-host "Reboot complete."
+  - ps: if ($isWindows) Restart-Computer -Force
+  - ps: if ($isWindows) Start-Sleep -s 60
+  - ps: if ($isWindows) Write-host "Reboot complete."
 build:
   project: src\golddrive.sln
   verbosity: minimal
