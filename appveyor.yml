@@ -15,9 +15,9 @@ hosts:
 install:
   - cmd: appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
   - cmd: start /wait msiexec /i %WINFSP%.msi /qn ADDLOCAL=ALL
-  - ps: if ($isWindows) Restart-Computer -Force
-  - ps: if ($isWindows) Start-Sleep -s 60
-  - ps: if ($isWindows) Write-host "Reboot complete."
+  - ps: if ($isWindows) { Restart-Computer -Force }
+  - ps: if ($isWindows) { Start-Sleep -s 60 }
+  - ps: if ($isWindows) { Write-host "Reboot complete." }
 build:
   project: src\golddrive.sln
   verbosity: minimal
