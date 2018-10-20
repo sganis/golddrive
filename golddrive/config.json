@@ -15,10 +15,10 @@
 			"hosts" 	: ["192.168.99.100"],
 		},
 		"T:" : {
-			"drivename" : "rebex",
-			"user" 		: "demo",
-			"port" 		: "22",
-			"hosts" 	: ["test.rebex.net"],
+			"drivename" : "appveyor",
+			"user" 		: "appveyor",
+			"port" 		: "22009",
+			"hosts" 	: ["104.197.110.30"],
 		},
 	}
 }

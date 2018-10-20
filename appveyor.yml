@@ -35,5 +35,5 @@ for:
   - docker build -t ssh-server .
   - docker run --rm -d -p 2222:22 -t ssh-server
   after_build:
-  - export APPVEYOR_SSH_BLOCK=true
-  - curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+  # - export APPVEYOR_SSH_BLOCK=true
+  # - curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -

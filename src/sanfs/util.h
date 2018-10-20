@@ -3,12 +3,14 @@
 #include <stdarg.h>
 
 #define USE_CACHE	0
+#define STATS		0
 #define DEBUG		1
 #if DEBUG
 
 #define debug(format, ...) {										\
 	int thread_id = GetCurrentThreadId();							\
-	printf("%d: DEBUG: %s: %d: ", thread_id, __func__, __LINE__);	\
+	printf("%zd: %d: DEBUG: %s: %d: ",								\
+		time_ms(), thread_id, __func__, __LINE__);					\
 	printf(format, __VA_ARGS__);									\
 }
 #define debug_cached(format, ...) {									\

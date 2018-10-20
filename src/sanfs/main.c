@@ -30,8 +30,11 @@ static int fs_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_fil
 	if (0 == fi) {
 		rc = san_stat(path, stbuf);
 	} else {
-		size_t fd = fi_fd(fi);
+		int fd = fi_fd(fi);
 		rc = san_fstat(fd, stbuf);
+		if (rc) {
+			rc = san_stat(path, stbuf);
+		}
 	}
 	//debug("end %d %s\n", rc, path);
 	char perm[10];
@@ -80,11 +83,7 @@ static int fs_releasedir(const char *path, struct fuse_file_info *fi)
 {
 	debug("%s\n", path);
 	DIR *dirp = fi_dirp(fi);
-	if (!dirp)
-		return 0;
-	int rc = san_closedir(dirp);
-	//printf("%ld: handle closed: %ld\n", GetCurrentThreadId(), dirp->handle);
-	return rc;
+	return san_closedir(dirp);
 }
 
 static int fs_mkdir(const char *path, fuse_mode_t mode)
@@ -117,7 +116,7 @@ static int fs_truncate(const char *path, fuse_off_t size, struct fuse_file_info 
     if (0 == fi)  {
         return san_truncate(path, size);
     } else {
-		size_t fd = fi_fd(fi);
+		int fd = fi_fd(fi);
         return san_ftruncate(fd, size);
     }
 }
@@ -125,10 +124,9 @@ static int fs_truncate(const char *path, fuse_off_t size, struct fuse_file_info 
 static int fs_open(const char *path, struct fuse_file_info *fi)
 {
 	debug("%s\n", path);
-	LIBSSH2_SFTP_HANDLE * handle = NULL;
-	handle = san_open(path, fi->flags);
-	if (handle) {
-		int rc = (fi_setfd(fi, handle), 0);
+	int fd = san_open(path, fi->flags);
+	if (fd) {
+		int rc = (fi_setfd(fi, fd), 0);
 		return rc;
 	} else {
 		return -1;
@@ -142,7 +140,7 @@ static int fs_read(const char *path, char *buf, size_t size,
 	//printf("thread req size  offset    path\n");
 	//printf("%-7ld%-10ld%-10ld%s\n", GetCurrentThreadId(), size, off, path);
 
-	size_t fd = fi_fd(fi);
+	int fd = fi_fd(fi);
 	ssize_t nb = san_read(fd, buf, size, off);
 	if (nb >= 0)
 		return (int)nb;
@@ -165,14 +163,14 @@ static int fs_write(const char *path, const char *buf, size_t size,
 static int fs_release(const char *path, struct fuse_file_info *fi)
 {
 	debug("%s\n", path);
-	LIBSSH2_SFTP_HANDLE* fd = (LIBSSH2_SFTP_HANDLE*)fi_fd(fi);
-    san_close_handle(fd);
+	int fd = fi_fd(fi);
+    san_close(fd);
     return 0;
 }
 
 static int fs_fsync(const char *path, int datasync, struct fuse_file_info *fi)
 {
-	size_t fd = fi_fd(fi);
+	int fd = fi_fd(fi);
     return san_fsync(fd);
 }
 
