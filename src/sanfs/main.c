@@ -10,12 +10,11 @@
 #include "winposix.h"
 
 /* global variables */
-CRITICAL_SECTION	g_critical_section;
 CACHE_ATTRIBUTES *	g_attributes_map;
 size_t				g_sftp_calls;
 size_t				g_sftp_cached_calls;
-//SANSSH *			g_sanssh;
 SANSSH *			g_sanssh_pool;
+CRITICAL_SECTION	g_ssh_critical_section;
 CMD_ARGS *			g_cmd_args;
 
 typedef struct _PTFS {
@@ -301,7 +300,7 @@ int main(int argc, char *argv[])
 
 
 	// Initialize global variables
-	if (!InitializeCriticalSectionAndSpinCount(&g_critical_section, 0x00000400))
+	if (!InitializeCriticalSectionAndSpinCount(&g_ssh_critical_section, 0x00000400))
 		return 1;
 	g_attributes_map = NULL;
 	g_sftp_calls = 0;
@@ -368,7 +367,7 @@ int main(int argc, char *argv[])
     rc = fuse_main(argc, argv, &fs_ops, &ptfs);
 
 	// cleanup
-	DeleteCriticalSection(&g_critical_section);
+	DeleteCriticalSection(&g_ssh_critical_section);
 	san_finalize();
 
 	return rc;

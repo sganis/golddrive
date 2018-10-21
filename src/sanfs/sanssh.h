@@ -98,20 +98,34 @@ static const char *sftp_errors[] = {
 	"LINK_LOOP",
 	"UNKNOWN"
 };
-#define san_error(path) {								\
-	int thread_id = GetCurrentThreadId();				\
-	SANSSH* sanssh = get_sanssh();						\
-	int err = libssh2_session_last_errno(sanssh->ssh);	\
-	if (err > 0 || err < -47) err = -48;					\
-	const char* msg = ssh_errors[-err];					\
-	if (err == LIBSSH2_ERROR_SFTP_PROTOCOL) {			\
-		err = libssh2_sftp_last_error(sanssh->sftp);	\
-		if (err <0 || err>21) err = 22;					\
-		msg = sftp_errors[err];							\
-	} 													\
+#define san_error(path) {											\
+	int thread_id = GetCurrentThreadId();							\
+	SANSSH* sanssh = get_sanssh();									\
+	int rc = libssh2_session_last_errno(sanssh->ssh);				\
+	if (rc > 0 || rc < -47) rc = -48;								\
+	const char* msg = ssh_errors[-rc];								\
+	if (rc == LIBSSH2_ERROR_SFTP_PROTOCOL) {						\
+		rc = libssh2_sftp_last_error(sanssh->sftp);					\
+		if (rc <0 || rc>21) rc = 22;								\
+		msg = sftp_errors[rc];										\
+	} 																\
 	fprintf(stderr, "%zd: %d :ERROR: %s: %d: [rc=%d: %s], path: %s\n",	\
-				time_ms(), thread_id, __func__,__LINE__, err, msg, path); \
+				time_ms(), thread_id, __func__, __LINE__, rc, msg, path); \
 }
+//#define san_error_init(errmsg, rc) {								\
+//	int thread_id = GetCurrentThreadId();							\
+//	if (rc > 0 || rc < -47) rc = -48;								\
+//	const char* msg = ssh_errors[-rc];								\
+//	if (rc == LIBSSH2_ERROR_SFTP_PROTOCOL) {						\
+//		rc = libssh2_sftp_last_error(sanssh->sftp);					\
+//		if (rc <0 || rc>21) rc = 22;								\
+//		msg = sftp_errors[rc];										\
+//	} 																\
+//	fprintf(stderr, "%zd: %d :ERROR: %s: %d: %s [rc=%d: %s]\n",		\
+//				time_ms(), thread_id, __func__,__LINE__, rc,		\
+//				errmsg, msg);										\
+//}
+
 //#define san_error(path) {												\
 //	int thread_id = GetCurrentThreadId();								\
 //	int err = libssh2_sftp_last_error(get_sanssh()->sftp);					\

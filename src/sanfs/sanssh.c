@@ -8,7 +8,7 @@
 
 extern size_t			g_sftp_calls;
 extern size_t			g_sftp_cached_calls;
-//extern SANSSH*			g_sanssh;
+extern CRITICAL_SECTION g_ssh_critical_section;
 
 long WinFspLoad(void)
 {
@@ -59,25 +59,29 @@ SANSSH * san_init(const char* hostname,	int port,
 	const char* username, const char* pkey)
 {
 	int rc;
+	char *errmsg;
+	int errlen;
 	SOCKADDR_IN sin;
 	HOSTENT *he;
 	SOCKET sock;
 	LIBSSH2_SESSION* ssh = NULL;
 	LIBSSH2_SFTP* sftp = NULL;
-
+	int thread_id = GetCurrentThreadId();
 
 	// initialize windows socket
 	WSADATA wsadata;
 	rc = WSAStartup(MAKEWORD(2, 0), &wsadata);
 	if (rc != 0) {
-		fprintf(stderr, "WSAStartup failed with error %d\n", rc);
+		fprintf(stderr, "%zd: %d :ERROR: %s: %d: WSAStartup failed, rc=%d\n", 
+			time_ms(), thread_id, __func__, __LINE__, rc);
 		return 0;
 	}
 
 	// resolve hostname	
 	he = gethostbyname(hostname);
 	if (!he) {
-		fprintf(stderr, "host not found");
+		fprintf(stderr, "%zd: %d :ERROR: %s: %d: host not found: %s\n", 
+			time_ms(), thread_id, __func__, __LINE__, hostname);
 		return 0;
 	}
 	sin.sin_addr.s_addr = **(int**)he->h_addr_list;
@@ -87,22 +91,28 @@ SANSSH * san_init(const char* hostname,	int port,
 	// init ssh
 	rc = libssh2_init(0);
 	if (rc) {
-		san_error("init");
+		fprintf(stderr, "%zd: %d :ERROR: %s: %d: "
+			"failed to initialize ssh library, libssh2_init() rc=%d\n",
+			time_ms(), thread_id, __func__, __LINE__, rc);
 		return 0;
 	}
 
 	/* create socket  */
 	sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (connect(sock, (SOCKADDR*)(&sin), sizeof(SOCKADDR_IN)) != 0) {
-		fprintf(stderr, "failed to open socket");
+	rc = connect(sock, (SOCKADDR*)(&sin), sizeof(SOCKADDR_IN));
+	if (rc) {
+		fprintf(stderr, "%zd: %d :ERROR: %s: %d: "
+			"failed to open socket, connect() rc=%d\n",
+			time_ms(), thread_id, __func__, __LINE__, rc);
 		return 0;
 	}
 
 	/* Create a session instance */
 	ssh = libssh2_session_init();
 	if (!ssh) {
-		fprintf(stderr, "failed to initialize ssh session");
-		san_error("init");
+		fprintf(stderr, "%zd: %d :ERROR: %s: %d: "
+			"failed allocate memory for ssh session\n",
+			time_ms(), thread_id, __func__, __LINE__);
 		return 0;
 	}
 		
@@ -116,8 +126,10 @@ SANSSH * san_init(const char* hostname,	int port,
 	rc = libssh2_session_handshake(ssh, sock);
 	//while ((rc = libssh2_session_handshake(session, sock)) == LIBSSH2_ERROR_EAGAIN);
 	if (rc) {
-		fprintf(stderr, "failure establishing ssh handshake whith error %d", rc);
-		san_error("init");
+		rc = libssh2_session_last_error(ssh, &errmsg, &errlen, 0);
+		fprintf(stderr, "%zd: %d :ERROR: %s: %d: "
+			"failed to complete ssh handshake [rc=%d, %s]\n",
+			time_ms(), thread_id, __func__, __LINE__, rc, errmsg);
 		return 0;
 	}
 
@@ -126,16 +138,20 @@ SANSSH * san_init(const char* hostname,	int port,
 	//while ((rc = libssh2_userauth_publickey_fromfile(
 	//	session, username, NULL, pkey, NULL)) == LIBSSH2_ERROR_EAGAIN);
 	if (rc) {
-		fprintf(stderr, "authentication by public key failed with error %d", rc);
-		san_error("init");
+		rc = libssh2_session_last_error(ssh, &errmsg, &errlen, 0);
+		fprintf(stderr, "%zd: %d :ERROR: %s: %d: "
+			"authentication by public key failed [rc=%d, %s]\n",
+			time_ms(), thread_id, __func__, __LINE__, rc, errmsg);
 		return 0;
 	}
 
 	// init sftp channel
 	sftp = libssh2_sftp_init(ssh);
 	if (!sftp) {
-		fprintf(stderr, "failure to init sftp session");
-		san_error("init");
+		rc = libssh2_session_last_error(ssh, &errmsg, &errlen, 0);
+		fprintf(stderr, "%zd: %d :ERROR: %s: %d: "
+			"failed to start sftp session [rc=%d, %s]\n",
+			time_ms(), thread_id, __func__, __LINE__, rc, errmsg);
 		return 0;
 	}
 	/* do {
@@ -574,7 +590,11 @@ int san_close(int fd)
 	int rc;
 	LIBSSH2_SFTP_HANDLE* handle = (LIBSSH2_SFTP_HANDLE*)(intptr_t)fd;
 	//lock();
+	// I don't know what thread is calling this function
+	// need to protect
+	EnterCriticalSection(&g_ssh_critical_section);
 	rc = libssh2_sftp_close_handle(handle);
+	LeaveCriticalSection(&g_ssh_critical_section);
 	//unlock();
 	debug("LIBSSH2_SFTP_HANDLE: %zd closed\n", (intptr_t)handle);
 	handle = NULL;
@@ -835,13 +855,16 @@ SANSSH* get_sanssh(void)
 	int current_thread_id = GetCurrentThreadId();
 	SANSSH *sanssh = sanssh_pool_find(current_thread_id);
 	if (!sanssh) {
-		lock();
 		size_t t = time_ms();
 		sanssh = san_init(g_cmd_args->host, g_cmd_args->port,
 			g_cmd_args->user, g_cmd_args->pkey);
-		sanssh_pool_add(sanssh);
-		debug("time to create new ssh session: %zd secs\n", time_ms() - t);
-		unlock();
+		if (sanssh) {
+			EnterCriticalSection(&g_ssh_critical_section);
+			sanssh_pool_add(sanssh);
+			LeaveCriticalSection(&g_ssh_critical_section);
+			debug("time to create new ssh session: %zd secs\n", time_ms() - t);
+		}
+		
 	}
 	return sanssh;
 }

@@ -1,16 +1,7 @@
 #include "util.h"
 #include <Windows.h>
 
-extern CRITICAL_SECTION g_critical_section;
 
-void lock(void)
-{
-	EnterCriticalSection(&g_critical_section);
-}
-void unlock(void)
-{
-	LeaveCriticalSection(&g_critical_section);
-}
 
 size_t time_ms(void)
 {
