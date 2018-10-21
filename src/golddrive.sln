@@ -7,8 +7,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sanfs", "sanfs\sanfs.vcxpro
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "runapp", "runapp\runapp.vcxproj", "{8D91C2D3-20FF-4372-BAE6-C66E425443CE}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libssh2", "..\..\libssh2-parallelssh\build\src\libssh2.vcxproj", "{A8E645BB-D754-3ED8-AE04-EE360E7C423F}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -33,14 +31,6 @@ Global
 		{8D91C2D3-20FF-4372-BAE6-C66E425443CE}.Release|x64.Build.0 = Release|x64
 		{8D91C2D3-20FF-4372-BAE6-C66E425443CE}.RelWithDebInfo|x64.ActiveCfg = Release|x64
 		{8D91C2D3-20FF-4372-BAE6-C66E425443CE}.RelWithDebInfo|x64.Build.0 = Release|x64
-		{A8E645BB-D754-3ED8-AE04-EE360E7C423F}.Debug|x64.ActiveCfg = Debug|x64
-		{A8E645BB-D754-3ED8-AE04-EE360E7C423F}.Debug|x64.Build.0 = Debug|x64
-		{A8E645BB-D754-3ED8-AE04-EE360E7C423F}.MinSizeRel|x64.ActiveCfg = MinSizeRel|x64
-		{A8E645BB-D754-3ED8-AE04-EE360E7C423F}.MinSizeRel|x64.Build.0 = MinSizeRel|x64
-		{A8E645BB-D754-3ED8-AE04-EE360E7C423F}.Release|x64.ActiveCfg = Release|x64
-		{A8E645BB-D754-3ED8-AE04-EE360E7C423F}.Release|x64.Build.0 = Release|x64
-		{A8E645BB-D754-3ED8-AE04-EE360E7C423F}.RelWithDebInfo|x64.ActiveCfg = RelWithDebInfo|x64
-		{A8E645BB-D754-3ED8-AE04-EE360E7C423F}.RelWithDebInfo|x64.Build.0 = RelWithDebInfo|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
