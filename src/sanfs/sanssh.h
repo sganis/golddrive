@@ -237,13 +237,14 @@ void print_statvfs(const char* path, LIBSSH2_SFTP_STATVFS *st);
 void get_filetype(unsigned long perm, char* filetype);
 int run_command(const char *cmd, char *out, char *err);
 
-// connection pool
+// hash table for connection pool
 void ht_sanssh_pool_add(SANSSH *value);
 void ht_sanssh_pool_del(SANSSH *value);
-SANSSH * ht_sanssh_pool_find(int thread);
+SANSSH* ht_sanssh_pool_find(int thread);
 SANSSH* get_sanssh(void);
 
 // hash table with handles to close
 void ht_handle_close_add(SAN_HANDLE *value);
 void ht_handle_close_del(SAN_HANDLE *value);
-SAN_HANDLE * ht_handle_close_find(int thread);
+SAN_HANDLE* ht_handle_close_find(int thread);
+
