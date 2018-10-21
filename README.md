@@ -112,29 +112,7 @@ WinFsp-FUSE advanced options:
     -o ThreadCount             number of file system dispatcher threads
 ```
 
-## libssh2 sftp API
-```
-libssh2_sftp_init         - start an SFTP session
-libssh2_sftp_shutdown     - shut down an SFTP session
-libssh2_sftp_open_ex      - open and possibly create a file on a remote host
-libssh2_sftp_read         - read from an SFTP file handle
-libssh2_sftp_readdir      - read an entry from an SFTP directory
-libssh2_sftp_write        - write data to an SFTP file handle
-libssh2_sftp_fstat_ex     - get or set attributes on a file handle
-libssh2_sftp_seek         - set the read/write position indicator to a position within a file
-libssh2_sftp_tell         - get the current read/write position indicator for a file
-libssh2_sftp_close_handle - close filehandle
-libssh2_sftp_unlink_ex    - delete a file
-libssh2_sftp_rename_ex    - rename a file
-libssh2_sftp_mkdir_ex     - create a directory
-libssh2_sftp_rmdir_ex     - remove a directory
-libssh2_sftp_stat_ex      - get or set attributes on a file or symbolic link
-libssh2_sftp_symlink_ex   - read or set a symbolic link
-libssh2_sftp_realpath     - resolve a filename's path
-libssh2_sftp_last_error   - return the last SFTP-specific error code
-```
-
-## Sanfs SFTP implementation
+## Sanfs API
 ```
 - san_init()
 - san_shutdown()

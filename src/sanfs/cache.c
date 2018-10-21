@@ -3,9 +3,9 @@
 
 inline void cache_attributes_write(CACHE_ATTRIBUTES *value)
 {
-	lock();
+	//lock();
 	HASH_ADD_STR(g_attributes_map, path, value);
-	unlock();
+	//unlock();
 }
 
 inline CACHE_ATTRIBUTES * cache_attributes_read(const char* name)

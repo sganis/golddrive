@@ -5,8 +5,12 @@ set OPENSSL_DIR="C:\openssl-static"
 set ARCH=x64_86
 set PYTHON_ARCH=win64
 set "MSVC=Visual Studio 14 2015 Win64"
+
+:: openssl 
 ::https://indy.fulgan.com/SSL/openssl-%OPENSSL_VER%-%ARCH%-win%PYTHON_ARCH%.zip
 ::https://indy.fulgan.com/SSL/openssl-1.0.2o-x64_86-win64.zip
+::http://p-nand-q.com/programming/windows/openssl-1.1.0c-64bit-release-dll-vs2015.7z
+
 :: static library
 ::http://p-nand-q.com/programming/windows/openssl-1.0.2j-64bit-release-static-vs2015.7z
 

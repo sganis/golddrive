@@ -14,77 +14,10 @@ CACHE_ATTRIBUTES *	g_attributes_map;
 size_t				g_sftp_calls;
 size_t				g_sftp_cached_calls;
 SANSSH *			g_sanssh_pool;
+SAN_HANDLE *		g_handle_close_ht;
 CRITICAL_SECTION	g_ssh_critical_section;
 CMD_ARGS *			g_cmd_args;
 
-typedef struct _PTFS {
-    char *rootdir;
-} PTFS;
-
-
-
-static int fs_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_file_info *fi)
-{
-	debug("%s\n", path);
-	int rc;
-	if (0 == fi) {
-		rc = san_stat(path, stbuf);
-	} else {
-		int fd = fi_fd(fi);
-		rc = san_fstat(fd, stbuf);
-		if (rc) {
-			rc = san_stat(path, stbuf);
-		}
-	}
-	//debug("end %d %s\n", rc, path);
-	char perm[10];
-	mode_human(stbuf->st_mode, perm);
-	debug("%s %d %d %s\n", perm, stbuf->st_uid, stbuf->st_gid, path);
-	return rc;
-}
-
-static int fs_statfs(const char *path, struct fuse_statvfs *stbuf)
-{
-	debug("%s\n", path);
-	return san_statvfs(path, stbuf);
-}
-static int fs_opendir(const char *path, struct fuse_file_info *fi)
-{
-	debug("%s\n", path);
-	int rc = -1;
-	DIR *dirp = san_opendir(path);
-	if (dirp) {
-		//printf("%ld: handle open:   %ld\n",GetCurrentThreadId(), dirp->handle);
-		rc = (fi_setdirp(fi, dirp), 0);
-	}
-	return rc;
-}
-
-static int fs_readdir(const char *path, void *buf,	fuse_fill_dir_t filler, fuse_off_t off,
-	struct fuse_file_info *fi, enum fuse_readdir_flags flags)
-{
-	debug("%s\n", path);
-	DIR *dirp = fi_dirp(fi);
-	struct dirent *de;
-
-	san_rewinddir(dirp);
-
-	for (;;) {
-		if (0 == (de = san_readdir(dirp)))
-			break;
-		if (0 != filler(buf, de->d_name, &de->d_stat, 0, FUSE_FILL_DIR_PLUS))
-			return -ENOMEM;
-	}
-	return 0;
-
-}
-
-static int fs_releasedir(const char *path, struct fuse_file_info *fi)
-{
-	debug("%s\n", path);
-	DIR *dirp = fi_dirp(fi);
-	return san_closedir(dirp);
-}
 
 static int fs_mkdir(const char *path, fuse_mode_t mode)
 {
@@ -92,23 +25,10 @@ static int fs_mkdir(const char *path, fuse_mode_t mode)
 	return san_mkdir(path, mode);
 }
 
-//static int fs_unlink(const char *path)
-//{
-//	debug("%s\n", path);
-//	return san_unlink(path);
-//}
-
 static int fs_rmdir(const char *path)
 {
 	debug("%s\n", path);
 	return san_rmdir(path);
-}
-
-static int fs_rename(const char *oldpath, const char *newpath, unsigned int flags)
-{
-	debug("%s\n", oldpath);
-	debug("%s\n", newpath);
-	return san_rename(oldpath, newpath);
 }
 
 static int fs_truncate(const char *path, fuse_off_t size, struct fuse_file_info *fi)
@@ -119,18 +39,6 @@ static int fs_truncate(const char *path, fuse_off_t size, struct fuse_file_info 
 		int fd = fi_fd(fi);
         return san_ftruncate(fd, size);
     }
-}
-
-static int fs_open(const char *path, struct fuse_file_info *fi)
-{
-	debug("%s\n", path);
-	int fd = san_open(path, fi->flags);
-	if (fd) {
-		int rc = (fi_setfd(fi, fd), 0);
-		return rc;
-	} else {
-		return -1;
-	}
 }
 
 static int fs_read(const char *path, char *buf, size_t size, 
@@ -160,27 +68,11 @@ static int fs_write(const char *path, const char *buf, size_t size,
 }
 
 
-static int fs_release(const char *path, struct fuse_file_info *fi)
-{
-	debug("%s\n", path);
-	int fd = fi_fd(fi);
-    san_close(fd);
-    return 0;
-}
-
 static int fs_fsync(const char *path, int datasync, struct fuse_file_info *fi)
 {
+	debug("%s\n", path);
 	int fd = fi_fd(fi);
     return san_fsync(fd);
-}
-
-static int fs_create(const char *path, fuse_mode_t mode, struct fuse_file_info *fi)
-{
-	debug("%s\n", path);
-	return -1;
-
-    //int fd;
-    //return -1 != (fd = open(path, fi->flags, mode)) ? (fi_setfd(fi, fd), 0) : -errno;
 }
 
 static int fs_utimens(const char *path, const struct fuse_timespec tv[2], struct fuse_file_info *fi)
@@ -189,48 +81,26 @@ static int fs_utimens(const char *path, const struct fuse_timespec tv[2], struct
 	return -1;
     //return san_utimensat(AT_FDCWD, path, tv, AT_SYMLINK_NOFOLLOW);
 }
-static int fs_chmod(const char *path, fuse_mode_t mode, struct fuse_file_info *fi)
-{
-	return -1;
-}
 
-static int fs_chown(const char *path, fuse_uid_t uid, fuse_gid_t gid, struct fuse_file_info *fi)
-{
-	return -1;
-}
-static void *fs_init(struct fuse_conn_info *conn, struct fuse_config *conf)
-{
-	conn->want |= (conn->capable & FUSE_CAP_READDIRPLUS);
-
-//#if defined(FSP_FUSE_CAP_CASE_INSENSITIVE)
-//	conn->want |= (conn->capable & FSP_FUSE_CAP_CASE_INSENSITIVE);
-//#endif
-
-	return fuse_get_context()->private_data;
-}
-
-static struct fuse_operations fs_ops =
-{
-    .getattr = fs_getattr,
-    .mkdir = fs_mkdir,
-    .unlink = san_unlink,
-    .rmdir = fs_rmdir,
-    .rename = fs_rename,
-    .chmod = fs_chmod,
-    .chown = fs_chown,
-    .truncate = fs_truncate,
-    .open = fs_open,
-    .read = fs_read,
-    .write = fs_write,
-    .statfs = fs_statfs,
-    .release = fs_release,
-    .fsync = fs_fsync,
-    .opendir = fs_opendir,
-    .readdir = fs_readdir,
-    .releasedir = fs_releasedir,
-    .init = fs_init,
-    .create = fs_create,
-    .utimens = fs_utimens,
+static struct fuse_operations fs_ops = {
+	.init		= san_init,
+	.statfs		= san_statfs,
+	.getattr	= san_getattr,
+	.opendir	= san_opendir,
+	.readdir	= san_readdir,
+	.releasedir = san_releasedir,
+	.unlink		= san_unlink,
+	.rename		= san_rename,
+	.create		= san_create,
+	.open		= san_open,
+    .read		= fs_read,
+    .write		= fs_write,
+    .release	= san_release,
+	.mkdir		= fs_mkdir,
+	.rmdir		= fs_rmdir,
+	.truncate	= fs_truncate,
+	.fsync		= fs_fsync,
+    .utimens	= fs_utimens,
 };
 
 static void usage(const char* prog)
@@ -238,6 +108,7 @@ static void usage(const char* prog)
     fprintf(stderr, "usage: %s host user drive [pkey]\n", prog);
     exit(2);
 }
+
 char **new_argv(int count, ...)
 {
 	va_list args;
@@ -343,10 +214,10 @@ int main(int argc, char *argv[])
 		
 
 	// fuse arguments, is this needed?
-	PTFS ptfs = { 0 };
-	char name[] = "";
-	ptfs.rootdir = malloc(strlen(name) + 1);
-	strcpy_s(ptfs.rootdir, 255, name);
+	//PTFS ptfs = { 0 };
+	//char name[] = "";
+	//ptfs.rootdir = malloc(strlen(name) + 1);
+	//strcpy_s(ptfs.rootdir, 255, name);
 
 	argc = 3;
 	argv = new_argv(argc, argv[0], 
@@ -369,7 +240,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 	// run fuse main
-    rc = fuse_main(argc, argv, &fs_ops, &ptfs);
+    rc = fuse_main(argc, argv, &fs_ops, 0);
 
 	// cleanup
 	DeleteCriticalSection(&g_ssh_critical_section);

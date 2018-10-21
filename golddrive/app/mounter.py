@@ -121,13 +121,13 @@ def mount(drive, userhost, appkey, port=22, drivename=''):
 		-o PasswordAuthentication=no
 		-o StrictHostKeyChecking=no	
 		-o UserKnownHostsFile=/dev/null
-		-o ServerAliveInterval=10 
+		-o ServerAliveInterval=60 
 		-o compression=no
 		-o rellinks 
 		-o reconnect 
-		-o max_read=65536
-		-o max_write=65536
 		'''
+		# -o max_read=65536
+		# -o max_write=65536
 		# -o sshfs_sync
 		# -f
 		# -o ThreadCount=10
