@@ -149,11 +149,6 @@ static const char *sftp_errors[] = {
 /* count the number of threads in this app */
 /* n is the -o ThreadCount=n arg, c is number of cores*/
 int san_threads(int n, int c);
-long WinFspLoad(void);
-
-#undef fuse_main
-#define fuse_main(argc, argv, ops, data)\
-    (WinFspLoad(), fuse_main_real(argc, argv, ops, sizeof *(ops), data))
 
 typedef struct _CMD_ARGS {
 	char host[64];

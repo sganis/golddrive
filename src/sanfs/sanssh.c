@@ -10,10 +10,6 @@ extern size_t			g_sftp_calls;
 extern size_t			g_sftp_cached_calls;
 extern CRITICAL_SECTION g_ssh_critical_section;
 
-long WinFspLoad(void)
-{
-	return FspLoad(0);
-}
 
 int san_threads(int n, int c)
 {
@@ -92,7 +88,7 @@ SANSSH * san_init(const char* hostname,	int port,
 	rc = libssh2_init(0);
 	if (rc) {
 		fprintf(stderr, "%zd: %d :ERROR: %s: %d: "
-			"failed to initialize ssh library, libssh2_init() rc=%d\n",
+			"failed to initialize crypto library, rc=%d\n",
 			time_ms(), thread_id, __func__, __LINE__, rc);
 		return 0;
 	}
@@ -258,14 +254,15 @@ int san_fstat(int fd, struct fuse_stat *stbuf)
 int san_stat(const char * path, struct fuse_stat *stbuf)
 {
 	int rc = 0;
-	LIBSSH2_SFTP_ATTRIBUTES *attrs = NULL;
+	LIBSSH2_SFTP_ATTRIBUTES attrs;
+	//LIBSSH2_SFTP_ATTRIBUTES *attrs = NULL;
 	CACHE_ATTRIBUTES* cattrs = NULL;
 	memset(stbuf, 0, sizeof *stbuf);
 #if USE_CACHE
 	cattrs = cache_attributes_find(path);
 #endif
 	if (!cattrs) {
-		attrs = malloc(sizeof(LIBSSH2_SFTP_ATTRIBUTES));
+		//attrs = malloc(sizeof(LIBSSH2_SFTP_ATTRIBUTES));
 		//lock();
 		// allways follow links
 		//rc = libssh2_sftp_stat(g_sanssh->sftp, path, attrs);
@@ -273,13 +270,14 @@ int san_stat(const char * path, struct fuse_stat *stbuf)
 		//rc = libssh2_sftp_stat_ex(g_sanssh->sftp, path, (int)strlen(path),
 		//	LIBSSH2_SFTP_STAT, attrs);
 		//lock();
+		
 		rc = libssh2_sftp_stat_ex(get_sanssh()->sftp, path, (int)strlen(path),
-			LIBSSH2_SFTP_STAT, attrs);
+									LIBSSH2_SFTP_STAT, &attrs);
 		//unlock();
 		if (rc) {
 			printf("rc: %d\n", rc);
 			san_error(path);
-			free(attrs);
+			//free(attrs);
 		}
 		else {
 #if USE_CACHE
@@ -292,13 +290,13 @@ int san_stat(const char * path, struct fuse_stat *stbuf)
 		}
 		//unlock();		
 	}
-	else {
-		debug_cached(cattrs->path);
-		attrs = cattrs->attrs;
-		g_sftp_cached_calls++;
-	}
+	//else {
+	//	debug_cached(cattrs->path);
+	//	attrs = cattrs->attrs;
+	//	g_sftp_cached_calls++;
+	//}
 
-	copy_attributes(stbuf, attrs);
+	copy_attributes(stbuf, &attrs);
 	//print_permissions(path, attrs);
 
 #if STATS

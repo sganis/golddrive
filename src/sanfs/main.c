@@ -363,6 +363,11 @@ int main(int argc, char *argv[])
 	// number of threads
 	printf("Threads needed: %d\n", san_threads(5, get_number_of_processors()));
 
+	// load fuse dll
+	if (FspLoad(0) != STATUS_SUCCESS) {
+		fprintf(stderr, "failed to load winfsp driver, either dll not present or wrong version\n");
+		return -1;
+	}
 	// run fuse main
     rc = fuse_main(argc, argv, &fs_ops, &ptfs);
 
