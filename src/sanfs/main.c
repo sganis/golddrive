@@ -13,7 +13,7 @@
 CACHE_ATTRIBUTES *	g_attributes_map;
 size_t				g_sftp_calls;
 size_t				g_sftp_cached_calls;
-SANSSH *			g_sanssh_pool;
+SANSSH *			g_sanssh_pool_ht;
 SAN_HANDLE *		g_handle_close_ht;
 CRITICAL_SECTION	g_ssh_critical_section;
 CMD_ARGS *			g_cmd_args;

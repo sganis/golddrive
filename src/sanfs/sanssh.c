@@ -170,17 +170,17 @@ int san_finalize()
 	/* free the hash table contents */
 	SANSSH* sanssh, *tmp;
 	unsigned int sessions;
-	sessions = HASH_COUNT(g_sanssh_pool);
+	sessions = HASH_COUNT(g_sanssh_pool_ht);
 	debug("there are %u ssh sessions\n", sessions);
 	/* FIXME: not sure if I can shutdown ssh sessions from different thread
 	* let's try anyways */
-	HASH_ITER(hh, g_sanssh_pool, sanssh, tmp) {
+	HASH_ITER(hh, g_sanssh_pool_ht, sanssh, tmp) {
 		libssh2_sftp_shutdown(sanssh->sftp);
 		libssh2_session_disconnect(sanssh->ssh, "sanssh session disconnected");
 		libssh2_session_free(sanssh->ssh);
 		libssh2_exit();
 		closesocket(sanssh->socket);
-		HASH_DEL(g_sanssh_pool, sanssh);
+		HASH_DEL(g_sanssh_pool_ht, sanssh);
 		free(sanssh);
 	}
 
@@ -731,8 +731,6 @@ ssize_t san_read(int fd, void *buf, size_t nbyte, fuse_off_t offset)
 	return total;
 }
 
-
-
 int san_rename(const char *oldpath, const char *newpath, unsigned int flags)
 {
 	debug("%s\n", oldpath);
@@ -972,35 +970,36 @@ finish:
 	return (int)rc;
 }
 
-void sanssh_pool_add(SANSSH *value)
+void ht_sanssh_pool_add(SANSSH *value)
 {
-	HASH_ADD_INT(g_sanssh_pool, thread, value);
+	HASH_ADD_INT(g_sanssh_pool_ht, thread, value);
 	debug("new ssh connection added\n");
 }
-
-SANSSH * sanssh_pool_find(int thread)
+void ht_sanssh_pool_del(SANSSH *value)
+{
+	HASH_DEL(g_sanssh_pool_ht, value);  /* value: pointer to delete */
+	free(value);						/* optional; it's up to you! */
+}
+SANSSH * ht_sanssh_pool_find(int thread)
 {
 	SANSSH *value = NULL;
-	HASH_FIND_INT(g_sanssh_pool, &thread, value);
+	HASH_FIND_INT(g_sanssh_pool_ht, &thread, value);
 	return value;
 }
 
 SANSSH* get_sanssh(void)
 {
 	int thread = GetCurrentThreadId();
-	SANSSH *sanssh = sanssh_pool_find(thread);
+	SANSSH *sanssh = ht_sanssh_pool_find(thread);
 	if (!sanssh) {
 		sanssh = san_init_ssh(g_cmd_args->host, g_cmd_args->port,
 			g_cmd_args->user, g_cmd_args->pkey);
 		if (sanssh) {
 			EnterCriticalSection(&g_ssh_critical_section);
-			sanssh_pool_add(sanssh);
+			ht_sanssh_pool_add(sanssh);
 			LeaveCriticalSection(&g_ssh_critical_section);
-			printf("%zd: %d :INFO: %s: %d: "
-				"new session created in thread\n",
-				time_ms(), thread, __func__, __LINE__);
-		}
-		
+			info("new session created in thread %s\n", thread);
+		}		
 	}
 	return sanssh;
 }

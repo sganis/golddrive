@@ -175,7 +175,7 @@ typedef struct _SANSSH {
 	char error[ERROR_LEN];
 	UT_hash_handle hh;			/* makes this structure hashable */
 } SANSSH;
-extern SANSSH *g_sanssh_pool;
+extern SANSSH *g_sanssh_pool_ht;
 
 struct dirent {
 	struct fuse_stat d_stat;
@@ -238,8 +238,9 @@ void get_filetype(unsigned long perm, char* filetype);
 int run_command(const char *cmd, char *out, char *err);
 
 // connection pool
-void sanssh_pool_add(SANSSH *value);
-SANSSH * sanssh_pool_find(int thread);
+void ht_sanssh_pool_add(SANSSH *value);
+void ht_sanssh_pool_del(SANSSH *value);
+SANSSH * ht_sanssh_pool_find(int thread);
 SANSSH* get_sanssh(void);
 
 // hash table with handles to close
