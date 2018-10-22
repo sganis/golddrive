@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
 	int rc;
 
 	if (argc == 2 && strcmp(argv[1], "-V") == 0) {
-		printf("sanfs 1.0.0\nbuild date: %s\n", __DATE__);
+		printf("sanfs 1.0.1\nbuild date: %s\n", __DATE__);
 		return 0;
 	}
 
