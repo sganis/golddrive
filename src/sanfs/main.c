@@ -48,7 +48,7 @@ static int fs_read(const char *path, char *buf, size_t size,
 	//printf("thread req size  offset    path\n");
 	//printf("%-7ld%-10ld%-10ld%s\n", GetCurrentThreadId(), size, off, path);
 
-	int fd = fi_fd(fi);
+	ssize_t fd = fi_fd(fi);
 	ssize_t nb = san_read(fd, buf, size, off);
 	if (nb >= 0)
 		return (int)nb;

@@ -145,12 +145,12 @@ static const char *sftp_errors[] = {
 /* macros */
 #define fi_dirbit                       (0x8000000000000000ULL)
 #define fi_fh(fi, MASK)                 ((fi)->fh & (MASK))
-#define fi_setfh(fi, FH, MASK)          ((fi)->fh = (intptr_t)(FH) | (MASK))
+#define fi_setfh(fi, FH, MASK)          ((fi)->fh = (ssize_t)(FH) | (MASK))
 #define fi_fd(fi)                       (fi_fh(fi, fi_dirbit) ? \
-										san_dirfd((DIR *)(intptr_t)fi_fh(fi, ~fi_dirbit)) : \
-										(int)fi_fh(fi, ~fi_dirbit))
+										san_dirfd((DIR *)(ssize_t)fi_fh(fi, ~fi_dirbit)) : \
+										(ssize_t)fi_fh(fi, ~fi_dirbit))
 #define fi_setfd(fi, fd)                (fi_setfh(fi, fd, 0))
-#define fi_dirp(fi)                     ((DIR *)(intptr_t)fi_fh(fi, ~fi_dirbit))
+#define fi_dirp(fi)                     ((DIR *)(ssize_t)fi_fh(fi, ~fi_dirbit))
 #define fi_setdirp(fi, dirp)            (fi_setfh(fi, dirp, fi_dirbit))
 
 
@@ -196,46 +196,47 @@ typedef struct _DIR {
 	char path[PATH_MAX];
 } DIR;
 
-int file_exists(const char* path);
-int waitsocket(SANSSH* sanssh);
-void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs);
-void *san_init(struct fuse_conn_info *conn, struct fuse_config *conf);
-SANSSH *san_init_ssh(const char *host, int port, const char *user, const char *pkey);
-int san_finalize();
-int san_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_file_info *fi);
-int san_stat(const char *path, struct fuse_stat *stbuf);
-int san_fstat(int fd, struct fuse_stat *stbuf);
-int san_statfs(const char *path, struct fuse_statvfs *st);
-int san_opendir(const char *path, struct fuse_file_info *fi);
-int san_dirfd(DIR *dirp);
-int san_readdir(const char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t off,
-	struct fuse_file_info *fi, enum fuse_readdir_flags flags);
-struct dirent *san_readdir_entry(DIR *dirp);
-int san_releasedir(const char *path, struct fuse_file_info *fi);
-int san_closedir(DIR *dirp);
-int san_truncate(const char *path, fuse_off_t size);
-int san_ftruncate(int fd, fuse_off_t size);
-int san_mkdir(const char *path, fuse_mode_t mode);
-int san_rmdir(const char *path);
-int san_close_request(int fd, int thread);
-int san_close(int fd);
-int san_release(const char *path, struct fuse_file_info *fi);
-int san_rename(const char *oldpath, const char *newpath, unsigned int flags);
-int san_unlink(const char *path);
-int san_fsync(int fd);
-ssize_t san_read(int fd, void *buf, size_t nbyte, fuse_off_t offset);
-int san_read_async(const char * remotefile, const char * localfile);
-int san_create(const char *path, fuse_mode_t mode, struct fuse_file_info *fi);
-int san_open(const char *path, struct fuse_file_info *fi);
-int utime(const char *path, const struct fuse_utimbuf *timbuf);
-int utimensat(int dirfd, const char *path, const struct fuse_timespec times[2], int flag);
-int setcrtime(const char *path, const struct fuse_timespec *tv);
 void mode_human(unsigned long mode, char* human);
 void print_permissions(const char* path, LIBSSH2_SFTP_ATTRIBUTES *attrs);
 void print_stat(const char* path, LIBSSH2_SFTP_ATTRIBUTES *attrs);
 void print_statvfs(const char* path, LIBSSH2_SFTP_STATVFS *st);
 void get_filetype(unsigned long perm, char* filetype);
 int run_command(const char *cmd, char *out, char *err);
+
+int waitsocket(SANSSH* sanssh);
+void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs);
+SANSSH *san_init_ssh(const char *host, int port, const char *user, const char *pkey);
+int san_finalize(void);
+
+// fuse 
+void *san_init(struct fuse_conn_info *conn, struct fuse_config *conf);
+int san_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_file_info *fi);
+int san_stat(const char *path, struct fuse_stat *stbuf);
+int san_statfs(const char *path, struct fuse_statvfs *st);
+int san_opendir(const char *path, struct fuse_file_info *fi);
+int san_readdir(const char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t off,
+	struct fuse_file_info *fi, enum fuse_readdir_flags flags);
+struct dirent *san_readdir_entry(DIR *dirp);
+int san_releasedir(const char *path, struct fuse_file_info *fi);
+int san_truncate(const char *path, fuse_off_t size);
+int san_mkdir(const char *path, fuse_mode_t mode);
+int san_rmdir(const char *path);
+int san_release(const char *path, struct fuse_file_info *fi);
+int san_rename(const char *oldpath, const char *newpath, unsigned int flags);
+int san_unlink(const char *path);
+int san_create(const char *path, fuse_mode_t mode, struct fuse_file_info *fi);
+int san_open(const char *path, struct fuse_file_info *fi);
+int utime(const char *path, const struct fuse_utimbuf *timbuf);
+int setcrtime(const char *path, const struct fuse_timespec *tv);
+ssize_t san_dirfd(DIR *dirp);
+int san_closedir(DIR *dirp);
+int san_fstat(ssize_t fd, struct fuse_stat *stbuf);
+int san_ftruncate(ssize_t fd, fuse_off_t size);
+int san_close_request(ssize_t fd, int thread);
+int san_close(ssize_t fd);
+int san_fsync(ssize_t fd);
+ssize_t san_read(ssize_t fd, void *buf, size_t nbyte, fuse_off_t offset);
+int utimensat(ssize_t dirfd, const char *path, const struct fuse_timespec times[2], int flag);
 
 // hash table for connection pool
 void ht_sanssh_pool_add(SANSSH *value);
