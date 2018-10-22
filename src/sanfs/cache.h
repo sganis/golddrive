@@ -5,13 +5,22 @@
 #define CACHE_TTL 5 /* secs */
 
 /* cached stat */
-typedef struct _CACHE_ATTRIBUTES {
-	char path[256];             /* key (string is WITHIN the structure) */
-	LIBSSH2_SFTP_ATTRIBUTES *attrs;
-	UT_hash_handle hh;         /* makes this structure hashable */
+typedef struct CACHE_ATTRIBUTES {
+	char path[MAX_PATH];            /* key (string is WITHIN the structure) */
+	LIBSSH2_SFTP_ATTRIBUTES attrs;	/* stats */
+	size_t expiry;					/* expiration in microsecons */
+	UT_hash_handle hh;				/* makes this structure hashable */
 } CACHE_ATTRIBUTES;
 
-extern CACHE_ATTRIBUTES *g_attributes_map;
+extern CACHE_ATTRIBUTES *g_attributes_ht;
+extern CRITICAL_SECTION g_attributes_lock;
+
+void ht_attributes_add(CACHE_ATTRIBUTES *value);
+CACHE_ATTRIBUTES * ht_attributes_find(const char* name);
+inline void ht_attributes_lock(int lock) {
+	lock ? EnterCriticalSection(&g_attributes_lock) : 
+		LeaveCriticalSection(&g_attributes_lock);
+}
 
 // cache function
 // function fetch(key, ttl) {
@@ -33,11 +42,6 @@ extern CACHE_ATTRIBUTES *g_attributes_map;
 //		}
 //		return value
 // }
-
-
-void cache_attributes_write(CACHE_ATTRIBUTES *value);
-CACHE_ATTRIBUTES * cache_attributes_read(const char* name);
-
 
 //int main(int argc, char *argv[]) {
 //	const char *names[] = { "joe", "bob", "betty", NULL };

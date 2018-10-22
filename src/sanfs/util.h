@@ -2,18 +2,20 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#define USE_CACHE	0
 #define STATS		0
+#define USE_CACHE	1
+
+/* logging */
 #define ERROR		0
 #define WARN		1
 #define INFO		2
 #define DEBUG		3
-#define LOGLEVEL	INFO
+#define LOGLEVEL	WARN
 
 #define log_message(level, format, ...) {						\
 	int thread = GetCurrentThreadId();							\
-	printf("%zd: %d: %s: %s: %d: ",								\
-		time_ms(), thread, level, __func__, __LINE__);			\
+	printf("%zd: %-6d: %s: %-15s:%3d: ",						\
+		time_mu(), thread, level, __func__, __LINE__);			\
 	printf(format, __VA_ARGS__);								\
 }
 #define debug(format, ...)  log_message("DEBUG", format, __VA_ARGS__) 
@@ -35,7 +37,7 @@
 #endif
 
 int get_number_of_processors(void);
-size_t time_ms(void);
+size_t time_mu(void);
 int time_str(size_t time_ms, char *time_string);
 void trim_str(char* str, int len);
 int file_exists(const char* path);

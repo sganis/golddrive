@@ -116,7 +116,7 @@ static const char *sftp_errors[] = {
 	} 																\
 	if (!skip) {													\
 		fprintf(stderr, "%zd: %d :ERROR: %s: %d: [rc=%d: %s], path: %s\n", \
-			time_ms(), thread, __func__, __LINE__, rc, msg, path); \
+			time_mu(), thread, __func__, __LINE__, rc, msg, path); \
 	}																\
 }
 
@@ -175,19 +175,22 @@ typedef struct _SANSSH {
 	char error[ERROR_LEN];
 	UT_hash_handle hh;			/* makes this structure hashable */
 } SANSSH;
-extern SANSSH *g_sanssh_pool_ht;
 
 struct dirent {
 	struct fuse_stat d_stat;
 	char d_name[FILENAME_MAX];
 };
 
-typedef struct _SAN_HANDLE {
+//typedef struct {
+//	LIBSSH2_SFTP_HANDLE *handle;		/* key */
+//	UT_hash_handle hh;				/* makes this structure hashable */
+//} san_handke_key_t;
+
+typedef struct SAN_HANDLE {
 	int thread;					/* key */
 	LIBSSH2_SFTP_HANDLE *handle;
 	UT_hash_handle hh;			/* makes this structure hashable */
 } SAN_HANDLE;
-extern SAN_HANDLE * g_handle_close_ht;
 
 typedef struct _DIR {
 	int thread;
@@ -239,13 +242,24 @@ ssize_t san_read(ssize_t fd, void *buf, size_t nbyte, fuse_off_t offset);
 int utimensat(ssize_t dirfd, const char *path, const struct fuse_timespec times[2], int flag);
 
 // hash table for connection pool
-void ht_sanssh_pool_add(SANSSH *value);
-void ht_sanssh_pool_del(SANSSH *value);
-SANSSH* ht_sanssh_pool_find(int thread);
+extern SANSSH *g_ssh_ht;
+extern CRITICAL_SECTION g_ssh_lock;
+void ht_ssh_add(SANSSH *value);
+void ht_ssh_del(SANSSH *value);
+SANSSH* ht_ssh_find(int thread);
 SANSSH* get_sanssh(void);
+inline void ht_ssh_lock(int lock) {
+	lock ? EnterCriticalSection(&g_ssh_lock) :
+		LeaveCriticalSection(&g_ssh_lock);
+}
 
 // hash table with handles to close
+extern SAN_HANDLE * g_handle_close_ht;
+extern CRITICAL_SECTION g_handle_close_lock;
 void ht_handle_close_add(SAN_HANDLE *value);
 void ht_handle_close_del(SAN_HANDLE *value);
 SAN_HANDLE* ht_handle_close_find(int thread);
-
+inline void ht_handle_close_lock(int lock) {
+	lock ? EnterCriticalSection(&g_handle_close_lock) :
+		LeaveCriticalSection(&g_handle_close_lock);
+}

@@ -8,7 +8,6 @@
 
 extern size_t			g_sftp_calls;
 extern size_t			g_sftp_cached_calls;
-extern CRITICAL_SECTION g_ssh_critical_section;
 
 
 int san_threads(int n, int c)
@@ -65,7 +64,7 @@ SANSSH * san_init_ssh(const char* hostname,	int port,
 	rc = WSAStartup(MAKEWORD(2, 0), &wsadata);
 	if (rc != 0) {
 		fprintf(stderr, "%zd: %d :ERROR: %s: %d: WSAStartup failed, rc=%d\n", 
-			time_ms(), thread, __func__, __LINE__, rc);
+			time_mu(), thread, __func__, __LINE__, rc);
 		return 0;
 	}
 
@@ -73,7 +72,7 @@ SANSSH * san_init_ssh(const char* hostname,	int port,
 	he = gethostbyname(hostname);
 	if (!he) {
 		fprintf(stderr, "%zd: %d :ERROR: %s: %d: host not found: %s\n", 
-			time_ms(), thread, __func__, __LINE__, hostname);
+			time_mu(), thread, __func__, __LINE__, hostname);
 		return 0;
 	}
 	sin.sin_addr.s_addr = **(int**)he->h_addr_list;
@@ -85,7 +84,7 @@ SANSSH * san_init_ssh(const char* hostname,	int port,
 	if (rc) {
 		fprintf(stderr, "%zd: %d :ERROR: %s: %d: "
 			"failed to initialize crypto library, rc=%d\n",
-			time_ms(), thread, __func__, __LINE__, rc);
+			time_mu(), thread, __func__, __LINE__, rc);
 		return 0;
 	}
 
@@ -95,7 +94,7 @@ SANSSH * san_init_ssh(const char* hostname,	int port,
 	if (rc) {
 		fprintf(stderr, "%zd: %d :ERROR: %s: %d: "
 			"failed to open socket, connect() rc=%d\n",
-			time_ms(), thread, __func__, __LINE__, rc);
+			time_mu(), thread, __func__, __LINE__, rc);
 		return 0;
 	}
 
@@ -104,7 +103,7 @@ SANSSH * san_init_ssh(const char* hostname,	int port,
 	if (!ssh) {
 		fprintf(stderr, "%zd: %d :ERROR: %s: %d: "
 			"failed allocate memory for ssh session\n",
-			time_ms(), thread, __func__, __LINE__);
+			time_mu(), thread, __func__, __LINE__);
 		return 0;
 	}
 		
@@ -121,7 +120,7 @@ SANSSH * san_init_ssh(const char* hostname,	int port,
 		rc = libssh2_session_last_error(ssh, &errmsg, &errlen, 0);
 		fprintf(stderr, "%zd: %d :ERROR: %s: %d: "
 			"failed to complete ssh handshake [rc=%d, %s]\n",
-			time_ms(), thread, __func__, __LINE__, rc, errmsg);
+			time_mu(), thread, __func__, __LINE__, rc, errmsg);
 		return 0;
 	}
 
@@ -133,7 +132,7 @@ SANSSH * san_init_ssh(const char* hostname,	int port,
 		rc = libssh2_session_last_error(ssh, &errmsg, &errlen, 0);
 		fprintf(stderr, "%zd: %d :ERROR: %s: %d: "
 			"authentication by public key failed [rc=%d, %s]\n",
-			time_ms(), thread, __func__, __LINE__, rc, errmsg);
+			time_mu(), thread, __func__, __LINE__, rc, errmsg);
 		return 0;
 	}
 
@@ -143,7 +142,7 @@ SANSSH * san_init_ssh(const char* hostname,	int port,
 		rc = libssh2_session_last_error(ssh, &errmsg, &errlen, 0);
 		fprintf(stderr, "%zd: %d :ERROR: %s: %d: "
 			"failed to start sftp session [rc=%d, %s]\n",
-			time_ms(), thread, __func__, __LINE__, rc, errmsg);
+			time_mu(), thread, __func__, __LINE__, rc, errmsg);
 		return 0;
 	}
 	/* do {
@@ -170,17 +169,17 @@ int san_finalize(void)
 	/* free the hash table contents */
 	SANSSH* sanssh, *tmp;
 	unsigned int sessions;
-	sessions = HASH_COUNT(g_sanssh_pool_ht);
+	sessions = HASH_COUNT(g_ssh_ht);
 	debug("there are %u ssh sessions\n", sessions);
 	/* FIXME: not sure if I can shutdown ssh sessions from different thread
 	* let's try anyways */
-	HASH_ITER(hh, g_sanssh_pool_ht, sanssh, tmp) {
+	HASH_ITER(hh, g_ssh_ht, sanssh, tmp) {
 		libssh2_sftp_shutdown(sanssh->sftp);
 		libssh2_session_disconnect(sanssh->ssh, "sanssh session disconnected");
 		libssh2_session_free(sanssh->ssh);
 		libssh2_exit();
 		closesocket(sanssh->socket);
-		HASH_DEL(g_sanssh_pool_ht, sanssh);
+		HASH_DEL(g_ssh_ht, sanssh);
 		free(sanssh);
 	}
 
@@ -225,7 +224,7 @@ int waitsocket(SANSSH* sanssh)
 
 int san_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_file_info *fi)
 {
-	debug("%s\n", path);
+	//info("%s\n", path);
 	int rc;
 	if (0 == fi) {
 		rc = san_stat(path, stbuf);
@@ -239,9 +238,9 @@ int san_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_file_info
 	}
 #if LOGLEVEL==DEBUG
 	//debug("end %d %s\n", rc, path);
-	char perm[10];
-	mode_human(stbuf->st_mode, perm);
-	debug("%s %d %d %s\n", perm, stbuf->st_uid, stbuf->st_gid, path);
+	//char perm[10];
+	//mode_human(stbuf->st_mode, perm);
+	//debug("%s %d %d %s\n", perm, stbuf->st_uid, stbuf->st_gid, path);
 #endif
 	return rc ? -1 : 0;
 }
@@ -250,9 +249,6 @@ int san_fstat(ssize_t fd, struct fuse_stat *stbuf)
 {
 	int rc = 0;
 	LIBSSH2_SFTP_HANDLE* handle = (LIBSSH2_SFTP_HANDLE*)fd;
-	
-	//LIBSSH2_SFTP_ATTRIBUTES *attrs = NULL;
-	//attrs = malloc(sizeof(LIBSSH2_SFTP_ATTRIBUTES));
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
 	memset(stbuf, 0, sizeof *stbuf);
 	//debug("LIBSSH2_SFTP_HANDLE: %zd\n", (intptr_t)handle);
@@ -282,21 +278,12 @@ int san_stat(const char * path, struct fuse_stat *stbuf)
 {
 	int rc = 0;
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
-	//LIBSSH2_SFTP_ATTRIBUTES *attrs = NULL;
 	CACHE_ATTRIBUTES* cattrs = NULL;
 	memset(stbuf, 0, sizeof *stbuf);
 #if USE_CACHE
-	cattrs = cache_attributes_find(path);
+	cattrs = ht_attributes_find(path);
 #endif
-	if (!cattrs) {
-		//attrs = malloc(sizeof(LIBSSH2_SFTP_ATTRIBUTES));
-		//lock();
-		// allways follow links
-		//rc = libssh2_sftp_stat(g_sanssh->sftp, path, attrs);
-
-		//rc = libssh2_sftp_stat_ex(g_sanssh->sftp, path, (int)strlen(path),
-		//	LIBSSH2_SFTP_STAT, attrs);
-		//lock();
+	if (!cattrs) {		
 		SANSSH* sanssh = get_sanssh();
 		int thread = GetCurrentThreadId();
 		assert(sanssh);
@@ -305,35 +292,33 @@ int san_stat(const char * path, struct fuse_stat *stbuf)
 
 		rc = libssh2_sftp_stat_ex(sanssh->sftp, path, (int)strlen(path),
 									LIBSSH2_SFTP_STAT, &attrs);
-		//unlock();
+		g_sftp_calls++;
+
 		if (rc) {
-			//printf("rc: %d\n", rc);
 			san_error(path);
-			//free(attrs);
 		}
 		else {
+			debug("%s\n", path);
 #if USE_CACHE
 			// added to cache
 			cattrs = malloc(sizeof(CACHE_ATTRIBUTES));
 			strcpy(cattrs->path, path);
-			cattrs->attrs = attrs;
-			cache_attributes_add(cattrs);
+			cattrs->attrs = attrs; /* shallow copy is ok */
+			ht_attributes_add(cattrs);
 #endif
 		}
-		//unlock();		
 	}
-	//else {
-	//	debug_cached(cattrs->path);
-	//	attrs = cattrs->attrs;
-	//	g_sftp_cached_calls++;
-	//}
+	else {
+		debug("CACHE: %s\n", cattrs->path);
+		attrs = cattrs->attrs;
+		g_sftp_cached_calls++;
+	}
 
 	copy_attributes(stbuf, &attrs);
 	//print_permissions(path, attrs);
 
 #if STATS
 	// stats	
-	g_sftp_calls++;
 	debug("sftp calls cached/total: %zd/%zd (%.1f%% cached)\n",
 		g_sftp_cached_calls, g_sftp_calls,
 		(g_sftp_cached_calls * 100 / (double)g_sftp_calls));
@@ -343,7 +328,7 @@ int san_stat(const char * path, struct fuse_stat *stbuf)
 
 int san_statfs(const char * path, struct fuse_statvfs *stbuf)
 {
-	debug("%s\n", path);
+	info("%s\n", path);
 	int rc = 0;
 	LIBSSH2_SFTP_STATVFS stvfs;
 	//lock();
@@ -365,6 +350,8 @@ int san_statfs(const char * path, struct fuse_statvfs *stbuf)
 
 int san_mkdir(const char * path, fuse_mode_t  mode)
 {
+	info("%s\n", path);
+
 	int rc;
 	//rc = libssh2_sftp_mkdir(g_sanssh->sftp, path,
 	//	LIBSSH2_SFTP_S_IRWXU |
@@ -382,6 +369,8 @@ int san_mkdir(const char * path, fuse_mode_t  mode)
 
 int san_rmdir(const char * path)
 {
+	info("%s\n", path);
+
 	int rc;
 	//rc = libssh2_sftp_rmdir(g_sanssh->sftp, path);
 	rc = libssh2_sftp_rmdir_ex(get_sanssh()->sftp, path, (int)strlen(path));
@@ -393,7 +382,7 @@ int san_rmdir(const char * path)
 
 int san_opendir(const char *path, struct fuse_file_info *fi)
 {
-	debug("%s\n", path);
+	info("%s\n", path);
 
 
 	int rc = -1;
@@ -407,6 +396,7 @@ int san_opendir(const char *path, struct fuse_file_info *fi)
 
 	DIR *dirp = fi_dirp(fi);
 	if (dirp) {
+		/* this never happes as fuse calls this function only if dirp is null */
 		error("DIR ALREADY OPEN: HANDLE %zd thread %d path: %s, path req: %s\n",
 			(ssize_t)dirp->handle, thread, dirp->path, path);
 	}
@@ -417,7 +407,7 @@ int san_opendir(const char *path, struct fuse_file_info *fi)
 		int hfd = (int)(ssize_t)close_handle->handle;
 		san_close(hfd);
 		ht_handle_close_del(close_handle);
-		warn("HANDLE %d closed from thread %d\n", hfd, thread);
+		warn("HANDLE %d closed from owner thread %d\n", hfd, thread);
 	}
 
 	handle = libssh2_sftp_open_ex(get_sanssh()->sftp, path, (int)strlen(path),
@@ -457,11 +447,12 @@ ssize_t san_dirfd(DIR *dirp)
 int san_readdir(const char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t off,
 	struct fuse_file_info *fi, enum fuse_readdir_flags flags)
 {
-	debug("%s\n", path);
+	info("%s\n", path);
 	DIR *dirp = fi_dirp(fi);
 	struct dirent *de;
 
 	libssh2_sftp_rewind(dirp->handle);
+	g_sftp_calls++;
 
 	for (;;) {
 		if (0 == (de = san_readdir_entry(dirp)))
@@ -481,9 +472,7 @@ struct dirent *san_readdir_entry(DIR *dirp)
 	char fname[512];
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
 	assert(dirp->handle);
-	//lock();
 	rc = libssh2_sftp_readdir(dirp->handle, fname, sizeof(fname), &attrs);
-	//unlock();
 	g_sftp_calls++;
 
 	if (rc > 0) {
@@ -496,11 +485,10 @@ struct dirent *san_readdir_entry(DIR *dirp)
 				strcat_s(fullpath, 2, "/");
 			strcat_s(fullpath, FILENAME_MAX, fname);
 			memset(&attrs, 0, sizeof attrs);
-			//lock();
-			//rc = libssh2_sftp_stat(g_sanssh->sftp, fullpath, &attrs);
 			rc = libssh2_sftp_stat_ex(get_sanssh()->sftp, fullpath,
 							(int)strlen(fullpath), LIBSSH2_SFTP_STAT, &attrs);
-			//unlock();
+			g_sftp_calls++;
+
 			if (rc) {
 				san_error(fullpath);
 			}
@@ -526,9 +514,9 @@ struct dirent *san_readdir_entry(DIR *dirp)
 	strcpy_s(dirp->de.d_name, FILENAME_MAX, fname);
 #if STATS
 	// stats	
-	debug("sftp calls cached/total: %zd/%zd (%.1f%% cached)\n",
-			g_sftp_cached_calls, g_sftp_calls, 
-			(g_sftp_cached_calls*100/(double)g_sftp_calls));
+	//debug("sftp calls cached/total: %zd/%zd (%.1f%% cached)\n",
+	//		g_sftp_cached_calls, g_sftp_calls, 
+	//		(g_sftp_cached_calls*100/(double)g_sftp_calls));
 #endif
 
 	return &dirp->de;
@@ -537,7 +525,7 @@ struct dirent *san_readdir_entry(DIR *dirp)
 
 int san_releasedir(const char *path, struct fuse_file_info *fi)
 {
-	debug("%s\n", path);
+	info("%s\n", path);
 	DIR *dirp = fi_dirp(fi);
 	return san_closedir(dirp);
 }
@@ -565,12 +553,12 @@ int san_closedir(DIR *dirp)
 
 int san_close_request(ssize_t fd, int thread)
 {
-	EnterCriticalSection(&g_ssh_critical_section);
+	EnterCriticalSection(&g_ssh_lock);
 	SAN_HANDLE* handle = malloc(sizeof(SAN_HANDLE));
 	handle->thread = thread;
 	handle->handle = (LIBSSH2_SFTP_HANDLE*)fd; 
 	ht_handle_close_add(handle);
-	LeaveCriticalSection(&g_ssh_critical_section);
+	LeaveCriticalSection(&g_ssh_lock);
 	return 0;
 }
 
@@ -590,12 +578,13 @@ int san_close(ssize_t fd)
 
 	// I don't know what thread is calling this function
 	// need to protect
-	EnterCriticalSection(&g_ssh_critical_section);
+	EnterCriticalSection(&g_ssh_lock);
 	int thread = GetCurrentThreadId();
 	info("HANDLE CLOSE: %zd thread %d\n", (ssize_t)handle, thread);
 	rc = libssh2_sftp_close_handle(handle);
+	g_sftp_calls++;
 	handle = NULL;
-	LeaveCriticalSection(&g_ssh_critical_section);
+	LeaveCriticalSection(&g_ssh_lock);
 	return rc;
 }
 
@@ -651,7 +640,7 @@ void print_statvfs(const char* path, LIBSSH2_SFTP_STATVFS *st)
 
 int san_create(const char *path, fuse_mode_t mode, struct fuse_file_info *fi)
 {
-	debug("%s\n", path);
+	info("%s\n", path);
 	return -1;
 
 	//int fd;
@@ -660,7 +649,7 @@ int san_create(const char *path, fuse_mode_t mode, struct fuse_file_info *fi)
 
 int san_open(const char *path, struct fuse_file_info *fi)
 {
-	debug("%s\n", path);
+	info("%s\n", path);
 
 	long mode = fi->flags;
 
@@ -669,6 +658,7 @@ int san_open(const char *path, struct fuse_file_info *fi)
 	//handle = libssh2_sftp_open(g_sanssh->sftp, path, LIBSSH2_FXF_READ, 0);
 	handle = libssh2_sftp_open_ex(get_sanssh()->sftp, path, (int)strlen(path),
 							LIBSSH2_FXF_READ, mode, LIBSSH2_SFTP_OPENFILE);
+	g_sftp_calls++;
 
 	//unlock();
 	//handle = libssh2_sftp_open(g_sanssh->sftp, path,
@@ -693,6 +683,7 @@ int san_open(const char *path, struct fuse_file_info *fi)
 
 ssize_t san_read(ssize_t fd, void *buf, size_t nbyte, fuse_off_t offset)
 {
+
 	//size_t thread = GetCurrentThreadId();
 	LIBSSH2_SFTP_HANDLE* handle = (LIBSSH2_SFTP_HANDLE*)fd;
 	debug("LIBSSH2_SFTP_HANDLE: %zd read from descriptor: %zd\n", (ssize_t)handle, fd);
@@ -709,6 +700,7 @@ ssize_t san_read(ssize_t fd, void *buf, size_t nbyte, fuse_off_t offset)
 	char *mem = malloc(size);
 	while (size) {		
 		bytesread = libssh2_sftp_read(handle, mem, size);
+		//g_sftp_calls++;
 		if (bytesread < 0) {
 			debug("ERROR: Unable to read file\n");
 			return -1;
@@ -732,8 +724,7 @@ ssize_t san_read(ssize_t fd, void *buf, size_t nbyte, fuse_off_t offset)
 
 int san_rename(const char *oldpath, const char *newpath, unsigned int flags)
 {
-	debug("%s\n", oldpath);
-	debug("%s\n", newpath);
+	info("%s -> %s\n", oldpath, newpath);
 	int rc;
 	//rc = libssh2_sftp_rename(g_sanssh->sftp, source, destination);
 	rc = libssh2_sftp_rename_ex(get_sanssh()->sftp,
@@ -742,6 +733,8 @@ int san_rename(const char *oldpath, const char *newpath, unsigned int flags)
 		LIBSSH2_SFTP_RENAME_OVERWRITE | 
 		LIBSSH2_SFTP_RENAME_ATOMIC | 
 		LIBSSH2_SFTP_RENAME_NATIVE);
+	g_sftp_calls++;
+
 	if (rc) {
 		san_error(oldpath);
 		san_error(newpath);
@@ -752,9 +745,12 @@ int san_rename(const char *oldpath, const char *newpath, unsigned int flags)
 
 int san_unlink(const char *path)
 {
+	info("%s\n", path);
 	int rc;
 	//rc = libssh2_sftp_unlink(g_sanssh->sftp, path);
 	rc = libssh2_sftp_unlink_ex(get_sanssh()->sftp, path, (int)strlen(path));
+	g_sftp_calls++;
+
 	if (rc) {
 		san_error(path);
 	}
@@ -763,6 +759,7 @@ int san_unlink(const char *path)
 
 int san_truncate(const char *path, fuse_off_t size)
 {
+	info("%s\n", path);
 	return -1;
 	
 	//HANDLE h = CreateFileA(path,
@@ -806,6 +803,7 @@ int san_fsync(ssize_t fd)
 
 int utime(const char *path, const struct fuse_utimbuf *timbuf)
 {
+	info("%s\n", path);
 	return -1;
 	//if (0 == timbuf)
 	//	return utimensat(AT_FDCWD, path, 0, AT_SYMLINK_NOFOLLOW);
@@ -822,6 +820,7 @@ int utime(const char *path, const struct fuse_utimbuf *timbuf)
 
 int utimensat(ssize_t dirfd, const char *path, const struct fuse_timespec times[2], int flag)
 {
+	info("%s\n", path);
 	return -1;
 	///* ignore dirfd and assume that it is always AT_FDCWD */
 	///* ignore flag and assume that it is always AT_SYMLINK_NOFOLLOW */
@@ -856,6 +855,7 @@ int utimensat(ssize_t dirfd, const char *path, const struct fuse_timespec times[
 
 int setcrtime(const char *path, const struct fuse_timespec *tv)
 {
+	info("%s\n", path);
 	(void*)path;
 	return -1;
 	//HANDLE h = CreateFileA(path,
@@ -969,42 +969,49 @@ finish:
 	return (int)rc;
 }
 
-void ht_sanssh_pool_add(SANSSH *value)
+void ht_ssh_add(SANSSH *value)
 {
-	HASH_ADD_INT(g_sanssh_pool_ht, thread, value);
+	HASH_ADD_INT(g_ssh_ht, thread, value);
 	debug("new ssh connection added\n");
 }
-void ht_sanssh_pool_del(SANSSH *value)
+void ht_ssh_del(SANSSH *value)
 {
-	HASH_DEL(g_sanssh_pool_ht, value);  /* value: pointer to delete */
+	HASH_DEL(g_ssh_ht, value);			/* value: pointer to delete */
 	free(value);						/* optional; it's up to you! */
 }
-SANSSH * ht_sanssh_pool_find(int thread)
+SANSSH * ht_ssh_find(int thread)
 {
 	SANSSH *value = NULL;
-	HASH_FIND_INT(g_sanssh_pool_ht, &thread, value);
+	HASH_FIND_INT(g_ssh_ht, &thread, value);
 	return value;
 }
 
 SANSSH* get_sanssh(void)
 {
 	int thread = GetCurrentThreadId();
-	SANSSH *sanssh = ht_sanssh_pool_find(thread);
+	SANSSH *sanssh = ht_ssh_find(thread);
 	if (!sanssh) {
 		sanssh = san_init_ssh(g_cmd_args->host, g_cmd_args->port,
 			g_cmd_args->user, g_cmd_args->pkey);
 		if (sanssh) {
-			EnterCriticalSection(&g_ssh_critical_section);
-			ht_sanssh_pool_add(sanssh);
-			LeaveCriticalSection(&g_ssh_critical_section);
+			ht_ssh_lock(1);
+			ht_ssh_add(sanssh);
+			ht_ssh_lock(0); 
 			info("new session created in thread %d\n", thread);
 		}		
 	}
 	return sanssh;
 }
 
+
 void ht_handle_close_add(SAN_HANDLE *value)
 {
+	/* fixme: a thread can own multiple open files and
+	   have requests from different threads to close the same file.
+	   this must be a list, not a single handle. */
+	SAN_HANDLE * h = ht_handle_close_find(value->thread);
+	//if(h)
+	//	assert(0);
 	HASH_ADD_INT(g_handle_close_ht, thread, value);
 }
 SAN_HANDLE * ht_handle_close_find(int thread)

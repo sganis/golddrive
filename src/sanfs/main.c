@@ -10,33 +10,36 @@
 #include "winposix.h"
 
 /* global variables */
-CACHE_ATTRIBUTES *	g_attributes_map;
 size_t				g_sftp_calls;
 size_t				g_sftp_cached_calls;
-SANSSH *			g_sanssh_pool_ht;
+SANSSH *			g_ssh_ht;
+CRITICAL_SECTION	g_ssh_lock;
+CACHE_ATTRIBUTES *	g_attributes_ht;
+CRITICAL_SECTION	g_attributes_lock;
 SAN_HANDLE *		g_handle_close_ht;
-CRITICAL_SECTION	g_ssh_critical_section;
+CRITICAL_SECTION	g_handle_close_lock;
 CMD_ARGS *			g_cmd_args;
 
 
 static int fs_mkdir(const char *path, fuse_mode_t mode)
 {
-	debug("%s\n", path);
+	info("%s\n", path);
 	return san_mkdir(path, mode);
 }
 
 static int fs_rmdir(const char *path)
 {
-	debug("%s\n", path);
+	info("%s\n", path);
 	return san_rmdir(path);
 }
 
 static int fs_truncate(const char *path, fuse_off_t size, struct fuse_file_info *fi)
 {
+	info("%s\n", path);
     if (0 == fi)  {
         return san_truncate(path, size);
     } else {
-		int fd = fi_fd(fi);
+		ssize_t fd = fi_fd(fi);
         return san_ftruncate(fd, size);
     }
 }
@@ -44,7 +47,7 @@ static int fs_truncate(const char *path, fuse_off_t size, struct fuse_file_info 
 static int fs_read(const char *path, char *buf, size_t size, 
 	fuse_off_t off, struct fuse_file_info *fi)
 {
-	//debug(path);
+	info(path);
 	//printf("thread req size  offset    path\n");
 	//printf("%-7ld%-10ld%-10ld%s\n", GetCurrentThreadId(), size, off, path);
 
@@ -59,7 +62,7 @@ static int fs_read(const char *path, char *buf, size_t size,
 static int fs_write(const char *path, const char *buf, size_t size, 
 	fuse_off_t off,  struct fuse_file_info *fi)
 {
-	debug("%s\n", path);
+	info("%s\n", path);
 	return -1;
 
     //int fd = fi_fd(fi);
@@ -70,14 +73,14 @@ static int fs_write(const char *path, const char *buf, size_t size,
 
 static int fs_fsync(const char *path, int datasync, struct fuse_file_info *fi)
 {
-	debug("%s\n", path);
-	int fd = fi_fd(fi);
+	info("%s\n", path);
+	ssize_t fd = fi_fd(fi);
     return san_fsync(fd);
 }
 
 static int fs_utimens(const char *path, const struct fuse_timespec tv[2], struct fuse_file_info *fi)
 {
-	debug("%s\n", path);
+	info("%s\n", path);
 	return -1;
     //return san_utimensat(AT_FDCWD, path, tv, AT_SYMLINK_NOFOLLOW);
 }
@@ -171,9 +174,14 @@ int main(int argc, char *argv[])
 
 
 	// Initialize global variables
-	if (!InitializeCriticalSectionAndSpinCount(&g_ssh_critical_section, 0x00000400))
+	if (!InitializeCriticalSectionAndSpinCount(&g_ssh_lock, 0x00000400)
+		|| !InitializeCriticalSectionAndSpinCount(&g_attributes_lock, 0x00000400)
+		|| !InitializeCriticalSectionAndSpinCount(&g_handle_close_lock, 0x00000400))
 		return 1;
-	g_attributes_map = NULL;
+	g_ssh_ht = NULL;
+	g_attributes_ht = NULL;
+	g_handle_close_ht = NULL;
+
 	g_sftp_calls = 0;
 	g_sftp_cached_calls = 0;
 
@@ -243,7 +251,9 @@ int main(int argc, char *argv[])
     rc = fuse_main(argc, argv, &fs_ops, 0);
 
 	// cleanup
-	DeleteCriticalSection(&g_ssh_critical_section);
+	DeleteCriticalSection(&g_ssh_lock);
+	DeleteCriticalSection(&g_attributes_lock);
+	DeleteCriticalSection(&g_handle_close_lock);
 	san_finalize();
 
 	return rc;
