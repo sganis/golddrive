@@ -8,7 +8,7 @@
 #define WARN		1
 #define INFO		2
 #define DEBUG		3
-#define LOGLEVEL	ERROR
+#define LOGLEVEL	INFO
 
 #define log_message(level, format, ...) {						\
 	int thread = GetCurrentThreadId();							\

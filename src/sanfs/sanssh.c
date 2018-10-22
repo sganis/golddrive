@@ -998,7 +998,7 @@ SANSSH* get_sanssh(void)
 			EnterCriticalSection(&g_ssh_critical_section);
 			ht_sanssh_pool_add(sanssh);
 			LeaveCriticalSection(&g_ssh_critical_section);
-			info("new session created in thread %s\n", thread);
+			info("new session created in thread %d\n", thread);
 		}		
 	}
 	return sanssh;
