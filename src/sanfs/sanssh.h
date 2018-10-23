@@ -186,15 +186,14 @@ struct dirent {
 //	UT_hash_handle hh;				/* makes this structure hashable */
 //} san_handke_key_t;
 
-typedef struct SAN_HANDLE {
+typedef struct _SAN_HANDLE {
 	int thread;					/* key */
-	LIBSSH2_SFTP_HANDLE *handle;
+	LIBSSH2_SFTP_HANDLE *sftp_handle;
 	UT_hash_handle hh;			/* makes this structure hashable */
 } SAN_HANDLE;
 
 typedef struct _DIR {
-	int thread;
-	LIBSSH2_SFTP_HANDLE *handle;
+	SAN_HANDLE *san_handle;
 	struct dirent de;
 	char path[PATH_MAX];
 } DIR;
@@ -235,8 +234,7 @@ ssize_t san_dirfd(DIR *dirp);
 int san_closedir(DIR *dirp);
 int san_fstat(ssize_t fd, struct fuse_stat *stbuf);
 int san_ftruncate(ssize_t fd, fuse_off_t size);
-int san_close_request(ssize_t fd, int thread);
-int san_close(ssize_t fd);
+int san_close(SAN_HANDLE* sh);
 int san_fsync(ssize_t fd);
 ssize_t san_read(ssize_t fd, void *buf, size_t nbyte, fuse_off_t offset);
 int utimensat(ssize_t dirfd, const char *path, const struct fuse_timespec times[2], int flag);

@@ -4,7 +4,7 @@
 
 
 /* cached stat */
-typedef struct CACHE_ATTRIBUTES {
+typedef struct {
 	char path[MAX_PATH];            /* key (string is WITHIN the structure) */
 	LIBSSH2_SFTP_ATTRIBUTES attrs;	/* stats */
 	size_t expiry;					/* expiration in microsecons */

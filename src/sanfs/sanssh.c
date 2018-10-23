@@ -246,7 +246,8 @@ int san_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_file_info
 int san_fstat(ssize_t fd, struct fuse_stat *stbuf)
 {
 	int rc = 0;
-	LIBSSH2_SFTP_HANDLE* handle = (LIBSSH2_SFTP_HANDLE*)fd;
+	SAN_HANDLE* sh = (SAN_HANDLE*)fd;
+	LIBSSH2_SFTP_HANDLE* handle = sh->sftp_handle;
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
 	memset(stbuf, 0, sizeof *stbuf);
 	//debug("LIBSSH2_SFTP_HANDLE: %zd\n", (intptr_t)handle);
@@ -329,9 +330,8 @@ int san_statfs(const char * path, struct fuse_statvfs *stbuf)
 	info("%s\n", path);
 	int rc = 0;
 	LIBSSH2_SFTP_STATVFS stvfs;
-	//lock();
 	rc = libssh2_sftp_statvfs(get_sanssh()->sftp, path, strlen(path), &stvfs);
-	//unlock();
+	g_sftp_calls++;
 	if (rc) {
 		san_error(path);
 	}
@@ -359,6 +359,7 @@ int san_mkdir(const char * path, fuse_mode_t  mode)
 		LIBSSH2_SFTP_S_IRWXU |
 		LIBSSH2_SFTP_S_IRWXG |
 		LIBSSH2_SFTP_S_IROTH | LIBSSH2_SFTP_S_IXOTH);
+	g_sftp_calls++;
 	if (rc) {
 		san_error(path);
 	}
@@ -372,6 +373,7 @@ int san_rmdir(const char * path)
 	int rc;
 	//rc = libssh2_sftp_rmdir(g_sanssh->sftp, path);
 	rc = libssh2_sftp_rmdir_ex(get_sanssh()->sftp, path, (int)strlen(path));
+	g_sftp_calls++;
 	if (rc) {
 		san_error(path);
 	}
@@ -388,6 +390,7 @@ int san_opendir(const char *path, struct fuse_file_info *fi)
 
 	SANSSH* sanssh = get_sanssh();
 	int thread = GetCurrentThreadId();
+	assert(thread > 0);
 	assert(sanssh);
 	assert(sanssh->sftp);
 	assert(sanssh->thread == thread);
@@ -396,20 +399,19 @@ int san_opendir(const char *path, struct fuse_file_info *fi)
 	if (dirp) {
 		/* this never happes as fuse calls this function only if dirp is null */
 		error("DIR ALREADY OPEN: HANDLE %zd thread %d path: %s, path req: %s\n",
-			(ssize_t)dirp->handle, thread, dirp->path, path);
+			(ssize_t)dirp->san_handle->sftp_handle, thread, dirp->path, path);
 	}
 
 	// check if close is requested
 	SAN_HANDLE* close_handle = ht_handle_close_find(thread);
 	if (close_handle) {
-		int hfd = (int)(ssize_t)close_handle->handle;
-		san_close(hfd);
 		ht_handle_close_del(close_handle);
-		warn("HANDLE %d closed from owner thread %d\n", hfd, thread);
+		san_close(close_handle);		
 	}
 
 	handle = libssh2_sftp_open_ex(get_sanssh()->sftp, path, (int)strlen(path),
 								0, 0, LIBSSH2_SFTP_OPENDIR);
+	g_sftp_calls++;
 	if (!handle) {
 		san_error(path);
 		return -1;
@@ -419,15 +421,15 @@ int san_opendir(const char *path, struct fuse_file_info *fi)
 	size_t pathlen = strlen(path);
 	if (0 < pathlen && '/' == path[pathlen - 1])
 		pathlen--;
-
 	dirp = malloc(sizeof *dirp + pathlen + 2); /* sets errno */
 	if (0 == dirp) 
 		return -1;
-
-
 	memset(dirp, 0, sizeof *dirp);
-	dirp->thread = thread;
-	dirp->handle = handle;
+	SAN_HANDLE *sh = malloc(sizeof(SAN_HANDLE));
+	memset(sh, 0, sizeof *sh);
+	sh->thread = thread;
+	sh->sftp_handle = handle;
+	dirp->san_handle = sh;
 	memcpy(dirp->path, path, pathlen);
 	dirp->path[pathlen + 0] = '/';
 	dirp->path[pathlen + 1] = '\0';
@@ -439,7 +441,7 @@ int san_opendir(const char *path, struct fuse_file_info *fi)
 
 ssize_t san_dirfd(DIR *dirp)
 {
-	return (ssize_t)dirp->handle;
+	return (ssize_t)dirp->san_handle;
 }
 
 int san_readdir(const char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t off,
@@ -448,8 +450,9 @@ int san_readdir(const char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t 
 	info("%s\n", path);
 	DIR *dirp = fi_dirp(fi);
 	struct dirent *de;
-
-	libssh2_sftp_rewind(dirp->handle);
+	SAN_HANDLE *sh = dirp->san_handle;
+	LIBSSH2_SFTP_HANDLE* handle = sh->sftp_handle;
+	libssh2_sftp_rewind(handle);
 	g_sftp_calls++;
 
 	for (;;) {
@@ -469,8 +472,11 @@ struct dirent *san_readdir_entry(DIR *dirp)
 	int rc;
 	char fname[512];
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
-	assert(dirp->handle);
-	rc = libssh2_sftp_readdir(dirp->handle, fname, sizeof(fname), &attrs);
+	SAN_HANDLE *sh = dirp->san_handle;
+	LIBSSH2_SFTP_HANDLE* handle = sh->sftp_handle;
+
+	assert(handle);
+	rc = libssh2_sftp_readdir(handle, fname, sizeof(fname), &attrs);
 	g_sftp_calls++;
 
 	if (rc > 0) {
@@ -532,57 +538,65 @@ int san_closedir(DIR *dirp)
 {
 	if (dirp) {
 		int thread = GetCurrentThreadId();
-		int fd = (int)(ssize_t)dirp->handle;
-		if (thread == dirp->thread) {
-			san_close(fd);
+		SAN_HANDLE *sh = dirp->san_handle;
+		//LIBSSH2_SFTP_HANDLE* dh = sh->sftp_handle;
+		//ssize_t fd = (ssize_t)sh;
+
+		if (thread == sh->thread) {			
+			san_close(sh);
 			free(dirp);
 			dirp = NULL;
 			return 0;
 		}
 		else {
 			warn("ATTEMPT TO CLOSE HANDLE %zu from thread %d, but %d owns it\n",
-				(ssize_t)dirp->handle, thread, dirp->thread);
-			/* request to thread owner ? */
-			san_close_request(fd, dirp->thread);
+				(ssize_t)sh, thread, sh->thread);
+			/* request to thread owner ? */			
+			ht_handle_close_add(sh);
 		}
 	}
 	return -1;
 }
 
-int san_close_request(ssize_t fd, int thread)
-{
-	EnterCriticalSection(&g_ssh_lock);
-	SAN_HANDLE* handle = malloc(sizeof(SAN_HANDLE));
-	handle->thread = thread;
-	handle->handle = (LIBSSH2_SFTP_HANDLE*)fd; 
-	ht_handle_close_add(handle);
-	LeaveCriticalSection(&g_ssh_lock);
-	return 0;
-}
-
 int san_release(const char *path, struct fuse_file_info *fi)
 {
 	debug("%s\n", path);
-	int rc = san_close(fi_fd(fi));
-	return rc;
+	SAN_HANDLE* sh = (SAN_HANDLE*)fi_fd(fi);
+	int thread = GetCurrentThreadId();
+	int rc;
+	if (thread == sh->thread) {
+		return san_close(sh);
+	}
+	else {
+		warn("ATTEMPT TO CLOSE HANDLE %zu from thread %d, but %d owns it\n",
+			(ssize_t)sh, thread, sh->thread);
+		/* request to thread owner ? */
+		ht_handle_close_add(sh);
+	}
+	return -1;
 }
 
-int san_close(ssize_t fd)
+int san_close(SAN_HANDLE* sh)
 {
 	int rc;
-	LIBSSH2_SFTP_HANDLE* handle = (LIBSSH2_SFTP_HANDLE*)fd;
+	// I don't know what thread is calling this function
+	// need to protect
+	int thread = GetCurrentThreadId();
+	if (sh->thread != thread)
+	{
+		assert(0);
+	}
+		
+	LIBSSH2_SFTP_HANDLE* handle = sh->sftp_handle;
 	if (!handle)
 		return 0;
 
-	// I don't know what thread is calling this function
-	// need to protect
-	EnterCriticalSection(&g_ssh_lock);
-	int thread = GetCurrentThreadId();
-	info("HANDLE CLOSE: %zd thread %d\n", (ssize_t)handle, thread);
 	rc = libssh2_sftp_close_handle(handle);
 	g_sftp_calls++;
+	info("HANDLE CLOSE: %zd by owner thread %d\n", (ssize_t)handle, thread);
+	free(sh);
+	sh = NULL;
 	handle = NULL;
-	LeaveCriticalSection(&g_ssh_lock);
 	return rc;
 }
 
@@ -652,8 +666,9 @@ int san_open(const char *path, struct fuse_file_info *fi)
 	long mode = fi->flags;
 
 	LIBSSH2_SFTP_HANDLE * handle;
-	//lock();
-	//handle = libssh2_sftp_open(g_sanssh->sftp, path, LIBSSH2_FXF_READ, 0);
+	/* fixme: try to reduce the number of this calls*/
+	int thread = GetCurrentThreadId();
+
 	handle = libssh2_sftp_open_ex(get_sanssh()->sftp, path, (int)strlen(path),
 							LIBSSH2_FXF_READ, mode, LIBSSH2_SFTP_OPENFILE);
 	g_sftp_calls++;
@@ -667,15 +682,21 @@ int san_open(const char *path, struct fuse_file_info *fi)
 		san_error(path);
 	}
 	debug("LIBSSH2_SFTP_HANDLE: %zd: %s\n", (ssize_t)handle, path);
-	ssize_t fd = (ssize_t)handle;
+	SAN_HANDLE* sh = malloc(sizeof(SAN_HANDLE));
+	sh->thread = thread;
+	sh->sftp_handle = handle;
+	ssize_t fd = (ssize_t)sh;
+	int rc = (fi_setfd(fi, fd), 0);
+	
+	return rc ? -1 : 0;
 
-	if (fd) {
-		int rc = (fi_setfd(fi, fd), 0);
-		return rc;
-	}
-	else {
-		return -1;
-	}
+	//if (fd) {
+	//	int rc = (fi_setfd(fi, fd), 0);
+	//	return rc;
+	//}
+	//else {
+	//	return -1;
+	//}
 
 }
 
@@ -683,8 +704,13 @@ ssize_t san_read(ssize_t fd, void *buf, size_t nbyte, fuse_off_t offset)
 {
 
 	//size_t thread = GetCurrentThreadId();
-	LIBSSH2_SFTP_HANDLE* handle = (LIBSSH2_SFTP_HANDLE*)fd;
+	SAN_HANDLE* sh = (SAN_HANDLE*)fd;
+	LIBSSH2_SFTP_HANDLE* handle = sh->sftp_handle;
+	int thread = GetCurrentThreadId();
 	debug("LIBSSH2_SFTP_HANDLE: %zd read from descriptor: %zd\n", (ssize_t)handle, fd);
+	if (thread != sh->thread)
+		debug("DIFFERENT THREAD\n");
+
 	ssize_t curpos;
 	//lock();
 	curpos = libssh2_sftp_tell64(handle);
@@ -694,14 +720,16 @@ ssize_t san_read(ssize_t fd, void *buf, size_t nbyte, fuse_off_t offset)
 	ssize_t bytesread = 0;
 	ssize_t total = 0;
 	size_t size = nbyte;
-	size_t off = 0;
-	char *mem = malloc(size);
+	size_t off = 0;	
+	char* mem = malloc(size);
 	while (size) {		
+		memset(mem, 0, size);
 		bytesread = libssh2_sftp_read(handle, mem, size);
-		//g_sftp_calls++;
+		g_sftp_calls++;
+		
 		if (bytesread < 0) {
 			debug("ERROR: Unable to read file\n");
-			return -1;
+			total = -1;
 		} else if (bytesread == 0) {
 			break;			
 		}
@@ -714,7 +742,6 @@ ssize_t san_read(ssize_t fd, void *buf, size_t nbyte, fuse_off_t offset)
 		//	size, offset, bytesread, bytesread, total);
 		size -= bytesread;
 	}
-	//unlock();
 	free(mem);
 
 	return total;
@@ -1007,10 +1034,12 @@ void ht_handle_close_add(SAN_HANDLE *value)
 	/* fixme: a thread can own multiple open files and
 	   have requests from different threads to close the same file.
 	   this must be a list, not a single handle. */
-	SAN_HANDLE * h = ht_handle_close_find(value->thread);
+	//SAN_HANDLE * h = ht_handle_close_find(value->thread);
 	//if(h)
 	//	assert(0);
+	ht_handle_close_lock(1);
 	HASH_ADD_INT(g_handle_close_ht, thread, value);
+	ht_handle_close_lock(0);
 }
 SAN_HANDLE * ht_handle_close_find(int thread)
 {
@@ -1021,5 +1050,5 @@ SAN_HANDLE * ht_handle_close_find(int thread)
 void ht_handle_close_del(SAN_HANDLE *value) 
 {
 	HASH_DEL(g_handle_close_ht, value);  /* value: pointer to delete */
-	free(value);             /* optional; it's up to you! */
+	//free(value);             /* optional; it's up to you! */
 }
