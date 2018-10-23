@@ -7,7 +7,6 @@
 #include "util.h"
 #include "sanssh.h"
 #include "cache.h"
-#include "winposix.h"
 
 /* global variables */
 size_t				g_sftp_calls;
@@ -20,95 +19,31 @@ SAN_HANDLE *		g_handle_close_ht;
 CRITICAL_SECTION	g_handle_close_lock;
 CMD_ARGS *			g_cmd_args;
 
-
-static int fs_mkdir(const char *path, fuse_mode_t mode)
-{
-	info("%s\n", path);
-	return san_mkdir(path, mode);
-}
-
-static int fs_rmdir(const char *path)
-{
-	info("%s\n", path);
-	return san_rmdir(path);
-}
-
-static int fs_truncate(const char *path, fuse_off_t size, struct fuse_file_info *fi)
-{
-	info("%s\n", path);
-    if (0 == fi)  {
-        return san_truncate(path, size);
-    } else {
-		ssize_t fd = fi_fd(fi);
-        return san_ftruncate(fd, size);
-    }
-}
-
-static int fs_read(const char *path, char *buf, size_t size, 
-	fuse_off_t off, struct fuse_file_info *fi)
-{
-	info(path);
-	//printf("thread req size  offset    path\n");
-	//printf("%-7ld%-10ld%-10ld%s\n", GetCurrentThreadId(), size, off, path);
-
-	ssize_t fd = fi_fd(fi);
-	ssize_t nb = san_read(fd, buf, size, off);
-	if (nb >= 0)
-		return (int)nb;
-	else
-		return -1;
-}
-
-static int fs_write(const char *path, const char *buf, size_t size, 
-	fuse_off_t off,  struct fuse_file_info *fi)
-{
-	info("%s\n", path);
-	return -1;
-
-    //int fd = fi_fd(fi);
-    //int nb;
-    //return -1 != (nb = pwrite(fd, buf, size, off)) ? nb : -errno;
-}
-
-
-static int fs_fsync(const char *path, int datasync, struct fuse_file_info *fi)
-{
-	info("%s\n", path);
-	ssize_t fd = fi_fd(fi);
-    return san_fsync(fd);
-}
-
-static int fs_utimens(const char *path, const struct fuse_timespec tv[2], struct fuse_file_info *fi)
-{
-	info("%s\n", path);
-	return -1;
-    //return san_utimensat(AT_FDCWD, path, tv, AT_SYMLINK_NOFOLLOW);
-}
-
+/* supported fs operations */
 static struct fuse_operations fs_ops = {
-	.init		= san_init,
-	.statfs		= san_statfs,
-	.getattr	= san_getattr,
-	.opendir	= san_opendir,
-	.readdir	= san_readdir,
-	.releasedir = san_releasedir,
-	.unlink		= san_unlink,
-	.rename		= san_rename,
-	.create		= san_create,
-	.open		= san_open,
-    .read		= fs_read,
-    .write		= fs_write,
-    .release	= san_release,
-	.mkdir		= fs_mkdir,
-	.rmdir		= fs_rmdir,
-	.truncate	= fs_truncate,
-	.fsync		= fs_fsync,
-    .utimens	= fs_utimens,
+	.init = f_init,
+	.statfs = f_statfs,
+	.getattr = f_getattr,
+	.opendir = f_opendir,
+	.readdir = f_readdir,
+	.releasedir = f_releasedir,
+	.unlink = f_unlink,
+	.rename = f_rename,
+	.create = f_create,
+	.open = f_open,
+	.read = f_read,
+	.write = f_write,
+	.release = f_release,
+	.mkdir = f_mkdir,
+	.rmdir = f_rmdir,
+	.truncate = f_truncate,
+	.fsync = f_fsync,
+	.utimens = f_utimens,
 };
 
 static void usage(const char* prog)
 {
-    fprintf(stderr, "usage: %s host user drive [pkey]\n", prog);
+    fprintf(stderr, "usage: %s host port user drive [pkey]\n", prog);
     exit(2);
 }
 
@@ -230,7 +165,7 @@ int main(int argc, char *argv[])
 	argc = 3;
 	argv = new_argv(argc, argv[0], 
 		//"-oVolumePrefix=/sanfs/linux,uid=-1,gid=-1,rellinks",
-		"-oVolumePrefix=/sanfs/linux,uid=-1,gid=-1,rellinks,FileInfoTimeout=1000,DirInfoTimeout=5000",
+		"-oVolumePrefix=/sanfs/linux,uid=-1,gid=-1,rellinks,FileInfoTimeout=1000,DirInfoTimeout=3000",
 		//"-oVolumePrefix=/sanfs/linux,uid=-1,gid=-1,rellinks,FileInfoTimeout=5000",
 		//"-oThreadCount=5",
 		drive);
