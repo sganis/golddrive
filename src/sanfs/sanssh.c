@@ -6,8 +6,6 @@
 #include "sanssh.h"
 #include "cache.h"
 
-extern size_t			g_sftp_calls;
-extern size_t			g_sftp_cached_calls;
 
 
 int san_threads(int n, int c)

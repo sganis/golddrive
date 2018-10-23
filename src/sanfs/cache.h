@@ -2,7 +2,6 @@
 #include <libssh2_sftp.h>
 #include "uthash.h"
 
-#define CACHE_TTL 5 /* secs */
 
 /* cached stat */
 typedef struct CACHE_ATTRIBUTES {

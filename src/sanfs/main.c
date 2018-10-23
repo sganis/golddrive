@@ -229,7 +229,9 @@ int main(int argc, char *argv[])
 
 	argc = 3;
 	argv = new_argv(argc, argv[0], 
-		"-oVolumePrefix=/sanfs/linux,uid=-1,gid=-1,rellinks",
+		//"-oVolumePrefix=/sanfs/linux,uid=-1,gid=-1,rellinks",
+		"-oVolumePrefix=/sanfs/linux,uid=-1,gid=-1,rellinks,FileInfoTimeout=1000,DirInfoTimeout=5000",
+		//"-oVolumePrefix=/sanfs/linux,uid=-1,gid=-1,rellinks,FileInfoTimeout=5000",
 		//"-oThreadCount=5",
 		drive);
 	//argv = new_argv(2, argv[0], "-h");
