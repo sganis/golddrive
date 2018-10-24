@@ -227,7 +227,7 @@ int f_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_file_info *
 		rc = san_stat(path, stbuf);
 	}
 	else {
-		ssize_t fd = fi_fd(fi);
+		size_t fd = fi_fd(fi);
 		rc = san_fstat(fd, stbuf);
 		if (rc) {
 			rc = san_stat(path, stbuf);
@@ -242,7 +242,7 @@ int f_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_file_info *
 	return rc ? -1 : 0;
 }
 
-int san_fstat(ssize_t fd, struct fuse_stat *stbuf)
+int san_fstat(size_t fd, struct fuse_stat *stbuf)
 {
 	int rc = 0;
 	SAN_HANDLE* sh = (SAN_HANDLE*)fd;
@@ -253,7 +253,7 @@ int san_fstat(ssize_t fd, struct fuse_stat *stbuf)
 	//lock();
 	rc = libssh2_sftp_fstat(handle, &attrs);
 	if (rc) {
-		error("cannot get fstat from handle: %zd\n", (ssize_t)handle);
+		error("cannot get fstat from handle: %zu\n", (size_t)handle);
 		san_error("wrong handle");
 	}
 	else {
@@ -395,8 +395,8 @@ int f_opendir(const char *path, struct fuse_file_info *fi)
 	DIR *dirp = fi_dirp(fi);
 	if (dirp) {
 		/* this never happes as fuse calls this function only if dirp is null */
-		error("DIR ALREADY OPEN: HANDLE %zd thread %d path: %s, path req: %s\n",
-			(ssize_t)dirp->san_handle->handle, thread, dirp->path, path);
+		error("DIR ALREADY OPEN: HANDLE %zu thread %d path: %s, path req: %s\n",
+			(size_t)dirp->san_handle->handle, thread, dirp->path, path);
 	}
 
 	// check if close is requested
@@ -413,7 +413,7 @@ int f_opendir(const char *path, struct fuse_file_info *fi)
 		san_error(path);
 		return -1;
 	}
-	debug("HANDLE OPEN : %zd thread %d path: %s\n", (ssize_t)handle, thread, path);
+	info("HANDLE OPEN : %zu thread %d path: %s\n", (size_t)handle, thread, path);
 
 	size_t pathlen = strlen(path);
 	if (0 < pathlen && '/' == path[pathlen - 1])
@@ -426,6 +426,8 @@ int f_opendir(const char *path, struct fuse_file_info *fi)
 	memset(sh, 0, sizeof *sh);
 	sh->thread = thread;
 	sh->handle = handle;
+	/* fixme: make a unique identifier for local file handlers */
+	sh->fh = time_mu(); 
 	dirp->san_handle = sh;
 	memcpy(dirp->path, path, pathlen);
 	dirp->path[pathlen + 0] = '/';
@@ -436,15 +438,15 @@ int f_opendir(const char *path, struct fuse_file_info *fi)
 	return rc;
 }
 
-ssize_t san_dirfd(DIR *dirp)
+size_t san_dirfd(DIR *dirp)
 {
-	return (ssize_t)dirp->san_handle;
+	return (size_t)dirp->san_handle;
 }
 
 int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t off,
 	struct fuse_file_info *fi, enum fuse_readdir_flags flags)
 {
-	debug("%s\n", path);
+	info("%s\n", path);
 	DIR *dirp = fi_dirp(fi);
 	struct dirent *de;
 	SAN_HANDLE *sh = dirp->san_handle;
@@ -605,7 +607,7 @@ int san_close(SAN_HANDLE* sh)
 
 	rc = libssh2_sftp_close_handle(handle);
 	g_sftp_calls++;
-	debug("HANDLE CLOSE: %zd by thread %d\n", (ssize_t)handle, thread);
+	debug("HANDLE CLOSE: %zu by thread %d\n", (size_t)handle, thread);
 	free(sh);
 	sh = NULL;
 	handle = NULL;
@@ -693,11 +695,11 @@ int f_open(const char *path, struct fuse_file_info *fi)
 	if (!handle) {
 		san_error(path);
 	}
-	debug("LIBSSH2_SFTP_HANDLE: %zd: %s\n", (ssize_t)handle, path);
+	debug("LIBSSH2_SFTP_HANDLE: %zd: %s\n", (size_t)handle, path);
 	SAN_HANDLE* sh = malloc(sizeof(SAN_HANDLE));
 	sh->thread = thread;
 	sh->handle = handle;
-	ssize_t fd = (ssize_t)sh;
+	size_t fd = (size_t)sh;
 	int rc = (fi_setfd(fi, fd), 0);
 	
 	return rc ? -1 : 0;
@@ -711,31 +713,29 @@ int f_open(const char *path, struct fuse_file_info *fi)
 	//}
 
 }
-int f_read(const char *path, char *buf, size_t size,
-	fuse_off_t off, struct fuse_file_info *fi)
+int f_read(const char *path, char *buf, size_t size, fuse_off_t off, struct fuse_file_info *fi)
 {
 	//info("%s\n", path);
 	//printf("thread req size  offset    path\n");
 	//printf("%-7ld%-10ld%-10ld%s\n", GetCurrentThreadId(), size, off, path);
 
-	ssize_t fd = fi_fd(fi);
-	ssize_t nb = san_read(fd, buf, size, off);
+	ssize_t nb = san_read(fi_fd(fi), buf, size, off);
 	if (nb >= 0)
 		return (int)nb;
 	else
 		return -1;
 }
-ssize_t san_read(ssize_t fd, void *buf, size_t nbyte, fuse_off_t offset)
+ssize_t san_read(size_t fd, void *buf, size_t nbyte, fuse_off_t offset)
 {
 	//size_t thread = GetCurrentThreadId();
 	SAN_HANDLE* sh = (SAN_HANDLE*)fd;
 	LIBSSH2_SFTP_HANDLE* handle = sh->handle;
 	int thread = GetCurrentThreadId();
-	info("READING LIBSSH2_SFTP_HANDLE: %zd\n", (ssize_t)handle);
+	info("READING LIBSSH2_SFTP_HANDLE: %zu\n", (size_t)handle);
 	//if (thread != sh->thread)
 	//	debug("DIFFERENT THREAD\n");
 
-	ssize_t curpos;
+	size_t curpos;
 	//lock();
 	curpos = libssh2_sftp_tell64(handle);
 	if (offset != curpos)
@@ -768,7 +768,7 @@ ssize_t san_read(ssize_t fd, void *buf, size_t nbyte, fuse_off_t offset)
 		size -= bytesread;
 	}
 	free(mem);
-	info("FINISH READING HANDLE %zu, bytes: %zd\n", (ssize_t)handle, total);
+	info("FINISH READING HANDLE %zu, bytes: %zu\n", (size_t)handle, total);
 
 	return total;
 }
@@ -825,8 +825,7 @@ int f_truncate(const char *path, fuse_off_t size, struct fuse_file_info *fi)
 		return san_truncate(path, size);
 	}
 	else {
-		ssize_t fd = fi_fd(fi);
-		return san_ftruncate(fd, size);
+		return san_ftruncate(fi_fd(fi), size);
 	}
 }
 
@@ -850,7 +849,7 @@ int san_truncate(const char *path, fuse_off_t size)
 	
 }
 
-int san_ftruncate(ssize_t fd, fuse_off_t size)
+int san_ftruncate(size_t fd, fuse_off_t size)
 {
 	return -1;
 	//HANDLE h = (HANDLE)(intptr_t)fd;
@@ -867,7 +866,7 @@ int san_ftruncate(ssize_t fd, fuse_off_t size)
 int f_fsync(const char *path, int datasync, struct fuse_file_info *fi)
 {
 	info("%s\n", path);
-	ssize_t fd = fi_fd(fi);
+	size_t fd = fi_fd(fi);
 	return -1;
 }
 

@@ -124,12 +124,12 @@ static const char *sftp_errors[] = {
 /* macros */
 #define fi_dirbit                       (0x8000000000000000ULL)
 #define fi_fh(fi, MASK)                 ((fi)->fh & (MASK))
-#define fi_setfh(fi, FH, MASK)          ((fi)->fh = (ssize_t)(FH) | (MASK))
+#define fi_setfh(fi, FH, MASK)          ((fi)->fh = (size_t)(FH) | (MASK))
 #define fi_fd(fi)                       (fi_fh(fi, fi_dirbit) ? \
-										san_dirfd((DIR *)(ssize_t)fi_fh(fi, ~fi_dirbit)) : \
-										(ssize_t)fi_fh(fi, ~fi_dirbit))
+										san_dirfd((DIR *)(size_t)fi_fh(fi, ~fi_dirbit)) : \
+										(size_t)fi_fh(fi, ~fi_dirbit))
 #define fi_setfd(fi, fd)                (fi_setfh(fi, fd, 0))
-#define fi_dirp(fi)                     ((DIR *)(ssize_t)fi_fh(fi, ~fi_dirbit))
+#define fi_dirp(fi)                     ((DIR *)(size_t)fi_fh(fi, ~fi_dirbit))
 #define fi_setdirp(fi, dirp)            (fi_setfh(fi, dirp, fi_dirbit))
 
 
@@ -137,7 +137,7 @@ static const char *sftp_errors[] = {
 /* n is the -o ThreadCount=n arg, c is number of cores*/
 int san_threads(int n, int c);
 
-typedef struct _CMD_ARGS {
+typedef struct CMD_ARGS {
 	char host[64];
 	int port;
 	char user[20];
@@ -145,31 +145,32 @@ typedef struct _CMD_ARGS {
 } CMD_ARGS;
 extern  CMD_ARGS * g_cmd_args;
 
-typedef struct _SANSSH {
-	int thread;					/* key */
-	SOCKET socket;
-	LIBSSH2_SESSION *ssh;
-	LIBSSH2_SFTP *sftp;
-	int rc;
-	char error[ERROR_LEN];
-	UT_hash_handle hh;			/* makes this structure hashable */
+typedef struct SANSSH {
+	int thread;						/* key, thread id that owns this struct */
+	SOCKET socket;					/* sockey id */
+	LIBSSH2_SESSION *ssh;			/* ssh session struct */
+	LIBSSH2_SFTP *sftp;				/* sftp session struct */
+	int rc;							/* return code from the last ssh/sftp call */
+	char error[ERROR_LEN];			/* error message */
+	UT_hash_handle hh;				/* uthash to make this struct hashable */
 } SANSSH;
 
 struct dirent {
-	struct fuse_stat d_stat;
-	char d_name[FILENAME_MAX];
+	struct fuse_stat d_stat;		/* file stats */
+	char d_name[FILENAME_MAX];		/* file name  */
 };
 
-typedef struct _SAN_HANDLE {
-	int thread;					/* key */
-	LIBSSH2_SFTP_HANDLE *handle;
-	UT_hash_handle hh;			/* makes this structure hashable */
+typedef struct SAN_HANDLE {
+	int thread;						/* thread id owner						*/
+	size_t fh;						/* key, local file handler				*/
+	LIBSSH2_SFTP_HANDLE *handle;	/* remote file handler					*/
+	UT_hash_handle hh;				/* uthash to make this struct hashable	*/
 } SAN_HANDLE;
 
-typedef struct _DIR {
-	SAN_HANDLE *san_handle;
-	struct dirent de;
-	char path[PATH_MAX];
+typedef struct DIR {
+	SAN_HANDLE *san_handle;			/* file handle			*/
+	struct dirent de;				/* file item entry		*/
+	char path[PATH_MAX];			/* directory full path	*/
 } DIR;
 
 void mode_human(unsigned long mode, char* human);
@@ -204,15 +205,16 @@ int f_fsync(const char *path, int datasync, struct fuse_file_info *fi);
 
 // 
 int san_stat(const char *path, struct fuse_stat *stbuf);
-int san_fstat(ssize_t fd, struct fuse_stat *stbuf);
+int san_fstat(size_t fd, struct fuse_stat *stbuf);
 struct dirent *san_readdir_entry(DIR *dirp);
 int san_close(SAN_HANDLE* sh);
 int san_closedir(DIR *dirp);
 int san_truncate(const char *path, fuse_off_t size);
-int san_ftruncate(ssize_t fd, fuse_off_t size);
-ssize_t san_read(ssize_t fd, void *buf, size_t nbyte, fuse_off_t offset);
-ssize_t san_dirfd(DIR *dirp);
+int san_ftruncate(size_t fd, fuse_off_t size);
+ssize_t san_read(size_t fd, void *buf, size_t nbyte, fuse_off_t offset);
+size_t san_dirfd(DIR *dirp);
 SANSSH *san_init_ssh(const char *host, int port, const char *user, const char *pkey);
+// the vs warning if for the ut hash macros?
 int san_finalize(void);
 
 
@@ -223,9 +225,9 @@ void ht_ssh_add(SANSSH *value);
 void ht_ssh_del(SANSSH *value);
 SANSSH* ht_ssh_find(int thread);
 SANSSH* get_sanssh(void);
-inline void ht_ssh_lock(int lock) {
-	lock ? EnterCriticalSection(&g_ssh_lock) :
-		LeaveCriticalSection(&g_ssh_lock);
+inline void ht_ssh_lock(int lock) 
+{
+	lock ? EnterCriticalSection(&g_ssh_lock) : LeaveCriticalSection(&g_ssh_lock);
 }
 
 // hash table with handles to close
@@ -234,7 +236,7 @@ extern CRITICAL_SECTION g_handle_close_lock;
 void ht_handle_close_add(SAN_HANDLE *value);
 void ht_handle_close_del(SAN_HANDLE *value);
 SAN_HANDLE* ht_handle_close_find(int thread);
-inline void ht_handle_close_lock(int lock) {
-	lock ? EnterCriticalSection(&g_handle_close_lock) :
-		LeaveCriticalSection(&g_handle_close_lock);
+inline void ht_handle_close_lock(int lock) 
+{
+	lock ? EnterCriticalSection(&g_handle_close_lock) :	LeaveCriticalSection(&g_handle_close_lock);
 }
