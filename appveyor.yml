@@ -5,15 +5,12 @@ image:
 platform: x64
 configuration: Release
 environment:
-  APPVEYOR_SSH_KEY: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDGlxioqCbDubblzttEHvEMJ5rspJZ7JpcMSeHNGEui17hxcIZKfgS5xpAG3W1gLRo191SZS2NkNZwW5P39SWF/kBvXyVPiCu9E6q5FuwtYZXr0SKUtca8/V5s6UGeKMATDCNl6iuBTa4R7xa6ubEho8UykmY8dHKzuqas4RXSL31QUD2AFbmzGVV0wHxOobrTEGeLzILIfhC9QxjeAo+uD+KWpTN46ilcivvpMtG4rnQ7C8NgdZyzVT0f+RIYa6HCRTL2O+vVvG0AnHVkatY2Cpgtv2K7thQCINjoM8JlDicDtaOOCxkiB++KbbJJt00db9lpxv9Oumdke5p2GzStH
+  # APPVEYOR_SSH_KEY: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDGlxioqCbDubblzttEHvEMJ5rspJZ7JpcMSeHNGEui17hxcIZKfgS5xpAG3W1gLRo191SZS2NkNZwW5P39SWF/kBvXyVPiCu9E6q5FuwtYZXr0SKUtca8/V5s6UGeKMATDCNl6iuBTa4R7xa6ubEho8UykmY8dHKzuqas4RXSL31QUD2AFbmzGVV0wHxOobrTEGeLzILIfhC9QxjeAo+uD+KWpTN46ilcivvpMtG4rnQ7C8NgdZyzVT0f+RIYa6HCRTL2O+vVvG0AnHVkatY2Cpgtv2K7thQCINjoM8JlDicDtaOOCxkiB++KbbJJt00db9lpxv9Oumdke5p2GzStH
   GOLDDRIVE_HOST: linux
   GOLDDRIVE_PASS: support
   GOLDDRIVE_USER: support
   GOLDDRIVE_PORT: 2222
   WINFSP: winfsp-1.4.18270
-hosts:
-  localhost: 127.0.0.1
-  linux: 127.0.0.2
 install:
   - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
   - start /wait msiexec /i %WINFSP%.msi /qn ADDLOCAL=ALL
@@ -22,7 +19,6 @@ install:
   - ps: Restart-Computer -Force 
   - ps: Start-Sleep -s 60 
   - ps: Write-host "Reboot complete." 
-  - C:\Python37\python -m pip install --upgrade pip
   - C:\Python37\python -m pip install --upgrade paramiko pytest
 build:
   project: src\golddrive.sln
