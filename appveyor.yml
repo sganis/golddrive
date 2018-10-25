@@ -13,6 +13,7 @@ environment:
   WINFSP: winfsp-1.4.18270
 install:
   - docker version
+  - ps: $Env:ProgramFiles\Docker\Docker\DockerCli.exe -SwitchDaemon
   - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
   - start /wait msiexec /i %WINFSP%.msi /qn ADDLOCAL=ALL
   # - choco install -y docker
