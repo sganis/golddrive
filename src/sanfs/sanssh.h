@@ -100,14 +100,14 @@ static const char *sftp_errors[] = {
 };
 #define san_error(path) {											\
 	int thread = GetCurrentThreadId();								\
-	SANSSH* sanssh = get_sanssh();									\
-	int rc = libssh2_session_last_errno(sanssh->ssh);				\
+	SANSSH* ssh = get_ssh();										\
+	int rc = libssh2_session_last_errno(ssh->ssh);					\
 	if (rc > 0 || rc < -47)											\
 		rc = -48;													\
 	const char* msg = ssh_errors[-rc];								\
 	int skip = 0;													\
 	if (rc == LIBSSH2_ERROR_SFTP_PROTOCOL) {						\
-		rc = libssh2_sftp_last_error(sanssh->sftp);					\
+		rc = libssh2_sftp_last_error(ssh->sftp);					\
 		if (rc <0 || rc>21)											\
 			rc = 22;												\
 		/* skip some common errors */								\
@@ -150,6 +150,7 @@ typedef struct SANSSH {
 	SOCKET socket;					/* sockey id */
 	LIBSSH2_SESSION *ssh;			/* ssh session struct */
 	LIBSSH2_SFTP *sftp;				/* sftp session struct */
+	CRITICAL_SECTION lock;			/* to serialize operations within a thread */
 	int rc;							/* return code from the last ssh/sftp call */
 	char error[ERROR_LEN];			/* error message */
 	UT_hash_handle hh;				/* uthash to make this struct hashable */
@@ -163,6 +164,7 @@ struct dirent {
 typedef struct SAN_HANDLE {
 	int thread;						/* thread id owner						*/
 	LIBSSH2_SFTP_HANDLE *handle;	/* key, remote file handler				*/
+	SANSSH* sanssh;					/* sanssh session that owns it			*/
 	UT_hash_handle hh;				/* uthash to make this struct hashable	*/
 } SAN_HANDLE;
 
@@ -223,9 +225,10 @@ extern CRITICAL_SECTION g_ssh_lock;
 void ht_ssh_add(SANSSH *value);
 void ht_ssh_del(SANSSH *value);
 SANSSH* ht_ssh_find(int thread);
-SANSSH* get_sanssh(void);
-inline void ht_ssh_lock(int lock) 
-{
+SANSSH* get_ssh(void);
+//inline void lock(SANSSH* sanssh) { EnterCriticalSection(&sanssh->lock); }
+//inline void unlock(SANSSH* sanssh) { LeaveCriticalSection(&sanssh->lock); }
+inline void ht_ssh_lock(int lock) {
 	lock ? EnterCriticalSection(&g_ssh_lock) : LeaveCriticalSection(&g_ssh_lock);
 }
 
