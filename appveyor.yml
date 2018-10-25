@@ -1,7 +1,7 @@
 version: 1.0.{build}
 image: 
 - Visual Studio 2015
-- Ubuntu
+# - Ubuntu
 platform: x64
 configuration: Release
 environment:
@@ -19,11 +19,11 @@ install:
   - start /wait msiexec /i %WINFSP%.msi /qn ADDLOCAL=ALL
   - choco install -y docker
   - choco install -y docker-machine
-  - C:\Python37\python -m pip install --upgrade pip
-  - C:\Python37\python -m pip install --upgrade paramiko pytest
   - ps: Restart-Computer -Force 
   - ps: Start-Sleep -s 60 
   - ps: Write-host "Reboot complete." 
+  - C:\Python37\python -m pip install --upgrade pip
+  - C:\Python37\python -m pip install --upgrade paramiko pytest
 build:
   project: src\golddrive.sln
   verbosity: minimal
@@ -33,6 +33,7 @@ before_test:
   - docker build -t ssh-server .
   - docker run --rm -d -p 2222:22 -t ssh-server
 test_script:
+  - set PATH=C:\Python37;C:\Python37\Scripts;%PATH%
   - cd test
   - pytest
 

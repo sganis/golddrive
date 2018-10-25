@@ -345,39 +345,6 @@ int f_statfs(const char * path, struct fuse_statvfs *stbuf)
 	return rc;
 }
 
-int f_mkdir(const char * path, fuse_mode_t  mode)
-{
-	info("%s\n", path);
-
-	int rc;
-	//rc = libssh2_sftp_mkdir(g_sanssh->sftp, path,
-	//	LIBSSH2_SFTP_S_IRWXU |
-	//	LIBSSH2_SFTP_S_IRWXG |
-	//	LIBSSH2_SFTP_S_IROTH | LIBSSH2_SFTP_S_IXOTH);
-	rc = libssh2_sftp_mkdir_ex(get_sanssh()->sftp, path, (int)strlen(path),
-		LIBSSH2_SFTP_S_IRWXU |
-		LIBSSH2_SFTP_S_IRWXG |
-		LIBSSH2_SFTP_S_IROTH | LIBSSH2_SFTP_S_IXOTH);
-	g_sftp_calls++;
-	if (rc) {
-		san_error(path);
-	}
-	return rc ? -1 : 0;
-}
-
-int f_rmdir(const char * path)
-{
-	info("%s\n", path);
-
-	int rc;
-	//rc = libssh2_sftp_rmdir(g_sanssh->sftp, path);
-	rc = libssh2_sftp_rmdir_ex(get_sanssh()->sftp, path, (int)strlen(path));
-	g_sftp_calls++;
-	if (rc) {
-		san_error(path);
-	}
-	return rc ? -1 : 0;
-}
 
 int f_opendir(const char *path, struct fuse_file_info *fi)
 {
@@ -815,6 +782,41 @@ int f_rename(const char *oldpath, const char *newpath, unsigned int flags)
 	return rc ? -1 : 0;
 
 }
+
+int f_mkdir(const char * path, fuse_mode_t  mode)
+{
+	info("%s\n", path);
+
+	int rc;
+	//rc = libssh2_sftp_mkdir(g_sanssh->sftp, path,
+	//	LIBSSH2_SFTP_S_IRWXU |
+	//	LIBSSH2_SFTP_S_IRWXG |
+	//	LIBSSH2_SFTP_S_IROTH | LIBSSH2_SFTP_S_IXOTH);
+	rc = libssh2_sftp_mkdir_ex(get_sanssh()->sftp, path, (int)strlen(path),
+		LIBSSH2_SFTP_S_IRWXU |
+		LIBSSH2_SFTP_S_IRWXG |
+		LIBSSH2_SFTP_S_IROTH | LIBSSH2_SFTP_S_IXOTH);
+	g_sftp_calls++;
+	if (rc) {
+		san_error(path);
+	}
+	return rc ? -1 : 0;
+}
+
+int f_rmdir(const char * path)
+{
+	info("%s\n", path);
+
+	int rc;
+	//rc = libssh2_sftp_rmdir(g_sanssh->sftp, path);
+	rc = libssh2_sftp_rmdir_ex(get_sanssh()->sftp, path, (int)strlen(path));
+	g_sftp_calls++;
+	if (rc) {
+		san_error(path);
+	}
+	return rc ? -1 : 0;
+}
+
 
 int f_unlink(const char *path)
 {
