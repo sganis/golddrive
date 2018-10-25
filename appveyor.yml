@@ -14,32 +14,54 @@ environment:
 hosts:
   localhost: 127.0.0.1
   linux: 127.0.0.2
-for:
-# Windows only
--
-  matrix:
-    only:
-      - image: Visual Studio 2015
-  install:
-    - cmd: appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
-    - cmd: start /wait msiexec /i %WINFSP%.msi /qn ADDLOCAL=ALL
-    - ps: if ($isWindows) { Restart-Computer -Force }
-    - ps: if ($isWindows) { Start-Sleep -s 60 }
-    - ps: if ($isWindows) { Write-host "Reboot complete." }
-  build:
-    project: src\golddrive.sln
-    verbosity: minimal
-# Ubuntu
--
-  matrix:
-    only:
-      - image: Ubuntu
-  build_script:
-  - echo Ubuntu build script
+install:
+  - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
+  - start /wait msiexec /i %WINFSP%.msi /qn ADDLOCAL=ALL
+  - choco install -y docker
+  - choco install -y docker-machine
+  - C:\Python37\python -m pip install --upgrade pip
+  - C:\Python37\python -m pip install --upgrade paramiko pytest
+  - ps: Restart-Computer -Force 
+  - ps: Start-Sleep -s 60 
+  - ps: Write-host "Reboot complete." 
+build:
+  project: src\golddrive.sln
+  verbosity: minimal
+before_test:
   - docker version
   - cd docker
   - docker build -t ssh-server .
   - docker run --rm -d -p 2222:22 -t ssh-server
-  after_build:
-  # - export APPVEYOR_SSH_BLOCK=true
-  # - curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+test_script:
+  - cd test
+  - pytest
+
+# for:
+# # Windows only
+# -
+#   matrix:
+#     only:
+#       - image: Visual Studio 2015
+#   install:
+#     - cmd: appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
+#     - cmd: start /wait msiexec /i %WINFSP%.msi /qn ADDLOCAL=ALL
+#     - ps: if ($isWindows) { Restart-Computer -Force }
+#     - ps: if ($isWindows) { Start-Sleep -s 60 }
+#     - ps: if ($isWindows) { Write-host "Reboot complete." }
+#   build:
+#     project: src\golddrive.sln
+#     verbosity: minimal
+# Ubuntu
+# -
+#   matrix:
+#     only:
+#       - image: Ubuntu
+#   build_script:
+#   - echo Ubuntu build script
+#   - docker version
+#   - cd docker
+#   - docker build -t ssh-server .
+#   - docker run --rm -d -p 2222:22 -t ssh-server
+#   after_build:
+#   # - export APPVEYOR_SSH_BLOCK=true
+#   # - curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
