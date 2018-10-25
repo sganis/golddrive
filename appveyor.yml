@@ -23,7 +23,7 @@ install:
   - ps: Restart-Computer -Force 
   - ps: Start-Sleep -s 10
   - ps: Write-host "Reboot complete." 
-  - C:\Python37\python -m pip install --upgrade paramiko pytest yaml psutil
+  - C:\Python37\python -m pip install --upgrade paramiko pytest pyyaml psutil
 build:
   project: src\golddrive.sln
   verbosity: minimal
