@@ -34,7 +34,7 @@ before_test:
 test_script:
   - set PATH=C:\Python37;C:\Python37\Scripts;%PATH%
   - cd test
-  - pytest
+  - pytest test_dep.py
 
 # for:
 # # Windows only
