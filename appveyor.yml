@@ -12,12 +12,12 @@ environment:
   GOLDDRIVE_PORT: 2222
   WINFSP: winfsp-1.4.18270
 install:
+  - choco install -y docker
+  - choco install -y docker-machine
   - docker version
   - ps: $Env:ProgramFiles\Docker\Docker\DockerCli.exe -SwitchDaemon
   - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
   - start /wait msiexec /i %WINFSP%.msi /qn ADDLOCAL=ALL
-  # - choco install -y docker
-  # - choco install -y docker-machine
   - ps: Restart-Computer -Force 
   # - ps: Start-Sleep -s 60 
   - ps: Write-host "Reboot complete." 
