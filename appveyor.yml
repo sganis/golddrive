@@ -17,13 +17,14 @@ install:
   - choco install -y docker
   - choco install -y docker-machine
   - ps: Restart-Computer -Force 
-  - ps: Start-Sleep -s 60 
+  # - ps: Start-Sleep -s 60 
   - ps: Write-host "Reboot complete." 
   - C:\Python37\python -m pip install --upgrade paramiko pytest
 build:
   project: src\golddrive.sln
   verbosity: minimal
 before_test:
+  - docker-machine restart
   - docker version
   - cd docker
   - docker build -t ssh-server .
