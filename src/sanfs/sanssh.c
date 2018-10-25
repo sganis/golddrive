@@ -692,6 +692,7 @@ int f_open(const char *path, struct fuse_file_info *fi)
 	//}
 
 }
+
 int f_read(const char *path, char *buf, size_t size, fuse_off_t off, struct fuse_file_info *fi)
 {
 	//info("%s\n", path);
@@ -704,6 +705,7 @@ int f_read(const char *path, char *buf, size_t size, fuse_off_t off, struct fuse
 	else
 		return -1;
 }
+
 ssize_t san_read(size_t fd, void *buf, size_t nbyte, fuse_off_t offset)
 {
 	//size_t thread = GetCurrentThreadId();
@@ -751,6 +753,7 @@ ssize_t san_read(size_t fd, void *buf, size_t nbyte, fuse_off_t offset)
 
 	return total;
 }
+
 int f_write(const char *path, const char *buf, size_t size,
 	fuse_off_t off, struct fuse_file_info *fi)
 {
@@ -816,7 +819,6 @@ int f_rmdir(const char * path)
 	}
 	return rc ? -1 : 0;
 }
-
 
 int f_unlink(const char *path)
 {
