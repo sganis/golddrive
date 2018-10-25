@@ -14,9 +14,10 @@ environment:
 install:
   - choco install -y docker
   - choco install -y docker-machine
-  - docker version
+  - ps: docker-machine env default
   - ps: $Env:ProgramFiles\Docker\Docker\DockerCli.exe -SwitchDaemon
   - ps: restart-service *docker*
+  - docker version
   - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
   - start /wait msiexec /i %WINFSP%.msi /qn ADDLOCAL=ALL
   - ps: Restart-Computer -Force 
