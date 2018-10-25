@@ -15,8 +15,9 @@ SANSSH *			g_ssh_ht;
 CRITICAL_SECTION	g_ssh_lock;
 CACHE_ATTRIBUTES *	g_attributes_ht;
 CRITICAL_SECTION	g_attributes_lock;
+SAN_HANDLE *		g_handle_open_ht;
 SAN_HANDLE *		g_handle_close_ht;
-CRITICAL_SECTION	g_handle_close_lock;
+CRITICAL_SECTION	g_handle_lock;
 CMD_ARGS *			g_cmd_args;
 
 /* supported fs operations */
@@ -111,10 +112,11 @@ int main(int argc, char *argv[])
 	// Initialize global variables
 	if (!InitializeCriticalSectionAndSpinCount(&g_ssh_lock, 0x00000400)
 		|| !InitializeCriticalSectionAndSpinCount(&g_attributes_lock, 0x00000400)
-		|| !InitializeCriticalSectionAndSpinCount(&g_handle_close_lock, 0x00000400))
+		|| !InitializeCriticalSectionAndSpinCount(&g_handle_lock, 0x00000400))
 		return 1;
 	g_ssh_ht = NULL;
 	g_attributes_ht = NULL;
+	g_handle_open_ht = NULL;
 	g_handle_close_ht = NULL;
 
 	g_sftp_calls = 0;
@@ -190,7 +192,7 @@ int main(int argc, char *argv[])
 	// cleanup
 	DeleteCriticalSection(&g_ssh_lock);
 	DeleteCriticalSection(&g_attributes_lock);
-	DeleteCriticalSection(&g_handle_close_lock);
+	DeleteCriticalSection(&g_handle_lock);
 	san_finalize();
 
 	return rc;

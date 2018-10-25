@@ -162,8 +162,7 @@ struct dirent {
 
 typedef struct SAN_HANDLE {
 	int thread;						/* thread id owner						*/
-	size_t fh;						/* key, local file handler				*/
-	LIBSSH2_SFTP_HANDLE *handle;	/* remote file handler					*/
+	LIBSSH2_SFTP_HANDLE *handle;	/* key, remote file handler				*/
 	UT_hash_handle hh;				/* uthash to make this struct hashable	*/
 } SAN_HANDLE;
 
@@ -231,12 +230,19 @@ inline void ht_ssh_lock(int lock)
 }
 
 // hash table with handles to close
+extern SAN_HANDLE * g_handle_open_ht;
 extern SAN_HANDLE * g_handle_close_ht;
-extern CRITICAL_SECTION g_handle_close_lock;
+extern CRITICAL_SECTION g_handle_lock;
+
+void ht_handle_open_add(SAN_HANDLE *value);
+void ht_handle_open_del(SAN_HANDLE *value);
+SAN_HANDLE* ht_handle_open_find(LIBSSH2_SFTP_HANDLE *handle);
+
 void ht_handle_close_add(SAN_HANDLE *value);
 void ht_handle_close_del(SAN_HANDLE *value);
 SAN_HANDLE* ht_handle_close_find(int thread);
-inline void ht_handle_close_lock(int lock) 
+
+inline void ht_handle_lock(int lock)
 {
-	lock ? EnterCriticalSection(&g_handle_close_lock) :	LeaveCriticalSection(&g_handle_close_lock);
+	lock ? EnterCriticalSection(&g_handle_lock) :	LeaveCriticalSection(&g_handle_lock);
 }

@@ -413,7 +413,8 @@ int f_opendir(const char *path, struct fuse_file_info *fi)
 		san_error(path);
 		return -1;
 	}
-	info("HANDLE OPEN : %zu thread %d path: %s\n", (size_t)handle, thread, path);
+
+	debug("HANDLE OPEN : %zu thread %d path: %s\n", (size_t)handle, thread, path);
 
 	size_t pathlen = strlen(path);
 	if (0 < pathlen && '/' == path[pathlen - 1])
@@ -426,8 +427,6 @@ int f_opendir(const char *path, struct fuse_file_info *fi)
 	memset(sh, 0, sizeof *sh);
 	sh->thread = thread;
 	sh->handle = handle;
-	/* fixme: make a unique identifier for local file handlers */
-	sh->fh = time_mu(); 
 	dirp->san_handle = sh;
 	memcpy(dirp->path, path, pathlen);
 	dirp->path[pathlen + 0] = '/';
@@ -435,6 +434,16 @@ int f_opendir(const char *path, struct fuse_file_info *fi)
 
 	rc = (fi_setdirp(fi, dirp), 0);
 	
+
+	//SAN_HANDLE* open_handle = ht_handle_open_find(handle);
+	//if (!open_handle) {
+	//	ht_handle_open_add(sh);
+	//}
+	//else {
+	//	debug("HANDLE ALREADY OPEN BY ANOTHER THREAD: %zu thread %d path: %s\n",
+	//		(size_t)handle, thread, path);
+	//}
+
 	return rc;
 }
 
@@ -540,28 +549,28 @@ int san_closedir(DIR *dirp)
 		int thread = GetCurrentThreadId();
 		SAN_HANDLE *sh = dirp->san_handle;
 
-		san_close(sh);
-		free(dirp);
-		dirp = NULL;
-		return 0;
+		//san_close(sh);
+		//free(dirp);
+		//dirp = NULL;
+		//return 0;
 
 
 
-		//LIBSSH2_SFTP_HANDLE* dh = sh->handle;
-		//ssize_t fd = (ssize_t)sh;
+		LIBSSH2_SFTP_HANDLE* dh = sh->handle;
+		size_t fd = (size_t)sh;
 
-		//if (thread == sh->thread) {			
-		//	san_close(sh);
-		//	free(dirp);
-		//	dirp = NULL;
-		//	return 0;
-		//}
-		//else {
-		//	warn("ATTEMPT TO CLOSE HANDLE %zu from thread %d, but %d owns it\n",
-		//		(ssize_t)sh, thread, sh->thread);
-		//	/* request to thread owner ? */			
-		//	ht_handle_close_add(sh);
-		//}
+		if (thread == sh->thread) {			
+			san_close(sh);
+			free(dirp);
+			dirp = NULL;
+			return 0;
+		}
+		else {
+			warn("ATTEMPT TO CLOSE HANDLE %zu from thread %d, but %d owns it\n",
+				(size_t)sh, thread, sh->thread);
+			/* request to thread owner */			
+			ht_handle_close_add(sh);
+		}
 	}
 	return -1;
 }
@@ -588,24 +597,27 @@ int f_release(const char *path, struct fuse_file_info *fi)
 
 int san_close(SAN_HANDLE* sh)
 {
-	if (!sh)
-	{
+	if (!sh) {
 		warn("invalid handle, already closed?\n");
-	}
-	int rc;
-	// I don't know what thread is calling this function
-	// need to protect
+		return 0;
+	}		
+
 	int thread = GetCurrentThreadId();
-	if (sh->thread != thread)
-	{
-		//assert(0);
-	}
+	assert(sh->thread == thread);
 		
 	LIBSSH2_SFTP_HANDLE* handle = sh->handle;
-	if (!handle)
+	if (!handle) {
+		warn("invalid handle, already closed?\n");
 		return 0;
+	}
 
-	rc = libssh2_sftp_close_handle(handle);
+	//SAN_HANDLE* open_handle = ht_handle_open_find(handle);
+	//if (!open_handle) {
+	//	ht_handle_open_del(open_handle);
+	//}
+
+
+	int rc = libssh2_sftp_close_handle(handle);
 	g_sftp_calls++;
 	debug("HANDLE CLOSE: %zu by thread %d\n", (size_t)handle, thread);
 	free(sh);
@@ -961,7 +973,9 @@ finish:
 
 void ht_ssh_add(SANSSH *value)
 {
+	ht_ssh_lock(1);
 	HASH_ADD_INT(g_ssh_ht, thread, value);
+	ht_ssh_lock(0);
 	debug("new ssh connection added\n");
 }
 void ht_ssh_del(SANSSH *value)
@@ -983,37 +997,51 @@ SANSSH* get_sanssh(void)
 	if (!sanssh) {
 		sanssh = san_init_ssh(g_cmd_args->host, g_cmd_args->port,
 			g_cmd_args->user, g_cmd_args->pkey);
-		if (sanssh) {
-			ht_ssh_lock(1);
+		if (sanssh) {			
 			ht_ssh_add(sanssh);
-			ht_ssh_lock(0); 
 			info("new session created in thread %d\n", thread);
 		}		
 	}
 	return sanssh;
 }
 
+// hash tables
+void ht_handle_open_add(SAN_HANDLE *value)
+{
+	ht_handle_lock(1);
+	HASH_ADD_PTR(g_handle_open_ht, handle, value);
+	ht_handle_lock(0);
+}
+void ht_handle_open_del(SAN_HANDLE *value)
+{
+	ht_handle_lock(1);
+	HASH_DEL(g_handle_open_ht, value);  /* value: pointer to delete */
+	ht_handle_lock(0);
+}
+SAN_HANDLE * ht_handle_open_find(LIBSSH2_SFTP_HANDLE* handle)
+{
+	SAN_HANDLE *value = NULL;
+	HASH_FIND_PTR(g_handle_open_ht, &handle, value);
+	return value;
+}
+
 
 void ht_handle_close_add(SAN_HANDLE *value)
 {
-	/* fixme: a thread can own multiple open files and
-	   have requests from different threads to close the same file.
-	   this must be a list, not a single handle. */
-	//SAN_HANDLE * h = ht_handle_close_find(value->thread);
-	//if(h)
-	//	assert(0);
-	ht_handle_close_lock(1);
+	ht_handle_lock(1);
 	HASH_ADD_INT(g_handle_close_ht, thread, value);
-	ht_handle_close_lock(0);
+	ht_handle_lock(0);
+}
+void ht_handle_close_del(SAN_HANDLE *value) 
+{
+	ht_handle_lock(1);
+	HASH_DEL(g_handle_close_ht, value);  /* value: pointer to delete */
+	//free(value);             /* optional; it's up to you! */
+	ht_handle_lock(0);
 }
 SAN_HANDLE * ht_handle_close_find(int thread)
 {
 	SAN_HANDLE *value = NULL;
 	HASH_FIND_INT(g_handle_close_ht, &thread, value);
 	return value;
-}
-void ht_handle_close_del(SAN_HANDLE *value) 
-{
-	HASH_DEL(g_handle_close_ht, value);  /* value: pointer to delete */
-	//free(value);             /* optional; it's up to you! */
 }
