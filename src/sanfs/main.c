@@ -35,6 +35,7 @@ static struct fuse_operations fs_ops = {
 	.read = f_read,
 	.write = f_write,
 	.release = f_release,
+	.flush = f_flush,
 	.mkdir = f_mkdir,
 	.rmdir = f_rmdir,
 	.truncate = f_truncate,
@@ -164,11 +165,11 @@ int main(int argc, char *argv[])
 	//ptfs.rootdir = malloc(strlen(name) + 1);
 	//strcpy_s(ptfs.rootdir, 255, name);
 
-	argc = 4;
+	argc = 3;
 	argv = new_argv(argc, argv[0], 
 		//"-oVolumePrefix=/sanfs/linux,uid=-1,gid=-1,rellinks",
 		"-oVolumePrefix=/sanfs/linux,uid=-1,gid=-1,rellinks,FileInfoTimeout=1000,DirInfoTimeout=3000",
-		"-s",
+		//"-s",
 		//"-oThreadCount=5",
 		drive);
 	//argv = new_argv(2, argv[0], "-h");

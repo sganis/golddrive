@@ -46,11 +46,23 @@ def md5sum(fname):
 
 
 def main():
+	global md5
 	# test data: 
 	# create a 1gb file in server
 	# python -c "import os; w=open('/tmp/file.bin','wb');w.write(os.urandom(1024*1024*1024))"
 	# update md5 = md5sum file.bin
 
+	# print('\n### paramiko ###')
+	ssh = paramiko.SSHClient()
+	pkey = paramiko.RSAKey.from_private_key_file(privatekey)
+	ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy()) 
+	ssh.connect(host, port, user, pkey=pkey)
+	cmd = f'md5sum {remotefile}'
+	stdin, stdout, stderr = ssh.exec_command(cmd)
+	for line in stdout.readlines():		
+		md5 = line.split()[0].strip()
+		print(f'testing with file: {remotefile}\nmd5: {md5}')
+	ssh.close()
 	# print('\n### sanssh ###')
 	# t = time.time()
 	# subprocess.run(	f'sanssh {host} {port} {user} {remotefile} {localfile} {privatekey}', shell=True)

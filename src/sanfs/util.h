@@ -22,6 +22,7 @@ extern size_t			g_sftp_cached_calls;
 	printf("%zd: %zd: %-6d: %s: %-15s:%3d: ",							\
 		g_sftp_calls, time_mu(), thread, level, __func__, __LINE__);	\
 	printf(format, __VA_ARGS__);										\
+	fflush(stdout);														\
 }
 #define debug(format, ...)  log_message("DEBUG", format, __VA_ARGS__) 
 #define info(format, ...)   log_message("INFO ", format, __VA_ARGS__) 
