@@ -154,6 +154,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>winfsp-$(PlatformTarget).dll</DelayLoadDLLs>
+      <Profile>true</Profile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -179,6 +180,7 @@
       <DelayLoadDLLs>winfsp-$(PlatformTarget).dll</DelayLoadDLLs>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\libssh2\lib;$(ProjectDir)lib\openssl\lib</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4099 /NODEFAULTLIB:LIBCMT %(AdditionalOptions)</AdditionalOptions>
+      <Profile>true</Profile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
