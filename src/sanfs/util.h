@@ -7,7 +7,7 @@ extern size_t			g_sftp_cached_calls;
 
 
 #define STATS		0
-#define USE_CACHE	1
+#define USE_CACHE	0
 #define CACHE_TTL	1000 /* millisecs */
 
 /* logging */
@@ -15,7 +15,7 @@ extern size_t			g_sftp_cached_calls;
 #define WARN		1
 #define INFO		2
 #define DEBUG		3
-#define LOGLEVEL	ERROR
+#define LOGLEVEL	DEBUG
 
 #define log_message(level, format, ...) {								\
 	int thread = GetCurrentThreadId();									\
