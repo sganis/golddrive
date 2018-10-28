@@ -69,26 +69,31 @@ def main():
 	# set_result('sanssh', time.time() - t)
 	# subprocess.run(f'del {localfile}', shell=True)
 
-	print('\n### sshfs ###')
-	t = time.time()
-	subprocess.run(f'copy Y:\\tmp\\file.bin {localfile}', shell=True)
-	set_result('sshfs', time.time() - t)
-	subprocess.run(f'del {localfile}', shell=True)
-
-	# print('\n### openssh ###')
-	# os.chdir('C:\\Temp')
+	# print('\n### sshfs ###')
 	# t = time.time()
-	# subprocess.run(
-	# 	f'echo get {remotefile} |sftp -q -i {privatekey} -B 65536 -R 256 -P {port} {user}@{host}', 
-	# 	shell=True)
-	# set_result('openssh', time.time() - t)
+	# subprocess.run(f'copy Y:\\tmp\\file.bin {localfile}', shell=True)
+	# set_result('sshfs', time.time() - t)
 	# subprocess.run(f'del {localfile}', shell=True)
 
-	print('\n### sanfs ###')
+	print('\n### openssh ###')
+	os.chdir('C:\\Temp')
 	t = time.time()
-	subprocess.run(f'copy X:\\tmp\\file.bin {localfile}', shell=True)
-	set_result('sanfs', time.time() - t)
+	subprocess.run(
+		f'echo get {remotefile} |sftp -q -i {privatekey} -B 65536 -R 256 -P {port} {user}@{host}'
+		# f'echo get {remotefile} |sftp -q -i {privatekey} -B 131072 -R 256 -P {port} {user}@{host}'
+		# f'echo get {remotefile} |sftp -q -i {privatekey} -B 262144 -R 256 -P {port} {user}@{host}'
+		# f'echo get {remotefile} |sftp -q -i {privatekey} -B 524288 -R 256 -P {port} {user}@{host}'
+		# f'echo get {remotefile} |sftp -q -i {privatekey} -B 1048576 -R 256 -P {port} {user}@{host}'
+		# f'echo get {remotefile} |sftp -q -i {privatekey} -B 2097152 -R 256 -P {port} {user}@{host}'
+		, shell=True)
+	set_result('openssh', time.time() - t)
 	subprocess.run(f'del {localfile}', shell=True)
+
+	# print('\n### sanfs ###')
+	# t = time.time()
+	# subprocess.run(f'copy X:\\tmp\\file.bin {localfile}', shell=True)
+	# set_result('sanfs', time.time() - t)
+	# subprocess.run(f'del {localfile}', shell=True)
 
 	# print('\n### paramiko ###')
 	# pkey = paramiko.RSAKey.from_private_key_file(privatekey)
