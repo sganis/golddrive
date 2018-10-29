@@ -14,10 +14,10 @@ results = {}
 remotefile = '/tmp/file.bin'
 localfile = 'C:\\Temp\\file.bin'
 md5 = '9aba09e0fc1d288d7ccd7719f3d0f184'
-host = os.environ['GOLDDRIVE_HOST']
-user = os.environ['GOLDDRIVE_USER']
-port = int(os.environ['GOLDDRIVE_PORT'])
-privatekey = os.path.expanduser(f'~\\.ssh\\id_rsa-{user}-golddrive')
+host = '192.168.100.201'
+port = 22
+user = 'sag'
+privatekey = os.path.expanduser('~\\.ssh\\id_rsa-sag-golddrive')
 DIR = os.path.dirname(os.path.realpath(__file__))
 
 os.environ['PATH'] = fr'{DIR}\sanssh;' + os.environ['PATH']
@@ -28,13 +28,12 @@ os.environ['PATH'] = fr'{DIR}\openssh;' + os.environ['PATH']
 def validate(fname, md5):	
 	t = time.time()
 	h = md5sum(fname)
-	# print(f'md5 took: { time.time() - t } secs')
-	# print(h)
+	print(f'md5 took: { time.time() - t } secs')
+	print(h)
 	assert md5 == h
 
 def set_result(name, secs):
-	size = os.lstat(localfile).st_size
-	results[name] = round(size/1024/1024/secs)
+	results[name] = round(BYTES/1024/1024/secs)
 	validate(localfile, md5)
 	
 def md5sum(fname):
@@ -55,47 +54,44 @@ def main():
 	# print('\n### paramiko ###')
 	ssh = paramiko.SSHClient()
 	pkey = paramiko.RSAKey.from_private_key_file(privatekey)
-	ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy()) 
+	ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 	ssh.connect(host, port, user, pkey=pkey)
 	cmd = f'md5sum {remotefile}'
 	stdin, stdout, stderr = ssh.exec_command(cmd)
-	for line in stdout.readlines():		
+	for line in stdout.readlines():
 		md5 = line.split()[0].strip()
 		print(f'testing with file: {remotefile}\nmd5: {md5}')
 	ssh.close()
 	# print('\n### sanssh ###')
 	# t = time.time()
-	# subprocess.run(	f'sanssh {host} {port} {user} {remotefile} {localfile} {privatekey}', shell=True)
+	# subprocess.run(       f'sanssh {host} {port} {user} {remotefile} {localfile} {privatekey}', shell=True)
 	# set_result('sanssh', time.time() - t)
 	# subprocess.run(f'del {localfile}', shell=True)
 
-	# print('\n### sshfs ###')
-	# t = time.time()
-	# subprocess.run(f'copy Y:\\tmp\\file.bin {localfile}', shell=True)
-	# set_result('sshfs', time.time() - t)
-	# subprocess.run(f'del {localfile}', shell=True)
 
-	print('\n### openssh ###')
-	os.chdir('C:\\Temp')
+	print('copying with sanfs...')
 	t = time.time()
-	subprocess.run(
-		f'echo get {remotefile} |sftp -q -i {privatekey} -B 65536 -R 256 -P {port} {user}@{host}'
-		# f'echo get {remotefile} |sftp -q -i {privatekey} -B 131072 -R 256 -P {port} {user}@{host}'
-		# f'echo get {remotefile} |sftp -q -i {privatekey} -B 262144 -R 256 -P {port} {user}@{host}'
-		# f'echo get {remotefile} |sftp -q -i {privatekey} -B 524288 -R 256 -P {port} {user}@{host}'
-		# f'echo get {remotefile} |sftp -q -i {privatekey} -B 1048576 -R 256 -P {port} {user}@{host}'
-		# f'echo get {remotefile} |sftp -q -i {privatekey} -B 2097152 -R 256 -P {port} {user}@{host}'
-		, shell=True)
-	set_result('openssh', time.time() - t)
+	subprocess.run(f'copy X:\\tmp\\file.bin {localfile}', shell=True)
+	set_result('sanfs', time.time() - t)
 	subprocess.run(f'del {localfile}', shell=True)
 
-	# print('\n### sanfs ###')
+	print('copying with sshfs...')
+	t = time.time()
+	subprocess.run(f'copy Y:\\tmp\\file.bin {localfile}', shell=True)
+	set_result('sshfs', time.time() - t)
+	subprocess.run(f'del {localfile}', shell=True)
+
+	# print('copying with openssh...')
+	# os.chdir('C:\\Temp')
 	# t = time.time()
-	# subprocess.run(f'copy X:\\tmp\\file.bin {localfile}', shell=True)
-	# set_result('sanfs', time.time() - t)
+	# subprocess.run(
+	# 	f'echo get {remotefile} |sftp -q -i {privatekey} -B 65536 -R 256 -P {port} {user}@{host}', 
+	# 	shell=True)
+	# set_result('openssh', time.time() - t)
 	# subprocess.run(f'del {localfile}', shell=True)
 
-	# print('\n### paramiko ###')
+
+	# print('copying with paramiko...')
 	# pkey = paramiko.RSAKey.from_private_key_file(privatekey)
 	# transport = paramiko.Transport((host, port))
 	# transport.connect(username=user, pkey=pkey) 
@@ -107,9 +103,9 @@ def main():
 	# sftp.close()
 	# transport.close()
 
-	# print('\n### ssh2-python ###')
+	# print('copying with ssh2-python...')
 	# sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	# sock.connect((host, port))
+	# sock.connect((host, 22))
 	# s = Session()
 	# s.handshake(sock)
 	# s.userauth_publickey_fromfile(user, privatekey)   
@@ -123,9 +119,13 @@ def main():
 	# set_result('ssh2-python', time.time() - t)
 	# subprocess.run(f'del {localfile}', shell=True)
 
+	# print('copying with sanssh...')
+	# t = time.time()
+	# subprocess.run(	f'sanssh {host} {user} {remotefile} {localfile} {privatekey}', shell=True)
+	# set_result('sanssh', time.time() - t)
+	# subprocess.run(f'del localfile', shell=True)
 
-
-	# print('### sanssh-libssh...')
+	# print('copying with sanssh-libssh...')
 	# t = time.time()
 	# subprocess.run(	f'sanssh-libssh {host} {user} {remotefile} {localfile} {privatekey}', shell=True)
 	# set_result('sanssh-libssh', time.time() - t)

@@ -11,14 +11,11 @@
 /* global variables */
 size_t				g_sftp_calls;
 size_t				g_sftp_cached_calls;
-//SANSSH *			g_ssh_ht;
 SANSSH *			g_ssh;
-//CRITICAL_SECTION	g_ssh_lock;
 CACHE_ATTRIBUTES *	g_attributes_ht;
 CRITICAL_SECTION	g_attributes_lock;
 SAN_HANDLE *		g_handle_open_ht;
 SAN_HANDLE *		g_handle_close_ht;
-//CRITICAL_SECTION	g_handle_lock;
 CMD_ARGS *			g_cmd_args;
 SRWLOCK				g_ssh_lock;
 
@@ -161,6 +158,16 @@ int main(int argc, char *argv[])
 		printf("gid=%d\n", gid);
 	}
 		
+	// get number of links
+	int nlinks;
+	const char *path = "/home/sant";
+	snprintf(cmd, sizeof(cmd), "stat -c %%h %s\n", path);
+	rc = run_command(cmd, out, err);
+	if (rc == 0) {
+		out[strcspn(out, "\r\n")] = 0;
+		nlinks = atoi(out);
+		printf("%s nlinks=%d\n", path, nlinks);
+	}
 
 	// fuse arguments, is this needed?
 	//PTFS ptfs = { 0 };

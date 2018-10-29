@@ -102,7 +102,7 @@ static const char *sftp_errors[] = {
 
 #define san_error(path) {											\
 	int thread = GetCurrentThreadId();								\
-	int rc = libssh2_session_last_errno(g_ssh->ssh);					\
+	int rc = libssh2_session_last_errno(g_ssh->ssh);				\
 	if (rc > 0 || rc < -47)											\
 		rc = -48;													\
 	const char* msg = ssh_errors[-rc];								\
@@ -217,8 +217,8 @@ int f_fsync(const char *path, int datasync, struct fuse_file_info *fi);
 // 
 int open_handle(SAN_HANDLE *sh, const char *path, int is_dir, long mode);
 int san_stat(const char *path, struct fuse_stat *stbuf);
-int san_fstat(size_t fd, struct fuse_stat *stbuf);
-struct dirent *san_readdir_entry(DIR *dirp);
+//int san_fstat(size_t fd, struct fuse_stat *stbuf);
+//struct dirent *san_readdir_entry(DIR *dirp);
 int san_close(SAN_HANDLE* sh);
 int san_truncate(const char *path, fuse_off_t size);
 int san_ftruncate(size_t fd, fuse_off_t size);
