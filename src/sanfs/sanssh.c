@@ -478,7 +478,7 @@ int san_close(SAN_HANDLE* sh)
 	LIBSSH2_SFTP_HANDLE* handle;
 	handle = sh->handle;
 	lock();
-	rc = libssh2_sftp_close_handle(handle);
+	//rc = libssh2_sftp_close_handle(handle);
 	g_sftp_calls++;
 	unlock();
 	debug("HANDLE CLOSE: %zu by thread %d\n", (size_t)handle, thread);
