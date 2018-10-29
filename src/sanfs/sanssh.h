@@ -19,6 +19,7 @@
 #define AT_FDCWD                        -2
 #define AT_SYMLINK_NOFOLLOW             2
 
+
 /* SSH Status Codes (returned by libssh2_ssh_last_error() */
 static const char * ssh_errors[] = {
 	"SSH_OK",
@@ -98,16 +99,16 @@ static const char *sftp_errors[] = {
 	"SFTP_LINK_LOOP",
 	"SFTP_UNKNOWN"
 };
+
 #define san_error(path) {											\
 	int thread = GetCurrentThreadId();								\
-	SANSSH* ssh = get_ssh();										\
-	int rc = libssh2_session_last_errno(ssh->ssh);					\
+	int rc = libssh2_session_last_errno(g_ssh->ssh);					\
 	if (rc > 0 || rc < -47)											\
 		rc = -48;													\
 	const char* msg = ssh_errors[-rc];								\
 	int skip = 0;													\
 	if (rc == LIBSSH2_ERROR_SFTP_PROTOCOL) {						\
-		rc = libssh2_sftp_last_error(ssh->sftp);					\
+		rc = libssh2_sftp_last_error(g_ssh->sftp);					\
 		if (rc <0 || rc>21)											\
 			rc = 22;												\
 		/* skip some common errors */								\
@@ -156,22 +157,19 @@ typedef struct SANSSH {
 	UT_hash_handle hh;				/* uthash to make this struct hashable */
 } SANSSH;
 
-typedef struct HANDLE_T {
-	int thread;						/* thread id owner						*/
-	LIBSSH2_SFTP_HANDLE *handle;	/* key, remote file handler				*/
-	SANSSH* sanssh;					/* sanssh session that owns it			*/
-	UT_hash_handle hh;				/* uthash to make this struct hashable	*/
-} HANDLE_T;
+//typedef struct HANDLE_T {
+//	int thread;						/* thread id owner						*/
+//	LIBSSH2_SFTP_HANDLE *handle;	/* key, remote file handler				*/
+//	SANSSH* sanssh;					/* sanssh session that owns it			*/
+//	UT_hash_handle hh;				/* uthash to make this struct hashable	*/
+//} HANDLE_T;
 
 
 typedef struct SAN_HANDLE {
-	void *id;						/* unique identifier					*/
-	int thread_count;				/* how many threads						*/
+	LIBSSH2_SFTP_HANDLE *handle;	/* key, remote file handler				*/
 	int is_dir;						/* is directory							*/
 	long mode;						/* open mode							*/
 	char path[PATH_MAX];			/* file full path						*/
-	HANDLE_T *handles;				/* list of handles in different threads */
-	UT_hash_handle hh;				/* uthash to make this struct hashable	*/
 } SAN_HANDLE;
 
 struct dirent {
@@ -217,11 +215,10 @@ int f_truncate(const char *path, fuse_off_t size, struct fuse_file_info *fi);
 int f_fsync(const char *path, int datasync, struct fuse_file_info *fi);
 
 // 
-HANDLE_T *open_handle(SAN_HANDLE *sh, const char *path, int is_dir, long mode);
+int open_handle(SAN_HANDLE *sh, const char *path, int is_dir, long mode);
 int san_stat(const char *path, struct fuse_stat *stbuf);
 int san_fstat(size_t fd, struct fuse_stat *stbuf);
 struct dirent *san_readdir_entry(DIR *dirp);
-int close_handles(void);
 int san_close(SAN_HANDLE* sh);
 int san_truncate(const char *path, fuse_off_t size);
 int san_ftruncate(size_t fd, fuse_off_t size);
@@ -232,33 +229,38 @@ int san_finalize(void);
 
 
 // hash table for connection pool
-extern SANSSH *g_ssh_ht;
-extern CRITICAL_SECTION g_ssh_lock;
-void ht_ssh_add(SANSSH *value);
-void ht_ssh_del(SANSSH *value);
-SANSSH* ht_ssh_find(int thread);
-SANSSH* get_ssh(void);
-//inline void lock(SANSSH* sanssh) { EnterCriticalSection(&sanssh->lock); }
-//inline void unlock(SANSSH* sanssh) { LeaveCriticalSection(&sanssh->lock); }
-inline void ht_ssh_lock(int lock) {
-	lock ? EnterCriticalSection(&g_ssh_lock) : LeaveCriticalSection(&g_ssh_lock);
-}
+//void ht_ssh_add(SANSSH *value);
+//void ht_ssh_del(SANSSH *value);
+//SANSSH* ht_ssh_find(int thread);
+//SANSSH* get_ssh(void);
+
+
+extern SANSSH *g_ssh;
+extern SRWLOCK g_ssh_lock;
+
+
+inline void lock() { AcquireSRWLockExclusive(&g_ssh_lock); }
+inline void unlock() { ReleaseSRWLockExclusive(&g_ssh_lock); }
+
+//inline void ht_ssh_lock(int lock) {
+//	lock ? EnterCriticalSection(&g_ssh_lock) : LeaveCriticalSection(&g_ssh_lock);
+//}
 
 // hash table with handles to close
 //extern SAN_HANDLE * g_handle_open_ht;
-extern SAN_HANDLE * g_handle_close_ht;
+//extern SAN_HANDLE * g_handle_close_ht;
 
-extern CRITICAL_SECTION g_handle_lock;
-
-void ht_handle_add(SAN_HANDLE *sh, HANDLE_T *value);
-void ht_handle_del(SAN_HANDLE *sh, HANDLE_T *value);
-HANDLE_T* ht_handle_find(SAN_HANDLE *sh, int thread);
-
-void ht_handle_close_add(SAN_HANDLE *value);
-void ht_handle_close_del(SAN_HANDLE *value);
-SAN_HANDLE* ht_handle_close_find(void *id);
-
-inline void ht_handle_lock(int lock)
-{
-	lock ? EnterCriticalSection(&g_handle_lock) :	LeaveCriticalSection(&g_handle_lock);
-}
+//extern CRITICAL_SECTION g_handle_lock;
+//
+//void ht_handle_add(SAN_HANDLE *sh, HANDLE_T *value);
+//void ht_handle_del(SAN_HANDLE *sh, HANDLE_T *value);
+//HANDLE_T* ht_handle_find(SAN_HANDLE *sh, int thread);
+//
+//void ht_handle_close_add(SAN_HANDLE *value);
+//void ht_handle_close_del(SAN_HANDLE *value);
+//SAN_HANDLE* ht_handle_close_find(void *id);
+//
+//inline void ht_handle_lock(int lock)
+//{
+//	lock ? EnterCriticalSection(&g_handle_lock) :	LeaveCriticalSection(&g_handle_lock);
+//}

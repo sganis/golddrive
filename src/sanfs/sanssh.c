@@ -116,36 +116,34 @@ SANSSH * san_init_ssh(const char* hostname,	int port, const char* username, cons
 
 	/* default mode is blocking */
 	//libssh2_session_set_blocking(session, 1);
-	SANSSH* sanssh = malloc(sizeof(SANSSH));
-	sanssh->socket = sock;
-	sanssh->ssh = ssh;
-	sanssh->sftp = sftp;
-	sanssh->thread = GetCurrentThreadId();
+	g_ssh = malloc(sizeof(SANSSH));
+	g_ssh->socket = sock;
+	g_ssh->ssh = ssh;
+	g_ssh->sftp = sftp;
+	g_ssh->thread = GetCurrentThreadId();
 	//if (!InitializeCriticalSectionAndSpinCount(&sanssh->lock, 0x00000400))
 	//	return 0;
-	return sanssh;
+	return g_ssh;
 }
 
 int san_finalize(void)
 {
 	/* free the hash table contents */
-	SANSSH* ssh, *tmp;
-	unsigned int sessions;
-	sessions = HASH_COUNT(g_ssh_ht);
-	debug("there are %u ssh sessions\n", sessions);
+	//SANSSH* ssh, *tmp;
+	//unsigned int sessions;
 	/* FIXME: not sure if I can shutdown ssh sessions from different thread
 	* let's try anyways */
-	HASH_ITER(hh, g_ssh_ht, ssh, tmp) {
-		libssh2_sftp_shutdown(ssh->sftp);
-		libssh2_session_disconnect(ssh->ssh, "ssh session disconnected");
-		libssh2_session_free(ssh->ssh);
+	//HASH_ITER(hh, g_ssh_ht, ssh, tmp) {
+		libssh2_sftp_shutdown(g_ssh->sftp);
+		libssh2_session_disconnect(g_ssh->ssh, "ssh session disconnected");
+		libssh2_session_free(g_ssh->ssh);
 		libssh2_exit();
-		closesocket(ssh->socket);
-		HASH_DEL(g_ssh_ht, ssh);
-		free(ssh);
-	}
+		closesocket(g_ssh->socket);
+		//HASH_DEL(g_ssh_ht, ssh);
+		free(g_ssh);
+	//}
 
-	//libssh2_sftp_shutdown(g_ssh->sftp);
+	//libssh2_sftp_shutdown(g_g_ssh->sftp);
 	//libssh2_session_disconnect(g_ssh->ssh, "g_ssh disconnected");
 	//libssh2_session_free(g_ssh->ssh);
 	//libssh2_exit();
@@ -210,7 +208,6 @@ int f_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_file_info *
 int san_stat(const char * path, struct fuse_stat *stbuf)
 {
 	int rc = 0;
-	SANSSH* ssh = get_ssh();
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
 	CACHE_ATTRIBUTES* cattrs = NULL;
 	memset(stbuf, 0, sizeof *stbuf);
@@ -218,17 +215,13 @@ int san_stat(const char * path, struct fuse_stat *stbuf)
 	cattrs = ht_attributes_find(path);
 #endif
 	if (!cattrs) {			
-		int thread = GetCurrentThreadId();
-		assert(ssh);
-		assert(ssh->sftp);
-		assert(ssh->thread == thread);
-
-		//lock(ssh);
-		rc = libssh2_sftp_stat_ex(ssh->sftp, path, (int)strlen(path), LIBSSH2_SFTP_STAT, &attrs);
-		//unlock(ssh);
-		ssh->rc = rc;
+		assert(g_ssh);
+		assert(g_ssh->sftp);
+		
+		lock();
+		rc = libssh2_sftp_stat_ex(g_ssh->sftp, path, (int)strlen(path), LIBSSH2_SFTP_STAT, &attrs);		
 		g_sftp_calls++;
-
+		unlock();
 		if (rc) {
 			san_error(path);
 		}
@@ -265,17 +258,13 @@ int san_fstat(size_t fd, struct fuse_stat *stbuf)
 {
 	int rc = 0;
 	SAN_HANDLE* sh = (SAN_HANDLE*)fd;
-	int thread = GetCurrentThreadId();
-	HANDLE_T* th = ht_handle_find(sh, thread);
-	if (!th) {
-		th = open_handle(sh, sh->path, sh->is_dir, sh->mode);
-	}
-	LIBSSH2_SFTP_HANDLE* handle = th->handle;
+	LIBSSH2_SFTP_HANDLE* handle = sh->handle;
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
 	memset(stbuf, 0, sizeof *stbuf);
-	//debug("LIBSSH2_SFTP_HANDLE: %zd\n", (intptr_t)handle);
-	//lock();
+	
+	lock();
 	rc = libssh2_sftp_fstat(handle, &attrs);
+	g_sftp_calls++;
 	if (rc) {
 		error("cannot get fstat from handle: %zu:%zu\n", (size_t)sh, (size_t)handle);
 		san_error("wrong handle");
@@ -283,7 +272,7 @@ int san_fstat(size_t fd, struct fuse_stat *stbuf)
 	else {
 		copy_attributes(stbuf, &attrs);
 	}
-	//unlock();	
+	unlock();	
 	//free(attrs);
 
 #if STATS
@@ -302,10 +291,10 @@ int f_statfs(const char * path, struct fuse_statvfs *stbuf)
 	int rc = 0;
 	LIBSSH2_SFTP_STATVFS stvfs;
 
-	SANSSH* ssh = get_ssh();
-	rc = libssh2_sftp_statvfs(ssh->sftp, path, strlen(path), &stvfs);
-	ssh->rc = rc;
+	lock();
+	rc = libssh2_sftp_statvfs(g_ssh->sftp, path, strlen(path), &stvfs);
 	g_sftp_calls++;
+	unlock();
 
 	if (rc) {
 		san_error(path);
@@ -325,37 +314,17 @@ int f_opendir(const char *path, struct fuse_file_info *fi)
 {
 	info("%s\n", path);
 	int rc = -1;
-	//LIBSSH2_SFTP_HANDLE * handle;
-
-	SANSSH* sanssh = get_ssh();
-	int thread = sanssh->thread;
-	assert(thread > 0);
-	assert(sanssh);
-	assert(sanssh->sftp);
-	assert(sanssh->thread == thread);
-
+	LIBSSH2_SFTP_HANDLE * handle;
 	DIR *dirp = fi_dirp(fi);
-	if (dirp) {
-		assert(0);
-	}
-
-	// check if close is requested
-	close_handles();
-
-	//lock(sanssh);
-
+	
 	SAN_HANDLE *sh = malloc(sizeof(SAN_HANDLE));
 	info("OPEN SAN_HANDLE: %zu, %s\n", (size_t)sh, path);
-
-	sh->id = sh;
-	sh->thread_count = 0;
 	sh->is_dir = 1;
 	sh->mode = 0;
-	sh->handles = NULL;
 	strcpy_s(sh->path, MAX_PATH, path);
-	HANDLE_T *th = open_handle(sh, path, 1, 0);
-	//handle = libssh2_sftp_open_ex(sanssh->sftp, path, (int)strlen(path), 0, 0, LIBSSH2_SFTP_OPENDIR);
-	if (!th)
+	rc = open_handle(sh, path, 1, 0);
+	//handle = libssh2_sftp_open_ex(g_ssh->sftp, path, (int)strlen(path), 0, 0, LIBSSH2_SFTP_OPENDIR);
+	if (rc)
 		return -1;
 
 	size_t pathlen = strlen(path);
@@ -379,35 +348,28 @@ size_t san_dirfd(DIR *dirp)
 	return (size_t)dirp->san_handle;
 }
 
-HANDLE_T *open_handle(SAN_HANDLE *sh, const char *path, int is_dir, long mode)
+int open_handle(SAN_HANDLE *sh, const char *path, int is_dir, long mode)
 {
-	SANSSH* sanssh = get_ssh();
 	LIBSSH2_SFTP_HANDLE* handle;
-	
+	lock();
 	if (is_dir)
-		handle = libssh2_sftp_open_ex(sanssh->sftp, path, (int)strlen(path),
+		handle = libssh2_sftp_open_ex(g_ssh->sftp, path, (int)strlen(path),
 			0, 0, LIBSSH2_SFTP_OPENDIR);
 	else
-		handle = libssh2_sftp_open_ex(sanssh->sftp, path, (int)strlen(path),
+		handle = libssh2_sftp_open_ex(g_ssh->sftp, path, (int)strlen(path),
 			LIBSSH2_FXF_READ, mode, LIBSSH2_SFTP_OPENFILE);
-	sanssh->rc = handle ? 0 : -1;
 	g_sftp_calls++;
+	unlock();
 
 	if (!handle) {
 		san_error(path);
 		return 0;
 	}
 
-	info("OPEN HANDLE : %zu(%d):%zu: %s\n",(size_t)sh,sh->thread_count+1, (size_t)handle, path);
+	info("OPEN HANDLE : %zu:%zu: %s\n",(size_t)sh,(size_t)handle, path);
 
-	HANDLE_T *th = malloc(sizeof(HANDLE_T));
-	th->handle = handle;
-	th->sanssh = sanssh;
-	th->thread = sanssh->thread;
-	ht_handle_lock(1);
-	ht_handle_add(sh, th);
-	ht_handle_lock(0);
-	return th;
+	sh->handle = handle;
+	return 0;
 }
 
 int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t off,
@@ -417,20 +379,12 @@ int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t of
 	DIR *dirp = fi_dirp(fi);
 	struct dirent *de;
 	SAN_HANDLE *sh = dirp->san_handle;
-	int thread = GetCurrentThreadId();
-	HANDLE_T* th = ht_handle_find(sh, thread);
-	if (!th) {
-		// open handle for this thread
-		th = open_handle(sh, path, 1, 0);
-		//assert(0);
-	}
-	LIBSSH2_SFTP_HANDLE* handle = th->handle;
-	SANSSH *sanssh = th->sanssh;
-
-	//lock(sh->sanssh);
+	LIBSSH2_SFTP_HANDLE* handle = sh->handle;
+	
+	lock();
 	libssh2_sftp_rewind(handle);
-	//unlock(sh->sanssh);
 	g_sftp_calls++;
+	unlock();
 
 	for (;;) {
 		if (0 == (de = san_readdir_entry(dirp)))
@@ -450,20 +404,12 @@ struct dirent *san_readdir_entry(DIR *dirp)
 	char fname[512];
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
 	SAN_HANDLE *sh = dirp->san_handle;
-	int thread = GetCurrentThreadId();
-	HANDLE_T* th = ht_handle_find(sh, thread);
-	if (!th) {
-		// open handle for this thread
-		assert(0);
-	}
-	LIBSSH2_SFTP_HANDLE* handle = th->handle;	
-	SANSSH *sanssh = th->sanssh;
+	LIBSSH2_SFTP_HANDLE* handle = sh->handle;	
 
-	//lock(sanssh);
+	lock();
 	rc = libssh2_sftp_readdir(handle, fname, sizeof(fname), &attrs);
-	//unlock(sanssh);
-	sanssh->rc = rc;
 	g_sftp_calls++;
+	unlock();
 
 	if (rc > 0) {
 		// resolve symbolic links
@@ -475,12 +421,11 @@ struct dirent *san_readdir_entry(DIR *dirp)
 				strcat_s(fullpath, 2, "/");
 			strcat_s(fullpath, FILENAME_MAX, fname);
 			memset(&attrs, 0, sizeof attrs);
-			//lock(sanssh);
-			rc = libssh2_sftp_stat_ex(sanssh->sftp, fullpath,
+			lock();
+			rc = libssh2_sftp_stat_ex(g_ssh->sftp, fullpath,
 							(int)strlen(fullpath), LIBSSH2_SFTP_STAT, &attrs);
-			//unlock(sanssh);
-			sanssh->rc = rc;
 			g_sftp_calls++;
+			unlock();
 
 			if (rc) {
 				san_error(fullpath);
@@ -491,7 +436,7 @@ struct dirent *san_readdir_entry(DIR *dirp)
 			//int r;
 			//memset(&attrs, 0, sizeof attrs);
 			//lock();
-			//r = libssh2_sftp_lstat(g_ssh->sftp, realpath, &attrs);
+			//r = libssh2_sftp_lstat(g_g_ssh->sftp, realpath, &attrs);
 			//unlock();
 			//if (r) {
 			//	sftp_error(g_ssh, realpath, r);
@@ -520,84 +465,25 @@ int f_releasedir(const char *path, struct fuse_file_info *fi)
 {
 	info("%s\n", path);
 	DIR *dirp = fi_dirp(fi);
-	assert(dirp);
 	SAN_HANDLE *sh = dirp->san_handle;
-	free(dirp);
-	dirp = NULL;
-
-	/* request close */
-	ht_handle_lock(1);
-	ht_handle_close_add(sh);
-	ht_handle_lock(0);
-	info("SAN_HANDLE CLOSE REQUEST: %zu: %s\n", (size_t)sh, path);
-
+	san_close(sh);
+	//free(dirp);
+	//dirp = NULL;
 	return 0;
-}
-
-int close_handles(void)
-{
-	int rc = 0;
-	SAN_HANDLE *sh, *tmp;
-	HANDLE_T *th;
-	LIBSSH2_SFTP_HANDLE *handle;
-	int thread = GetCurrentThreadId();
-	ht_handle_lock(1);
-	HASH_ITER(hh, g_handle_close_ht, sh, tmp) {
-		th = ht_handle_find(sh, thread);
-		if (th) {
-			handle = th->handle;
-			rc = libssh2_sftp_close_handle(handle);
-			g_sftp_calls++;
-			th->sanssh->rc = rc;
-			info("CLOSE HANDLE: %zu(%d):%zu\n", (size_t)sh, sh->thread_count, (size_t)handle);
-			ht_handle_del(sh, th);
-			free(th);
-			th = NULL;
-			handle = NULL;
-		}
-		if (!sh->handles) {
-			info("CLOSE SAN_HANDLE: %zu\n", (size_t)sh);
-			ht_handle_close_del(sh);
-			free(sh);
-			sh = NULL;
-		}
-	}
-	ht_handle_lock(0);
-	unsigned int close_request_handles = HASH_COUNT(g_handle_close_ht);
-	info("CLOSE REQ HANDLES: %u\n", close_request_handles);
-	return rc;	
 }
 
 int san_close(SAN_HANDLE* sh)
 {
 	int rc;
 	LIBSSH2_SFTP_HANDLE* handle;
-	HANDLE_T* th;
-
-
-	info("handle opened in %d threads\n", sh->thread_count);
-	int thread = GetCurrentThreadId();
-
-
-	th = ht_handle_find(sh, thread);
-	if (th) {
-		handle = th->handle;
-		rc = libssh2_sftp_close_handle(handle);
-		g_sftp_calls++;
-		th->sanssh->rc = rc;
-		debug("HANDLE CLOSE: %zu by thread %d\n", (size_t)handle, thread);
-		//HASH_DEL(sh->handles, th);  
-		ht_handle_del(sh, th);	
-		free(th);
-		th = NULL;
-	}
-
-	if (!sh->thread_count) {
-		debug("SAN_HANDLE CLOSE after thread count 0: %zu by thread %d\n", (size_t)sh, thread);
-		free(sh);
-		sh = NULL;
-	}
-
+	handle = sh->handle;
+	lock();
+	rc = libssh2_sftp_close_handle(handle);
+	g_sftp_calls++;
+	unlock();
+	debug("HANDLE CLOSE: %zu by thread %d\n", (size_t)handle, thread);
+	free(sh);
+	sh = NULL;
 	return 0;
 }
 
@@ -613,38 +499,33 @@ int f_create(const char *path, fuse_mode_t mode, struct fuse_file_info *fi)
 int f_open(const char *path, struct fuse_file_info *fi)
 {
 	info("%s\n", path);
-
+	int rc;
 	long mode = fi->flags;
-	//SANSSH* sanssh = get_ssh();
+	//SANSSH* sanssh = g_ssh;
 	//LIBSSH2_SFTP_HANDLE * handle;
 	//int thread = sanssh->thread;
 
-	// check if close is requested
-	close_handles();
-
+	
 	SAN_HANDLE *sh = malloc(sizeof(SAN_HANDLE));
-	sh->id = sh;
-	sh->thread_count = 0;
 	sh->is_dir = 0;
 	sh->mode = 0;
-	sh->handles = NULL;
 	strcpy_s(sh->path, MAX_PATH, path);
-	HANDLE_T *th = open_handle(sh, path, 0, mode);
+	rc = open_handle(sh, path, 0, mode);
 
-	//handle = libssh2_sftp_open_ex(sanssh->sftp, path, (int)strlen(path),
+	//handle = libssh2_sftp_open_ex(g_ssh->sftp, path, (int)strlen(path),
 	//						LIBSSH2_FXF_READ, mode, LIBSSH2_SFTP_OPENFILE);
 
 	//unlock();
-	//handle = libssh2_sftp_open(g_ssh->sftp, path,
+	//handle = libssh2_sftp_open(g_g_ssh->sftp, path,
 	//	LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_TRUNC,
 	//	LIBSSH2_SFTP_S_IRUSR | LIBSSH2_SFTP_S_IWUSR |
 	//	LIBSSH2_SFTP_S_IRGRP | LIBSSH2_SFTP_S_IROTH);
-	if (!th) {
+	if (rc) {
 		return -1;
 	}
 
 	size_t fd = (size_t)sh;
-	int rc = (fi_setfd(fi, fd), 0);
+	rc = (fi_setfd(fi, fd), 0);
 	
 	return rc ? -1 : 0;
 
@@ -664,21 +545,15 @@ int f_read(const char *path, char *buf, size_t nbyte, fuse_off_t off, struct fus
 	(void)path;
 	size_t fd = fi_fd(fi);
 	size_t curpos;
-	int thread = GetCurrentThreadId();
-	SAN_HANDLE* sh = (SAN_HANDLE*)fd;
-	HANDLE_T* th = ht_handle_find(sh, thread);
-	if (!th) {
-		th = open_handle(sh, path, 0, fi->flags);
-	}
-	LIBSSH2_SFTP_HANDLE* handle = th->handle;
-	SANSSH* sanssh = th->sanssh;
+	SAN_HANDLE* sh = (SAN_HANDLE*)fd;	
+	LIBSSH2_SFTP_HANDLE* handle = sh->handle;
 	
 	debug("READING HANDLE: %zu:%zu size: %zu\n", (size_t)sh, (size_t)handle, nbyte);
 	//if (thread != sh->thread)
 	//	debug("DIFFERENT THREAD\n");
 
 	
-	//lock(sh->sanssh);
+	lock();
 	curpos = libssh2_sftp_tell64(handle);
 	if (off != curpos)
 		libssh2_sftp_seek64(handle, off);
@@ -708,7 +583,7 @@ int f_read(const char *path, char *buf, size_t nbyte, fuse_off_t off, struct fus
 		//	size, offset, bytesread, bytesread, total);
 		size -= bytesread;
 	}
-	//unlock(sh->sanssh);
+	unlock();
 	free(mem);
 
 	info("FINISH READING HANDLE %zu, bytes: %zu\n", (size_t)handle, total);
@@ -731,14 +606,7 @@ int f_release(const char *path, struct fuse_file_info *fi)
 {
 	debug("%s\n", path);
 	SAN_HANDLE* sh = (SAN_HANDLE*)fi_fd(fi);
-
-	/* request close */
-	ht_handle_lock(1);
-	ht_handle_close_add(sh);
-	ht_handle_lock(0);
-	info("SAN_HANDLE CLOSE REQUEST: %zu: %s\n", (size_t)sh, path);
-
-	return 0;
+	return san_close(sh);	
 }
 
 int f_flush(const char *path, struct fuse_file_info *fi)
@@ -750,14 +618,16 @@ int f_rename(const char *oldpath, const char *newpath, unsigned int flags)
 {
 	info("%s -> %s\n", oldpath, newpath);
 	int rc;
-	//rc = libssh2_sftp_rename(g_ssh->sftp, source, destination);
-	rc = libssh2_sftp_rename_ex(get_ssh()->sftp,
+	lock();
+	//rc = libssh2_sftp_rename(g_g_ssh->sftp, source, destination);
+	rc = libssh2_sftp_rename_ex(g_ssh->sftp,
 		oldpath, (int)strlen(oldpath),
 		newpath, (int)strlen(newpath),
 		LIBSSH2_SFTP_RENAME_OVERWRITE | 
 		LIBSSH2_SFTP_RENAME_ATOMIC | 
 		LIBSSH2_SFTP_RENAME_NATIVE);
 	g_sftp_calls++;
+	unlock();
 
 	if (rc) {
 		san_error(oldpath);
@@ -772,15 +642,17 @@ int f_mkdir(const char * path, fuse_mode_t  mode)
 	info("%s\n", path);
 
 	int rc;
-	//rc = libssh2_sftp_mkdir(g_ssh->sftp, path,
+	//rc = libssh2_sftp_mkdir(g_g_ssh->sftp, path,
 	//	LIBSSH2_SFTP_S_IRWXU |
 	//	LIBSSH2_SFTP_S_IRWXG |
 	//	LIBSSH2_SFTP_S_IROTH | LIBSSH2_SFTP_S_IXOTH);
-	rc = libssh2_sftp_mkdir_ex(get_ssh()->sftp, path, (int)strlen(path),
+	lock();
+	rc = libssh2_sftp_mkdir_ex(g_ssh->sftp, path, (int)strlen(path),
 		LIBSSH2_SFTP_S_IRWXU |
 		LIBSSH2_SFTP_S_IRWXG |
 		LIBSSH2_SFTP_S_IROTH | LIBSSH2_SFTP_S_IXOTH);
 	g_sftp_calls++;
+	unlock();
 	if (rc) {
 		san_error(path);
 	}
@@ -792,9 +664,12 @@ int f_rmdir(const char * path)
 	info("%s\n", path);
 
 	int rc;
-	//rc = libssh2_sftp_rmdir(g_ssh->sftp, path);
-	rc = libssh2_sftp_rmdir_ex(get_ssh()->sftp, path, (int)strlen(path));
+	//rc = libssh2_sftp_rmdir(g_g_ssh->sftp, path);
+	lock();
+	rc = libssh2_sftp_rmdir_ex(g_ssh->sftp, path, (int)strlen(path));
 	g_sftp_calls++;
+	unlock();
+
 	if (rc) {
 		san_error(path);
 	}
@@ -805,9 +680,11 @@ int f_unlink(const char *path)
 {
 	info("%s\n", path);
 	int rc;
-	//rc = libssh2_sftp_unlink(g_ssh->sftp, path);
-	rc = libssh2_sftp_unlink_ex(get_ssh()->sftp, path, (int)strlen(path));
+	lock();
+	//rc = libssh2_sftp_unlink(g_g_ssh->sftp, path);
+	rc = libssh2_sftp_unlink_ex(g_ssh->sftp, path, (int)strlen(path));
 	g_sftp_calls++;
+	unlock();
 
 	if (rc) {
 		san_error(path);
@@ -882,20 +759,20 @@ int run_command(const char *cmd, char *out, char *err)
 	size_t offset = 0;
 	char *errmsg;
 	//lock();
-	channel = libssh2_channel_open_session(get_ssh()->ssh);
+	channel = libssh2_channel_open_session(g_ssh->ssh);
 	//unlock();
 	if (!channel) {
-		rc = libssh2_session_last_error(get_ssh()->ssh, &errmsg, NULL, 0);
+		rc = libssh2_session_last_error(g_ssh->ssh, &errmsg, NULL, 0);
 		debug("ERROR: unable to init ssh chanel, rc=%d, %s\n", rc, errmsg);
 		return 1;
 	}
 
 	libssh2_channel_set_blocking(channel, 0);
 	while ((rc = libssh2_channel_exec(channel, cmd)) == LIBSSH2_ERROR_EAGAIN)
-		waitsocket(get_ssh());
+		waitsocket(g_ssh);
 
 	if (rc != 0) {
-		rc = libssh2_session_last_error(get_ssh()->ssh, &errmsg, NULL, 0);
+		rc = libssh2_session_last_error(g_ssh->ssh, &errmsg, NULL, 0);
 		debug("ERROR: unable to execute command, rc=%d, %s\n", rc, errmsg);
 		goto finish;
 	}
@@ -916,7 +793,7 @@ int run_command(const char *cmd, char *out, char *err)
 		} while (bytesread > 0);
 
 		if (bytesread == LIBSSH2_ERROR_EAGAIN)
-			waitsocket(get_ssh());
+			waitsocket(g_ssh);
 		else
 			break;
 	}
@@ -938,13 +815,13 @@ int run_command(const char *cmd, char *out, char *err)
 		} while (bytesread > 0);
 
 		if (bytesread == LIBSSH2_ERROR_EAGAIN)
-			waitsocket(get_ssh());
+			waitsocket(g_ssh);
 		else
 			break;
 	}
 	/* get exit code */
 	while ((rc = libssh2_channel_close(channel)) == LIBSSH2_ERROR_EAGAIN)
-		waitsocket(get_ssh());
+		waitsocket(g_ssh);
 	if (rc == 0)
 		rc = libssh2_channel_get_exit_status(channel);
 	else
@@ -1043,76 +920,76 @@ void print_statvfs(const char* path, LIBSSH2_SFTP_STATVFS *st)
 }
 
 
-void ht_ssh_add(SANSSH *value)
-{
-	ht_ssh_lock(1);
-	HASH_ADD_INT(g_ssh_ht, thread, value);
-	ht_ssh_lock(0);
-	debug("new ssh connection added\n");
-}
-void ht_ssh_del(SANSSH *value)
-{
-	HASH_DEL(g_ssh_ht, value);			/* value: pointer to delete */
-	free(value);						/* optional; it's up to you! */
-}
-SANSSH * ht_ssh_find(int thread)
-{
-	SANSSH *value = NULL;
-	HASH_FIND_INT(g_ssh_ht, &thread, value);
-	return value;
-}
-
-SANSSH* get_ssh(void)
-{
-	int thread = GetCurrentThreadId();
-	SANSSH *ssh = ht_ssh_find(thread);
-	if (!ssh) {
-		ssh = san_init_ssh(g_cmd_args->host, g_cmd_args->port,
-			g_cmd_args->user, g_cmd_args->pkey);
-		if (ssh) {
-			ht_ssh_add(ssh);
-			info("new ssh session created in thread %d\n", thread);
-		}
-		else {
-			error("cannot create ssh session, terminating...\n");
-			exit(1);
-		}
-	}
-	return ssh;
-}
-
-// lock add and delete functions before calling
-void ht_handle_close_add(SAN_HANDLE *value)
-{
-	HASH_ADD_PTR(g_handle_close_ht, id , value);
-}
-void ht_handle_close_del(SAN_HANDLE *value) 
-{
-	HASH_DEL(g_handle_close_ht, value);  /* value: pointer to delete */
-}
-
-SAN_HANDLE * ht_handle_close_find(void * id)
-{
-	SAN_HANDLE *value = NULL;
-	HASH_FIND_PTR(g_handle_close_ht, &id, value);
-	return value;
-}
-
-void ht_handle_add(SAN_HANDLE *sh, HANDLE_T *value)
-{
-	HASH_ADD_INT(sh->handles, thread, value);
-	sh->thread_count++;
-}
-void ht_handle_del(SAN_HANDLE *sh, HANDLE_T *value)
-{
-	HASH_DEL(sh->handles, value);  /* value: pointer to delete */
-	sh->thread_count--;
-}
-HANDLE_T * ht_handle_find(SAN_HANDLE *sh, int thread)
-{
-	HANDLE_T *value = NULL;
-	HASH_FIND_INT(sh->handles, &thread, value);
-	return value;
-}
-
+//void ht_ssh_add(SANSSH *value)
+//{
+//	ht_ssh_lock(1);
+//	HASH_ADD_INT(g_ssh_ht, thread, value);
+//	ht_ssh_lock(0);
+//	debug("new ssh connection added\n");
+//}
+//void ht_ssh_del(SANSSH *value)
+//{
+//	HASH_DEL(g_ssh_ht, value);			/* value: pointer to delete */
+//	free(value);						/* optional; it's up to you! */
+//}
+//SANSSH * ht_ssh_find(int thread)
+//{
+//	SANSSH *value = NULL;
+//	HASH_FIND_INT(g_ssh_ht, &thread, value);
+//	return value;
+//}
+//
+//SANSSH* get_ssh(void)
+//{
+//	int thread = GetCurrentThreadId();
+//	SANSSH *ssh = ht_ssh_find(thread);
+//	if (!ssh) {
+//		ssh = san_init_ssh(g_cmd_args->host, g_cmd_args->port,
+//			g_cmd_args->user, g_cmd_args->pkey);
+//		if (ssh) {
+//			ht_ssh_add(ssh);
+//			info("new ssh session created in thread %d\n", thread);
+//		}
+//		else {
+//			error("cannot create ssh session, terminating...\n");
+//			exit(1);
+//		}
+//	}
+//	return ssh;
+//}
+//
+//// lock add and delete functions before calling
+//void ht_handle_close_add(SAN_HANDLE *value)
+//{
+//	HASH_ADD_PTR(g_handle_close_ht, id , value);
+//}
+//void ht_handle_close_del(SAN_HANDLE *value) 
+//{
+//	HASH_DEL(g_handle_close_ht, value);  /* value: pointer to delete */
+//}
+//
+//SAN_HANDLE * ht_handle_close_find(void * id)
+//{
+//	SAN_HANDLE *value = NULL;
+//	HASH_FIND_PTR(g_handle_close_ht, &id, value);
+//	return value;
+//}
+//
+//void ht_handle_add(SAN_HANDLE *sh, HANDLE_T *value)
+//{
+//	HASH_ADD_INT(sh->handles, thread, value);
+//	sh->thread_count++;
+//}
+//void ht_handle_del(SAN_HANDLE *sh, HANDLE_T *value)
+//{
+//	HASH_DEL(sh->handles, value);  /* value: pointer to delete */
+//	sh->thread_count--;
+//}
+//HANDLE_T * ht_handle_find(SAN_HANDLE *sh, int thread)
+//{
+//	HANDLE_T *value = NULL;
+//	HASH_FIND_INT(sh->handles, &thread, value);
+//	return value;
+//}
+//
 

@@ -11,14 +11,17 @@
 /* global variables */
 size_t				g_sftp_calls;
 size_t				g_sftp_cached_calls;
-SANSSH *			g_ssh_ht;
-CRITICAL_SECTION	g_ssh_lock;
+//SANSSH *			g_ssh_ht;
+SANSSH *			g_ssh;
+//CRITICAL_SECTION	g_ssh_lock;
 CACHE_ATTRIBUTES *	g_attributes_ht;
 CRITICAL_SECTION	g_attributes_lock;
 SAN_HANDLE *		g_handle_open_ht;
 SAN_HANDLE *		g_handle_close_ht;
-CRITICAL_SECTION	g_handle_lock;
+//CRITICAL_SECTION	g_handle_lock;
 CMD_ARGS *			g_cmd_args;
+SRWLOCK				g_ssh_lock;
+
 
 /* supported fs operations */
 static struct fuse_operations fs_ops = {
@@ -111,14 +114,15 @@ int main(int argc, char *argv[])
 
 
 	// Initialize global variables
-	if (!InitializeCriticalSectionAndSpinCount(&g_ssh_lock, 0x00000400)
-		|| !InitializeCriticalSectionAndSpinCount(&g_attributes_lock, 0x00000400)
-		|| !InitializeCriticalSectionAndSpinCount(&g_handle_lock, 0x00000400))
-		return 1;
-	g_ssh_ht = NULL;
-	g_attributes_ht = NULL;
-	g_handle_open_ht = NULL;
-	g_handle_close_ht = NULL;
+	//if (!InitializeCriticalSectionAndSpinCount(&g_ssh_lock, 0x00000400)
+	//	|| !InitializeCriticalSectionAndSpinCount(&g_attributes_lock, 0x00000400)
+	//	|| !InitializeCriticalSectionAndSpinCount(&g_handle_lock, 0x00000400))
+	//	return 1;
+	InitializeSRWLock(&g_ssh_lock);
+
+	//g_attributes_ht = NULL;
+	//g_handle_open_ht = NULL;
+	//g_handle_close_ht = NULL;
 
 	g_sftp_calls = 0;
 	g_sftp_cached_calls = 0;
@@ -130,9 +134,8 @@ int main(int argc, char *argv[])
 	strcpy_s(g_cmd_args->pkey, MAX_PATH, pkey);
 
 
-	//g_ssh = san_init(host, port, user, pkey);
-	SANSSH* ssh = get_ssh();
-	if (!ssh) {
+	g_ssh = san_init_ssh(host, port, user, pkey);
+	if (!g_ssh) {
 		return 1;
 	}
 
@@ -191,9 +194,11 @@ int main(int argc, char *argv[])
     rc = fuse_main(argc, argv, &fs_ops, 0);
 
 	// cleanup
-	DeleteCriticalSection(&g_ssh_lock);
-	DeleteCriticalSection(&g_attributes_lock);
-	DeleteCriticalSection(&g_handle_lock);
+	//DeleteCriticalSection(&g_ssh_lock);
+	//DeleteCriticalSection(&g_attributes_lock);
+	//DeleteCriticalSection(&g_handle_lock);
+	InitializeSRWLock(&g_ssh_lock);
+
 	san_finalize();
 
 	return rc;
