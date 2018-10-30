@@ -378,7 +378,8 @@ int open_handle(SAN_HANDLE *sh)
 	}
 	unlock();
 	
-	info("OPEN HANDLE : %zu:%zu: %s\n",(size_t)sh,(size_t)handle, sh->path);
+	info("OPEN HANDLE : %zu:%zu: %s, flags: %d, mode: %d\n",
+		(size_t)sh,(size_t)handle, sh->path, sh->flags, sh->mode);
 
 	sh->handle = handle;
 	return 0;
@@ -494,20 +495,22 @@ int san_close(SAN_HANDLE* sh)
 
 int f_create(const char *path, fuse_mode_t mode, struct fuse_file_info *fi)
 {
-	info("%s\n", path);
 	int rc;
-
 	SAN_HANDLE *sh = malloc(sizeof(SAN_HANDLE));
 	strcpy_s(sh->path, MAX_PATH, path);
 	sh->is_dir = 0;
-	sh->flags = 0;
-	if(fi->flags)
-		sh->flags = LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_TRUNC;
+	//sh->flags = 0;
+	//if(fi->flags)
+	sh->flags = LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_TRUNC;
+	//sh->flags = fi->flags;
 	sh->mode = mode;
 	//LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_TRUNC,
 	//LIBSSH2_SFTP_S_IRUSR | LIBSSH2_SFTP_S_IWUSR |
 	//LIBSSH2_SFTP_S_IRGRP |
 	//LIBSSH2_SFTP_S_IROTH;	
+
+	info("%s, mode: %d, flags: %d\n", sh->path, sh->flags, sh->mode);
+
 	rc = open_handle(sh);
 	if (rc) {
 		return -1;
@@ -522,7 +525,13 @@ int f_create(const char *path, fuse_mode_t mode, struct fuse_file_info *fi)
 
 int f_open(const char *path, struct fuse_file_info *fi)
 {
-	info("%s\n", path);
+	if (fi) {
+		info("%s, flags: %d\n", path, fi->flags);
+	}
+	else {
+		info("%s\n", path);
+	}
+
 	int rc;
 
 	SAN_HANDLE *sh = malloc(sizeof(SAN_HANDLE));
@@ -556,7 +565,7 @@ int f_open(const char *path, struct fuse_file_info *fi)
 
 }
 
-int f_read(const char *path, char *buf, size_t nbyte, fuse_off_t off, struct fuse_file_info *fi)
+int f_read(const char *path, char *buf, size_t size, fuse_off_t offset, struct fuse_file_info *fi)
 {
 	//info("%s\n", path);
 	(void)path;
@@ -566,51 +575,38 @@ int f_read(const char *path, char *buf, size_t nbyte, fuse_off_t off, struct fus
 	LIBSSH2_SFTP_HANDLE* handle = sh->handle;
 	
 	debug("READING HANDLE: %zu:%zu size: %zu\n", (size_t)sh, (size_t)handle, nbyte);
-	//if (thread != sh->thread)
-	//	debug("DIFFERENT THREAD\n");
 
-	
 	lock();
 	curpos = libssh2_sftp_tell64(handle);
-	if (off != curpos)
-		libssh2_sftp_seek64(handle, off);
-	//printf("thread buffer size    offset         bytes read     bytes written  total bytes\n");
+	if (offset != curpos)
+		libssh2_sftp_seek64(handle, offset);
 	ssize_t bytesread = 0;
 	ssize_t total = 0;
-	size_t size = nbyte;
-	size_t offset = 0;	
-	// size is never bigger than 1MB in windows apparently
-	char mem[1024 * 1024];
-
-	while (size) {		
-		memset(mem, 0, size);
-		bytesread = libssh2_sftp_read(handle, mem, size);
-		g_sftp_calls++;		
-		if (bytesread < 0) {
-			error("ERROR: Unable to read chuck of file\n");
-			total = -1;
+	size_t chunk = size;
+	char *pos = buf;	
+	
+	while (chunk) {
+		bytesread = libssh2_sftp_read(handle, pos, chunk);
+		g_sftp_calls++;
+		if (bytesread <= 0) {
+			if (bytesread < 0) {
+				san_error("ERROR: Unable to read chuck of file\n");
+				total = -1;
+			}
 			break;
-		} else if (bytesread == 0) {
-			break;			
-		}
-		//memcpy(buffer, selectedText + offset, size);
-		//return strlen(selectedText) - offset;
-		memcpy(buf + offset, mem, bytesread);
+		}	
+		pos += bytesread;
 		total += bytesread;
-		offset += bytesread;
-		//printf("%-7ld%-15d%-15ld%-15d%-15d%-15ld\n",thread,
-		//	size, offset, bytesread, bytesread, total);
-		size -= bytesread;
+		chunk -= bytesread;
 	}
 	unlock();
-	//free(mem);
-
+	
 	debug("FINISH READING HANDLE %zu, bytes: %zu\n", (size_t)handle, total);
 
 	return total >= 0 ? (int)total: -1;
 }
 
-int f_write(const char *path, const char *buf, size_t nbyte, fuse_off_t off, struct fuse_file_info *fi)
+int f_write(const char *path, const char *buf, size_t size, fuse_off_t offset, struct fuse_file_info *fi)
 {
 	(void)path;
 	size_t fd = fi_fd(fi);
@@ -622,33 +618,30 @@ int f_write(const char *path, const char *buf, size_t nbyte, fuse_off_t off, str
 
 	lock();
 	curpos = libssh2_sftp_tell64(handle);
-	if (off != curpos)
-		libssh2_sftp_seek64(handle, off);
+	if (offset != curpos)
+		libssh2_sftp_seek64(handle, offset);
 	//printf("thread buffer size    offset         bytes read     bytes written  total bytes\n");
 	ssize_t byteswritten = 0;
 	ssize_t total = 0;
-	size_t size = nbyte;
-	size_t offset = 0;
-	// size is never bigger than 1MB in windows apparently
-	char mem[1024 * 1024];
-	char* ptr = mem;
+	size_t chunk = size;
+	const char* pos = buf;
 
-	while (size) {
-		byteswritten = libssh2_sftp_write(handle, buf + offset, size);
+	while (chunk) {
+		byteswritten = libssh2_sftp_write(handle, pos, chunk);
 		g_sftp_calls++;
-		if (byteswritten < 0) {
-			error("ERROR: Unable to write chuck of data\n");
-			total = -1;
+		if (byteswritten <= 0) {
+			if (byteswritten < 0) {
+				error("ERROR: Unable to write chuck of data\n");
+				total = -1;
+			}
 			break;
 		}
-		if (byteswritten == 0) {
-			break;
-		}
+		pos += byteswritten;
 		total += byteswritten;
-		offset += byteswritten;
+		chunk -= byteswritten;
 		//printf("%-7ld%-15d%-15ld%-15d%-15d%-15ld\n",thread,
 		//	size, offset, bytesread, bytesread, total);
-		size -= byteswritten;
+
 	}
 	unlock();
 	//free(mem);
@@ -796,8 +789,42 @@ int f_fsync(const char *path, int datasync, struct fuse_file_info *fi)
 int f_utimens(const char *path, const struct fuse_timespec tv[2], struct fuse_file_info *fi)
 {
 	info("%s\n", path);
-	return -1;
-	//return san_utimensat(AT_FDCWD, path, tv, AT_SYMLINK_NOFOLLOW);
+	return utimensat(AT_FDCWD, path, tv, AT_SYMLINK_NOFOLLOW);
+}
+
+int utimensat(int dirfd, const char *path, const struct fuse_timespec times[2], int flag)
+{
+	/* ignore dirfd and assume that it is always AT_FDCWD */
+	/* ignore flag and assume that it is always AT_SYMLINK_NOFOLLOW */
+
+	return 0;
+
+	//HANDLE h = CreateFileA(path,
+	//	FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+	//	0,
+	//	OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
+	//if (INVALID_HANDLE_VALUE == h)
+	//	return error();
+
+	//UINT64 LastAccessTime, LastWriteTime;
+	//if (0 == times)
+	//{
+	//	FILETIME FileTime;
+	//	GetSystemTimeAsFileTime(&FileTime);
+	//	LastAccessTime = LastWriteTime = *(PUINT64)&FileTime;
+	//}
+	//else
+	//{
+	//	FspPosixUnixTimeToFileTime((void *)&times[0], &LastAccessTime);
+	//	FspPosixUnixTimeToFileTime((void *)&times[1], &LastWriteTime);
+	//}
+
+	//int res = SetFileTime(h,
+	//	0, (PFILETIME)&LastAccessTime, (PFILETIME)&LastWriteTime) ? 0 : error();
+
+	//CloseHandle(h);
+
+	//return res;
 }
 
 int run_command(const char *cmd, char *out, char *err)

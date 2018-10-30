@@ -115,7 +115,7 @@ WinFsp-FUSE advanced options:
 ## Sanfs API
 ```
 - san_init()
-- san_shutdown()
+- san_finalize()
 - san_statvfs()
 - san_stat()
 - san_fstat()
@@ -128,9 +128,12 @@ WinFsp-FUSE advanced options:
 - san_read()
 - san_realpath()
 - san_unlink()
-- san_rename()
 - san_mkdir()
 - san_rmdir()
-- san_fsync()
 - san_write()
+- san_rename()
+- san_fsync()
+- san_utimens()
+- san_truncate()
+- san_ftruncate()
 ```

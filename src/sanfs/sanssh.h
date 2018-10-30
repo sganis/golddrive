@@ -205,8 +205,8 @@ int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t of
 int f_releasedir(const char *path, struct fuse_file_info *fi);
 int f_mkdir(const char *path, fuse_mode_t mode);
 int f_rmdir(const char *path);
-int f_read(const char *path, char *buf, size_t nbyte, fuse_off_t off, struct fuse_file_info *fi);
-int f_write(const char *path, const char *buf, size_t nbyte, fuse_off_t off, struct fuse_file_info *fi);
+int f_read(const char *path, char *buf, size_t size, fuse_off_t offset, struct fuse_file_info *fi);
+int f_write(const char *path, const char *buf, size_t size, fuse_off_t offset, struct fuse_file_info *fi);
 int f_release(const char *path, struct fuse_file_info *fi);
 int f_flush(const char *path, struct fuse_file_info *fi);
 int f_rename(const char *oldpath, const char *newpath, unsigned int flags);
@@ -225,6 +225,7 @@ int san_stat(const char *path, struct fuse_stat *stbuf);
 int san_close(SAN_HANDLE* sh);
 int san_truncate(const char *path, fuse_off_t size);
 int san_ftruncate(size_t fd, fuse_off_t size);
+int utimensat(int dirfd, const char *path, const struct fuse_timespec times[2], int flag);
 size_t san_dirfd(DIR *dirp);
 SANSSH *san_init_ssh(const char *host, int port, const char *user, const char *pkey);
 // the vs warning if for the ut hash macros?
