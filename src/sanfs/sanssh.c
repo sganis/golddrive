@@ -189,12 +189,13 @@ int f_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_file_info *
 	const char *p = path;
 	if (fi) 
 	{
+		
 		size_t fd = fi_fd(fi);
 		SAN_HANDLE* sh = (SAN_HANDLE*)fd;
 		p = sh->path;
+		info("FSTAT HANDLE: %zu:%zu, %s\n", (size_t)sh, (size_t)sh->handle, sh->path);
 	}
 	rc = san_stat(p, stbuf);
-
 
 	//if (! fi) {
 	//	rc = san_stat(path, stbuf);
@@ -254,7 +255,7 @@ int san_stat(const char * path, struct fuse_stat *stbuf)
 	}
 
 	copy_attributes(stbuf, &attrs);
-	//print_permissions(path, attrs);
+	//print_permissions(path, &attrs);
 
 #if STATS
 	// stats	
@@ -329,9 +330,10 @@ int f_opendir(const char *path, struct fuse_file_info *fi)
 	SAN_HANDLE *sh = malloc(sizeof(SAN_HANDLE));
 	//info("OPEN SAN_HANDLE: %zu, %s\n", (size_t)sh, path);
 	sh->is_dir = 1;
+	sh->flags = 0;
 	sh->mode = 0;
 	strcpy_s(sh->path, MAX_PATH, path);
-	rc = open_handle(sh, path, 1, 0);
+	rc = open_handle(sh);
 	//handle = libssh2_sftp_open_ex(g_ssh->sftp, path, (int)strlen(path), 0, 0, LIBSSH2_SFTP_OPENDIR);
 	if (rc)
 		return -1;
@@ -357,25 +359,26 @@ size_t san_dirfd(DIR *dirp)
 	return (size_t)dirp->san_handle;
 }
 
-int open_handle(SAN_HANDLE *sh, const char *path, int is_dir, long mode)
+int open_handle(SAN_HANDLE *sh)
 {
 	LIBSSH2_SFTP_HANDLE* handle;
 	lock();
-	if (is_dir)
-		handle = libssh2_sftp_open_ex(g_ssh->sftp, path, (int)strlen(path),
-			0, 0, LIBSSH2_SFTP_OPENDIR);
+	if (sh->is_dir)
+		handle = libssh2_sftp_open_ex(g_ssh->sftp, sh->path, (int)strlen(sh->path),
+			sh->flags, sh->mode, LIBSSH2_SFTP_OPENDIR);
 	else
-		handle = libssh2_sftp_open_ex(g_ssh->sftp, path, (int)strlen(path),
-			LIBSSH2_FXF_READ, mode, LIBSSH2_SFTP_OPENFILE);
+		handle = libssh2_sftp_open_ex(g_ssh->sftp, sh->path, (int)strlen(sh->path),
+			sh->flags, sh->mode, LIBSSH2_SFTP_OPENFILE);
 	g_sftp_calls++;
+	
 	if (!handle) {
-		san_error(path);
+		san_error(sh->path);
 		unlock();
 		return -1;
 	}
 	unlock();
 	
-	info("OPEN HANDLE : %zu:%zu: %s\n",(size_t)sh,(size_t)handle, path);
+	info("OPEN HANDLE : %zu:%zu: %s\n",(size_t)sh,(size_t)handle, sh->path);
 
 	sh->handle = handle;
 	return 0;
@@ -391,6 +394,7 @@ int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t of
 	LIBSSH2_SFTP_HANDLE* handle = sh->handle;
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
 	char fname[FILENAME_MAX];
+	//char longentry[512];
 	//struct dirent *de;
 	//struct fuse_stat *stbuf;
 
@@ -401,8 +405,10 @@ int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t of
 	for (;;) {
 		//de = san_readdir_entry(dirp);
 
-		rc = libssh2_sftp_readdir(handle, fname, sizeof(fname), &attrs);
+		rc = libssh2_sftp_readdir(handle, fname, FILENAME_MAX, &attrs);
+		//rc = libssh2_sftp_readdir_ex(handle, fname, FILENAME_MAX, longentry, 512, &attrs);
 		g_sftp_calls++;
+
 		if (rc < 0) {
 			san_error(sh->path);
 			break; // or continue?
@@ -412,6 +418,10 @@ int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t of
 			rc = 0;
 			break;
 		}
+
+		//if (longentry[0] != '\0') {
+		//	printf("%s\n", longentry);
+		//}
 		// resolve symbolic links
 		if (attrs.permissions & LIBSSH2_SFTP_S_IFLNK) {
 			char fullpath[MAX_PATH];
@@ -456,67 +466,6 @@ int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t of
 
 }
 
-//struct dirent *san_readdir_entry(DIR *dirp)
-//{
-//	struct fuse_stat *stbuf = &dirp->de.d_stat;
-//	memset(stbuf, 0, sizeof *stbuf);
-//	int rc;
-//	char fname[512];
-//	LIBSSH2_SFTP_ATTRIBUTES attrs;
-//	SAN_HANDLE *sh = dirp->san_handle;
-//	LIBSSH2_SFTP_HANDLE* handle = sh->handle;	
-//
-//	rc = libssh2_sftp_readdir(handle, fname, sizeof(fname), &attrs);
-//	g_sftp_calls++;
-//
-//	if (rc > 0) {
-//		// resolve symbolic links
-//		if (attrs.permissions & LIBSSH2_SFTP_S_IFLNK) {
-//			char fullpath[MAX_PATH];
-//			strcpy_s(fullpath, MAX_PATH, dirp->path);
-//			int pathlen = (int)strlen(dirp->path);
-//			if (!(pathlen > 0 && dirp->path[pathlen - 1] == '/'))
-//				strcat_s(fullpath, 2, "/");
-//			strcat_s(fullpath, FILENAME_MAX, fname);
-//			memset(&attrs, 0, sizeof attrs);
-//			rc = libssh2_sftp_stat_ex(g_ssh->sftp, fullpath,
-//							(int)strlen(fullpath), LIBSSH2_SFTP_STAT, &attrs);
-//			g_sftp_calls++;
-//
-//			if (rc) {
-//				san_error(fullpath);
-//			}
-//			////printf("fullpath: %s\n", fullpath);
-//			//int realpathlen = san_realpath(fullpath, realpath);
-//			////printf("realpath: %s\n", realpath);
-//			//int r;
-//			//memset(&attrs, 0, sizeof attrs);
-//			//lock();
-//			//r = libssh2_sftp_lstat(g_g_ssh->sftp, realpath, &attrs);
-//			//unlock();
-//			//if (r) {
-//			//	sftp_error(g_ssh, realpath, r);
-//			//}
-//		}
-//	}
-//	else {
-//		// no more files
-//		return 0;
-//	}
-//	
-//	copy_attributes(stbuf, &attrs);
-//	strcpy_s(dirp->de.d_name, FILENAME_MAX, fname);
-//#if STATS
-//	// stats	
-//	//debug("sftp calls cached/total: %zd/%zd (%.1f%% cached)\n",
-//	//		g_sftp_cached_calls, g_sftp_calls, 
-//	//		(g_sftp_cached_calls*100/(double)g_sftp_calls));
-//#endif
-//
-//	return &dirp->de;
-//
-//}
-
 int f_releasedir(const char *path, struct fuse_file_info *fi)
 {
 	info("%s\n", path);
@@ -546,36 +495,48 @@ int san_close(SAN_HANDLE* sh)
 int f_create(const char *path, fuse_mode_t mode, struct fuse_file_info *fi)
 {
 	info("%s\n", path);
-	return -1;
+	int rc;
 
-	//int fd;
-	//return -1 != (fd = open(path, fi->flags, mode)) ? (fi_setfd(fi, fd), 0) : -errno;
+	SAN_HANDLE *sh = malloc(sizeof(SAN_HANDLE));
+	strcpy_s(sh->path, MAX_PATH, path);
+	sh->is_dir = 0;
+	sh->flags = 0;
+	if(fi->flags)
+		sh->flags = LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_TRUNC;
+	sh->mode = mode;
+	//LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_TRUNC,
+	//LIBSSH2_SFTP_S_IRUSR | LIBSSH2_SFTP_S_IWUSR |
+	//LIBSSH2_SFTP_S_IRGRP |
+	//LIBSSH2_SFTP_S_IROTH;	
+	rc = open_handle(sh);
+	if (rc) {
+		return -1;
+	}
+
+	size_t fd = (size_t)sh;
+	rc = (fi_setfd(fi, fd), 0);
+
+	return rc ? -1 : 0;
+
 }
 
 int f_open(const char *path, struct fuse_file_info *fi)
 {
 	info("%s\n", path);
 	int rc;
-	long mode = fi->flags;
-	//SANSSH* sanssh = g_ssh;
-	//LIBSSH2_SFTP_HANDLE * handle;
-	//int thread = sanssh->thread;
 
-	
 	SAN_HANDLE *sh = malloc(sizeof(SAN_HANDLE));
-	sh->is_dir = 0;
-	sh->mode = 0;
 	strcpy_s(sh->path, MAX_PATH, path);
-	rc = open_handle(sh, path, 0, mode);
-
-	//handle = libssh2_sftp_open_ex(g_ssh->sftp, path, (int)strlen(path),
-	//						LIBSSH2_FXF_READ, mode, LIBSSH2_SFTP_OPENFILE);
-
-	//unlock();
-	//handle = libssh2_sftp_open(g_g_ssh->sftp, path,
-	//	LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_TRUNC,
-	//	LIBSSH2_SFTP_S_IRUSR | LIBSSH2_SFTP_S_IWUSR |
-	//	LIBSSH2_SFTP_S_IRGRP | LIBSSH2_SFTP_S_IROTH);
+	sh->is_dir = 0;
+	sh->flags = LIBSSH2_FXF_READ;
+	if (fi->flags > 0) {
+		sh->flags = fi->flags;
+	}
+	//sh->mode = LIBSSH2_SFTP_S_IRUSR | LIBSSH2_SFTP_S_IWUSR |
+	//				LIBSSH2_SFTP_S_IRGRP | 
+	//				LIBSSH2_SFTP_S_IROTH;
+	sh->mode = 0;
+	rc = open_handle(sh);
 	if (rc) {
 		return -1;
 	}
@@ -618,7 +579,9 @@ int f_read(const char *path, char *buf, size_t nbyte, fuse_off_t off, struct fus
 	ssize_t total = 0;
 	size_t size = nbyte;
 	size_t offset = 0;	
-	char* mem = malloc(size);
+	// size is never bigger than 1MB in windows apparently
+	char mem[1024 * 1024];
+
 	while (size) {		
 		memset(mem, 0, size);
 		bytesread = libssh2_sftp_read(handle, mem, size);
@@ -640,22 +603,59 @@ int f_read(const char *path, char *buf, size_t nbyte, fuse_off_t off, struct fus
 		size -= bytesread;
 	}
 	unlock();
-	free(mem);
+	//free(mem);
 
 	debug("FINISH READING HANDLE %zu, bytes: %zu\n", (size_t)handle, total);
 
 	return total >= 0 ? (int)total: -1;
 }
 
-int f_write(const char *path, const char *buf, size_t size,
-	fuse_off_t off, struct fuse_file_info *fi)
+int f_write(const char *path, const char *buf, size_t nbyte, fuse_off_t off, struct fuse_file_info *fi)
 {
-	info("%s\n", path);
-	return -1;
+	(void)path;
+	size_t fd = fi_fd(fi);
+	size_t curpos;
+	SAN_HANDLE* sh = (SAN_HANDLE*)fd;
+	LIBSSH2_SFTP_HANDLE* handle = sh->handle;
 
-	//int fd = fi_fd(fi);
-	//int nb;
-	//return -1 != (nb = pwrite(fd, buf, size, off)) ? nb : -errno;
+	debug("WRITING HANDLE: %zu:%zu size: %zu\n", (size_t)sh, (size_t)handle, nbyte);
+
+	lock();
+	curpos = libssh2_sftp_tell64(handle);
+	if (off != curpos)
+		libssh2_sftp_seek64(handle, off);
+	//printf("thread buffer size    offset         bytes read     bytes written  total bytes\n");
+	ssize_t byteswritten = 0;
+	ssize_t total = 0;
+	size_t size = nbyte;
+	size_t offset = 0;
+	// size is never bigger than 1MB in windows apparently
+	char mem[1024 * 1024];
+	char* ptr = mem;
+
+	while (size) {
+		byteswritten = libssh2_sftp_write(handle, buf + offset, size);
+		g_sftp_calls++;
+		if (byteswritten < 0) {
+			error("ERROR: Unable to write chuck of data\n");
+			total = -1;
+			break;
+		}
+		if (byteswritten == 0) {
+			break;
+		}
+		total += byteswritten;
+		offset += byteswritten;
+		//printf("%-7ld%-15d%-15ld%-15d%-15d%-15ld\n",thread,
+		//	size, offset, bytesread, bytesread, total);
+		size -= byteswritten;
+	}
+	unlock();
+	//free(mem);
+
+	debug("FINISH WRITING HANDLE %zu, bytes: %zu\n", (size_t)handle, total);
+
+	return total >= 0 ? (int)total : -1;
 }
 
 int f_release(const char *path, struct fuse_file_info *fi)
@@ -670,25 +670,22 @@ int f_flush(const char *path, struct fuse_file_info *fi)
 	info("%s\n", path);
 	return 0;
 }
+
 int f_rename(const char *oldpath, const char *newpath, unsigned int flags)
 {
 	info("%s -> %s\n", oldpath, newpath);
 	int rc;
 	lock();
-	//rc = libssh2_sftp_rename(g_g_ssh->sftp, source, destination);
-	rc = libssh2_sftp_rename_ex(g_ssh->sftp,
-		oldpath, (int)strlen(oldpath),
+	rc = libssh2_sftp_rename_ex(g_ssh->sftp, 
+		oldpath, (int)strlen(oldpath), 
 		newpath, (int)strlen(newpath),
-		LIBSSH2_SFTP_RENAME_OVERWRITE | 
-		LIBSSH2_SFTP_RENAME_ATOMIC | 
-		LIBSSH2_SFTP_RENAME_NATIVE);
+		LIBSSH2_SFTP_RENAME_OVERWRITE | LIBSSH2_SFTP_RENAME_ATOMIC | LIBSSH2_SFTP_RENAME_NATIVE);
 	g_sftp_calls++;
-	unlock();
-
 	if (rc) {
 		san_error(oldpath);
 		san_error(newpath);
 	}
+	unlock();
 	return rc ? -1 : 0;
 
 }
@@ -720,15 +717,13 @@ int f_rmdir(const char * path)
 	info("%s\n", path);
 
 	int rc;
-	//rc = libssh2_sftp_rmdir(g_g_ssh->sftp, path);
 	lock();
 	rc = libssh2_sftp_rmdir_ex(g_ssh->sftp, path, (int)strlen(path));
 	g_sftp_calls++;
-	unlock();
-
 	if (rc) {
 		san_error(path);
 	}
+	unlock();
 	return rc ? -1 : 0;
 }
 
@@ -737,14 +732,12 @@ int f_unlink(const char *path)
 	info("%s\n", path);
 	int rc;
 	lock();
-	//rc = libssh2_sftp_unlink(g_g_ssh->sftp, path);
 	rc = libssh2_sftp_unlink_ex(g_ssh->sftp, path, (int)strlen(path));
 	g_sftp_calls++;
-	unlock();
-
 	if (rc) {
 		san_error(path);
 	}
+	unlock();
 	return rc ? -1 : 0;
 }
 

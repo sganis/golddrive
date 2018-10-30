@@ -112,12 +112,14 @@ static const char *sftp_errors[] = {
 		if (rc <0 || rc>21)											\
 			rc = 22;												\
 		/* skip some common errors */								\
-		skip = (rc == 2 || rc == 3) ? 1 : 0;						\
+		skip = (rc == 2 || rc == 3) ? 0 : 0;						\
 		msg = sftp_errors[rc];										\
 	} 																\
 	if (!skip) {													\
 		fprintf(stderr, "%zd: %d :ERROR: %s: %d: [rc=%d: %s], path: %s\n", \
 			time_mu(), thread, __func__, __LINE__, rc, msg, path); \
+		fflush(stderr);	\
+		fflush(stdout);	\
 	}																\
 }
 
@@ -168,7 +170,8 @@ typedef struct SANSSH {
 typedef struct SAN_HANDLE {
 	LIBSSH2_SFTP_HANDLE *handle;	/* key, remote file handler				*/
 	int is_dir;						/* is directory							*/
-	long mode;						/* open mode							*/
+	int flags;						/* open flags							*/
+	int mode;						/* open mode							*/
 	char path[PATH_MAX];			/* file full path						*/
 } SAN_HANDLE;
 
@@ -203,7 +206,7 @@ int f_releasedir(const char *path, struct fuse_file_info *fi);
 int f_mkdir(const char *path, fuse_mode_t mode);
 int f_rmdir(const char *path);
 int f_read(const char *path, char *buf, size_t nbyte, fuse_off_t off, struct fuse_file_info *fi);
-int f_write(const char *path, const char *buf, size_t size,	fuse_off_t off, struct fuse_file_info *fi);
+int f_write(const char *path, const char *buf, size_t nbyte, fuse_off_t off, struct fuse_file_info *fi);
 int f_release(const char *path, struct fuse_file_info *fi);
 int f_flush(const char *path, struct fuse_file_info *fi);
 int f_rename(const char *oldpath, const char *newpath, unsigned int flags);
@@ -215,7 +218,7 @@ int f_truncate(const char *path, fuse_off_t size, struct fuse_file_info *fi);
 int f_fsync(const char *path, int datasync, struct fuse_file_info *fi);
 
 // 
-int open_handle(SAN_HANDLE *sh, const char *path, int is_dir, long mode);
+int open_handle(SAN_HANDLE *sh);
 int san_stat(const char *path, struct fuse_stat *stbuf);
 //int san_fstat(size_t fd, struct fuse_stat *stbuf);
 //struct dirent *san_readdir_entry(DIR *dirp);
