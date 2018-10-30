@@ -137,3 +137,7 @@ WinFsp-FUSE advanced options:
 - san_truncate()
 - san_ftruncate()
 ```
+
+## Extending Windows Explorer
+
+https://docs.microsoft.com/en-us/windows/desktop/shell/propsheet-handlers

@@ -184,7 +184,7 @@ int waitsocket(SANSSH* ssh)
 
 int f_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_file_info *fi)
 {
-	//info("%s\n", path);
+	debug("%s\n", path);
 	int rc;
 	const char *p = path;
 	if (fi) 
