@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
 		
 	// get number of links
 	int nlinks;
-	const char *path = "/home/sant";
+	const char *path = "~";
 	snprintf(cmd, sizeof(cmd), "stat -c %%h %s\n", path);
 	rc = run_command(cmd, out, err);
 	if (rc == 0) {
