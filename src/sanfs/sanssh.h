@@ -3,17 +3,20 @@
 #include <libssh2_sftp.h>
 #include <winfsp/winfsp.h>
 #include <fuse.h>
+#include <fcntl.h>
 #include "uthash.h"
 
 #define BUFFER_SIZE 32767
 #define ERROR_LEN MAXERRORLENGTH
-#define O_RDONLY                        _O_RDONLY
-#define O_WRONLY                        _O_WRONLY
-#define O_RDWR                          _O_RDWR
-#define O_APPEND                        _O_APPEND
-#define O_CREAT                         _O_CREAT
-#define O_EXCL                          _O_EXCL
-#define O_TRUNC                         _O_TRUNC
+// this is defined in <fcntl.h>
+//#define O_RDONLY                        _O_RDONLY
+//#define O_WRONLY                        _O_WRONLY
+//#define O_RDWR                          _O_RDWR
+//#define O_APPEND                        _O_APPEND
+//#define O_CREAT                         _O_CREAT
+//#define O_EXCL                          _O_EXCL
+//#define O_TRUNC                         _O_TRUNC
+#define O_ACCMODE						0x0003
 
 #define PATH_MAX                        1024
 #define AT_FDCWD                        -2
@@ -111,8 +114,10 @@ static const char *sftp_errors[] = {
 		rc = libssh2_sftp_last_error(g_ssh->sftp);					\
 		if (rc <0 || rc>21)											\
 			rc = 22;												\
-		/* skip some common errors */								\
-		skip = (rc == 2 || rc == 3) ? 0 : 0;						\
+		/* skip some common errors	*/								\
+		/* 2: no such file			*/								\
+		/* 3: access denied			*/								\
+		skip = (rc == 2 || rc == 3) ? 1 : 0;						\
 		msg = sftp_errors[rc];										\
 	} 																\
 	if (!skip) {													\
@@ -186,6 +191,11 @@ typedef struct DIR {
 	char path[PATH_MAX];			/* directory full path	*/
 } DIR;
 
+enum _FILE_TYPE {
+	FILE_ISREG = 0,
+	FILE_ISDIR = 1,
+} FILE_TYPE;
+
 void mode_human(unsigned long mode, char* human);
 void print_permissions(const char* path, LIBSSH2_SFTP_ATTRIBUTES *attrs);
 void print_stat(const char* path, LIBSSH2_SFTP_ATTRIBUTES *attrs);
@@ -218,17 +228,12 @@ int f_truncate(const char *path, fuse_off_t size, struct fuse_file_info *fi);
 int f_fsync(const char *path, int datasync, struct fuse_file_info *fi);
 
 // 
-int open_handle(SAN_HANDLE *sh);
+SAN_HANDLE * san_open(const char *path, int is_dir, unsigned int mode, struct fuse_file_info *fi);
 int san_stat(const char *path, struct fuse_stat *stbuf);
-//int san_fstat(size_t fd, struct fuse_stat *stbuf);
-//struct dirent *san_readdir_entry(DIR *dirp);
 int san_close(SAN_HANDLE* sh);
-int san_truncate(const char *path, fuse_off_t size);
-int san_ftruncate(size_t fd, fuse_off_t size);
 int utimensat(int dirfd, const char *path, const struct fuse_timespec times[2], int flag);
 size_t san_dirfd(DIR *dirp);
 SANSSH *san_init_ssh(const char *host, int port, const char *user, const char *pkey);
-// the vs warning if for the ut hash macros?
 int san_finalize(void);
 
 

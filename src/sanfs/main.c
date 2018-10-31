@@ -35,7 +35,7 @@ static struct fuse_operations fs_ops = {
 	.read = f_read,
 	.write = f_write,
 	.release = f_release,
-	.flush = f_flush,
+	/*.flush = f_flush,*/
 	.mkdir = f_mkdir,
 	.rmdir = f_rmdir,
 	.truncate = f_truncate,
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
 	argc = 3;
 	argv = new_argv(argc, argv[0], 
 		//"-oVolumePrefix=/sanfs/linux,uid=-1,gid=-1,rellinks",
-		"-oVolumePrefix=/sanfs/linux,uid=-1,gid=-1,rellinks,FileInfoTimeout=1000,DirInfoTimeout=3000",
+		"-oVolumePrefix=/sanfs/linux,uid=-1,gid=-1,rellinks,FileInfoTimeout=3000,DirInfoTimeout=3000",
 		//"-s",
 		//"-oThreadCount=5",
 		drive);
