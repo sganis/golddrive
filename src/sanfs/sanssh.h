@@ -105,7 +105,7 @@ static const char *sftp_errors[] = {
 
 #define san_error(path) {											\
 	int thread = GetCurrentThreadId();								\
-	int rc = libssh2_session_last_errno(g_ssh->ssh);				\
+	rc = libssh2_session_last_errno(g_ssh->ssh);					\
 	if (rc > 0 || rc < -47)											\
 		rc = -48;													\
 	const char* msg = ssh_errors[-rc];								\
@@ -122,9 +122,9 @@ static const char *sftp_errors[] = {
 	} 																\
 	if (!skip) {													\
 		fprintf(stderr, "%zd: %d :ERROR: %s: %d: [rc=%d: %s], path: %s\n", \
-			time_mu(), thread, __func__, __LINE__, rc, msg, path); \
-		fflush(stderr);	\
-		fflush(stdout);	\
+			time_mu(), thread, __func__, __LINE__, rc, msg, path);	\
+		fflush(stderr);												\
+		fflush(stdout);												\
 	}																\
 }
 
