@@ -230,8 +230,7 @@ int san_stat(const char * path, struct fuse_stat *stbuf)
 		
 		lock();
 		rc = libssh2_sftp_stat_ex(g_ssh->sftp, path, (int)strlen(path), LIBSSH2_SFTP_STAT, &attrs);		
-		g_sftp_calls++;
-		unlock();
+		g_sftp_calls++;		
 		if (rc) {
 			san_error(path);
 		}
@@ -245,6 +244,7 @@ int san_stat(const char * path, struct fuse_stat *stbuf)
 			ht_attributes_add(cattrs);
 #endif
 		}
+		unlock();
 	}
 	else {
 		debug("CACHE: %s\n", cattrs->path);
@@ -648,13 +648,6 @@ int f_release(const char *path, struct fuse_file_info *fi)
 	return san_close(sh);	
 }
 
-int f_flush(const char *path, struct fuse_file_info *fi)
-{
-	info("%s\n", path);
-	// no need as this is sync write always
-	return 0;
-}
-
 int f_rename(const char *oldpath, const char *newpath, unsigned int flags)
 {
 	info("%s -> %s\n", oldpath, newpath);
@@ -733,28 +726,43 @@ int f_truncate(const char *path, fuse_off_t size, struct fuse_file_info *fi)
 {
 	info("%s\n", path);
 	int rc;
-	struct fuse_stat stbuf;
-	rc = f_getattr(path, &stbuf, fi);
-	if (rc)
+	LIBSSH2_SFTP_ATTRIBUTES attrs;
+	lock();
+	rc = libssh2_sftp_stat_ex(g_ssh->sftp, path, (int)strlen(path), 
+		LIBSSH2_SFTP_STAT, &attrs);
+	g_sftp_calls++;
+	if (rc) {
+		san_error(path);
 		return rc;
-
-	if (stbuf.st_size == size)
-		return 0;
-
-
-	const char *p = path;
-	if (fi) {
-		size_t fd = fi_fd(fi);
-		SAN_HANDLE* sh = (SAN_HANDLE*)fd;
-		p = sh->path;
 	}
-	
-	struct fuse_file_info tempfi;
-	tempfi.flags = O_WRONLY | O_TRUNC;
+	attrs.filesize = size;
+	rc = libssh2_sftp_stat_ex(g_ssh->sftp, path, (int)strlen(path),
+		LIBSSH2_SFTP_SETSTAT, &attrs);
+	g_sftp_calls++;
+	if (rc) {
+		san_error(path);
+		return rc;
+	}
+	unlock();
 
-	rc = f_open(p, &tempfi);
-	if (!rc)
-		f_release(p, &tempfi);
+	
+	//if (stbuf.st_size == size)
+	//	return 0;
+
+	//const char *p = path;
+	//if (fi) {
+	//	size_t fd = fi_fd(fi);
+	//	SAN_HANDLE* sh = (SAN_HANDLE*)fd;
+	//	p = sh->path;
+	//}
+
+	//struct fuse_file_info tempfi;
+	//tempfi.flags = O_WRONLY | O_TRUNC;
+
+	//rc = f_open(p, &tempfi);
+	//if (!rc)
+	//	f_release(p, &tempfi);
+
 
 	return rc;
 }
@@ -762,8 +770,15 @@ int f_truncate(const char *path, fuse_off_t size, struct fuse_file_info *fi)
 int f_fsync(const char *path, int datasync, struct fuse_file_info *fi)
 {
 	info("%s\n", path);
-	size_t fd = fi_fd(fi);
-	return -1;
+	SAN_HANDLE* sh = (SAN_HANDLE*)fi_fd(fi);
+	return f_flush(sh->path, fi);
+}
+
+int f_flush(const char *path, struct fuse_file_info *fi)
+{
+	info("%s\n", path);
+	// no need as this is sync write always ?
+	return 0;
 }
 
 int f_utimens(const char *path, const struct fuse_timespec tv[2], struct fuse_file_info *fi)
