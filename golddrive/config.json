@@ -2,7 +2,11 @@
 	// GoldDrive configuration file.
 	// It's json format with support for comments, trailing commas, 
 	// and environment variables
-	"sshfs_path" 		: "%GOLDDRIVE%\\sshfs\\bin",
+
+	// client: sanfs or sshfs
+	"client" 			: "sshfs",
+	"sshfs" 			: "%GOLDDRIVE%\\client\\sshfs\\bin\\sshfs.exe",
+	"sanfs" 			: "%GOLDDRIVE%\\client\\sanfs\\sanfs.exe",
 	"logfile" 			: "%GOLDDRIVE%\\golddrive.log",
 	"editor" 			: "C:\\Program Files\\Sublime Text 3\\sublime_text.exe",
 	
@@ -13,6 +17,7 @@
 			"user" 		: "support",
 			"port" 		: "2222",
 			"hosts" 	: ["192.168.99.100"],
+			"client"	: "sanfs"
 		},
 		"Y:" : {
 			"drivename" : "Box",

@@ -62,13 +62,26 @@ def loadConfig(path):
 				value = config[key]
 				if r'%' in value:
 					config[key] = os.path.expandvars(value)
-			config['ssh'] = fr"{config.get('sshfs_path','')}\ssh.exe"
-			config['sshfs'] = fr"{config.get('sshfs_path','')}\sshfs.exe"
-			os.environ['GOLDDRIVE_SSHFS'] = config['sshfs']
+
+			client = config.get('client','')
+			assert client in ['sshfs', 'sanfs'] # client not supported
+
+			config['client'] = config.get(client,'')
+			sshfs_path = os.path.dirname(config.get('sshfs',''))
+			sanfs_path = os.path.dirname(config.get('sanfs',''))
+			config['sshfs_path'] = sshfs_path
+			config['sanfs_path'] = sanfs_path
+			config['ssh'] = fr"{sshfs_path}\ssh.exe"
+			os.environ['GOLDDRIVE_SSHFS'] = sshfs_path
+			os.environ['GOLDDRIVE_SANFS'] = sshfs_path
+			os.environ['GOLDDRIVE_CLIENT'] = config.get(client,'')
+			
 			if not os.path.exists(config['ssh']):
 				logger.error('ssh not found')
 			if not os.path.exists(config['sshfs']):
 				logger.error('sshfs not found')
+			if not os.path.exists(config['sanfs']):
+				logger.error('sanfs not found')
 			return config
 
 	except Exception as ex:

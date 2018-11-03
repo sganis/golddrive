@@ -145,13 +145,13 @@ static const char *sftp_errors[] = {
 /* n is the -o ThreadCount=n arg, c is number of cores*/
 int san_threads(int n, int c);
 
-typedef struct CMD_ARGS {
-	char host[64];
-	int port;
-	char user[20];
-	char pkey[MAX_PATH];
-} CMD_ARGS;
-extern  CMD_ARGS * g_cmd_args;
+//typedef struct CMD_ARGS {
+//	char host[64];
+//	int port;
+//	char user[20];
+//	char pkey[MAX_PATH];
+//} CMD_ARGS;
+//extern  CMD_ARGS * g_cmd_args;
 
 typedef struct SANSSH {
 	int thread;						/* key, thread id that owns this struct */

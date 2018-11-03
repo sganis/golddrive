@@ -80,7 +80,8 @@ class Window(QMainWindow, Ui_MainWindow):
 		self.config = util.loadConfig(self.configfile)
 		path = os.environ['PATH']
 		sshfs_path = self.config.get('sshfs_path','')
-		os.environ['PATH'] = fr'{sshfs_path};{path}'	
+		sanfs_path = self.config.get('sanfs_path','')
+		os.environ['PATH'] = fr'{sanfs_path};{sshfs_path};{path}'	
 
 		self.updateCombo(self.settings.value("cboParam",0))	
 		self.fillParam()

@@ -24,6 +24,7 @@ set PATH=C:\Program Files (x86)\WinFsp\bin;%PATH%
 	-delete_standby_test ^
 	-rename_flipflop_test ^
 	-rename_mmap_test ^
+	-exec_rename_test ^
 	-rename_test ^
 	-rename_open_test ^
 	-rename_caseins_test ^

@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include "util.h"
-#include "sanssh.h"
+#include "sanfs.h"
 #include "cache.h"
 
 

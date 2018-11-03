@@ -186,12 +186,12 @@
   <ItemGroup>
     <ClCompile Include="cache.c" />
     <ClCompile Include="main.c" />
-    <ClCompile Include="sanssh.c" />
+    <ClCompile Include="sanfs.c" />
     <ClCompile Include="util.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cache.h" />
-    <ClInclude Include="sanssh.h" />
+    <ClInclude Include="sanfs.h" />
     <ClInclude Include="uthash.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
