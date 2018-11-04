@@ -241,6 +241,8 @@ int main(int argc, char *argv[])
 
 	// run fuse main
 	char volprefix[256], volname[256];
+	//sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=/sanfs/%s/%s@%s",
+	//	sanfs.drive, sanfs.user, sanfs.host);
 	sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=/sanfs/%s@%s", sanfs.user, sanfs.host);
 	sprintf_s(volname, sizeof(volname), "-ovolname=%s@%s", sanfs.user, sanfs.host);
 	fuse_opt_add_arg(&args, volprefix);
