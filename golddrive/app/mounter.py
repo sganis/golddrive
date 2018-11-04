@@ -36,44 +36,32 @@ def reg_add(subkey, name, valtype, value):
 def reg_del(subkey):
 	try:
 		winreg.DeleteKey(winreg.HKEY_CURRENT_USER, subkey)
+		logger.info(fr'regkey HKCU\{subkey} deleted.')
 	except Exception as ex:
 		logger.error(f'cannot delete registry key {subkey}: {ex}')
 
 
-def set_drive_name(name, userhost):
+def set_drive_name(name, userhost, client):
 	logger.info(f'Setting drive name as {name}...')
-	subkey = fr'Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\##sshfs#{userhost}'
+	subkey = fr'Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\##{client}#{userhost}'
 	reg_add(subkey, '_LabelFromReg', winreg.REG_SZ, name)
-	# key = fr'HKCU\Software\Microsoft\Windows\CurrentVersion'
-	# key = fr'{key}\Explorer\MountPoints2\##sshfs#{userhost}'
-	# cmd = f'reg add {key} /v _LabelFromReg /d {name} /f'
-	# util.run(cmd, capture=True)
 
-def set_drive_icon(letter):
+
+def set_drive_icon(letter, client):
 	logger.info(f'Setting registry drive icon...')
 	loc = os.path.dirname(os.path.realpath(__file__))
-	ico = fr'{loc}\icon\golddrive.ico'	
+	if client == 'sanfs':
+		ico = fr'{loc}\icon\golddrive_sanfs.ico'	
+	else:
+		ico = fr'{loc}\icon\golddrive.ico'	
 	logger.info(f'Setting drive icon as {ico}...')	
-	explorer = fr'Software\Classes\Applications\Explorer.exe'
-	# keys = [ 
-	# 	explorer,	
-	# 	fr'{explorer}\Drives',
-	# 	fr'{explorer}\Drives\{letter}']
-
-	# reg_add(fr'{explorer}\Drives\{letter}', '', winreg.REG_SZ, '')
-
-
-	# for subkey in keys:
-	# 	reg_add(subkey, '_LabelFromReg', winreg.REG_SZ, name)
-		# util.run(f'reg add {key} /ve /f', capture=True)
-
-	key = fr'{explorer}\Drives\{letter}\DefaultIcon'
+	key = fr'Software\Classes\Applications\Explorer.exe\Drives\{letter}\DefaultIcon'
 	reg_add(key, '', winreg.REG_SZ, ico)
-	# util.run(f'reg add {key} /ve /d "{ico}" /f', capture=True)
 
-def set_net_use(letter, userhost):
+
+def set_net_use(letter, userhost, client):
 	logger.info(f'Setting registry net use info...')
-	remotepath = f'\\\\sshfs\\{userhost}\\..\\..'
+	remotepath = f'\\\\{client}\\{userhost}\\..\\..'
 	key = fr'Network\{letter}'	
 	reg_add(key, 'RemotePath', winreg.REG_SZ, remotepath)
 	reg_add(key, 'UserName', winreg.REG_SZ, '')
@@ -89,10 +77,12 @@ def set_net_use(letter, userhost):
 	# util.run(f'''reg add {key} /v ConnectionType /d 1 /t REG_DWORD /f''', capture=True)
 	# util.run(f'''reg add {key} /v ConnectFlags /d 0 /t REG_DWORD /f''', capture=True)
 
-def mount(drive, userhost, appkey, port=22, drivename=''):
+def mount(drive, userhost, appkey, client='sanfs', port=22, drivename=''):
 
 	logger.info(f'Mounting {drive} {userhost}...')
 	rb = util.ReturnBox()
+
+	user, host = userhost.split('@')
 
 	letter = drive.strip(':')
 	if not drivename:
@@ -105,42 +95,51 @@ def mount(drive, userhost, appkey, port=22, drivename=''):
 	# 	rb.returncode = result
 	# 	return rb
 
-	status = check_drive(drive, userhost)
+	status = check_drive(drive, userhost, client)
 	if not status == 'DISCONNECTED':
 		rb.error = status
 		rb.drive_status = status
 		return rb
 
-	cmd = f'''sshfs {userhost}:/ {drive} 
-		-o port={port}
-		-o IdentityFile={appkey}
-		-o VolumePrefix=/sshfs/{userhost}
-		-o volname={userhost} 
-		-o uid=-1,gid=-1,create_umask=007,mask=007 
-		-o FileSystemName=SSHFS 
-		-o PasswordAuthentication=no
-		-o StrictHostKeyChecking=no	
-		-o UserKnownHostsFile=/dev/null
-		-o ServerAliveInterval=60 
-		-o compression=no
-		-o rellinks 
-		-o reconnect 
-		'''
-		# -o max_read=65536
-		# -o max_write=65536
-		# -o sshfs_sync
-		# -f
-		# -o ThreadCount=10
-		# -o dir_cache=yes
-		# -o dcache_timeout=5
-		# -o dcache_clean_interval=300
-		# -o KeepFileCache
-		# -o FileInfoTimeout=-1
-		# -o DirInfoTimeout=5000
-		# -o VolumeInfoTimeout=5000
-		# -o Ciphers=aes128-gcm@openssh.com
-		# -o ServerAliveCountMax=10000
-		# -o ssh_command='ssh -vv -d'
+	cmd = ''
+	if client == 'sanfs':
+		cmd = f'''sanfs.exe {host} {drive} 
+			-o user={user}
+			-o port={port}
+			-o pkey={appkey}
+			-o uid=-1,gid=-1,create_umask=007,mask=007 
+			'''
+	else:	
+		cmd = f'''sshfs.exe {userhost}:/ {drive} 
+			-o port={port}
+			-o IdentityFile={appkey}
+			-o VolumePrefix=/sshfs/{userhost}
+			-o volname={userhost} 
+			-o uid=-1,gid=-1,create_umask=007,mask=007 
+			-o FileSystemName=SSHFS 
+			-o PasswordAuthentication=no
+			-o StrictHostKeyChecking=no	
+			-o UserKnownHostsFile=/dev/null
+			-o ServerAliveInterval=60 
+			-o compression=no
+			-o rellinks 
+			-o reconnect 
+			'''
+			# -o max_read=65536
+			# -o max_write=65536
+			# -o sshfs_sync
+			# -f
+			# -o ThreadCount=10
+			# -o dir_cache=yes
+			# -o dcache_timeout=5
+			# -o dcache_clean_interval=300
+			# -o KeepFileCache
+			# -o FileInfoTimeout=-1
+			# -o DirInfoTimeout=5000
+			# -o VolumeInfoTimeout=5000
+			# -o Ciphers=aes128-gcm@openssh.com
+			# -o ServerAliveCountMax=10000
+			# -o ssh_command='ssh -vv -d'
 
 	cmd = cmd.replace('\n',' ').replace('\r','').replace('\t','') 
 	logger.info(cmd)
@@ -165,14 +164,14 @@ def mount(drive, userhost, appkey, port=22, drivename=''):
 	# 	rb.returncode = util.ReturnCode.BAD_MOUNT
 	# 	return rb
 	
-	set_drive_name(drivename, userhost)
-	set_net_use(letter, userhost)
-	set_drive_icon(letter)
+	set_drive_name(drivename, userhost, client)
+	set_net_use(letter, userhost, client)
+	set_drive_icon(letter, client)
 	rb.drive_status = 'CONNECTED'
 	rb.returncode = util.ReturnCode.OK
 	return rb
 
-def clean_drive(drive):
+def clean_drive(drive, client):
 	# cleanup registry
 	user = ''
 	host = ''
@@ -204,7 +203,7 @@ def clean_drive(drive):
 		i = 0
 		while 1:
 			asubkey = winreg.EnumKey(reg_key, i)
-			if asubkey.startswith(f'##sshfs#{user}@{host}'):
+			if asubkey.startswith(f'##{client}#{user}@{host}'):
 				keys.append(f'{regkey}\\{asubkey}')
 			i += 1
 	except:
@@ -213,7 +212,12 @@ def clean_drive(drive):
 	for k in keys:
 		reg_del(k)
 
-def unmount(drive):
+	# clean icon
+	reg_del(fr'Software\Classes\Applications\Explorer.exe\Drives\{letter}\DefaultIcon')
+	reg_del(fr'Software\Classes\Applications\Explorer.exe\Drives\{letter}')
+
+
+def unmount(drive, client):
 
 	logger.info(f'Unmounting {drive}...')
 	rb = util.ReturnBox()
@@ -222,8 +226,8 @@ def unmount(drive):
 		rb.returncode = util.ReturnCode.BAD_DRIVE
 		return rb
 
-	util.kill_drive(drive)
-	clean_drive(drive)
+	util.kill_drive(drive, client)
+	clean_drive(drive, client)
 
 	rb.drive_status = 'DISCONNECTED'
 	rb.returncode = util.ReturnCode.OK
@@ -261,7 +265,7 @@ def get_free_drives():
 	# 		used.append(line.split(':')[0])
 	return [f'{d}:' for d in GOLDLETTERS if d not in used]
 
-def check_drive(drive, userhost):
+def check_drive(drive, userhost, client):
 	logger.info(f'checking drive {drive} in {userhost}...')
 	if not (drive and len(drive)==2 and drive.split(':')[0].upper() in GOLDLETTERS):
 		return 'NOT SUPPORTED'
@@ -278,7 +282,7 @@ def check_drive(drive, userhost):
 	is_golddrive = False
 	host_use = False
 	for line in r.stdout.split('\n'):
-		if fr'\\sshfs\{userhost}' in line:
+		if fr'\\{client}\{userhost}' in line:
 			if drive in line:
 				is_golddrive = True
 			else:

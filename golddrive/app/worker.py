@@ -21,14 +21,14 @@ class BackgroundWorker(QObject):
 
 	def check_drive(sefl, p):
 		rb = util.ReturnBox()
-		rb.drive_status = mounter.check_drive(p['drive'], p['userhost'])
+		rb.drive_status = mounter.check_drive(p['drive'], p['userhost'], p['client'])
 		if rb.drive_status == 'CONNECTED' or rb.drive_status == 'DISCONNECTED':
 			rb.returncode = util.ReturnCode.OK
 		return rb
 
 	def mount(self, p):
 		rb = mounter.mount(p['drive'],
-			 				p['userhost'], p['appkey'], p['port'], 
+			 				p['userhost'], p['appkey'], p['client'],  p['port'], 
 							p['drivename'])
 		if rb.returncode == util.ReturnCode.OK	and p['no_host']:
 			util.addDriveConfig(**p)
@@ -37,7 +37,7 @@ class BackgroundWorker(QObject):
 	def connect(self, p):
 		rb = util.ReturnBox()
 		# test drive status
-		status = mounter.check_drive(p['drive'], p['userhost'])
+		status = mounter.check_drive(p['drive'], p['userhost'], p['client'])
 		if status != 'DISCONNECTED':
 			rb.returncode = util.ReturnCode.BAD_DRIVE
 			rb.error = f'{status}'
@@ -86,7 +86,7 @@ class BackgroundWorker(QObject):
 
 		
 	def disconnect(self, p):
-		return mounter.unmount(p['drive'])
+		return mounter.unmount(p['drive'], p['client'])
 		
 	def disconnect_all(self, p):
 		return mounter.unmount_all()

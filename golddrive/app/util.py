@@ -294,13 +294,16 @@ def restart_explorer():
 	# no need to restart, as p.terminate() restarts explorer?
 	# util.run(fr'start /b c:\windows\explorer.exe', capture=True)
 
-def kill_drive(drive):
-	logger.info(f'killing drive {drive}...')
+def kill_drive(drive, client):
+	logger.info(f'killing drive {drive} in client {client}...')
 	plist = []
+	drive = drive.lower()
+	# print(f'client: {client}')
 	for p in psutil.process_iter(attrs=['cmdline']):
 		if p.info['cmdline']:
-			cmdline = ' '.join(p.info['cmdline'])
-			if 'sshfs' in cmdline and f' {drive} ' in cmdline:
+			cmdline = ' '.join(p.info['cmdline']).lower()
+			# print(f'cmdline: {cmdline}')
+			if f'{client}.exe' in cmdline and f' {drive} ' in cmdline:
 				plist.append(p)
 	taskkill(plist)
 	

@@ -244,7 +244,10 @@ class Window(QMainWindow, Ui_MainWindow):
 		p['appkey'] = util.getAppKey(p['user'])
 		p['userkey'] = util.getUserKey()
 		p['userhostport'] = ''
-		p['port'] = 22
+		default_client = self.config.get('client')
+		default_port = 22
+		p['client'] = default_client
+		p['port'] = default_port
 		p['drive'] = ''
 		p['drivename'] = 'GOLDDRIVE'
 		drives = self.config.get('drives')
@@ -259,11 +262,12 @@ class Window(QMainWindow, Ui_MainWindow):
 		p['drive'] = drive
 		p['drivename'] = d.get('drivename', 'GOLDDRIVE').replace(' ','-')
 		p['host'] = d.get('hosts','localhost')[0]
-		p['port'] = d.get('port', 22)
+		p['port'] = d.get('port', default_port)
 		p['user'] = d.get('user', getpass.getuser())		
 		p['userhost'] = f"{p['user']}@{p['host']}"
 		p['userhostport'] = f"{p['userhost']}:{p['port']}"
 		p['appkey'] = util.getAppKey(p['user'])
+		p['client'] = d.get('client', default_client)
 		
 	# decorator used to trigger only the int overload and not twice
 	@pyqtSlot(int)
