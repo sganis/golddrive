@@ -66,11 +66,14 @@ enum {
 
 static struct fuse_opt sanfs_opts[] = {
 	SANFS_OPT("port=%i",           port, 0),
+	SANFS_OPT("-p %i",             port, 0),
+	SANFS_OPT("-p=%i",             port, 0),
 	SANFS_OPT("user=%s",           user, 0),
+	SANFS_OPT("-u %s",             user, 0),
+	SANFS_OPT("-u=%s",             user, 0),
 	SANFS_OPT("pkey=%s",           pkey, 0),
-	//SANFS_OPT("uid=%d",            uid, 0),
-	//SANFS_OPT("gid=%d",            gid, 0),
-	//SANFS_OPT("VolumePrefix=%s",   volumeprefix, 0),
+	SANFS_OPT("-k %s",             pkey, 0),
+	SANFS_OPT("-k=%s",             pkey, 0),
 
 	FUSE_OPT_KEY("-V",             KEY_VERSION),
 	FUSE_OPT_KEY("--version",      KEY_VERSION),
@@ -96,15 +99,15 @@ static int sanfs_opt_proc(void *data, const char *arg, int key, struct fuse_args
 	case KEY_HELP:
 		fprintf(stderr,
 			"\n"
-			"Usage: sanfs.exe [options] host drive\n"
+			"Usage: sanfs.exe host drive [options]\n"
 			"\n"
 			"Options:\n"
 			"    -h, --help                 print this help\n"
 			"    -V, --version              print version\n"
-			"    -o opt,[opt...]            mount options\n"
-			"    -o user=USER               user to connect to ssh server, default: current user\n"
-			"    -o port=PORT               server port, default: 22\n"
-			"    -o pkey=PKEY               private key, default: %%USERPROFILE%%\\.ssh\\id_rsa\n"
+			"    -o opt,[opt...]            mount options: -oopt or -o=opt is also valid\n"
+			"    -o user=USER, -u=USER      user to connect to ssh server, default: current user\n"
+			"    -o port=PORT, -p=PORT      server port, default: 22\n"
+			"    -o pkey=PKEY, -k=PKEY      private key, default: %%USERPROFILE%%\\.ssh\\id_rsa\n"
 			"\n"
 			"WinFsp-FUSE options:\n"
 			"    -d, -o debug               enable debug output\n"
