@@ -11,14 +11,18 @@ from ssh2.sftp import LIBSSH2_FXF_READ, LIBSSH2_SFTP_S_IRUSR
 BYTES = 1024*1024*1024
 results = {}
 
+host = os.environ['GOLDDRIVE_HOST']
+port = os.environ['GOLDDRIVE_PORT']
+user = os.environ['GOLDDRIVE_USER']
+
 remote_down = '/tmp/file.bin'
-remote_up = '/home/sag/file.bin'
-localfile = 'C:\\Temp\\file.bin'
-md5 = '9aba09e0fc1d288d7ccd7719f3d0f184'
-host = '192.168.100.201'
-port = 22
-user = 'sag'
-privatekey = os.path.expanduser('~\\.ssh\\id_rsa-sag-golddrive')
+remote_up = f'/home/{user}/file.bin'
+remote_sanfs = fr'W:\tmp\file.bin'
+remote_sanfs_up = fr'W:\home\{user}\file.bin'
+remote_sshfs = fr'S:\tmp\file.bin'
+remote_sshfs_up = fr'S:\home\{user}\file.bin'
+localfile = fr'C:\Temp\file.bin'
+privatekey = os.path.expanduser(fr'~\.ssh\id_rsa-{user}-golddrive')
 DIR = os.path.dirname(os.path.realpath(__file__))
 
 os.environ['PATH'] = fr'{DIR}\sanssh;' + os.environ['PATH']
@@ -71,28 +75,28 @@ def main():
 	
 	print('downloading with sanfs...')
 	t = time.time()
-	subprocess.run(f'copy X:\\tmp\\file.bin {localfile}', shell=True)
+	subprocess.run(f'copy {remote_sanfs} {localfile}', shell=True)
 	set_result('sanfs download', time.time() - t)
 	assert md5 == md5sum(localfile)
 	# subprocess.run(f'del {localfile}', shell=True)
 
 	print('uploading with sanfs...')
 	t = time.time()
-	subprocess.run(f'copy {localfile} X:\\home\\sag\\file.bin', shell=True)
+	subprocess.run(f'copy {localfile} {remote_sanfs_up}', shell=True)
 	set_result('sanfs upload', time.time() - t)
 	assert md5 == md5sumRemote(remote_up)
 	subprocess.run(f'del {localfile}', shell=True)
 
 	print('downloading with sshfs...')
 	t = time.time()
-	subprocess.run(f'copy Y:\\tmp\\file.bin {localfile}', shell=True)
+	subprocess.run(f'copy {remote_sshfs} {localfile}', shell=True)
 	set_result('sshfs download', time.time() - t)
 	assert md5 == md5sum(localfile)
 	# subprocess.run(f'del {localfile}', shell=True)
 
 	print('uploading with sshfs...')
 	t = time.time()
-	subprocess.run(f'copy {localfile} Y:\\home\\sag\\file.bin', shell=True)
+	subprocess.run(f'copy {localfile} {remote_sshfs_up}', shell=True)
 	set_result('sshfs upload', time.time() - t)
 	assert md5 == md5sumRemote(remote_up)
 	subprocess.run(f'del {localfile}', shell=True)

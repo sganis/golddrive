@@ -12,12 +12,19 @@
 	
 	// drive parameters
 	"drives" : {
+		"S:" : {
+			"drivename" : "Sinulation",
+			"user" 		: "support",
+			"port" 		: "2222",
+			"hosts" 	: ["192.168.99.100"],
+			"client"	: "sshfs"
+		},
 		"W:" : {
 			"drivename" : "Docker",
 			"user" 		: "support",
 			"port" 		: "2222",
 			"hosts" 	: ["192.168.99.100"],
-			"client"	: "sshfs"
+			"client"	: "sanfs"
 		},
 		"Y:" : {
 			"drivename" : "Box",

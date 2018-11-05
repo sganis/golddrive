@@ -10,7 +10,7 @@ doskey ll=dir
 set PATH=C:\Python37;C:\Python37\Scripts;%PATH%
 set PATH=C:\Program Files (x86)\WinFsp\bin;%PATH%
 ::set GOLDDRIVE=%DIR%\..
-
+ECHO Select remote test host:
 ECHO 1. localhost
 ECHO 2. 192.168.100.201
 ECHO 3. 192.168.99.100
