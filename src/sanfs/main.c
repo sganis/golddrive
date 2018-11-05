@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
 	//fuse_opt_add_arg(&args, "-ouid=-1,gid=-1,create_umask=007,mask=007");
 	//fuse_opt_add_arg(&args, "-ouid=-1,gid=-1,create_umask=002");
 	fuse_opt_add_arg(&args, "-oFileSystemName=SANFS");
-	fuse_opt_add_arg(&args, "-orellinks,FileInfoTimeout=3000,DirInfoTimeout=3000");
+	fuse_opt_add_arg(&args, "-orellinks");
 	fuse_opt_parse(&args, &sanfs, sanfs_opts, sanfs_opt_proc);
 	fuse_opt_add_arg(&args, sanfs.drive);
 

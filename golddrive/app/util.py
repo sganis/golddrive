@@ -66,7 +66,7 @@ def loadConfig(path):
 			client = config.get('client','')
 			assert client in ['sshfs', 'sanfs'] # client not supported
 
-			config['client'] = config.get(client,'')
+			config['client'] = client
 			sshfs_path = os.path.dirname(config.get('sshfs',''))
 			sanfs_path = os.path.dirname(config.get('sanfs',''))
 			logger.info(f'sshfs folder: {sshfs_path}')

@@ -108,6 +108,8 @@ def mount(drive, userhost, appkey, client='sanfs', port=22, drivename=''):
 			-o port={port}
 			-o pkey={appkey}
 			-o uid=-1,gid=-1,create_umask=007,mask=007 
+			-o FileInfoTimeout=3000
+			-o DirInfoTimeout=5000
 			'''
 	else:	
 		cmd = f'''sshfs.exe {userhost}:/ {drive} 
@@ -124,6 +126,8 @@ def mount(drive, userhost, appkey, client='sanfs', port=22, drivename=''):
 			-o compression=no
 			-o rellinks 
 			-o reconnect 
+			-o FileInfoTimeout=3000
+			-o DirInfoTimeout=5000
 			'''
 			# -o max_read=65536
 			# -o max_write=65536
