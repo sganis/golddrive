@@ -4,6 +4,7 @@ import os
 import paramiko
 import logging
 import util
+import subprocess
 
 logger = logging.getLogger('golddrive')
 logging.getLogger("paramiko.transport").setLevel(logging.WARNING)
@@ -84,7 +85,7 @@ def testssh(userhost, seckey, port=22):
 		rb.error = "No key"
 		return rb
 
-	cmd = f'''ssh
+	cmd = f'''ssh.exe
 		-i "{seckey}"
 		-p {port} 
 		-o PasswordAuthentication=no
@@ -151,6 +152,26 @@ def setup_user_keys(userhost, password, port):
 	# generate key
 
 	# transfer using password
+
+def set_key_permissions(pkey):
+	
+	print('setting permissions...')
+	ssh_folder = os.path.dirname(pkey)
+	# Remove Inheritance ::
+	subprocess.run(fr'icacls {ssh_folder} /c /t /inheritance:d')
+	# subprocess.run(fr'icacls {pkey} /c /t /inheritance:d')
+	
+	# Set Ownership to Owner 
+	subprocess.run(fr'icacls {ssh_folder} /c /t /grant %username%:F')
+	# subprocess.run(fr'icacls {pkey} /c /t /grant %username%:F')
+	
+	# Remove All Users, except for Owner 
+	subprocess.run(fr'icacls {ssh_folder} /c /t /remove Administrator BUILTIN\Administrators BUILTIN Everyone System Users')
+	# subprocess.run(fr'icacls {pkey} /c /t /remove Administrator BUILTIN\Administrators BUILTIN Everyone System Users')
+	
+	# Verify 
+	subprocess.run(fr'icacls {pkey}')
+	print('done.')
 
 def main(userhost, password, userkey='', port=22):
 	'''
@@ -220,6 +241,8 @@ def main(userhost, password, userkey='', port=22):
 		rb.returncode = util.ReturnCode.BAD_SSH
 		return rb
 
+	set_key_permissions(seckey)
+
 	logger.info(f'Publising public key...')
 		
 	# Copy to the target machines.
@@ -275,10 +298,11 @@ if __name__ == '__main__':
 			'@' in sys.argv[1]) # usage: prog user@host
 	userhost = sys.argv[1]
 	password = getpass.getpass('Linux password: ')
-	port=22
-	userkey = os.path.expandvars(r'%USERPROFILE%\.ssh\id_rsa')
+	port=2222
+	userkey = os.path.expandvars(fr'%USERPROFILE%\.ssh\id_rsa')
 	if ':' in userhost:
 		userhost, port = userhost.split(':')                             
 	logging.basicConfig(level=logging.INFO)
 
 	main(userhost, password, userkey, port)
+

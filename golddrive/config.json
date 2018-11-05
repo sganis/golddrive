@@ -23,7 +23,7 @@
 			"drivename" : "Docker",
 			"user" 		: "support",
 			"port" 		: "2222",
-			"hosts" 	: ["192.168.99.100"],
+			"hosts" 	: ["localhost"],
 			"client"	: "sanfs"
 		},
 		"Y:" : {
