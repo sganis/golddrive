@@ -143,9 +143,10 @@ def mount(drive, userhost, appkey, client='sanfs', port=22, drivename=''):
 
 	cmd = cmd.replace('\n',' ').replace('\r','').replace('\t','') 
 	logger.info(cmd)
-	proc = subprocess.Popen(cmd, shell=True, 
-		stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+	proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 	time.sleep(1)
+	# proc = subprocess.run(f'start "" /b {cmd}', shell=True)
+	
 	# rc = proc.poll()
 	# # rc = os.system('start "" /b f'{cmd})
 	# if rc != None:

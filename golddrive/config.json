@@ -30,7 +30,7 @@
 			"drivename" : "Box",
 			"user" 		: "sag",
 			"hosts" 	: ["192.168.100.201"],
-			"client"	: "sshfs"
+			"client"	: "sanfs"
 		},
 		"T:" : {
 			"drivename" : "appveyor",

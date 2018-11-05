@@ -69,6 +69,8 @@ def loadConfig(path):
 			config['client'] = config.get(client,'')
 			sshfs_path = os.path.dirname(config.get('sshfs',''))
 			sanfs_path = os.path.dirname(config.get('sanfs',''))
+			logger.info(f'sshfs folder: {sshfs_path}')
+			logger.info(f'sanfs folder: {sanfs_path}')
 			config['sshfs_path'] = sshfs_path
 			config['sanfs_path'] = sanfs_path
 			config['ssh'] = fr"{sshfs_path}\ssh.exe"
@@ -214,6 +216,7 @@ def getAppVersion():
 def getVersions():
 	ssh = ''
 	sshfs = ''
+	sanfs = ''
 	cygwin = ''
 	winfsp = ''
 	
@@ -232,18 +235,22 @@ def getVersions():
 		out = r.stdout.replace('version ','')
 		sshfs = fr"{out}"
 	
+	r = run(f'sanfs -V', capture=True)
+	if r.returncode == 0:
+		sanfs = fr"{r.stderr}"
+	
 	# sshfs_path = os.path.dirname(run(f'where sshfs', capture=True).stdout)
 	import version
-	cygwin_path = f"{ os.path.dirname(os.environ['GOLDDRIVE_SSHFS']) }\\cygwin1.dll"
+	cygwin_path = fr"{os.environ['GOLDDRIVE_SSHFS']}\cygwin1.dll"	
 	cygwin = version.get_file_version(cygwin_path)
 	if cygwin:
 		cygwin = f'Cygwin {cygwin}'
 
-	winfsp_dll = os.path.expandvars('%ProgramFiles(x86)%\\WinFsp\\bin\\winfsp-x64.dll')
+	winfsp_dll = os.path.expandvars(fr'%ProgramFiles(x86)%\WinFsp\bin\winfsp-x64.dll')
 	winfsp = version.get_file_version(winfsp_dll);
 	if winfsp:
 		winfsp = f'WinFSP {winfsp}'
-	result = f'{ssh}\n{sshfs}\n{cygwin}\n{winfsp}'
+	result = f'{ssh}\n{sshfs}\n{cygwin}\n{sanfs}\n{winfsp}'
 	return result
 
 def setPath(path=None):
@@ -258,9 +265,9 @@ def setPath(path=None):
 		# fr'C:\Windows\System32\Wbem',		
 	]
 	os.environ['PATH'] = ';'.join(path)
-	print('PATH:')
+	logger.info('PATH:')
 	for p in os.environ['PATH'].split(';'):
-		print(p)
+		logger.info(p)
 	# print('sys.path:')
 	# for p in sys.path:
 	# 	print(p)
@@ -268,7 +275,10 @@ def setPath(path=None):
 def taskkill(plist, timeout=5):
 	def on_terminate(p):
 		if p.returncode != 0:
-			logger.error(f"process {p.name()} terminated with exit code {p.returncode}")
+			if p.returncode == 15:
+				logger.info(f"process {p.name()} terminated")
+			else:
+				logger.error(f"process {p.name()} terminated with exit code {p.returncode}")
 
 	for p in plist:
 		logger.info(f'terminating process {p}')

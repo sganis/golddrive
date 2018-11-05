@@ -404,7 +404,7 @@ class Window(QMainWindow, Ui_MainWindow):
 
 	def keyPressEvent(self, event):
 		if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
-			print('enter pressed in app')
+			# print('enter pressed in app')
 			self.on_pbConnect_released()
 			event.accept()
 
