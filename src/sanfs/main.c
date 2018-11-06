@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fuse.h>
+#include <fuse_opt.h>
 #include "util.h"
 #include "sanfs.h"
 #include "cache.h"
@@ -104,7 +105,7 @@ static int sanfs_opt_proc(void *data, const char *arg, int key, struct fuse_args
 			"Options:\n"
 			"    -h, --help                 print this help\n"
 			"    -V, --version              print version\n"
-			"    -o opt,[opt...]            mount options: -o=opt or -oopt valid too\n"
+			"    -o opt,[opt...]            mount options, -o=opt or -oopt is also valid\n"
 			"    -u USER, -o user=USER      user to connect to ssh server, default: current user\n"			
 			"    -k PKEY, -o pkey=PKEY      private key, default: %%USERPROFILE%%\\.ssh\\id_rsa\n"
 			"    -p PORT, -o port=PORT      server port, default: 22\n"
@@ -259,6 +260,53 @@ int main(int argc, char *argv[])
 		printf("arg %d = %s\n", i, args.argv[i]);
 
 	rc = fuse_main(args.argc, args.argv, &sanfs_ops, NULL);
+	
+	
+	//struct fuse *fuse;
+	//struct fuse_session *se;
+	//fuse = fuse_new(&args, &sanfs_ops, sizeof(struct fuse_operations), NULL);
+	//if (fuse == NULL)
+	//	return 1;
+
+	//se = fuse_get_session(fuse);
+	//rc = fuse_set_signal_handlers(se);
+	//if (rc != 0) {
+	//	fuse_destroy(fuse);
+	//	exit(1);
+	//}
+
+	//rc = fuse_mount(fuse, sanfs.drive);
+	//if (rc != 0) {
+	//	fuse_destroy(fuse);
+	//	return 1;
+	//}
+
+	////res = fuse_daemonize(sanfs.foreground);
+	//rc = fuse_daemonize(0);
+	//if (rc == -1) {
+	//	fuse_unmount(fuse);
+	//	fuse_destroy(fuse);
+	//	return 1;
+	//}
+
+	////if (sshfs.singlethread)
+	//if (0) {
+	//	printf("starting single-threading loop...\n");
+	//	rc = fuse_loop(fuse);
+	//}
+	//else {
+	//	printf("starting multi-threading loop...\n");
+	//	rc = fuse_loop_mt(fuse, 0);
+	//}
+
+	//rc = (rc != 0) ? 1 : 0;
+	//	
+
+	//// cleanup fuse
+	//fuse_remove_signal_handlers(se);
+	//fuse_unmount(fuse);
+	//fuse_destroy(fuse);
+	//fuse_opt_free_args(&args);
 
 	// cleanup
 	InitializeSRWLock(&g_ssh_lock);

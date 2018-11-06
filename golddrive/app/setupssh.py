@@ -153,21 +153,21 @@ def setup_user_keys(userhost, password, port):
 
 	# transfer using password
 
-def set_key_permissions(pkey):
+def set_key_permissions(user, pkey):
 	
 	print('setting permissions...')
 	ssh_folder = os.path.dirname(pkey)
 	# Remove Inheritance ::
-	subprocess.run(fr'icacls {ssh_folder} /c /t /inheritance:d')
-	# subprocess.run(fr'icacls {pkey} /c /t /inheritance:d')
+	# subprocess.run(fr'icacls {ssh_folder} /c /t /inheritance:d')
+	subprocess.run(fr'icacls {pkey} /c /t /inheritance:d')
 	
 	# Set Ownership to Owner 
-	subprocess.run(fr'icacls {ssh_folder} /c /t /grant %username%:F')
-	# subprocess.run(fr'icacls {pkey} /c /t /grant %username%:F')
+	# subprocess.run(fr'icacls {ssh_folder} /c /t /grant %username%:F')
+	subprocess.run(fr'icacls {pkey} /c /t /grant {user}:F')
 	
 	# Remove All Users, except for Owner 
-	subprocess.run(fr'icacls {ssh_folder} /c /t /remove Administrator BUILTIN\Administrators BUILTIN Everyone System Users')
-	# subprocess.run(fr'icacls {pkey} /c /t /remove Administrator BUILTIN\Administrators BUILTIN Everyone System Users')
+	# subprocess.run(fr'icacls {ssh_folder} /c /t /remove Administrator BUILTIN\Administrators BUILTIN Everyone System Users')
+	subprocess.run(fr'icacls {pkey} /c /t /remove Administrator BUILTIN\Administrators BUILTIN Everyone System Users')
 	
 	# Verify 
 	subprocess.run(fr'icacls {pkey}')
@@ -241,7 +241,7 @@ def main(userhost, password, userkey='', port=22):
 		rb.returncode = util.ReturnCode.BAD_SSH
 		return rb
 
-	set_key_permissions(seckey)
+	set_key_permissions(user, seckey)
 
 	logger.info(f'Publising public key...')
 		

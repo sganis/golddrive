@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{5E99498C-D30C-48EF-A04A-7977C0305FAC}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>passthroughfuse3</RootNamespace>
+    <RootNamespace>sanfs</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
