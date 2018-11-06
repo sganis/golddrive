@@ -108,8 +108,6 @@ def mount(drive, userhost, appkey, client='sanfs', port=22, drivename=''):
 			-o port={port}
 			-o pkey={appkey}
 			-o uid=-1,gid=-1,create_umask=007,mask=007 
-			-o FileInfoTimeout=3000
-			-o DirInfoTimeout=5000
 			'''
 	else:	
 		cmd = f'''sshfs.exe {userhost}:/ {drive} 
@@ -125,9 +123,7 @@ def mount(drive, userhost, appkey, client='sanfs', port=22, drivename=''):
 			-o ServerAliveInterval=60 
 			-o compression=no
 			-o rellinks 
-			-o reconnect 
-			-o FileInfoTimeout=3000
-			-o DirInfoTimeout=5000
+			-o reconnect 			
 			'''
 			# -o max_read=65536
 			# -o max_write=65536
@@ -144,30 +140,18 @@ def mount(drive, userhost, appkey, client='sanfs', port=22, drivename=''):
 			# -o Ciphers=aes128-gcm@openssh.com
 			# -o ServerAliveCountMax=10000
 			# -o ssh_command='ssh -vv -d'
-
-	cmd = cmd.replace('\n',' ').replace('\r','').replace('\t','') 
-	logger.info(cmd)
-	proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-	time.sleep(1)
-	# proc = subprocess.run(f'start "" /b {cmd}', shell=True)
 	
-	# rc = proc.poll()
-	# # rc = os.system('start "" /b f'{cmd})
-	# if rc != None:
-	# 	rb.error = f'sshfs process failed to start, exit code {rc}'
-	# 	rb.returncode = util.ReturnCode.BAD_MOUNT
-	# 	return rb
-		
-	# r = util.run(cmd, capture=False)
-	# if r.stderr:
-	# 	logger.error(r.stderr)
-	# 	rb.error = r.stderr
-	# 	if 'mount point in use' in rb.error:
-	# 		rb.error = 'Drive in use'
-	# 	if 'winfsp-x64.dll not found' in rb.error:
-	# 		rb.error = 'WinFSP not installed'
-	# 	rb.returncode = util.ReturnCode.BAD_MOUNT
-	# 	return rb
+	fuse_options = ' -o FileInfoTimeout=3000 -o DirInfoTimeout=5000'
+	cmd = cmd.replace('\n',' ').replace('\r','').replace('\t','') 
+	cmd += fuse_options
+	
+	# logger.info(cmd)
+	
+	util.run(cmd, detach=True)
+	# proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+	# time.sleep(1)
+	
+
 	
 	set_drive_name(drivename, userhost, client)
 	set_net_use(letter, userhost, client)
@@ -271,7 +255,7 @@ def get_free_drives():
 	return [f'{d}:' for d in GOLDLETTERS if d not in used]
 
 def check_drive(drive, userhost, client):
-	logger.info(f'checking drive {drive} in {userhost}...')
+	logger.info(f'Checking drive {drive} in {userhost}...')
 	if not (drive and len(drive)==2 and drive.split(':')[0].upper() in GOLDLETTERS):
 		return 'NOT SUPPORTED'
 	r = util.run(f'net use', capture=True)

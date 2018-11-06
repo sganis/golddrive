@@ -7,7 +7,7 @@ import yaml
 import re
 import getpass
 import psutil
-# import pefile
+import shlex
 from enum import Enum
 
 DIR = os.path.abspath(os.path.dirname(__file__))
@@ -163,21 +163,29 @@ def getUserHostPort(text):
 		port = 22
 	return user, host, port
 
-def run(cmd, capture=False, shell=True, timeout=30):
+def run(cmd, capture=False, detach=False, shell=True, timeout=30):
 	cmd = re.sub(r'[\n\r\t ]+',' ', cmd).replace('  ',' ').strip()
 	header = 'CMD'
 	if shell:
 		header += ' (SHELL)'
 	logger.info(f'{header}: {cmd}')
+
+	r = subprocess.CompletedProcess(cmd, 0)
+	r.stdout = ''
+	r.stderr = ''
+
 	try:
-		r = subprocess.run(cmd, 
-			capture_output=capture, 
-			shell=shell, 
-			timeout=timeout, 
-			text=True)
+		if detach:
+			CREATE_NEW_PROCESS_GROUP = 0x00000200
+			DETACHED_PROCESS = 0x00000008
+			p = subprocess.Popen(shlex.split(cmd), 
+					stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+					creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP)
+			logger.info(f'Detached process {p.pid} started.')
+		else:
+			r = subprocess.run(cmd, capture_output=capture, shell=shell, 
+					timeout=timeout, text=True)
 	except Exception as ex:
-		r = subprocess.CompletedProcess(cmd, 1)
-		r.stdout = ''
 		r.stderr = repr(ex)
 		logger.error(r)
 		return r
@@ -276,24 +284,24 @@ def taskkill(plist, timeout=5):
 	def on_terminate(p):
 		if p.returncode != 0:
 			if p.returncode == 15:
-				logger.info(f"process {p.name()} terminated")
+				logger.info(f"Process {p.pid} terminated")
 			else:
-				logger.error(f"process {p.name()} terminated with exit code {p.returncode}")
+				logger.error(f"Process {p.pid} terminated with exit code {p.returncode}")
 
 	for p in plist:
-		logger.info(f'terminating process {p}')
+		logger.info(f'Terminating process {p.pid}...')
 		p.terminate()
 	gone, alive = psutil.wait_procs(plist, timeout=timeout, callback=on_terminate)
 	if alive:
 		# send SIGKILL
 		for p in alive:
-			logger.error(f"process {p.name()} survived SIGTERM; trying SIGKILL")
+			logger.error(f"Process {p.pid} survived SIGTERM; trying SIGKILL")
 			p.kill()
 		gone, alive = psutil.wait_procs(alive, timeout=timeout, callback=on_terminate)
 		if alive:
 			# give up
 			for p in alive:
-				logger.error(f"process {p.name()} survived SIGKILL; giving up")
+				logger.error(f"Process {p.pid} survived SIGKILL; giving up")
 				return False
 	return True
 
@@ -305,7 +313,7 @@ def restart_explorer():
 	# util.run(fr'start /b c:\windows\explorer.exe', capture=True)
 
 def kill_drive(drive, client):
-	logger.info(f'killing drive {drive} in client {client}...')
+	logger.info(f'Killing drive {drive} process in client {client}...')
 	plist = []
 	drive = drive.lower()
 	# print(f'client: {client}')

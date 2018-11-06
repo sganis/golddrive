@@ -1,8 +1,9 @@
 {
 	// GoldDrive configuration file.
 	// It's json format with support for comments, trailing commas, 
-	// and environment variables
-
+	// and environment variables.
+	// %GOLDDRIVE% expands to the app path
+	
 	// client: sanfs or sshfs
 	"client" 			: "sshfs",
 	"sshfs" 			: "%GOLDDRIVE%\\client\\sshfs\\bin\\sshfs.exe",
