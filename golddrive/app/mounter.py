@@ -146,10 +146,11 @@ def mount(drive, userhost, appkey, client='sanfs', port=22, drivename=''):
 	cmd += fuse_options
 	
 	# logger.info(cmd)
-	
-	util.run(cmd, detach=True)
-	# proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-	# time.sleep(1)
+	if client == 'sanfs':
+		util.run(cmd, detach=True)
+	else:
+		proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+		time.sleep(1)
 	
 
 	

@@ -18,7 +18,7 @@
 			"user" 		: "support",
 			"port" 		: "2222",
 			"hosts" 	: ["192.168.99.100"],
-			"client"	: "sshfs"
+			//"client"	: "sanfs"
 		},
 		"W:" : {
 			"drivename" : "Docker",
