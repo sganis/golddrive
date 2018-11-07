@@ -9,7 +9,7 @@
 #include "sanfs.h"
 #include "cache.h"
 
-#define VERSION "1.1.0"
+#define VERSION "1.1.1"
 
 /* global variables */
 size_t				g_sftp_calls;
