@@ -112,32 +112,6 @@ WinFsp-FUSE advanced options:
     -o ThreadCount             number of file system dispatcher threads
 ```
 
-## Sanfs API
-```
-- san_init()
-- san_finalize()
-- san_statvfs()
-- san_stat()
-- san_fstat()
-- san_opendir()
-- san_readdir()
-- san_rewind()
-- san_closedir()
-- san_open()
-- san_close()
-- san_read()
-- san_realpath()
-- san_unlink()
-- san_mkdir()
-- san_rmdir()
-- san_write()
-- san_rename()
-- san_fsync()
-- san_utimens()
-- san_truncate()
-- san_ftruncate()
-```
-
 ## Extending Windows Explorer
 
 https://docs.microsoft.com/en-us/windows/desktop/shell/propsheet-handlers
