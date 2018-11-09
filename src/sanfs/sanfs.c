@@ -209,41 +209,36 @@ int san_stat(const char * path, struct fuse_stat *stbuf)
 {
 	int rc = 0;
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
-	CACHE_ATTRIBUTES* cattrs = NULL;
 	memset(stbuf, 0, sizeof *stbuf);
-	memset(&attrs, 0, sizeof attrs);
 #if USE_CACHE
+	CACHE_ATTRIBUTES* cattrs = NULL;
+	memset(&attrs, 0, sizeof attrs);
 	cattrs = ht_attributes_find(path);
-#endif
 	if (!cattrs) {			
+#endif
 		assert(g_ssh);
 		assert(g_ssh->sftp);
 		
 		lock();
 		rc = libssh2_sftp_stat_ex(g_ssh->sftp, path, (int)strlen(path), LIBSSH2_SFTP_STAT, &attrs);		
 		g_sftp_calls++;		
+		unlock();
 		if (rc) {
-			// set rc
 			san_error(path);
 		}
-		else {
-			debug("%s\n", path);
 #if USE_CACHE
-			// added to cache
-			cattrs = malloc(sizeof(CACHE_ATTRIBUTES));
-			strcpy(cattrs->path, path);
-			cattrs->attrs = attrs; /* shallow copy is ok */
-			ht_attributes_add(cattrs);
-#endif
-		}
-		unlock();
+		// added to cache
+		cattrs = malloc(sizeof(CACHE_ATTRIBUTES));
+		strcpy(cattrs->path, path);
+		cattrs->attrs = attrs; /* shallow copy is ok */
+		ht_attributes_add(cattrs);
 	}
 	else {
 		debug("CACHE: %s\n", cattrs->path);
 		attrs = cattrs->attrs;
 		g_sftp_cached_calls++;
 	}
-
+#endif
 	copy_attributes(stbuf, &attrs);
 	//print_permissions(path, &attrs);
 
@@ -425,6 +420,15 @@ int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t of
 		rc = libssh2_sftp_readdir(handle, fname, FILENAME_MAX, &attrs);
 		//rc = libssh2_sftp_readdir_ex(handle, fname, FILENAME_MAX, longentry, 512, &attrs);
 		g_sftp_calls++;
+
+		/* skip hidden files */
+		if (rc > 1							/* file name length 2 or more	*/				
+			&& !g_sanfs.hidden				/* user parameter not set		*/
+			&& strncmp(fname, ".", 1) == 0  /* file name starts with .		*/
+			&& strncmp(fname, "..", 2)) {	/* file name is not ..			*/
+			//printf("skipping hidden file: %s\n", fname);
+			continue;
+		}
 
 		if (rc < 0) {
 			san_error(sh->path);

@@ -21,7 +21,7 @@ set DIR=%~dp0
 set DIR=%DIR:~0,-1%
  
 :: mount
-%DIR%\sanfs.exe %HOST% 22 %USERNAME% %DRIVE% %USERPROFILE%\.ssh\id_rsa-%USERNAME%-golddrive
+%DIR%\sanfs.exe %HOST% %DRIVE% -k %USERPROFILE%\.ssh\id_rsa-%USERNAME%-golddrive
 goto :eof
  
 :usage

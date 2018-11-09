@@ -15,11 +15,12 @@
 size_t				g_sftp_calls;
 size_t				g_sftp_cached_calls;
 SANSSH *			g_ssh;
-CACHE_ATTRIBUTES *	g_attributes_ht;
-CRITICAL_SECTION	g_attributes_lock;
-SAN_HANDLE *		g_handle_open_ht;
-SAN_HANDLE *		g_handle_close_ht;
+//CACHE_ATTRIBUTES *	g_attributes_ht;
+//CRITICAL_SECTION	g_attributes_lock;
+//SAN_HANDLE *		g_handle_open_ht;
+//SAN_HANDLE *		g_handle_close_ht;
 SRWLOCK				g_ssh_lock;
+sanfs_config		g_sanfs;
 
 /* supported fs operations */
 static struct fuse_operations sanfs_ops = {
@@ -44,37 +45,24 @@ static struct fuse_operations sanfs_ops = {
 	.utimens = f_utimens,
 };
 
-
-struct sanfs_config {
-	char *host;
-	int port;
-	char *user;
-	char *pkey;
-	char *drive;
-	//int uid;
-	//int gid;
-	//char *volumeprefix;
-};
-
-static struct sanfs_config sanfs;
-
 enum {
 	KEY_HELP,
 	KEY_VERSION,
 };
 
-#define SANFS_OPT(t, p, v) { t, offsetof(struct sanfs_config, p), v }
+#define SANFS_OPT(t, p, v) { t, offsetof(sanfs_config, p), v }
 
 static struct fuse_opt sanfs_opts[] = {
-	SANFS_OPT("port=%i",           port, 0),
-	SANFS_OPT("-p %i",             port, 0),
-	SANFS_OPT("-p=%i",             port, 0),
+	SANFS_OPT("port=%d",           port, 0),
+	SANFS_OPT("-p %d",             port, 0),
+	SANFS_OPT("-p=%d",             port, 0),
 	SANFS_OPT("user=%s",           user, 0),
 	SANFS_OPT("-u %s",             user, 0),
 	SANFS_OPT("-u=%s",             user, 0),
 	SANFS_OPT("pkey=%s",           pkey, 0),
 	SANFS_OPT("-k %s",             pkey, 0),
 	SANFS_OPT("-k=%s",             pkey, 0),
+	SANFS_OPT("hidden",			   hidden, 1),
 
 	FUSE_OPT_KEY("-V",             KEY_VERSION),
 	FUSE_OPT_KEY("--version",      KEY_VERSION),
@@ -87,12 +75,12 @@ static int sanfs_opt_proc(void *data, const char *arg, int key, struct fuse_args
 {
 	switch (key) {
 	case FUSE_OPT_KEY_NONOPT:
-		if (!sanfs.host) {
-			sanfs.host = strdup(arg);
+		if (!g_sanfs.host) {
+			g_sanfs.host = strdup(arg);
 			return 0;
 		}
-		if (!sanfs.drive) {
-			sanfs.drive = strdup(arg);
+		if (!g_sanfs.drive) {
+			g_sanfs.drive = strdup(arg);
 			return 0;
 		}
 		fprintf(stderr, "sanfs: invalid argument '%s'\n", arg);
@@ -109,6 +97,7 @@ static int sanfs_opt_proc(void *data, const char *arg, int key, struct fuse_args
 			"    -u USER, -o user=USER      user to connect to ssh server, default: current user\n"			
 			"    -k PKEY, -o pkey=PKEY      private key, default: %%USERPROFILE%%\\.ssh\\id_rsa\n"
 			"    -p PORT, -o port=PORT      server port, default: 22\n"
+			"    -o hidden                  show hidden files\n"
 			"\n"
 			"WinFsp-FUSE options:\n"
 			"    -s                         disable multi-threaded operation\n"
@@ -163,38 +152,39 @@ int main(int argc, char *argv[])
 
 	int rc;
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
-	memset(&sanfs, 0, sizeof(sanfs));
-	sanfs.port = 22;
-	sanfs.user = getenv("USERNAME");
-	fuse_opt_parse(&args, &sanfs, sanfs_opts, sanfs_opt_proc);
+	memset(&g_sanfs, 0, sizeof(g_sanfs));
+	g_sanfs.port = 22;
+	g_sanfs.user = getenv("USERNAME");
+	fuse_opt_parse(&args, &g_sanfs, sanfs_opts, sanfs_opt_proc);
 
 	if (argc < 3) {
 		fuse_opt_add_arg(&args, "-h");
-		fuse_opt_parse(&args, &sanfs, sanfs_opts, sanfs_opt_proc);
+		fuse_opt_parse(&args, &g_sanfs, sanfs_opts, sanfs_opt_proc);
 		return 1;
 	}
 	
 	// get public key
-	if (!sanfs.pkey) {
+	if (!g_sanfs.pkey) {
 		char profile[BUFFER_SIZE];
 		ExpandEnvironmentStringsA("%USERPROFILE%", profile, BUFFER_SIZE);
-		sanfs.pkey = malloc(MAX_PATH);
-		strcpy_s(sanfs.pkey, MAX_PATH, profile);
-		strcat_s(sanfs.pkey, MAX_PATH, "\\.ssh\\id_rsa");
+		g_sanfs.pkey = malloc(MAX_PATH);
+		strcpy_s(g_sanfs.pkey, MAX_PATH, profile);
+		strcat_s(g_sanfs.pkey, MAX_PATH, "\\.ssh\\id_rsa");
 	}
-	if (!file_exists(sanfs.pkey)) {
-		fprintf(stderr, "error: cannot read private key: %s\n", sanfs.pkey);
+	if (!file_exists(g_sanfs.pkey)) {
+		fprintf(stderr, "error: cannot read private key: %s\n", g_sanfs.pkey);
 		return 1;
 	}
 
 	
-	fuse_opt_parse(&args, &sanfs, sanfs_opts, sanfs_opt_proc);
+	fuse_opt_parse(&args, &g_sanfs, sanfs_opts, sanfs_opt_proc);
 
-	printf("host  = %s\n", sanfs.host);
-	printf("drive = %s\n", sanfs.drive);
-	printf("port  = %d\n", sanfs.port);
-	printf("user  = %s\n", sanfs.user);
-	printf("pkey  = %s\n", sanfs.pkey);
+	printf("host    = %s\n", g_sanfs.host);
+	printf("drive   = %s\n", g_sanfs.drive);
+	printf("port    = %d\n", g_sanfs.port);
+	printf("user    = %s\n", g_sanfs.user);
+	printf("pkey    = %s\n", g_sanfs.pkey);
+	printf("hidden  = %d\n", g_sanfs.hidden);
 
 	// initiaize small read/write lock
 	InitializeSRWLock(&g_ssh_lock);
@@ -202,19 +192,19 @@ int main(int argc, char *argv[])
 	g_sftp_calls = 0;
 	g_sftp_cached_calls = 0;
 
-	g_ssh = san_init_ssh(sanfs.host, sanfs.port, sanfs.user, sanfs.pkey);
+	g_ssh = san_init_ssh(g_sanfs.host, g_sanfs.port, g_sanfs.user, g_sanfs.pkey);
 	if (!g_ssh) 
 		return 1;
 
 	// get uid
 	char cmd[100], out[100], err[100];
 	int uid=-1, gid=-1;
-	snprintf(cmd,sizeof(cmd), "id -u %s\n", sanfs.user);
+	snprintf(cmd,sizeof(cmd), "id -u %s\n", g_sanfs.user);
 	rc = run_command(cmd, out, err);
 	if (rc == 0) {
 		out[strcspn(out, "\r\n")] = 0;
 		uid = atoi(out);
-		printf("uid=%d\n", uid);
+		printf("uid     = %d\n", uid);
 	}
 
 	// get gid
@@ -238,76 +228,28 @@ int main(int argc, char *argv[])
 	//}
 
 	// number of threads
-	printf("Threads needed: %d\n", san_threads(5, get_number_of_processors()));
+	//printf("Threads = %d\n", san_threads(5, get_number_of_processors()));
 
 	// run fuse main
 	char volprefix[256], volname[256];
-	//sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=/sanfs/%s/%s@%s",
-	//	sanfs.drive, sanfs.user, sanfs.host);
-	sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=/sanfs/%s@%s", sanfs.user, sanfs.host);
-	sprintf_s(volname, sizeof(volname), "-ovolname=%s@%s", sanfs.user, sanfs.host);
+	sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=/sanfs/%s@%s", g_sanfs.user, g_sanfs.host);
+	sprintf_s(volname, sizeof(volname), "-ovolname=%s@%s", g_sanfs.user, g_sanfs.host);
 	fuse_opt_add_arg(&args, volprefix);
 	fuse_opt_add_arg(&args, volname);
-	//fuse_opt_add_arg(&args, "-ouid=-1,gid=-1,create_umask=007,mask=007");
-	//fuse_opt_add_arg(&args, "-ouid=-1,gid=-1,create_umask=002");
 	fuse_opt_add_arg(&args, "-oFileSystemName=SANFS");
 	fuse_opt_add_arg(&args, "-orellinks");
-	fuse_opt_parse(&args, &sanfs, sanfs_opts, sanfs_opt_proc);
-	fuse_opt_add_arg(&args, sanfs.drive);
+	//fuse_opt_add_arg(&args, "-ouid=-1,gid=-1,create_umask=007,mask=007");
+	fuse_opt_parse(&args, &g_sanfs, sanfs_opts, sanfs_opt_proc);
+	
+	// no need to parse the drive, it must be the last argument
+	fuse_opt_add_arg(&args, g_sanfs.drive);
 
 	// debug arguments
 	for (int i = 1; i < args.argc; i++)
-		printf("arg %d = %s\n", i, args.argv[i]);
+		printf("arg %d   = %s\n", i, args.argv[i]);
 
 	rc = fuse_main(args.argc, args.argv, &sanfs_ops, NULL);
 	
-	
-	//struct fuse *fuse;
-	//struct fuse_session *se;
-	//fuse = fuse_new(&args, &sanfs_ops, sizeof(struct fuse_operations), NULL);
-	//if (fuse == NULL)
-	//	return 1;
-
-	//se = fuse_get_session(fuse);
-	//rc = fuse_set_signal_handlers(se);
-	//if (rc != 0) {
-	//	fuse_destroy(fuse);
-	//	exit(1);
-	//}
-
-	//rc = fuse_mount(fuse, sanfs.drive);
-	//if (rc != 0) {
-	//	fuse_destroy(fuse);
-	//	return 1;
-	//}
-
-	////res = fuse_daemonize(sanfs.foreground);
-	//rc = fuse_daemonize(0);
-	//if (rc == -1) {
-	//	fuse_unmount(fuse);
-	//	fuse_destroy(fuse);
-	//	return 1;
-	//}
-
-	////if (sshfs.singlethread)
-	//if (0) {
-	//	printf("starting single-threading loop...\n");
-	//	rc = fuse_loop(fuse);
-	//}
-	//else {
-	//	printf("starting multi-threading loop...\n");
-	//	rc = fuse_loop_mt(fuse, 0);
-	//}
-
-	//rc = (rc != 0) ? 1 : 0;
-	//	
-
-	//// cleanup fuse
-	//fuse_remove_signal_handlers(se);
-	//fuse_unmount(fuse);
-	//fuse_destroy(fuse);
-	//fuse_opt_free_args(&args);
-
 	// cleanup
 	InitializeSRWLock(&g_ssh_lock);
 	san_finalize();

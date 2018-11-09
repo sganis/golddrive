@@ -21,15 +21,16 @@ class BackgroundWorker(QObject):
 
 	def check_drive(sefl, p):
 		rb = util.ReturnBox()
-		rb.drive_status = mounter.check_drive(p['drive'], p['userhost'], p['client'])
-		if rb.drive_status == 'CONNECTED' or rb.drive_status == 'DISCONNECTED':
+		rb.drive_status = mounter.check_drive(p['drive'], p['userhost'],
+												 p['client'])
+		if (rb.drive_status == 'CONNECTED' 
+			or rb.drive_status == 'DISCONNECTED'):
 			rb.returncode = util.ReturnCode.OK
 		return rb
 
 	def mount(self, p):
-		rb = mounter.mount(p['drive'],
-			 				p['userhost'], p['appkey'], p['client'],  p['port'], 
-							p['drivename'])
+		rb = mounter.mount(p['drive'], p['userhost'], p['appkey'], 
+							p['client'], p['port'], p['drivename'])
 		if rb.returncode == util.ReturnCode.OK	and p['no_host']:
 			util.addDriveConfig(**p)
 		return rb
@@ -93,9 +94,8 @@ class BackgroundWorker(QObject):
 		
 	def repair(self, p):
 		mounter.unmount(p['drive'])
-		return mounter.mount(p['drive'],
-			 				p['userhost'], p['appkey'], p['port'], 
-							p['drivename'])
+		return mounter.mount(p['drive'], p['userhost'], p['appkey'], 
+								p['port'], p['drivename'])
 	
 	def restart_explorer(self, p):
 		util.restart_explorer()

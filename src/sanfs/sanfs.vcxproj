@@ -182,6 +182,11 @@
       <AdditionalOptions>/ignore:4099 /NODEFAULTLIB:LIBCMT %(AdditionalOptions)</AdditionalOptions>
       <Profile>true</Profile>
     </Link>
+    <PostBuildEvent>
+      <Command>copy $(OutDir)sanfs.exe $(SolutionDir)..\tools\sanfs
+copy $(OutDir)sanfs.exe $(SolutionDir)..\golddrive\client\sanfs
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="cache.c" />

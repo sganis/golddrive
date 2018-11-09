@@ -141,9 +141,13 @@ def mount(drive, userhost, appkey, client='sanfs', port=22, drivename=''):
 			# -o ServerAliveCountMax=10000
 			# -o ssh_command='ssh -vv -d'
 	
-	fuse_options = ' -o FileInfoTimeout=3000 -o DirInfoTimeout=5000'
+	fuse_opts = ''' 
+			-o FileInfoTimeout=3000 
+			-o DirInfoTimeout=5000
+			-o VolumeInfoTimeout=10000
+			'''
 	cmd = cmd.replace('\n',' ').replace('\r','').replace('\t','') 
-	cmd += fuse_options
+	cmd += fuse_opts
 	
 	# logger.info(cmd)
 	if client == 'sanfs':
