@@ -1,6 +1,18 @@
 #include "util.h"
 #include <Windows.h>
 #include <time.h>
+#include <string.h>
+
+char *strndup(char *str, int chars)
+{
+	char *buffer;
+	buffer = (char *)malloc(chars + 1);
+	if (buffer) {
+		memcpy(buffer, str, chars);
+		buffer[chars+1] = 0;
+	}
+	return buffer;
+}
 
 int time_str(size_t time_ms, char *time_string)
 {
@@ -44,25 +56,187 @@ int get_number_of_processors(void)
 	return sysinfo.dwNumberOfProcessors;
 }
 
-void trim_str(char* str, int len)
-{
-	char *t;
-	str[len - 1] = '\0';
-	// trim trailing space
-	for (t = str + len; --t >= str; )
-		if (*t == ' ' || *t == '\n' || *t == '\r' || *t == '\t')
-			*t = '\0';
-		else
-			break;
-	// trim leading space
-	for (t = str; t < str + len; ++t)
-		if (*t != ' ' && *t == '\n' && *t == '\r' && *t == '\t')
-			break;
-
-}
-
 int file_exists(const char* path)
 {
 	DWORD attr = GetFileAttributesA(path);
 	return (attr != INVALID_FILE_ATTRIBUTES && !(attr & FILE_ATTRIBUTE_DIRECTORY));
+}
+
+int jsoneq(const char *json, jsmntok_t *tok, const char *s)
+{
+	return (tok->type == JSMN_STRING
+		&& (int)strlen(s) == tok->end - tok->start
+		&& strncmp(json + tok->start, s, tok->end - tok->start) == 0) ? 0 : -1;
+}
+
+int load_json(sanfs_config * sanfs)
+{
+	// fill json with json->drive parameters
+	if (!file_exists(sanfs->json)) {
+		fprintf(stderr, "cannot read json file: %s", sanfs->json);
+		return 1;
+	}
+	char* JSON_STRING = 0;
+	size_t size = 0;
+	FILE *fp = fopen(sanfs->json, "r");
+	fseek(fp, 0, SEEK_END); /* Go to end of file */
+	size = ftell(fp); /* How many bytes did we pass ? */
+	rewind(fp);
+	JSON_STRING = malloc((size + 1) * sizeof(*JSON_STRING)); /* size + 1 byte for the \0 */
+	fread(JSON_STRING, size, 1, fp); /* Read 1 chunk of size bytes from fp into buffer */
+	JSON_STRING[size] = '\0';
+	fclose(fp);
+
+	int i, r;
+	jsmn_parser p;
+	jsmntok_t t[1024]; /* We expect no more than 128 tokens */
+	jsmn_init(&p);
+	r = jsmn_parse(&p, JSON_STRING, strlen(JSON_STRING), t, sizeof(t) / sizeof(t[0]));
+	if (r < 0) {
+		fprintf(stderr, "Failed to parse JSON: %d\n", r);
+		return 1;
+	}
+
+	/* Assume the top-level element is an object */
+	if (r < 1 || t[0].type != JSMN_OBJECT) {
+		fprintf(stderr, "Object expected, json type=%d\n", t[0].type);
+		return 1;
+	}
+	
+	/* Loop over all keys of the root object */
+	for (i = 1; i < r; i++) {
+		/* only interested in drives key */
+		if (jsoneq(JSON_STRING, &t[i], sanfs->drive) == 0) {
+			// drives object
+			jsmntok_t *d = &t[i + 1];
+			int j;
+			int size = t[i + 1].size;
+			for (j = 0; j < size; j++) {
+				jsmntok_t *k = &t[i + j + 2];
+				if (k->type == JSMN_STRING) {
+					char * key = strndup(JSON_STRING + k->start, k->end - k->start);
+					jsmntok_t *v = &t[i + j + 3];
+					if (v->type == JSMN_STRING) {
+						char * val = strndup(JSON_STRING + v->start, v->end - v->start);
+						printf("%s : %s\n", key, val);
+						if (!sanfs->user && strcmp(key, "user") == 0)
+							sanfs->user = strdup(val);
+						else if (!sanfs->port && strcmp(key, "port") == 0)
+							sanfs->port = atoi(val);
+						else if (strcmp(key, "args") == 0)
+							sanfs->args, strndup(val, 10);						
+						free(val);
+						i++;
+					}
+					else if (v->type == JSMN_ARRAY) {
+						i = i + v->size + 1;
+					}
+					free(key);	
+					
+				}
+				
+				
+
+			}			
+		}
+		//if (jsoneq(JSON_STRING, &t[i], "hosts") == 0) {
+		//	int j;
+		//	if (t[i + 1].type != JSMN_ARRAY)
+		//		continue;
+		//	for (j = 0; j < t[i + 1].size; j++) {
+		//		jsmntok_t *g = &t[i + j + 2];
+		//		//json->hosts[j] = _strdup(JSON_STRING + g->start, g->end - g->start);
+		//	}
+		//	i += t[i + 1].size + 1;
+		//}
+		//else if (jsoneq(JSON_STRING, &t[i], "port") == 0) {
+		//	//json->port = strndup(JSON_STRING + t[i + 1].start, t[i + 1].end - t[i + 1].start);
+		//	i++;
+		//}
+		//else if (jsoneq(JSON_STRING, &t[i], "drive") == 0) {
+		//	//json->drive = strndup(JSON_STRING + t[i + 1].start, t[i + 1].end - t[i + 1].start);
+		//	i++;
+		//}
+		//else if (jsoneq(JSON_STRING, &t[i], "path") == 0) {
+		//	//json->path = strndup(JSON_STRING + t[i + 1].start, t[i + 1].end - t[i + 1].start);
+		//	i++;
+		//}
+		//else {
+		//	// ignore
+		//	//printf("Unexpected key: %.*s\n", t[i].end-t[i].start, JSON_STRING + t[i].start);
+		//}
+	}
+	free(JSON_STRING);
+	//printf("Hosts:\n");
+	//i = 0;
+	//while (json->hosts[i])
+	//	printf("  - %s\n", json->hosts[i++]);
+	//printf("Port: %s\n", json->port);
+	//printf("Drive: %s\n", json->drive);
+	//printf("Path: %s\n", json->path);
+	return 0;
+}
+
+int load_ini(const char* appdir, sanfs_config * sanfs)
+{
+	//printf("loading ini..., json.jsonfile=%s\n",json->jsonfile);
+	char key[100] = { '\0' };
+	char val[FILENAME_MAX] = { '\0' };
+	char line[300] = { '\0' };
+	size_t span = 0;
+	char ini_path[FILENAME_MAX];
+	snprintf(ini_path, sizeof ini_path, "%s\\sanfs.ini", appdir);
+	//printf("ini path=%s\n", ini_path);
+	FILE *ini_file = fopen(ini_path, "r");
+	if (!ini_file) {
+		fprintf(stderr, "json config will not be used, cannot read ini file: %s\n", ini_path);
+		return 1;
+	}
+	else {
+		while (fgets(line, sizeof(line), ini_file)) {
+			char *equal = strpbrk(line, "="); //find the equal
+			if (equal) {
+				span = equal - line;
+				memcpy(key, line, span);
+				key[span] = '\0';
+				strtrim(key);
+				if (strcmp(key, "json") == 0) {
+					equal++; //advance past the =
+					char *nl = strpbrk(equal, "\n"); //fine the newline
+					if (nl) {
+						span = nl - equal;
+						//printf("span=%d\n", span);
+						strncpy(val, equal, span);
+						strtrim(val);
+						sanfs->json = strdup(val);
+					}
+					else {
+						//printf("no nl\n");
+					}
+				}
+			}
+		}
+	}
+	fclose(ini_file);
+	return 0;
+}
+
+void strtrim(char *str)
+{
+	char *end;
+
+	// Trim leading space
+	while (isspace((unsigned char)*str))
+		str++;
+
+	if (*str == 0)  // All spaces?
+		return;
+
+	// Trim trailing space
+	end = str + strlen(str) - 1;
+	while (end > str && isspace((unsigned char)*end))
+		end--;
+
+	// Write new null terminator character
+	end[1] = '\0';
 }

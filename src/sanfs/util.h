@@ -1,10 +1,10 @@
 #pragma once
 #include <stdio.h>
 #include <stdarg.h>
+#include "jsmn.h"
 
 extern size_t			g_sftp_calls;
 extern size_t			g_sftp_cached_calls;
-
 
 #define STATS		0
 #define USE_CACHE	0
@@ -42,8 +42,25 @@ extern size_t			g_sftp_cached_calls;
 #define warn(format, ...) {}
 #endif
 
+typedef struct sanfs_config {
+	char *host;
+	int port;
+	char *user;
+	char *pkey;
+	char *drive;
+	int hidden;
+	char *json;
+	char *args;
+} sanfs_config;
+
+extern sanfs_config g_sanfs;
+
+char *strndup(char *str, int chars);
 int get_number_of_processors(void);
 size_t time_mu(void);
 int time_str(size_t time_ms, char *time_string);
-void trim_str(char* str, int len);
+void strtrim(char *str);
 int file_exists(const char* path);
+int jsoneq(const char *json, jsmntok_t *tok, const char *s);
+int load_ini(const char *appdir, sanfs_config *sanfs);
+int load_json(sanfs_config * sanfs);

@@ -8,8 +8,10 @@
 #include "util.h"
 #include "sanfs.h"
 #include "cache.h"
+#include <Shlwapi.h> /* PathRemoveFileSpecA */
+#pragma comment(lib, "shlwapi.lib")
 
-#define VERSION "1.1.1"
+#define VERSION "1.1.2"
 
 /* global variables */
 size_t				g_sftp_calls;
@@ -53,20 +55,21 @@ enum {
 #define SANFS_OPT(t, p, v) { t, offsetof(sanfs_config, p), v }
 
 static struct fuse_opt sanfs_opts[] = {
-	SANFS_OPT("port=%d",           port, 0),
-	SANFS_OPT("-p %d",             port, 0),
-	SANFS_OPT("-p=%d",             port, 0),
+	SANFS_OPT("host=%s",           host, 0),
+	SANFS_OPT("-h %s",             host, 0),
+	SANFS_OPT("-h=%s",             host, 0),
 	SANFS_OPT("user=%s",           user, 0),
 	SANFS_OPT("-u %s",             user, 0),
 	SANFS_OPT("-u=%s",             user, 0),
+	SANFS_OPT("port=%d",           port, 0),
+	SANFS_OPT("-p %d",             port, 0),
+	SANFS_OPT("-p=%d",             port, 0),
 	SANFS_OPT("pkey=%s",           pkey, 0),
 	SANFS_OPT("-k %s",             pkey, 0),
 	SANFS_OPT("-k=%s",             pkey, 0),
 	SANFS_OPT("hidden",			   hidden, 1),
 
-	FUSE_OPT_KEY("-V",             KEY_VERSION),
 	FUSE_OPT_KEY("--version",      KEY_VERSION),
-	FUSE_OPT_KEY("-h",             KEY_HELP),
 	FUSE_OPT_KEY("--help",         KEY_HELP),
 	FUSE_OPT_END
 };
@@ -75,10 +78,6 @@ static int sanfs_opt_proc(void *data, const char *arg, int key, struct fuse_args
 {
 	switch (key) {
 	case FUSE_OPT_KEY_NONOPT:
-		if (!g_sanfs.host) {
-			g_sanfs.host = strdup(arg);
-			return 0;
-		}
 		if (!g_sanfs.drive) {
 			g_sanfs.drive = strdup(arg);
 			return 0;
@@ -88,13 +87,14 @@ static int sanfs_opt_proc(void *data, const char *arg, int key, struct fuse_args
 	case KEY_HELP:
 		fprintf(stderr,
 			"\n"
-			"Usage: sanfs.exe host drive [options]\n"
+			"Usage: sanfs.exe drive [options]\n"
 			"\n"
 			"Options:\n"
-			"    -h, --help                 print this help\n"
-			"    -V, --version              print version\n"
+			"    --help                     print this help\n"
+			"    --version                  print version\n"
 			"    -o opt,[opt...]            mount options, -o=opt or -oopt is also valid\n"
-			"    -u USER, -o user=USER      user to connect to ssh server, default: current user\n"			
+			"    -h HOST, -o host=HOST      ssh server name or IP, default: random from config file\n"
+			"    -u USER, -o user=USER      user to connect to ssh server, default: current user\n"
 			"    -k PKEY, -o pkey=PKEY      private key, default: %%USERPROFILE%%\\.ssh\\id_rsa\n"
 			"    -p PORT, -o port=PORT      server port, default: 22\n"
 			"    -o hidden                  show hidden files\n"
@@ -142,6 +142,19 @@ static int sanfs_opt_proc(void *data, const char *arg, int key, struct fuse_args
 //	return argv;
 //}
 
+static int load_config_file(sanfs_config* sanfs)
+{
+	int rc = 0;
+	// app dir
+	char appdir[MAX_PATH];
+	GetModuleFileNameA(NULL, appdir, MAX_PATH);
+	PathRemoveFileSpecA(appdir);
+	rc = load_ini(appdir, sanfs);
+	if (!rc)
+		rc = load_json(sanfs);
+	return rc;
+}
+
 int main(int argc, char *argv[])
 {
 	// load fuse dll
@@ -153,17 +166,25 @@ int main(int argc, char *argv[])
 	int rc;
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 	memset(&g_sanfs, 0, sizeof(g_sanfs));
-	g_sanfs.port = 22;
-	g_sanfs.user = getenv("USERNAME");
 	fuse_opt_parse(&args, &g_sanfs, sanfs_opts, sanfs_opt_proc);
 
-	if (argc < 3) {
-		fuse_opt_add_arg(&args, "-h");
+	if (argc < 2) {
+		fuse_opt_add_arg(&args, "--help");
 		fuse_opt_parse(&args, &g_sanfs, sanfs_opts, sanfs_opt_proc);
 		return 1;
 	}
 	
-	// get public key
+	fuse_opt_parse(&args, &g_sanfs, sanfs_opts, sanfs_opt_proc);
+
+	// load missing arguments from config file
+	load_config_file(&g_sanfs);
+
+	// finally setup missing arguments with defaults
+	// user
+	if (!g_sanfs.user) {
+		g_sanfs.user = getenv("USERNAME");
+	}
+	// private key
 	if (!g_sanfs.pkey) {
 		char profile[BUFFER_SIZE];
 		ExpandEnvironmentStringsA("%USERPROFILE%", profile, BUFFER_SIZE);
@@ -175,10 +196,10 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "error: cannot read private key: %s\n", g_sanfs.pkey);
 		return 1;
 	}
+	if (!g_sanfs.port)
+		g_sanfs.port = 22;
 
-	
-	fuse_opt_parse(&args, &g_sanfs, sanfs_opts, sanfs_opt_proc);
-
+	// show parameters
 	printf("host    = %s\n", g_sanfs.host);
 	printf("drive   = %s\n", g_sanfs.drive);
 	printf("port    = %d\n", g_sanfs.port);

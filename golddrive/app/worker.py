@@ -30,7 +30,7 @@ class BackgroundWorker(QObject):
 
 	def mount(self, p):
 		rb = mounter.mount(p['drive'], p['userhost'], p['appkey'], 
-							p['client'], p['port'], p['drivename'])
+							p['client'], p['port'], p['drivename'], p['args'])
 		if rb.returncode == util.ReturnCode.OK	and p['no_host']:
 			util.addDriveConfig(**p)
 		return rb

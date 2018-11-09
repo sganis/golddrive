@@ -77,7 +77,7 @@ def set_net_use(letter, userhost, client):
 	# util.run(f'''reg add {key} /v ConnectionType /d 1 /t REG_DWORD /f''', capture=True)
 	# util.run(f'''reg add {key} /v ConnectFlags /d 0 /t REG_DWORD /f''', capture=True)
 
-def mount(drive, userhost, appkey, client='sanfs', port=22, drivename=''):
+def mount(drive, userhost, appkey, client='sanfs', port=22, drivename='', args=''):
 
 	logger.info(f'Mounting {drive} {userhost}...')
 	rb = util.ReturnBox()
@@ -103,7 +103,8 @@ def mount(drive, userhost, appkey, client='sanfs', port=22, drivename=''):
 
 	cmd = ''
 	if client == 'sanfs':
-		cmd = f'''sanfs.exe {host} {drive} 
+		cmd = f'''sanfs.exe {drive} 
+			-o host={host}
 			-o user={user}
 			-o port={port}
 			-o pkey={appkey}
@@ -141,13 +142,13 @@ def mount(drive, userhost, appkey, client='sanfs', port=22, drivename=''):
 			# -o ServerAliveCountMax=10000
 			# -o ssh_command='ssh -vv -d'
 	
-	fuse_opts = ''' 
-			-o FileInfoTimeout=3000 
-			-o DirInfoTimeout=5000
-			-o VolumeInfoTimeout=10000
-			'''
+	# fuse_opts = ''' 
+	# 		-o FileInfoTimeout=3000 
+	# 		-o DirInfoTimeout=5000
+	# 		-o VolumeInfoTimeout=10000
+	# 		'''
 	cmd = cmd.replace('\n',' ').replace('\r','').replace('\t','') 
-	cmd += fuse_opts
+	cmd += ' ' + args
 	
 	# logger.info(cmd)
 	if client == 'sanfs':

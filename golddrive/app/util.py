@@ -243,7 +243,7 @@ def getVersions():
 		out = r.stdout.replace('version ','')
 		sshfs = fr"{out}"
 	
-	r = run(f'sanfs -V', capture=True)
+	r = run(f'sanfs --version', capture=True)
 	if r.returncode == 0:
 		sanfs = fr"{r.stderr}"
 	

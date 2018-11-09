@@ -5,7 +5,7 @@
 	// %GOLDDRIVE% expands to the app path
 	
 	// client: sanfs or sshfs
-	"client" 			: "sshfs",
+	"client" 			: "sanfs",
 	"sshfs" 			: "%GOLDDRIVE%\\client\\sshfs\\bin\\sshfs.exe",
 	"sanfs" 			: "%GOLDDRIVE%\\client\\sanfs\\sanfs.exe",
 	"logfile" 			: "%GOLDDRIVE%\\golddrive.log",
@@ -18,20 +18,20 @@
 			"user" 		: "support",
 			"port" 		: "2222",
 			"hosts" 	: ["192.168.99.100"],
-			//"client"	: "sanfs"
 		},
 		"W:" : {
 			"drivename" : "Docker",
 			"user" 		: "support",
 			"port" 		: "2222",
 			"hosts" 	: ["localhost"],
-			"client"	: "sanfs"
+			
 		},
 		"Y:" : {
 			"drivename" : "Box",
 			"user" 		: "sag",
 			"hosts" 	: ["192.168.100.201"],
-			"client"	: "sanfs"
+			"args" 		: "-o FileInfoTimeout=3000,DirInfoTimeout=5000,VolumeInfoTimeout=20000",
+			"client"	: "sshfs"
 		},
 		"T:" : {
 			"drivename" : "appveyor",

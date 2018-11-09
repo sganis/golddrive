@@ -135,46 +135,14 @@ static const char *sftp_errors[] = {
 /* n is the -o ThreadCount=n arg, c is number of cores*/
 int san_threads(int n, int c);
 
-//typedef struct CMD_ARGS {
-//	char host[64];
-//	int port;
-//	char user[20];
-//	char pkey[MAX_PATH];
-//} CMD_ARGS;
-//extern  CMD_ARGS * g_cmd_args;
-
-typedef struct _sanfs_config {
-	char *host;
-	int port;
-	char *user;
-	char *pkey;
-	char *drive;
-	int hidden;
-	//int uid;
-	//int gid;
-	//char *volumeprefix;
-} sanfs_config;
-extern sanfs_config g_sanfs;
-
-
 typedef struct SANSSH {
 	int thread;						/* key, thread id that owns this struct */
 	SOCKET socket;					/* sockey id */
 	LIBSSH2_SESSION *ssh;			/* ssh session struct */
 	LIBSSH2_SFTP *sftp;				/* sftp session struct */
-	//CRITICAL_SECTION lock;			/* to serialize operations within a thread */
 	int rc;							/* return code from the last ssh/sftp call */
-	//char error[ERROR_LEN];			/* error message */
 	UT_hash_handle hh;				/* uthash to make this struct hashable */
 } SANSSH;
-
-//typedef struct HANDLE_T {
-//	int thread;						/* thread id owner						*/
-//	LIBSSH2_SFTP_HANDLE *handle;	/* key, remote file handler				*/
-//	SANSSH* sanssh;					/* sanssh session that owns it			*/
-//	UT_hash_handle hh;				/* uthash to make this struct hashable	*/
-//} HANDLE_T;
-
 
 typedef struct SAN_HANDLE {
 	LIBSSH2_SFTP_HANDLE *handle;	/* key, remote file handler				*/
@@ -231,7 +199,6 @@ int f_utimens(const char *path, const struct fuse_timespec tv[2], struct fuse_fi
 int f_truncate(const char *path, fuse_off_t size, struct fuse_file_info *fi);
 int f_fsync(const char *path, int datasync, struct fuse_file_info *fi);
 
-// 
 SAN_HANDLE * san_open(const char *path, int is_dir, unsigned int mode, struct fuse_file_info *fi);
 int san_stat(const char *path, struct fuse_stat *stbuf);
 int san_close(SAN_HANDLE* sh);

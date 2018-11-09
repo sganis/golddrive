@@ -132,6 +132,14 @@
       <AdditionalLibraryDirectories>$(ProjectDir)lib\libssh2\lib;$(ProjectDir)lib\openssl\lib</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4099 /NODEFAULTLIB:LIBCMT %(AdditionalOptions)</AdditionalOptions>
     </Link>
+    <PostBuildEvent>
+      <Command>copy $(ProjectDir)sanfs.ini $(Outdir)
+copy $(ProjectDir)sanfs.ini $(SolutionDir)..\tools\sanfs
+copy $(ProjectDir)sanfs.ini $(SolutionDir)..\golddrive\client\sanfs
+copy $(OutDir)sanfs.exe $(SolutionDir)..\golddrive\client\sanfs
+copy $(OutDir)sanfs.exe $(SolutionDir)..\tools\sanfs
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -183,22 +191,33 @@
       <Profile>true</Profile>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(OutDir)sanfs.exe $(SolutionDir)..\tools\sanfs
+      <Command>copy $(ProjectDir)sanfs.ini $(Outdir)
+copy $(ProjectDir)sanfs.ini $(SolutionDir)..\tools\sanfs
+copy $(ProjectDir)sanfs.ini $(SolutionDir)..\golddrive\client\sanfs
 copy $(OutDir)sanfs.exe $(SolutionDir)..\golddrive\client\sanfs
+copy $(OutDir)sanfs.exe $(SolutionDir)..\tools\sanfs
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="cache.c" />
+    <ClCompile Include="jsmn.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="sanfs.c" />
     <ClCompile Include="util.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cache.h" />
+    <ClInclude Include="jsmn.h" />
     <ClInclude Include="sanfs.h" />
     <ClInclude Include="uthash.h" />
     <ClInclude Include="util.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="sanfs.ini">
+      <DeploymentContent>false</DeploymentContent>
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
