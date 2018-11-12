@@ -166,7 +166,7 @@ def mount(drive, userhost, appkey, client='sanfs', port=22, drivename='', args='
 	rb.returncode = util.ReturnCode.OK
 	return rb
 
-def clean_drive(drive, client):
+def clean_drive(drive):
 	# cleanup registry
 	user = ''
 	host = ''
@@ -198,7 +198,9 @@ def clean_drive(drive, client):
 		i = 0
 		while 1:
 			asubkey = winreg.EnumKey(reg_key, i)
-			if asubkey.startswith(f'##{client}#{user}@{host}'):
+			if asubkey.startswith(f'##sanfs#{user}@{host}'):
+				keys.append(f'{regkey}\\{asubkey}')
+			if asubkey.startswith(f'##sshfs#{user}@{host}'):
 				keys.append(f'{regkey}\\{asubkey}')
 			i += 1
 	except:
@@ -212,7 +214,7 @@ def clean_drive(drive, client):
 	reg_del(fr'Software\Classes\Applications\Explorer.exe\Drives\{letter}')
 
 
-def unmount(drive, client):
+def unmount(drive):
 
 	logger.info(f'Unmounting {drive}...')
 	rb = util.ReturnBox()
@@ -221,16 +223,15 @@ def unmount(drive, client):
 		rb.returncode = util.ReturnCode.BAD_DRIVE
 		return rb
 
-	util.kill_drive(drive, client)
-	clean_drive(drive, client)
+	util.kill_drive(drive)
+	clean_drive(drive)
 
 	rb.drive_status = 'DISCONNECTED'
 	rb.returncode = util.ReturnCode.OK
 	return rb
 
-def unmount_all():
-	for letter in GOLDLETTERS:
-		drive = f'{letter}:'
+def unmount_all(drives):
+	for drive in drives:
 		unmount(drive)
 
 	rb = util.ReturnBox()

@@ -14,7 +14,7 @@
 	// drive parameters
 	"drives" : {
 		"S:" : {
-			"drivename" : "Sinulation",
+			"drivename" : "Simulation",
 			"user" 		: "support",
 			"port" 		: "2222",
 			"hosts" 	: ["192.168.99.100"],

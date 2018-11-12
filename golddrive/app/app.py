@@ -251,6 +251,7 @@ class Window(QMainWindow, Ui_MainWindow):
 		p['drive'] = ''
 		p['drivename'] = 'GOLDDRIVE'
 		drives = self.config.get('drives')
+		p['drives'] = drives
 		p['no_host'] = not bool(drives)
 		if not drives:
 			return

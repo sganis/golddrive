@@ -87,10 +87,10 @@ class BackgroundWorker(QObject):
 
 		
 	def disconnect(self, p):
-		return mounter.unmount(p['drive'], p['client'])
+		return mounter.unmount(p['drive'])
 		
 	def disconnect_all(self, p):
-		return mounter.unmount_all()
+		return mounter.unmount_all(p['drives'])
 		
 	def repair(self, p):
 		mounter.unmount(p['drive'])
