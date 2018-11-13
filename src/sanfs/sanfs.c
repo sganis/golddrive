@@ -210,26 +210,28 @@ int san_stat(const char * path, struct fuse_stat *stbuf)
 	int rc = 0;
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
 	memset(stbuf, 0, sizeof *stbuf);
+	char * p = realpath(path);
+
 #if USE_CACHE
 	CACHE_ATTRIBUTES* cattrs = NULL;
 	memset(&attrs, 0, sizeof attrs);
-	cattrs = ht_attributes_find(path);
+	cattrs = ht_attributes_find(p);
 	if (!cattrs) {			
 #endif
 		assert(g_ssh);
 		assert(g_ssh->sftp);
 		
 		lock();
-		rc = libssh2_sftp_stat_ex(g_ssh->sftp, path, (int)strlen(path), LIBSSH2_SFTP_STAT, &attrs);		
+		rc = libssh2_sftp_stat_ex(g_ssh->sftp, p, (int)strlen(p), LIBSSH2_SFTP_STAT, &attrs);		
 		g_sftp_calls++;		
 		unlock();
 		if (rc) {
-			san_error(path);
+			san_error(p);
 		}
 #if USE_CACHE
 		// added to cache
 		cattrs = malloc(sizeof(CACHE_ATTRIBUTES));
-		strcpy(cattrs->path, path);
+		strcpy(cattrs->path, p);
 		cattrs->attrs = attrs; /* shallow copy is ok */
 		ht_attributes_add(cattrs);
 	}
@@ -248,6 +250,8 @@ int san_stat(const char * path, struct fuse_stat *stbuf)
 		g_sftp_cached_calls, g_sftp_calls,
 		(g_sftp_cached_calls * 100 / (double)g_sftp_calls));
 #endif
+	free(p);
+
 	return -rc;
 }
 
@@ -306,30 +310,59 @@ int f_statfs(const char * path, struct fuse_statvfs *stbuf)
 	return rc;
 }
 
+char * realpath(const char * path)
+{
+	char *p;
+	p = malloc(MAX_PATH);
+	memset(p, 0, MAX_PATH);
+
+	/* expand home directory */
+	if (strncmp(path, "/~", 2) == 0) {		
+		strcpy_s(p, strlen(g_sanfs.home)+1, g_sanfs.home);
+		if (strlen(path) > 2)
+			strcat_s(p, MAX_PATH, path + 2);		
+	} 
+	else {
+		strcpy_s(p, MAX_PATH, path);
+	}
+	
+	if (strchr(path, '$')) 
+	{
+		char *c = g_sanfs.home;
+	}
+
+	
+	assert(p);
+	return p;
+}
+
 int f_opendir(const char *path, struct fuse_file_info *fi)
 {
 	info("%s\n", path);
 	DIR *dirp = fi_dirp(fi);
 	SAN_HANDLE *sh;
 	unsigned int mode = 0;
+	char *p = realpath(path);
 
-	sh = san_open(path, FILE_ISDIR, mode, fi);
+	sh = san_open(p, FILE_ISDIR, mode, fi);
 	if (!sh)
 		return -1;
 
-	size_t pathlen = strlen(path);
-	if (0 < pathlen && '/' == path[pathlen - 1])
+	size_t pathlen = strlen(p);
+	if (0 < pathlen && '/' == p[pathlen - 1])
 		pathlen--;
 	dirp = malloc(sizeof *dirp + pathlen + 2); /* sets errno */
 	if (0 == dirp) 
 		return -1;
 	memset(dirp, 0, sizeof *dirp);
 	dirp->san_handle = sh;
-	memcpy(dirp->path, path, pathlen);
+	memcpy(dirp->path, p, pathlen);
 	dirp->path[pathlen + 0] = '/';
 	dirp->path[pathlen + 1] = '\0';
-
+	
 	int rc = (fi_setdirp(fi, dirp), 0);
+
+	free(p);
 	return rc;
 }
 
@@ -518,8 +551,10 @@ int f_create(const char *path, fuse_mode_t mode, struct fuse_file_info *fi)
 	info("%s\n", path);
 	SAN_HANDLE *sh;
 	int rc;
+	char *p = realpath(path);
+	sh = san_open(p, FILE_ISREG, mode, fi);
+	free(p);
 
-	sh = san_open(path, FILE_ISREG, mode, fi);
 	if (!sh)
 		return -1;
 
@@ -534,23 +569,15 @@ int f_open(const char *path, struct fuse_file_info *fi)
 	unsigned int mode = 0;
 	int rc;
 	SAN_HANDLE *sh;
+	char *p = realpath(path);
+	sh = san_open(p, FILE_ISREG, mode, fi);
+	free(p);
 
-	sh = san_open(path, FILE_ISREG, mode, fi);
 	if (!sh) 
 		return -1;
 
 	rc = (fi_setfd(fi, (size_t)sh), 0);
-	
 	return rc ? -1 : 0;
-
-	//if (fd) {
-	//	int rc = (fi_setfd(fi, fd), 0);
-	//	return rc;
-	//}
-	//else {
-	//	return -1;
-	//}
-
 }
 
 int f_read(const char *path, char *buf, size_t size, fuse_off_t offset, struct fuse_file_info *fi)
@@ -648,129 +675,119 @@ int f_release(const char *path, struct fuse_file_info *fi)
 
 int f_rename(const char *oldpath, const char *newpath, unsigned int flags)
 {
-	info("%s -> %s\n", oldpath, newpath);
 	int rc;
+	char *o = realpath(oldpath);
+	char *n = realpath(newpath);
+	info("%s -> %s\n", o, n);
 	lock();
-	rc = libssh2_sftp_rename_ex(g_ssh->sftp, 
-		oldpath, (int)strlen(oldpath), 
-		newpath, (int)strlen(newpath),
+	rc = libssh2_sftp_rename_ex(g_ssh->sftp, o, (int)strlen(o),	n, (int)strlen(n),
 		LIBSSH2_SFTP_RENAME_OVERWRITE | 
 		LIBSSH2_SFTP_RENAME_ATOMIC | 
 		LIBSSH2_SFTP_RENAME_NATIVE);
 	g_sftp_calls++;
 	if (rc) {
-		san_error(oldpath);
-		san_error(newpath);
+		san_error(o);
+		san_error(n);
 	}
 	unlock();
+	free(o);
+	free(n);
 	return rc ? -1 : 0;
 
 }
 
 int f_mkdir(const char * path, fuse_mode_t  mode)
 {
-	info("%s\n", path);
-	info("MODE: %u\n", mode);
-
 	int rc;
+	char *p = realpath(path);
+	info("%s\n", p);
+	info("MODE: %u\n", mode);
 
 	unsigned int mod = LIBSSH2_SFTP_S_IRWXU |
 		LIBSSH2_SFTP_S_IRWXG |
 		LIBSSH2_SFTP_S_IROTH | LIBSSH2_SFTP_S_IXOTH;
 	info("MOD : %u\n", mod);
-
-	//rc = libssh2_sftp_mkdir(g_g_ssh->sftp, path,
-	//	LIBSSH2_SFTP_S_IRWXU |
-	//	LIBSSH2_SFTP_S_IRWXG |
-	//	LIBSSH2_SFTP_S_IROTH | LIBSSH2_SFTP_S_IXOTH);
 	lock();
-	rc = libssh2_sftp_mkdir_ex(g_ssh->sftp, path, (int)strlen(path), mod);
+	rc = libssh2_sftp_mkdir_ex(g_ssh->sftp, p, (int)strlen(p), mod);
 	g_sftp_calls++;
 	unlock();
 	if (rc) {
-		san_error(path);
+		san_error(p);
 	}
+	free(p);
+
 	return rc ? -1 : 0;
 }
 
 int f_rmdir(const char * path)
 {
-	info("%s\n", path);
-
 	int rc;
+	char *p = realpath(path);
+	info("%s\n", p);
+
 	lock();
-	rc = libssh2_sftp_rmdir_ex(g_ssh->sftp, path, (int)strlen(path));
+	rc = libssh2_sftp_rmdir_ex(g_ssh->sftp, p, (int)strlen(p));
 	g_sftp_calls++;
 	if (rc) {
-		san_error(path);
+		san_error(p);
 	}
 	unlock();
+	free(p);
+
 	return rc ? -1 : 0;
 }
 
 int f_unlink(const char *path)
 {
-	info("%s\n", path);
 	int rc;
+	char *p = realpath(path);
+	info("%s\n", p);
 	lock();
-	rc = libssh2_sftp_unlink_ex(g_ssh->sftp, path, (int)strlen(path));
+	rc = libssh2_sftp_unlink_ex(g_ssh->sftp, p, (int)strlen(p));
 	g_sftp_calls++;
 	if (rc) {
-		san_error(path);
+		san_error(p);
 	}
 	unlock();
+	free(p);
+
 	return rc ? -1 : 0;
 }
 
 int f_truncate(const char *path, fuse_off_t size, struct fuse_file_info *fi)
 {
-	info("%s\n", path);
 	int rc;
+	char *p = realpath(path);
+	info("%s\n", p);
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
 	lock();
-	rc = libssh2_sftp_stat_ex(g_ssh->sftp, path, (int)strlen(path), 
+	rc = libssh2_sftp_stat_ex(g_ssh->sftp, p, (int)strlen(p), 
 		LIBSSH2_SFTP_STAT, &attrs);
 	g_sftp_calls++;
 	if (rc) {
-		san_error(path);
+		san_error(p);
 		return rc;
 	}
 	attrs.filesize = size;
-	rc = libssh2_sftp_stat_ex(g_ssh->sftp, path, (int)strlen(path),
+	rc = libssh2_sftp_stat_ex(g_ssh->sftp, p, (int)strlen(p),
 		LIBSSH2_SFTP_SETSTAT, &attrs);
 	g_sftp_calls++;
 	if (rc) {
-		san_error(path);
+		san_error(p);
 		return rc;
 	}
 	unlock();
-
-	
-	//if (stbuf.st_size == size)
-	//	return 0;
-
-	//const char *p = path;
-	//if (fi) {
-	//	size_t fd = fi_fd(fi);
-	//	SAN_HANDLE* sh = (SAN_HANDLE*)fd;
-	//	p = sh->path;
-	//}
-
-	//struct fuse_file_info tempfi;
-	//tempfi.flags = O_WRONLY | O_TRUNC;
-
-	//rc = f_open(p, &tempfi);
-	//if (!rc)
-	//	f_release(p, &tempfi);
-
+	free(p);
 
 	return rc;
 }
 
 int f_fsync(const char *path, int datasync, struct fuse_file_info *fi)
 {
-	info("%s\n", path);
+	char *p = realpath(path);
+	info("%s\n", p);
 	SAN_HANDLE* sh = (SAN_HANDLE*)fi_fd(fi);
+	free(p);
 	return f_flush(sh->path, fi);
 }
 

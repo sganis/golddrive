@@ -15,7 +15,7 @@ extern size_t			g_sftp_cached_calls;
 #define WARN		1
 #define INFO		2
 #define DEBUG		3
-#define LOGLEVEL	ERROR
+#define LOGLEVEL	INFO
 
 #define log_message(level, format, ...) {								\
 	int thread = GetCurrentThreadId();									\
@@ -51,6 +51,7 @@ typedef struct sanfs_config {
 	int hidden;
 	char *json;
 	char *args;
+	char *home;
 } sanfs_config;
 
 extern sanfs_config g_sanfs;

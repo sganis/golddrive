@@ -174,7 +174,7 @@ void print_stat(const char* path, LIBSSH2_SFTP_ATTRIBUTES *attrs);
 void print_statvfs(const char* path, LIBSSH2_SFTP_STATVFS *st);
 void get_filetype(unsigned long perm, char* filetype);
 int run_command(const char *cmd, char *out, char *err);
-
+char * realpath(const char * path);
 int waitsocket(SANSSH* sanssh);
 void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs);
 
