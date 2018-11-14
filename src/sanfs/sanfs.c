@@ -310,6 +310,17 @@ int f_statfs(const char * path, struct fuse_statvfs *stbuf)
 	return rc;
 }
 
+
+#define concat_path(s1, s2, s)				(sizeof s > (unsigned)snprintf(s, sizeof s, "%s%s", s1, s2))
+#define realpath2(n)						\
+    char full ## n[PATH_MAX];				\
+	/* expand home directory */				\
+	if (strncmp(n, "/~", 2) == 0) {			\
+		if (!concat_path(g_sanfs.home, n+2, full ## n))	\
+			return -ENAMETOOLONG;			\
+		n = full ## n;						\
+	}										
+
 char * realpath(const char * path)
 {
 	char *p;
@@ -342,27 +353,26 @@ int f_opendir(const char *path, struct fuse_file_info *fi)
 	DIR *dirp = fi_dirp(fi);
 	SAN_HANDLE *sh;
 	unsigned int mode = 0;
-	char *p = realpath(path);
-
-	sh = san_open(p, FILE_ISDIR, mode, fi);
+	//char *p = realpath(path);
+	realpath2(path);
+	sh = san_open(path, FILE_ISDIR, mode, fi);
 	if (!sh)
 		return -1;
 
-	size_t pathlen = strlen(p);
-	if (0 < pathlen && '/' == p[pathlen - 1])
+	size_t pathlen = strlen(path);
+	if (0 < pathlen && '/' == path[pathlen - 1])
 		pathlen--;
 	dirp = malloc(sizeof *dirp + pathlen + 2); /* sets errno */
 	if (0 == dirp) 
 		return -1;
 	memset(dirp, 0, sizeof *dirp);
 	dirp->san_handle = sh;
-	memcpy(dirp->path, p, pathlen);
+	memcpy(dirp->path, path, pathlen);
 	dirp->path[pathlen + 0] = '/';
 	dirp->path[pathlen + 1] = '\0';
 	
 	int rc = (fi_setdirp(fi, dirp), 0);
 
-	free(p);
 	return rc;
 }
 
