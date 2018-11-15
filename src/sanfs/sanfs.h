@@ -130,6 +130,16 @@ static const char *sftp_errors[] = {
 #define fi_dirp(fi)                     ((DIR *)(size_t)fi_fh(fi, ~fi_dirbit))
 #define fi_setdirp(fi, dirp)            (fi_setfh(fi, dirp, fi_dirbit))
 
+#define concat_path(s1, s2, s)			(sizeof s > (unsigned)snprintf(s, sizeof s, "%s%s", s1, s2))
+#define realpath(n)						\
+    char real ## n[PATH_MAX];			\
+	/* expand home directory */			\
+	if (strncmp(n, "/~", 2) == 0) {		\
+		if (!concat_path(g_sanfs.home, n+2, real ## n))	\
+			return -ENAMETOOLONG;		\
+		n = real ## n;					\
+	}										
+
 
 /* count the number of threads in this app */
 /* n is the -o ThreadCount=n arg, c is number of cores*/
@@ -174,7 +184,7 @@ void print_stat(const char* path, LIBSSH2_SFTP_ATTRIBUTES *attrs);
 void print_statvfs(const char* path, LIBSSH2_SFTP_STATVFS *st);
 void get_filetype(unsigned long perm, char* filetype);
 int run_command(const char *cmd, char *out, char *err);
-char * realpath(const char * path);
+//char * realpath(const char * path);
 int waitsocket(SANSSH* sanssh);
 void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs);
 

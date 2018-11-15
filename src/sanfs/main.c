@@ -17,10 +17,6 @@
 size_t				g_sftp_calls;
 size_t				g_sftp_cached_calls;
 SANSSH *			g_ssh;
-//CACHE_ATTRIBUTES *	g_attributes_ht;
-//CRITICAL_SECTION	g_attributes_lock;
-//SAN_HANDLE *		g_handle_open_ht;
-//SAN_HANDLE *		g_handle_close_ht;
 SRWLOCK				g_ssh_lock;
 sanfs_config		g_sanfs;
 
@@ -219,19 +215,18 @@ int main(int argc, char *argv[])
 
 	// get uid
 	char cmd[100], out[100], err[100];
-	int uid=-1, gid=-1;
 	
 	snprintf(cmd,sizeof(cmd), "id -u %s\n", g_sanfs.user);
 	rc = run_command(cmd, out, err);
 	if (rc == 0) {
 		out[strcspn(out, "\r\n")] = 0;
-		uid = atoi(out);
-		printf("uid     = %d\n", uid);
+		g_sanfs.remote_uid = atoi(out);
+		printf("uid     = %d\n", g_sanfs.remote_uid);
 	}
 	rc = run_command("echo $HOME\n", out, err);
 	if (rc == 0) {
 		out[strcspn(out, "\r\n")] = 0;
-		g_sanfs.home = malloc(out);
+		g_sanfs.home = malloc(sizeof out);
 		strcpy_s(g_sanfs.home, sizeof out, out);
 		printf("home    = %s\n", g_sanfs.home);
 	}

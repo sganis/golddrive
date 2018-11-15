@@ -178,8 +178,10 @@ def run(cmd, capture=False, detach=False, shell=True, timeout=30):
 		if detach:
 			CREATE_NEW_PROCESS_GROUP = 0x00000200
 			DETACHED_PROCESS = 0x00000008
-			p = subprocess.Popen(shlex.split(cmd), 
-					stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+			# p = subprocess.Popen(shlex.split(cmd), 
+			# 		stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+			# 		creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP)
+			p = subprocess.Popen(shlex.split(cmd), close_fds=True,
 					creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP)
 			logger.info(f'Detached process {p.pid} started.')
 		else:

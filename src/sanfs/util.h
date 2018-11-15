@@ -1,4 +1,5 @@
 #pragma once
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <stdio.h>
 #include <stdarg.h>
 #include "jsmn.h"
@@ -15,7 +16,7 @@ extern size_t			g_sftp_cached_calls;
 #define WARN		1
 #define INFO		2
 #define DEBUG		3
-#define LOGLEVEL	INFO
+#define LOGLEVEL	ERROR
 
 #define log_message(level, format, ...) {								\
 	int thread = GetCurrentThreadId();									\
@@ -44,14 +45,16 @@ extern size_t			g_sftp_cached_calls;
 
 typedef struct sanfs_config {
 	char *host;
-	int port;
 	char *user;
 	char *pkey;
 	char *drive;
-	int hidden;
 	char *json;
 	char *args;
 	char *home;
+	int port;
+	int hidden;
+	unsigned local_uid;
+	unsigned remote_uid;
 } sanfs_config;
 
 extern sanfs_config g_sanfs;

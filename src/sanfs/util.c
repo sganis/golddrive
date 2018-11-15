@@ -73,7 +73,7 @@ int load_json(sanfs_config * sanfs)
 {
 	// fill json with json->drive parameters
 	if (!file_exists(sanfs->json)) {
-		fprintf(stderr, "cannot read json file: %s", sanfs->json);
+		fprintf(stderr, "cannot read json file: %s\n", sanfs->json);
 		return 1;
 	}
 	char* JSON_STRING = 0;
