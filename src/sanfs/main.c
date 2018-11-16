@@ -255,10 +255,11 @@ int main(int argc, char *argv[])
 	//printf("Threads = %d\n", san_threads(5, get_number_of_processors()));
 
 	// run fuse main
-	char volprefix[256], volname[256];
+	char volprefix[256];
 	sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=/sanfs/%s@%s", g_sanfs.user, g_sanfs.host);
-	sprintf_s(volname, sizeof(volname), "-ovolname=%s@%s", g_sanfs.user, g_sanfs.host);
 	fuse_opt_add_arg(&args, volprefix);
+	char volname[256];
+	sprintf_s(volname, sizeof(volname), "-ovolname=%s@%s", g_sanfs.user, g_sanfs.host);
 	fuse_opt_add_arg(&args, volname);
 	fuse_opt_add_arg(&args, "-oFileSystemName=SANFS");
 	fuse_opt_add_arg(&args, "-orellinks");
