@@ -11,7 +11,7 @@
 #include <Shlwapi.h> /* PathRemoveFileSpecA */
 #pragma comment(lib, "shlwapi.lib")
 
-#define VERSION "1.1.2"
+#define VERSION "1.1.4"
 
 /* global variables */
 size_t				g_sftp_calls;
@@ -162,9 +162,12 @@ int main(int argc, char *argv[])
 	int rc;
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 	memset(&g_sanfs, 0, sizeof(g_sanfs));
-	fuse_opt_parse(&args, &g_sanfs, sanfs_opts, sanfs_opt_proc);
-
-	if (argc < 2) {
+	rc = fuse_opt_parse(&args, &g_sanfs, sanfs_opts, sanfs_opt_proc);
+	if (rc) {
+		fprintf(stderr, "bad arguments, try --help\n");
+		return -1;
+	}
+	if (!g_sanfs.drive || argc < 2) {
 		fuse_opt_add_arg(&args, "--help");
 		fuse_opt_parse(&args, &g_sanfs, sanfs_opts, sanfs_opt_proc);
 		return 1;

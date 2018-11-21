@@ -2,5 +2,5 @@
 
 "C:\Program Files (x86)\WinFsp\bin\fsreg.bat" ^
 	golddrive ^
-	C:\Users\san\Documents\golddrive\golddrive\client\sanfs\sanfs.exe ^
-	"%%2 -u %%1 -h 192.168.99.100" "D:P(A;;RPWPLC;;;WD)"
+	C:\Users\sant\Documents\golddrive\golddrive\client\sanfs\sanfs.exe ^
+	"%%2 -u %%1 -h 192.168.100.201" "D:P(A;;RPWPLC;;;WD)"
