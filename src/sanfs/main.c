@@ -185,8 +185,9 @@ int main(int argc, char *argv[])
 		char profile[BUFFER_SIZE];
 		ExpandEnvironmentStringsA("%USERPROFILE%", profile, BUFFER_SIZE);
 		g_sanfs.pkey = malloc(MAX_PATH);
-		strcpy_s(g_sanfs.pkey, MAX_PATH, profile);
-		strcat_s(g_sanfs.pkey, MAX_PATH, "\\.ssh\\id_rsa");
+		sprintf_s(g_sanfs.pkey, MAX_PATH, "%s\\.ssh\\id_rsa-%s-golddrive", profile, g_sanfs.user);
+		//strcpy_s(g_sanfs.pkey, MAX_PATH, profile);
+		//strcat_s(g_sanfs.pkey, MAX_PATH, "\\.ssh\\id_rsa-");
 	}
 	if (!file_exists(g_sanfs.pkey)) {
 		fprintf(stderr, "error: cannot read private key: %s\n", g_sanfs.pkey);
