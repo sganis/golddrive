@@ -150,7 +150,6 @@ static int load_config_file(sanfs_config* sanfs)
 		rc = load_json(sanfs);
 	return rc;
 }
-
 int main(int argc, char *argv[])
 {
 	// load fuse dll
@@ -167,7 +166,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "bad arguments, try --help\n");
 		return -1;
 	}
-	if (!g_sanfs.drive || argc < 2) {
+	if (strlen(g_sanfs.drive) < 2 || argc < 2) {
 		fuse_opt_add_arg(&args, "--help");
 		fuse_opt_parse(&args, &g_sanfs, sanfs_opts, sanfs_opt_proc);
 		return 1;
@@ -176,6 +175,8 @@ int main(int argc, char *argv[])
 	fuse_opt_parse(&args, &g_sanfs, sanfs_opts, sanfs_opt_proc);
 
 	// load missing arguments from config file
+	g_sanfs.drive[0] = toupper(g_sanfs.drive[0]);
+	g_sanfs.letter = g_sanfs.drive[0];
 	load_config_file(&g_sanfs);
 
 	// finally setup missing arguments with defaults
@@ -260,12 +261,13 @@ int main(int argc, char *argv[])
 
 	// run fuse main
 	char volprefix[256];
-	sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=/sanfs/%s@%s", g_sanfs.user, g_sanfs.host);
+	//sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=/sanfs/%s@%s", g_sanfs.user, g_sanfs.host);
+	sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=/golddrive/%c", g_sanfs.letter);
 	fuse_opt_add_arg(&args, volprefix);
 	char volname[256];
 	sprintf_s(volname, sizeof(volname), "-ovolname=%s@%s", g_sanfs.user, g_sanfs.host);
 	fuse_opt_add_arg(&args, volname);
-	fuse_opt_add_arg(&args, "-oFileSystemName=SANFS");
+	fuse_opt_add_arg(&args, "-oFileSystemName=GOLDDRIVE");
 	fuse_opt_add_arg(&args, "-orellinks");
 	//fuse_opt_add_arg(&args, "-ouid=-1,gid=-1,create_umask=007,mask=007");
 	fuse_opt_parse(&args, &g_sanfs, sanfs_opts, sanfs_opt_proc);

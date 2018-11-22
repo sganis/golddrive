@@ -51,6 +51,7 @@ typedef struct sanfs_config {
 	char *json;
 	char *args;
 	char *home;
+	char letter;
 	int port;
 	int hidden;
 	unsigned local_uid;

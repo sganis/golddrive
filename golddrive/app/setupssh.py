@@ -161,9 +161,10 @@ def set_key_permissions(user, pkey):
 	# subprocess.run(fr'icacls {ssh_folder} /c /t /inheritance:d')
 	subprocess.run(fr'icacls {pkey} /c /t /inheritance:d')
 	
-	# Set Ownership to Owner 
+	# Set Ownership to Owner and SYSTEM account
 	# subprocess.run(fr'icacls {ssh_folder} /c /t /grant %username%:F')
 	subprocess.run(fr'icacls {pkey} /c /t /grant {user}:F')
+	subprocess.run(fr'icacls {pkey} /c /t /grant SYSTEM:F')
 	
 	# Remove All Users, except for Owner 
 	# subprocess.run(fr'icacls {ssh_folder} /c /t /remove Administrator BUILTIN\Administrators BUILTIN Everyone System Users')
