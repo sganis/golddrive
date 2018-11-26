@@ -18,7 +18,7 @@ RUN sed -ri s/#PermitRootLogin.*/PermitRootLogin\ yes/ /etc/ssh/sshd_config && \
 	sed -ri 's/#HostKey \/etc\/ssh\/ssh_host_dsa_key/HostKey \/etc\/ssh\/ssh_host_dsa_key/g' /etc/ssh/sshd_config && \
 	sed -ri 's/#HostKey \/etc\/ssh\/ssh_host_ecdsa_key/HostKey \/etc\/ssh\/ssh_host_ecdsa_key/g' /etc/ssh/sshd_config && \
 	sed -ri 's/#HostKey \/etc\/ssh\/ssh_host_ed25519_key/HostKey \/etc\/ssh\/ssh_host_ed25519_key/g' /etc/ssh/sshd_config && \
-	sed -ri 's/Subsystem.+/Subsystem sftp \/usr\/lib\/ssh\/sftp-server -l VERBOSE/g' /etc/ssh/sshd_config 
+	sed -ri 's/Subsystem.+/Subsystem sftp \/usr\/lib\/ssh\/sftp-server -l VERBOSE -u 002/g' /etc/ssh/sshd_config 
 
 RUN /usr/bin/ssh-keygen -A
 RUN ssh-keygen -t rsa -b 4096 -f /etc/ssh/ssh_host_key

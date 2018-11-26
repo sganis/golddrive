@@ -168,7 +168,7 @@ def set_key_permissions(user, pkey):
 	
 	# Remove All Users, except for Owner 
 	# subprocess.run(fr'icacls {ssh_folder} /c /t /remove Administrator BUILTIN\Administrators BUILTIN Everyone System Users')
-	subprocess.run(fr'icacls {pkey} /c /t /remove Administrator BUILTIN\Administrators BUILTIN Everyone System Users')
+	subprocess.run(fr'icacls {pkey} /c /t /remove Administrator BUILTIN\Administrators BUILTIN Everyone Users')
 	
 	# Verify 
 	subprocess.run(fr'icacls {pkey}')
