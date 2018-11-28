@@ -128,10 +128,10 @@ def generate_keys(seckey, userhost):
 	pubkey = f'ssh-rsa {sk.get_base64()} {userhost}'
 	
 	try:
-		with open(seckey + '.pub', 'wb') as w:
+		with open(seckey + '.pub', 'wt') as w:
 			w.write(pubkey)
-	except:
-		logger.error('Could not save public key')
+	except Exception as ex:
+		logger.error(f'Could not save public key: {ex}')
 
 	rb.output = pubkey
 	return rb
@@ -247,7 +247,8 @@ def main(userhost, password, userkey='', port=22):
 	logger.info(f'Publising public key...')
 		
 	# Copy to the target machines.
-	cmd = f"exec bash -c \"cd; umask 077; mkdir -p .ssh && echo '{pubkey}' >> .ssh/authorized_keys || exit 1\" || exit 1"
+	# cmd = f"exec bash -c \"cd; umask 077; mkdir -p .ssh && echo '{pubkey}' >> .ssh/authorized_keys || exit 1\" || exit 1"
+	cmd = f"umask 077; mkdir -p .ssh && echo '{pubkey}' >> .ssh/authorized_keys || exit 1"
 	print (cmd)
 	ok = False
 	

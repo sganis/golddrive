@@ -262,9 +262,15 @@ def get_free_drives():
 	return [f'{d}:' for d in GOLDLETTERS if d not in used]
 
 def check_drive(drive, userhost, client):
-	logger.info(f'Checking drive {drive} in {userhost}...')
+	
+	logger.info(f'Checking drive {drive} in {userhost}, client: {client}...')
 	if not (drive and len(drive)==2 and drive.split(':')[0].upper() in GOLDLETTERS):
 		return 'NOT SUPPORTED'
+
+	service = 'golddrive' 
+	if client == 'sshfs':
+		service = 'sshfs'
+	print(f'service: {service}')
 	r = util.run(f'net use', capture=True)
 	# print(r.stdout)
 	# cmd = (f'wmic logicaldisk where "providername like \'%{userhost}%\' '
@@ -278,7 +284,8 @@ def check_drive(drive, userhost, client):
 	is_golddrive = False
 	host_use = False
 	for line in r.stdout.split('\n'):
-		if fr'\\{client}\{userhost}' in line:
+		if f'\\\\{service}\\' in line:
+			print(line)
 			if drive in line:
 				is_golddrive = True
 			else:
