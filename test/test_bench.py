@@ -32,7 +32,7 @@ def md5sum(fname):
 	return hash_md5.hexdigest()
 
 def setup_module():
-	rb = setupssh.main(userhost, password, '', port)
+	rb = setupssh.main(userhost, password, port)
 	assert 'successfull' or 'OK' in rb.output
 	rb = mounter.unmount(drive)
 	assert rb.drive_status == 'DISCONNECTED'
