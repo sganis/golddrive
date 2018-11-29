@@ -48,22 +48,22 @@ class BackgroundWorker(QObject):
 		if rb.returncode == util.ReturnCode.BAD_HOST:
 			return rb
 
-		if rb.returncode == util.ReturnCode.BAD_LOGIN:
-			# test login with user keys
-			current_user = getpass.getuser()
-			if not current_user == p['user']:
-				return rb
-			# user is same as logged in user, try user keys	
-			rb = setupssh.testssh( p['userhost'], p['userkey'], p['port'])
-			if not rb.returncode == util.ReturnCode.OK:
-				rb.returncode = util.ReturnCode.BAD_LOGIN
-				rb.error = '' # do not show error, is password required
-				return rb
-			# setup ssh with user key
-			rb = setupssh.main(p['userhost'],'',p['userkey'],p['port'])
-			if not rb.returncode == util.ReturnCode.OK:
-				rb.returncode = util.ReturnCode.BAD_SSH
-				return rb
+		# if rb.returncode == util.ReturnCode.BAD_LOGIN:
+		# 	# test login with user keys
+		# 	current_user = getpass.getuser()
+		# 	if not current_user == p['user']:
+		# 		return rb
+		# 	# user is same as logged in user, try user keys	
+		# 	rb = setupssh.testssh( p['userhost'], p['userkey'], p['port'])
+		# 	if not rb.returncode == util.ReturnCode.OK:
+		# 		rb.returncode = util.ReturnCode.BAD_LOGIN
+		# 		rb.error = '' # do not show error, is password required
+		# 		return rb
+		# 	# setup ssh with user key
+		# 	rb = setupssh.main(p['userhost'],'',p['userkey'],p['port'])
+		# 	if not rb.returncode == util.ReturnCode.OK:
+		# 		rb.returncode = util.ReturnCode.BAD_SSH
+		# 		return rb
 
 		assert rb.returncode == util.ReturnCode.OK
 		# app keys are ok, mount
@@ -91,7 +91,7 @@ class BackgroundWorker(QObject):
 		
 	def disconnect_all(self, p):
 		return mounter.unmount_all(p['drives'])
-		
+			
 	def repair(self, p):
 		mounter.unmount(p['drive'])
 		return mounter.mount(p['drive'], p['userhost'], p['appkey'], 

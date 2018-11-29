@@ -140,18 +140,6 @@ def has_app_keys(user):
 	appkey = util.getAppKey(user)
 	return os.path.exists(appkey)
 
-def setup_keys(userhost, seckey, userkey='', port=22):
-	pass
-
-def setup_user_keys(userhost, password, port):
-	pass
-	'''
-	Setup ~/.ssh/id_rsa defaut keys, usefull for testing.
-	Run this from commmand line before testing
-	'''
-	# generate key
-
-	# transfer using password
 
 def set_key_permissions(user, pkey):
 	
@@ -174,7 +162,7 @@ def set_key_permissions(user, pkey):
 	subprocess.run(fr'icacls {pkey}')
 	print('done.')
 
-def main(userhost, password, userkey='', port=22):
+def main(userhost, password, port=22):
 	'''
 	Setup ssh keys, return ReturnBox
 	'''
@@ -203,36 +191,18 @@ def main(userhost, password, userkey='', port=22):
 	client = paramiko.SSHClient()
 	client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-	# transfer key using user key
-	if userkey:
-		try:
-			logger.info('Connecting using user keys...')
-			pkey = paramiko.RSAKey.from_private_key_file(userkey)
-			client.connect(hostname=host, username=user,
-						pkey=pkey, look_for_keys=False, port=port, timeout=10)
-		except paramiko.ssh_exception.AuthenticationException:
-			rb.error = f'User or password wrong'
-			rb.returncode = 1
-		except Exception as ex:
-			rb.error = f'connection error: {ex}'
-			rb.returncode = 2
-	if rb.error:
-		logger.error(rb.error)
-
-	# use password
-	if rb.error or not userkey:
-		rb.error = ''
-		try:
-			logger.info('Connecting using password...')
-			client.connect(hostname=host, username=user,
-							password=password, port=port, timeout=10,
-							look_for_keys=False)     
-		except paramiko.ssh_exception.AuthenticationException:
-			rb.error = f'User or password wrong'
-			rb.returncode = 1
-		except Exception as ex:
-			rb.error = f'connection error: {ex}'
-			rb.returncode = 2
+	rb.error = ''
+	try:
+		logger.info('Connecting using password...')
+		client.connect(hostname=host, username=user,
+						password=password, port=port, timeout=10,
+						look_for_keys=False)     
+	except paramiko.ssh_exception.AuthenticationException:
+		rb.error = f'User or password wrong'
+		rb.returncode = 1
+	except Exception as ex:
+		rb.error = f'connection error: {ex}'
+		rb.returncode = 2
 
 	if rb.error:
 		logger.error(rb.error)
@@ -248,7 +218,7 @@ def main(userhost, password, userkey='', port=22):
 		
 	# Copy to the target machines.
 	# cmd = f"exec bash -c \"cd; umask 077; mkdir -p .ssh && echo '{pubkey}' >> .ssh/authorized_keys || exit 1\" || exit 1"
-	cmd = f"umask 077; mkdir -p .ssh && echo '{pubkey}' >> .ssh/authorized_keys || exit 1"
+	cmd = f"exec sh -c \"cd; umask 077; mkdir -p .ssh; echo '{pubkey}' >> .ssh/authorized_keys\""
 	print (cmd)
 	ok = False
 	
@@ -259,7 +229,7 @@ def main(userhost, password, userkey='', port=22):
 			logger.info('Key transfer successful')
 			rb.returncode = util.ReturnCode.OK
 		else:
-			logger.error(f'Error transfering public key: exit {rc}')
+			logger.error(f'Error transfering public key: exit {rc}, error: {stderr}')
 	except Exception as ex:
 		logger.error(ex)
 		rb.returncode = util.ReturnCode.BAD_SSH
@@ -295,16 +265,18 @@ def main(userhost, password, userkey='', port=22):
 if __name__ == '__main__':
 
 	import sys
+	import os
 	import getpass
 	assert (len(sys.argv) > 1 and
 			'@' in sys.argv[1]) # usage: prog user@host
+	os.environ['PATH'] = f'{DIR}\\..\\client\\sshfs\\bin;' + os.environ['PATH']
 	userhost = sys.argv[1]
 	password = getpass.getpass('Linux password: ')
-	port=2222
-	userkey = os.path.expandvars(fr'%USERPROFILE%\.ssh\id_rsa')
+	port=22
 	if ':' in userhost:
 		userhost, port = userhost.split(':')                             
 	logging.basicConfig(level=logging.INFO)
 
-	main(userhost, password, userkey, port)
+	main(userhost, password, port)
+
 

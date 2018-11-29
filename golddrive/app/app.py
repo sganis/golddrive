@@ -92,6 +92,7 @@ class Window(QMainWindow, Ui_MainWindow):
 		menu.addAction('&Disconnect', self.mnuDisconnect)
 		menu.addAction('Disconnect &all drives', self.mnuDisconnectAll)
 		menu.addAction('&Open program location', self.mnuOpenProgramLocation)
+		menu.addAction('Open &terminal', self.mnuOpenTerminal)
 		menu.addAction('Open &log file', self.mnuOpenLogFile)
 		menu.addAction('&Restart Explorer.exe', self.mnuRestartExplorer)
 		menu.addAction('&About...', self.mnuAbout)
@@ -345,6 +346,9 @@ class Window(QMainWindow, Ui_MainWindow):
 			editor = 'C:\\windows\\notepad.exe'
 		cmd = fr'start /b c:\windows\explorer.exe "{util.DIR}\.."'
 		util.run(cmd, shell=True)
+
+	def mnuOpenTerminal(self):
+		util.run('start %ComSpec%', shell=True)
 
 	def mnuOpenLogFile(self):
 		editor = self.param["editor"]

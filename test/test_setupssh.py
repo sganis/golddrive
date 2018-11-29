@@ -61,7 +61,7 @@ def test_testssh_invalid_key():
 def test_setupssh_passord():
 	if os.path.exists(appkey):		
 		os.remove(appkey)	
-	rb = setupssh.main(userhost, password, '', port)
+	rb = setupssh.main(userhost, password, port)
 	assert rb.returncode == util.ReturnCode.OK
 	assert 'successfull' in rb.output
 
