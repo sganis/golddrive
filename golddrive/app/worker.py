@@ -21,8 +21,7 @@ class BackgroundWorker(QObject):
 
 	def check_drive(sefl, p):
 		rb = util.ReturnBox()
-		rb.drive_status = mounter.check_drive(p['drive'], p['userhost'],
-												 p['client'])
+		rb.drive_status = mounter.check_drive(p['drive'], p['userhost'])
 		if (rb.drive_status == 'CONNECTED' 
 			or rb.drive_status == 'DISCONNECTED'):
 			rb.returncode = util.ReturnCode.OK
@@ -30,7 +29,7 @@ class BackgroundWorker(QObject):
 
 	def mount(self, p):
 		rb = mounter.mount(p['drive'], p['userhost'], p['appkey'], 
-							p['client'], p['port'], p['drivename'], p['args'])
+							p['port'], p['drivename'], p['args'])
 		if rb.returncode == util.ReturnCode.OK	and p['no_host']:
 			util.addDriveConfig(**p)
 		return rb
@@ -38,34 +37,16 @@ class BackgroundWorker(QObject):
 	def connect(self, p):
 		rb = util.ReturnBox()
 		# test drive status
-		status = mounter.check_drive(p['drive'], p['userhost'], p['client'])
+		status = mounter.check_drive(p['drive'], p['userhost'])
 		if status != 'DISCONNECTED':
 			rb.returncode = util.ReturnCode.BAD_DRIVE
 			rb.error = f'{status}'
 			return rb
 		# test ssh with app key
 		rb = setupssh.testssh(p['userhost'], p['appkey'], p['port'])
-		if rb.returncode == util.ReturnCode.BAD_HOST:
+		if rb.returncode != util.ReturnCode.OK:
 			return rb
 
-		# if rb.returncode == util.ReturnCode.BAD_LOGIN:
-		# 	# test login with user keys
-		# 	current_user = getpass.getuser()
-		# 	if not current_user == p['user']:
-		# 		return rb
-		# 	# user is same as logged in user, try user keys	
-		# 	rb = setupssh.testssh( p['userhost'], p['userkey'], p['port'])
-		# 	if not rb.returncode == util.ReturnCode.OK:
-		# 		rb.returncode = util.ReturnCode.BAD_LOGIN
-		# 		rb.error = '' # do not show error, is password required
-		# 		return rb
-		# 	# setup ssh with user key
-		# 	rb = setupssh.main(p['userhost'],'',p['userkey'],p['port'])
-		# 	if not rb.returncode == util.ReturnCode.OK:
-		# 		rb.returncode = util.ReturnCode.BAD_SSH
-		# 		return rb
-
-		assert rb.returncode == util.ReturnCode.OK
 		# app keys are ok, mount
 		return self.mount(p)
 
@@ -76,7 +57,7 @@ class BackgroundWorker(QObject):
 			return rb
 
 		# setup ssh with password
-		rb = setupssh.main(p['userhost'],p['password'],'',p['port'])
+		rb = setupssh.main(p['userhost'], p['password'], p['port'])
 		if not rb.returncode == util.ReturnCode.OK:
 			rb.returncode = util.ReturnCode.BAD_SSH
 			return rb

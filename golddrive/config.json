@@ -4,10 +4,6 @@
 	// and environment variables.
 	// %GOLDDRIVE% expands to the app path
 	
-	// client: sanfs or sshfs
-	"client" 			: "sanfs",
-	"sshfs" 			: "%GOLDDRIVE%\\client\\sshfs\\bin\\sshfs.exe",
-	"sanfs" 			: "%GOLDDRIVE%\\client\\sanfs\\sanfs.exe",
 	"logfile" 			: "%GOLDDRIVE%\\golddrive.log",
 	"editor" 			: "C:\\Program Files\\Sublime Text 3\\sublime_text.exe",
 	
@@ -23,15 +19,13 @@
 			"drivename" : "Docker",
 			"user" 		: "support",
 			"port" 		: "2222",
-			"hosts" 	: ["localhost"],
-			
+			"hosts" 	: ["localhost"],			
 		},
 		"Y:" : {
 			"drivename" : "Box",
 			"user" 		: "sag",
 			"hosts" 	: ["192.168.100.201"],
 			"args" 		: "-o FileInfoTimeout=3000,DirInfoTimeout=5000,VolumeInfoTimeout=20000",
-			"client"	: "sshfs"
 		},
 		"T:" : {
 			"drivename" : "appveyor",

@@ -127,11 +127,11 @@ def generate_keys(seckey, userhost):
 	
 	pubkey = f'ssh-rsa {sk.get_base64()} {userhost}'
 	
-	try:
-		with open(seckey + '.pub', 'wt') as w:
-			w.write(pubkey)
-	except Exception as ex:
-		logger.error(f'Could not save public key: {ex}')
+	# try:
+	# 	with open(seckey + '.pub', 'wt') as w:
+	# 		w.write(pubkey)
+	# except Exception as ex:
+	# 	logger.error(f'Could not save public key: {ex}')
 
 	rb.output = pubkey
 	return rb

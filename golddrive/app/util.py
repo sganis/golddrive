@@ -63,27 +63,11 @@ def loadConfig(path):
 				if r'%' in value:
 					config[key] = os.path.expandvars(value)
 
-			client = config.get('client','')
-			assert client in ['sshfs', 'sanfs'] # client not supported
-
-			config['client'] = client
 			sshfs_path = os.path.dirname(config.get('sshfs',''))
-			sanfs_path = os.path.dirname(config.get('sanfs',''))
-			logger.info(f'sshfs folder: {sshfs_path}')
-			logger.info(f'sanfs folder: {sanfs_path}')
-			config['sshfs_path'] = sshfs_path
-			config['sanfs_path'] = sanfs_path
 			config['ssh'] = fr"{sshfs_path}\ssh.exe"
-			os.environ['GOLDDRIVE_SSHFS'] = sshfs_path
-			os.environ['GOLDDRIVE_SANFS'] = sshfs_path
-			os.environ['GOLDDRIVE_CLIENT'] = config.get(client,'')
 			
 			if not os.path.exists(config['ssh']):
 				logger.error('ssh not found')
-			if not os.path.exists(config['sshfs']):
-				logger.error('sshfs not found')
-			if not os.path.exists(config['sanfs']):
-				logger.error('sanfs not found')
 			return config
 
 	except Exception as ex:
@@ -122,11 +106,6 @@ def addDriveConfig(**p):
 def getAppKey(user):
 	sshdir = os.path.expandvars("%USERPROFILE%")
 	seckey = fr'{sshdir}\.ssh\id_rsa-{user}-golddrive'
-	return seckey.replace(f'\\', '/')
-
-def getUserKey():
-	sshdir = os.path.expandvars("%USERPROFILE%")
-	seckey = fr'{sshdir}\.ssh\id_rsa'
 	return seckey.replace(f'\\', '/')
 
 def richText(text):
@@ -225,42 +204,26 @@ def getAppVersion():
 
 def getVersions():
 	ssh = ''
-	sshfs = ''
-	sanfs = ''
-	cygwin = ''
+	golddrive = ''
 	winfsp = ''
 	
 	r = run(f'ssh -V', capture=True)
 	if r.returncode == 0:
-		# m = re.match(r'(OpenSSH[^,]+),[\s]*(OpenSSL[\s]?[\w.]+)[\s]+([\w\s]+)', r.stderr)
-		# if m:
-		# 	ssh = f'{ m.group(1) }\n{ m.group(2) } ({ m.group(3) })'
 		for c in r.stderr.split(','):
 			if c.strip():
 				ssh += c.strip().replace('  ',' ') + '\n'
 		ssh = ssh.strip()
 		
-	r = run(f'sshfs -V', capture=True)
+	r = run(f'golddrive --version', capture=True)
 	if r.returncode == 0:
-		out = r.stdout.replace('version ','')
-		sshfs = fr"{out}"
+		golddrive = fr"{r.stderr}"
 	
-	r = run(f'sanfs --version', capture=True)
-	if r.returncode == 0:
-		sanfs = fr"{r.stderr}"
-	
-	# sshfs_path = os.path.dirname(run(f'where sshfs', capture=True).stdout)
 	import version
-	cygwin_path = fr"{os.environ['GOLDDRIVE_SSHFS']}\cygwin1.dll"	
-	cygwin = version.get_file_version(cygwin_path)
-	if cygwin:
-		cygwin = f'Cygwin {cygwin}'
-
 	winfsp_dll = os.path.expandvars(fr'%ProgramFiles(x86)%\WinFsp\bin\winfsp-x64.dll')
 	winfsp = version.get_file_version(winfsp_dll);
 	if winfsp:
 		winfsp = f'WinFSP {winfsp}'
-	result = f'{ssh}\n{sshfs}\n{cygwin}\n{sanfs}\n{winfsp}'
+	result = f'{ssh}\n{golddrive}\n{winfsp}'
 	return result
 
 def setPath(path=None):
@@ -269,6 +232,8 @@ def setPath(path=None):
 	path = [
 		# fr'{golddrive}\lib\lib\PyQt5\Qt\bin',
 		fr'{golddrive}',
+		fr'{golddrive}\bin',
+		fr'{golddrive}\bin\sshfs\bin',
 		fr'{golddrive}\python',
 		fr'{golddrive}\python\lib',
 		fr'C:\Windows\system32',
@@ -322,7 +287,7 @@ def kill_drive(drive):
 		if p.info['cmdline']:
 			cmdline = ' '.join(p.info['cmdline']).lower()
 			# print(f'cmdline: {cmdline}')
-			if ('sshfs.exe' in cmdline or 'sanfs.exe' in cmdline) and f' {drive} ' in cmdline:
+			if 'golddrive.exe' in cmdline and f' {drive} ' in cmdline:
 				plist.append(p)
 	taskkill(plist)
 	

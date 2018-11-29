@@ -78,10 +78,10 @@ class Window(QMainWindow, Ui_MainWindow):
 		self.param = {}
 		
 		self.config = util.loadConfig(self.configfile)
-		path = os.environ['PATH']
-		sshfs_path = self.config.get('sshfs_path','')
-		sanfs_path = self.config.get('sanfs_path','')
-		os.environ['PATH'] = fr'{sanfs_path};{sshfs_path};{path}'	
+		# path = os.environ['PATH']
+		# sshfs_path = self.config.get('sshfs_path','')
+		# sanfs_path = self.config.get('sanfs_path','')
+		# os.environ['PATH'] = fr'{sanfs_path};{sshfs_path};{path}'	
 
 		self.updateCombo(self.settings.value("cboParam",0))	
 		self.fillParam()
@@ -243,11 +243,8 @@ class Window(QMainWindow, Ui_MainWindow):
 		p['configfile'] = self.configfile
 		p['user'] = getpass.getuser()		
 		p['appkey'] = util.getAppKey(p['user'])
-		p['userkey'] = util.getUserKey()
 		p['userhostport'] = ''
-		default_client = self.config.get('client')
 		default_port = 22
-		p['client'] = default_client
 		p['port'] = default_port
 		p['drive'] = ''
 		p['drivename'] = 'GOLDDRIVE'
@@ -269,7 +266,6 @@ class Window(QMainWindow, Ui_MainWindow):
 		p['userhost'] = f"{p['user']}@{p['host']}"
 		p['userhostport'] = f"{p['userhost']}:{p['port']}"
 		p['appkey'] = util.getAppKey(p['user'])
-		p['client'] = d.get('client', default_client)
 		p['args'] = d.get('args', '')
 		
 	# decorator used to trigger only the int overload and not twice
