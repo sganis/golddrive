@@ -7,7 +7,6 @@ import subprocess
 import getpass
 import logging
 import util
-util.setPath()
 from worker import Worker
 from PyQt5.QtCore import (QObject, pyqtSlot, QFile, Qt,
 	QThread, QSize, QSettings, QIODevice, QTextStream,
@@ -82,11 +81,11 @@ class Window(QMainWindow, Ui_MainWindow):
 		# sshfs_path = self.config.get('sshfs_path','')
 		# sanfs_path = self.config.get('sanfs_path','')
 		# os.environ['PATH'] = fr'{sanfs_path};{sshfs_path};{path}'	
-
+		
 		self.updateCombo(self.settings.value("cboParam",0))	
 		self.fillParam()
 		self.lblUserHostPort.setText(self.param['userhostport'])
-
+		
 		menu = Menu(self.pbHamburger)
 		menu.addAction('&Connect', self.mnuConnect)
 		menu.addAction('&Disconnect', self.mnuDisconnect)
@@ -106,11 +105,12 @@ class Window(QMainWindow, Ui_MainWindow):
 		self.watcher = QFileSystemWatcher()
 		self.watcher.addPaths([self.configfile])
 		self.watcher.fileChanged.connect(self.onConfigFileChanged)
-
+		
 		self.checkDriveStatus()
 		self.showPage(util.Page.MAIN)
 		self.lblMessage.linkActivated.connect(self.on_lblMessage_linkActivated)
 		self.loaded = True
+
 
 	def start(self, message):	
 		self.showPage(util.Page.MAIN)
@@ -429,4 +429,6 @@ if __name__ == '__main__':
 	logging.basicConfig(
 		level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S',
 		format='%(asctime)s: %(name)-10s: %(levelname)-7s: %(message)s')
+	util.setPath()
+
 	run()

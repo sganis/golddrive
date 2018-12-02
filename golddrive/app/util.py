@@ -62,14 +62,7 @@ def loadConfig(path):
 				value = config[key]
 				if r'%' in value:
 					config[key] = os.path.expandvars(value)
-
-			sshfs_path = os.path.dirname(config.get('sshfs',''))
-			config['ssh'] = fr"{sshfs_path}\ssh.exe"
-			
-			if not os.path.exists(config['ssh']):
-				logger.error('ssh not found')
 			return config
-
 	except Exception as ex:
 		logger.error(f'Cannot read config file: {path}. Error: {ex}')
 	return {}
@@ -227,6 +220,7 @@ def getVersions():
 	return result
 
 def setPath(path=None):
+	# print('setting path...')
 	golddrive = os.path.realpath(fr'{DIR}\..')
 	os.environ['GOLDDRIVE'] = golddrive
 	path = [
