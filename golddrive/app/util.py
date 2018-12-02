@@ -236,6 +236,7 @@ def setPath(path=None):
 		fr'{golddrive}\bin\sshfs\bin',
 		fr'{golddrive}\python',
 		fr'{golddrive}\python\lib',
+		fr'C:\Windows',
 		fr'C:\Windows\system32',
 		# fr'C:\Windows\System32\Wbem',		
 	]

@@ -145,7 +145,7 @@ def mount(drive, userhost, appkey, port=22, drivename='', args=''):
 	# logger.info(cmd)
 	util.run(cmd, detach=True)
 	# proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-	# time.sleep(1)
+	time.sleep(1)
 		
 	set_drive_name(drivename, drive)
 	set_net_use(drive)
@@ -244,8 +244,8 @@ def get_free_drives():
 	# 		used.append(line.split(':')[0])
 	return [f'{d}:' for d in GOLDLETTERS if d not in used]
 
+
 def check_drive(drive, userhost):
-	
 	logger.info(f'Checking drive {drive} in {userhost}...')
 	if not (drive and len(drive)==2 and drive.split(':')[0].upper() in GOLDLETTERS):
 		return 'NOT SUPPORTED'

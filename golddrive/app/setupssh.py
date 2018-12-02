@@ -140,7 +140,6 @@ def has_app_keys(user):
 	appkey = util.getAppKey(user)
 	return os.path.exists(appkey)
 
-
 def set_key_permissions(user, pkey):
 	
 	print('setting permissions...')
