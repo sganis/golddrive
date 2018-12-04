@@ -142,25 +142,24 @@ def has_app_keys(user):
 
 def set_key_permissions(user, pkey):
 	
-	print('setting permissions...')
+	logger.info('setting ssh key permissions...')
 	ssh_folder = os.path.dirname(pkey)
 	# Remove Inheritance ::
 	# subprocess.run(fr'icacls {ssh_folder} /c /t /inheritance:d')
-	subprocess.run(fr'icacls {pkey} /c /t /inheritance:d')
+	util.run(fr'icacls {pkey} /c /t /inheritance:d', capture=True)
 	
 	# Set Ownership to Owner and SYSTEM account
 	# subprocess.run(fr'icacls {ssh_folder} /c /t /grant %username%:F')
-	subprocess.run(fr'icacls {pkey} /c /t /grant {user}:F')
-	subprocess.run(fr'icacls {pkey} /c /t /grant SYSTEM:F')
+	util.run(fr'icacls {pkey} /c /t /grant {user}:F', capture=True)
+	util.run(fr'icacls {pkey} /c /t /grant SYSTEM:F', capture=True)
 	
 	# Remove All Users, except for Owner 
 	# subprocess.run(fr'icacls {ssh_folder} /c /t /remove Administrator BUILTIN\Administrators BUILTIN Everyone System Users')
-	subprocess.run(fr'icacls {pkey} /c /t /remove Administrator BUILTIN\Administrators BUILTIN Everyone Users')
+	util.run(fr'icacls {pkey} /c /t /remove Administrator BUILTIN\Administrators BUILTIN Everyone Users', capture=True)
 	
 	# Verify 
-	subprocess.run(fr'icacls {pkey}')
-	print('done.')
-
+	# util.run(fr'icacls {pkey}')
+	
 def main(userhost, password, port=22):
 	'''
 	Setup ssh keys, return ReturnBox
@@ -218,7 +217,7 @@ def main(userhost, password, port=22):
 	# Copy to the target machines.
 	# cmd = f"exec bash -c \"cd; umask 077; mkdir -p .ssh && echo '{pubkey}' >> .ssh/authorized_keys || exit 1\" || exit 1"
 	cmd = f"exec sh -c \"cd; umask 077; mkdir -p .ssh; echo '{pubkey}' >> .ssh/authorized_keys\""
-	print (cmd)
+	logger.info(cmd)
 	ok = False
 	
 	try:
