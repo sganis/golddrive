@@ -1,5 +1,27 @@
 #include <Windows.h>
 #include <string>
+#include <fstream>
+
+std::string getVersionApp(std::string exepath)
+{
+
+	// get version
+	std::string apppath = exepath.substr(0, exepath.find_last_of("\\/"));
+	std::ifstream f(apppath + "\\version.txt");	
+	if (f.is_open()) {
+		std::string line;
+		std::getline(f, line);
+		f.close();
+		std::string exename = exepath.substr(exepath.find_last_of("\\/")+1, exepath.length());
+		std::string app = apppath + "\\v" + line + "\\" + exename;
+		std::ifstream exe(app);
+		if (exe.good()) {
+			exe.close();
+			return app;
+		}			
+	}
+	return "";
+}
 
 // load python37.dll from lib directory
 // use explicit dll loading instead of implicit
@@ -19,6 +41,14 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int 
 	GetModuleFileName(NULL, buffer, MAX_PATH);
 	_fullpath(fullpath, buffer, MAX_PATH);
 	std::string exepath = fullpath;
+
+	// check launch mode and run version/app.exe if so
+	std::string app = getVersionApp(exepath);
+	if (app != "") {
+		int ret = (int)ShellExecute(0, "open", app.c_str(), "", 0, 1);
+		return ret;
+	}
+
 	std::string apppath = exepath.substr(0, exepath.find_last_of("\\/"));
 	std::string libpath = apppath + "\\python\\python37.dll";
 
