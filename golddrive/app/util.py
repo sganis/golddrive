@@ -184,7 +184,7 @@ def get_app_version():
 		with open(os.environ['GOLDDRIVE'] + '\\version.txt') as r:
 			return r.read().strip()
 	except:
-		return 'n/a'
+		return ''
 
 def is_winfsp_installed():
 	return get_winfsp_version() != None

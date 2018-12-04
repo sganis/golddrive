@@ -36,6 +36,8 @@ class About(QWidget, Ui_About):
 		link = 'http://github.com/sganis/golddrive'
 		link = util.make_hyperlink(link, link)
 		version = util.get_app_version()
+		if not version:
+			version = 'N/A'
 		self.about = (f"Golddrive {version}\n"
 				"Map drive to ssh server\n"
 				f"{link}\n")

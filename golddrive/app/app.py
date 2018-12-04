@@ -8,6 +8,7 @@ import getpass
 import logging
 import util
 from worker import Worker
+from updater import UpdateChecker
 from PyQt5.QtCore import (QObject, pyqtSlot, QFile, Qt,
 	QThread, QSize, QSettings, QIODevice, QTextStream,
 	QFileSystemWatcher)
@@ -100,7 +101,12 @@ class Window(QMainWindow, Ui_MainWindow):
 		# worker for background commands
 		self.worker = Worker()
 		self.worker.workDone.connect(self.onWorkDone)
-		
+
+		# worker for update
+		self.updateChecker = UpdateChecker()
+		self.updateChecker.checkUpdateDone.connect(self.onCheckUpdateDone)
+		self.updateChecker.start()
+
 		# worker for watching config.json changes
 		self.watcher = QFileSystemWatcher()
 		self.watcher.addPaths([self.configfile])
@@ -218,6 +224,14 @@ class Window(QMainWindow, Ui_MainWindow):
 				msg = rb.error
 			self.end(msg)
 		self.setPbConnectText(rb.drive_status)
+	
+	@pyqtSlot(util.ReturnBox)
+	def onCheckUpdateDone(self, rb):
+		self.returncode = rb.returncode
+		logger.info('Check update done')
+		link = util.make_hyperlink('update', 'Update and re-launch now')
+		msg = util.rich_text(f"New version available\n\n{link}")
+		self.end(msg)
 
 	def onConfigFileChanged(self, path):
 		logger.info('Config file has changed, reloading...')
@@ -389,10 +403,16 @@ class Window(QMainWindow, Ui_MainWindow):
 		util.run(cmd, shell=True)
 
 	def on_lblMessage_linkActivated(self, link):
+		
 		if link == 'open_drive':
 			drive = self.param['drive']
 			cmd = fr'start /b c:\windows\explorer.exe {drive}'
 			util.run(cmd, shell=True)
+		
+		elif link == 'update':
+			from updater import update
+			update()
+
 		elif link == 'install_winfsp':
 			cmd = fr'start /b { self.config["winfsp"] }'
 			util.run(cmd, shell=True)
