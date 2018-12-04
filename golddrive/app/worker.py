@@ -35,7 +35,12 @@ class BackgroundWorker(QObject):
 		return rb
 
 	def connect(self, p):
+
 		rb = util.ReturnBox()
+		# check if winfsp is installed
+		if not util.is_winfsp_installed():
+			rb.returncode = util.ReturnCode.BAD_WINFSP
+			return rb
 		# test drive status
 		status = mounter.check_drive(p['drive'], p['userhost'])
 		if status != 'DISCONNECTED':

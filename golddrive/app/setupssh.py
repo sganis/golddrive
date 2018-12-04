@@ -137,7 +137,7 @@ def generate_keys(seckey, userhost):
 	return rb
 
 def has_app_keys(user):
-	appkey = util.getAppKey(user)
+	appkey = util.get_app_key(user)
 	return os.path.exists(appkey)
 
 def set_key_permissions(user, pkey):
@@ -170,7 +170,7 @@ def main(userhost, password, port=22):
 
 	# app key
 	user, host = userhost.split('@')
-	seckey = util.getAppKey(user)	
+	seckey = util.get_app_key(user)	
 
 	# Check if keys need to be generated
 	pubkey = ''

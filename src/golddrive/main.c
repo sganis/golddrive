@@ -11,14 +11,14 @@
 #include <Shlwapi.h> /* PathRemoveFileSpecA */
 #pragma comment(lib, "shlwapi.lib")
 
-#define VERSION "1.1.5"
+#define VERSION "1.1.6"
 
 /* global variables */
-size_t				g_sftp_calls;
-size_t				g_sftp_cached_calls;
-SANSSH *			g_ssh;
-SRWLOCK				g_ssh_lock;
-fs_config		g_fs;
+size_t		g_sftp_calls;
+size_t		g_sftp_cached_calls;
+SANSSH *	g_ssh;
+SRWLOCK		g_ssh_lock;
+fs_config	g_fs;
 
 /* supported fs operations */
 static struct fuse_operations fs_ops = {
@@ -197,9 +197,14 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "error: cannot read private key: %s\n", g_fs.pkey);
 		return 1;
 	}
-	if (!g_fs.port)
+	if (!g_fs.port) {
 		g_fs.port = 22;
+	}
 
+	if (!g_fs.host && g_fs.hostcount > 0) {
+		// pick random host
+		g_fs.host = g_fs.hostlist[randint(0,g_fs.hostcount-1)];
+	}
 	// show parameters
 	printf("host    = %s\n", g_fs.host);
 	printf("drive   = %s\n", g_fs.drive);

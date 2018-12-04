@@ -141,7 +141,7 @@ def get_file_version(filename):
         info = VersionInfo(filename)
         return '.'.join([repr(x) for x in info.file_version])
     except:
-        return 'N/A'
+        return None
 
 def main(filename):
     try:

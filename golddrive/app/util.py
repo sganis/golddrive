@@ -9,6 +9,8 @@ import getpass
 import psutil
 import shlex
 from enum import Enum
+import version
+
 
 DIR = os.path.abspath(os.path.dirname(__file__))
 logger = logging.getLogger('golddrive')
@@ -41,6 +43,7 @@ class ReturnCode(Enum):
 	BAD_LOGIN 	= 3
 	BAD_SSH 	= 4
 	BAD_MOUNT	= 5
+	BAD_WINFSP	= 6
 	NONE 		= -1
 
 class ReturnBox():
@@ -51,7 +54,7 @@ class ReturnBox():
 		self.returncode = ReturnCode.NONE
 		self.object = None
 
-def loadConfig(path):
+def load_config(path):
 	try:
 		with open(path) as f:
 			js = str(f.read())
@@ -67,7 +70,7 @@ def loadConfig(path):
 		logger.error(f'Cannot read config file: {path}. Error: {ex}')
 	return {}
 
-def addDriveConfig(**p):
+def add_drive_config(**p):
 	'''Add drive to config.json
 	'''
 	logger.info('Adding drive to config file...')
@@ -96,20 +99,20 @@ def addDriveConfig(**p):
 	except Exception as ex:
 		logger.error(str(ex))
 
-def getAppKey(user):
+def get_app_key(user):
 	sshdir = os.path.expandvars("%USERPROFILE%")
 	seckey = fr'{sshdir}\.ssh\id_rsa-{user}-golddrive'
 	return seckey.replace(f'\\', '/')
 
-def richText(text):
+def rich_text(text):
 	t = text.replace('\n','<br/>') #.replace('\'','\\\'')
 	return f'<html><head/><body><p>{t}</p></body></html>'
 
-def makeHyperlink(href, text):
+def make_hyperlink(href, text):
 	
 	return f"<a href='{href}'><span style=\"text-decoration: none; color:#0E639C;\">{text}</span></a>"
 
-def getUserHostPort(text):
+def get_user_host_port(text):
 	userhostport = text
 	userhost = text
 	host = text
@@ -176,26 +179,21 @@ def run(cmd, capture=False, detach=False, shell=True, timeout=30):
 		r.stderr = r.stderr.strip()
 	return r
 	
-def getAppVersion():
+def get_app_version():
 	try:
 		with open(os.environ['GOLDDRIVE'] + '\\version.txt') as r:
 			return r.read().strip()
 	except:
 		return 'n/a'
 
-# def get_product_version(path):
-# 	import pefile
-# 	def LOWORD(dword):
-# 		return dword & 0x0000ffff
-# 	def HIWORD(dword): 
-# 		return dword >> 16
-# 	pe = pefile.PE(path)
-# 	#print PE.dump_info()
-# 	ms = pe.VS_FIXEDFILEINFO.ProductVersionMS
-# 	ls = pe.VS_FIXEDFILEINFO.ProductVersionLS
-# 	return (HIWORD (ms), LOWORD (ms), HIWORD (ls), LOWORD (ls))
+def is_winfsp_installed():
+	return get_winfsp_version() != None
 
-def getVersions():
+def get_winfsp_version():
+	winfsp_dll = os.path.expandvars(fr'%ProgramFiles(x86)%\WinFsp\bin\winfsp-x64.dll')
+	return version.get_file_version(winfsp_dll);
+	
+def get_versions():
 	ssh = ''
 	golddrive = ''
 	winfsp = ''
@@ -211,15 +209,15 @@ def getVersions():
 	if r.returncode == 0:
 		golddrive = fr"{r.stderr}"
 	
-	import version
-	winfsp_dll = os.path.expandvars(fr'%ProgramFiles(x86)%\WinFsp\bin\winfsp-x64.dll')
-	winfsp = version.get_file_version(winfsp_dll);
+	winfsp = get_winfsp_version()
+	if not winfsp:
+		winfsp = 'N/A'
 	if winfsp:
 		winfsp = f'WinFSP {winfsp}'
 	result = f'{ssh}\n{golddrive}\n{winfsp}'
 	return result
 
-def setPath(path=None):
+def set_path(path=None):
 	# print('setting path...')
 	golddrive = os.path.realpath(fr'{DIR}\..')
 	os.environ['GOLDDRIVE'] = golddrive

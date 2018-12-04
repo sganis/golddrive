@@ -2,10 +2,10 @@
 	// GoldDrive configuration file.
 	// It's json format with support for comments, trailing commas, 
 	// and environment variables.
-	// %GOLDDRIVE% expands to the app path
-	
+	// %GOLDDRIVE% expands to the app path	
 	"logfile" 			: "%GOLDDRIVE%\\golddrive.log",
 	"editor" 			: "C:\\Program Files\\Sublime Text 3\\sublime_text.exe",
+	"winfsp" 			: "C:\\Users\\san\\Downloads\\winfsp-1.4.18270.msi",
 	
 	// drive parameters
 	"drives" : {
@@ -13,7 +13,7 @@
 			"drivename" : "Simulation",
 			"user" 		: "support",
 			"port" 		: "2222",
-			"hosts" 	: ["192.168.99.100"],
+			"hosts" 	: ["192.168.99.100","192.168.99.100"],
 		},
 		"W:" : {
 			"drivename" : "Docker",
@@ -27,12 +27,6 @@
 			"port" 		: "2222",
 			"hosts" 	: ["192.168.100.201"],
 			"args" 		: "-o FileInfoTimeout=3000,DirInfoTimeout=5000,VolumeInfoTimeout=20000",
-		},
-		"T:" : {
-			"drivename" : "appveyor",
-			"user" 		: "appveyor",
-			"port" 		: "22009",
-			"hosts" 	: ["104.197.110.30"],
 		},
 	}
 }

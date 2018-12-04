@@ -118,17 +118,30 @@ int load_json(fs_config * fs)
 					jsmntok_t *v = &t[i + j + 3];
 					if (v->type == JSMN_STRING) {
 						char * val = strndup(JSON_STRING + v->start, v->end - v->start);
-						printf("%s : %s\n", key, val);
+						//printf("%s : %s\n", key, val);
 						if (!fs->user && strcmp(key, "user") == 0)
 							fs->user = strdup(val);
 						else if (!fs->port && strcmp(key, "port") == 0)
 							fs->port = atoi(val);
 						else if (strcmp(key, "args") == 0)
-							fs->args, strndup(val, 10);						
+							fs->args = strdup(val);
 						free(val);
 						i++;
 					}
 					else if (v->type == JSMN_ARRAY) {
+						fs->hostcount = v->size;
+						fs->hostlist = malloc(v->size);
+						for (int u = 0; u < v->size; u++) {
+							jsmntok_t *h = &t[i+j+u+4];
+							int ssize = h->end - h->start;
+							//printf("  * %.*s\n", h->end - h->start, JSON_STRING + h->start); 
+							fs->hostlist[u] = strndup(JSON_STRING + h->start, ssize);
+							fs->hostlist[u][ssize] = '\0';
+							//printf("host %d: %s\n", u+1, fs->hostlist[u]);
+							
+						}
+						//i += t[i + 1].size + 1;
+
 						i = i + v->size + 1;
 					}
 					free(key);	
@@ -240,3 +253,10 @@ void strtrim(char *str)
 	// Write new null terminator character
 	end[1] = '\0';
 }
+
+int randint(int min, int max)
+{
+	srand((unsigned int)time(NULL));
+	int n = min + (rand() % (max-min+1));
+	return n;
+}	

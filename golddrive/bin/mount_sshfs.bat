@@ -8,18 +8,19 @@
 @echo off
 setlocal
  
-if [%3]==[] goto :usage
+if [%4]==[] goto :usage
 if "%1"=="-h" goto :usage
 
 set USER=%1
 set HOST=%2
-set DRIVE=%3
+set PORT=%3
+set DRIVE=%4
  
 :: this script directory
 set DIR=%~dp0
 set DIR=%DIR:~0,-1%
 
-set PORT=2222
+
 set USERHOST=%USER%@%HOST%
 set PATH=%DIR%\sshfs\bin;%PATH%
 
@@ -34,10 +35,10 @@ sshfs.exe %USERHOST%:/ %DRIVE%  ^
    -o compression=no ^
    -o rellinks ^
    -o reconnect ^
-   -f -o ssh_command='ssh -vvv'
+   -f
 
 goto :eof
  
 :usage
-echo usage: %0 [user] [host] [drive]
+echo usage: %0 [user] [host] [port] [drive]
 exit /B 1

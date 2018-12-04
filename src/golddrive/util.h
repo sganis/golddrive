@@ -45,6 +45,8 @@ extern size_t			g_sftp_cached_calls;
 
 typedef struct fs_config {
 	char *host;
+	char **hostlist;
+	int hostcount;
 	char *user;
 	char *pkey;
 	char *drive;
@@ -69,3 +71,4 @@ int file_exists(const char* path);
 int jsoneq(const char *json, jsmntok_t *tok, const char *s);
 int load_ini(const char *appdir, fs_config *fs);
 int load_json(fs_config * fs);
+int randint(int min, int max);

@@ -18,7 +18,7 @@ class AboutWorker(QThread):
 		QThread.__init__(self)
 	
 	def run(self):
-		result = util.getVersions()
+		result = util.get_versions()
 		self.workDone.emit(result)
 
 
@@ -34,8 +34,8 @@ class About(QWidget, Ui_About):
 		self.worker = None
 		self.main = None
 		link = 'http://github.com/sganis/golddrive'
-		link = util.makeHyperlink(link, link)
-		version = util.getAppVersion()
+		link = util.make_hyperlink(link, link)
+		version = util.get_app_version()
 		self.about = (f"Golddrive {version}\n"
 				"Map drive to ssh server\n"
 				f"{link}\n")
@@ -44,13 +44,13 @@ class About(QWidget, Ui_About):
 		if self.worker is None:
 			self.worker = AboutWorker()
 			self.worker.workDone.connect(self.onWorkDone)
-		self.lblAbout.setText(util.richText(self.about))
+		self.lblAbout.setText(util.rich_text(self.about))
 		self.pbAboutOk.setVisible(False)
 		self.worker.start()
 	
 	def onWorkDone(self, result):
 		msg = (f"{self.about}\n{result}")
-		self.lblAbout.setText(util.richText(msg))
+		self.lblAbout.setText(util.rich_text(msg))
 		self.pbAboutOk.setVisible(True)
 		
 	def setMain(self, main):

@@ -76,16 +76,16 @@ class Window(QMainWindow, Ui_MainWindow):
 		self.configfile = fr'{util.DIR}\..\config.json'
 		self.param = {}
 		
-		self.config = util.loadConfig(self.configfile)
+		self.config = util.load_config(self.configfile)
 		# path = os.environ['PATH']
 		# sshfs_path = self.config.get('sshfs_path','')
 		# sanfs_path = self.config.get('sanfs_path','')
 		# os.environ['PATH'] = fr'{sanfs_path};{sshfs_path};{path}'	
-		
+
 		self.updateCombo(self.settings.value("cboParam",0))	
 		self.fillParam()
 		self.lblUserHostPort.setText(self.param['userhostport'])
-		
+
 		menu = Menu(self.pbHamburger)
 		menu.addAction('&Connect', self.mnuConnect)
 		menu.addAction('&Disconnect', self.mnuDisconnect)
@@ -105,7 +105,7 @@ class Window(QMainWindow, Ui_MainWindow):
 		self.watcher = QFileSystemWatcher()
 		self.watcher.addPaths([self.configfile])
 		self.watcher.fileChanged.connect(self.onConfigFileChanged)
-		
+
 		self.checkDriveStatus()
 		self.showPage(util.Page.MAIN)
 		self.lblMessage.linkActivated.connect(self.on_lblMessage_linkActivated)
@@ -150,8 +150,8 @@ class Window(QMainWindow, Ui_MainWindow):
 		if task == 'check_drive':
 			if rb.drive_status == 'CONNECTED':
 				drive = self.param['drive']				
-				link = util.makeHyperlink('open_drive', 'Open')
-				msg = util.richText(f"{rb.drive_status}\n\n{link}")
+				link = util.make_hyperlink('open_drive', 'Open')
+				msg = util.rich_text(f"{rb.drive_status}\n\n{link}")
 			else:
 				msg = rb.drive_status
 				if rb.error:
@@ -176,11 +176,15 @@ class Window(QMainWindow, Ui_MainWindow):
 			elif rb.returncode == util.ReturnCode.BAD_MOUNT:
 				self.end(rb.error)
 
+			elif rb.returncode == util.ReturnCode.BAD_WINFSP:
+				msg = (f"WinFSP is not installed\n\n{ util.make_hyperlink('install_winfsp', 'Install') }")
+				self.end(util.rich_text(msg))
+
 			else:
 				# print(rb.returncode)
 				assert rb.returncode == util.ReturnCode.OK
-				msg = (f"CONNECTED\n\n{ util.makeHyperlink('open_drive', 'Open') }")
-				self.end(util.richText(msg))
+				msg = (f"CONNECTED\n\n{ util.make_hyperlink('open_drive', 'Open') }")
+				self.end(util.rich_text(msg))
 
 		elif task == 'connect_login':
 			
@@ -189,8 +193,8 @@ class Window(QMainWindow, Ui_MainWindow):
 				self.progressBar.setVisible(False)
 
 			elif rb.drive_status == 'CONNECTED':
-				link = util.makeHyperlink('open_drive', 'Open')
-				msg = util.richText(f"{rb.drive_status}\n\n{link}")
+				link = util.make_hyperlink('open_drive', 'Open')
+				msg = util.rich_text(f"{rb.drive_status}\n\n{link}")
 									
 				self.end(msg)
 			else:
@@ -204,8 +208,8 @@ class Window(QMainWindow, Ui_MainWindow):
 			self.end(rb.drive_status)
 
 		elif task == 'restart_explorer':
-			link = util.makeHyperlink('open_drive', 'Open')
-			msg = util.richText(f"{rb.output}\n\n{link}")
+			link = util.make_hyperlink('open_drive', 'Open')
+			msg = util.rich_text(f"{rb.output}\n\n{link}")
 			self.end(msg)
 
 		else:
@@ -217,7 +221,7 @@ class Window(QMainWindow, Ui_MainWindow):
 
 	def onConfigFileChanged(self, path):
 		logger.info('Config file has changed, reloading...')
-		self.config = util.loadConfig(path)
+		self.config = util.load_config(path)
 		self.updateCombo(self.settings.value("cboParam",0))
 		self.fillParam()
 		self.lblUserHostPort.setText(self.param['userhostport'])
@@ -242,7 +246,7 @@ class Window(QMainWindow, Ui_MainWindow):
 		p['logfile'] = self.config.get('logfile')
 		p['configfile'] = self.configfile
 		p['user'] = getpass.getuser()		
-		p['appkey'] = util.getAppKey(p['user'])
+		p['appkey'] = util.get_app_key(p['user'])
 		p['userhostport'] = ''
 		default_port = 22
 		p['port'] = default_port
@@ -265,7 +269,7 @@ class Window(QMainWindow, Ui_MainWindow):
 		p['user'] = d.get('user', getpass.getuser())		
 		p['userhost'] = f"{p['user']}@{p['host']}"
 		p['userhostport'] = f"{p['userhost']}:{p['port']}"
-		p['appkey'] = util.getAppKey(p['user'])
+		p['appkey'] = util.get_app_key(p['user'])
 		p['args'] = d.get('args', '')
 		
 	# decorator used to trigger only the int overload and not twice
@@ -308,7 +312,7 @@ class Window(QMainWindow, Ui_MainWindow):
 		else:
 			user = self.param['user']
 		self.param['userhost'] = f'{user}@{host}'
-		self.param['appkey'] = util.getAppKey(user)
+		self.param['appkey'] = util.get_app_key(user)
 
 		# print(f"user: {self.param['user']}")
 		# print(f"host: {self.param['host']}")
@@ -385,9 +389,14 @@ class Window(QMainWindow, Ui_MainWindow):
 		util.run(cmd, shell=True)
 
 	def on_lblMessage_linkActivated(self, link):
-		drive = self.param['drive']
-		cmd = fr'start /b c:\windows\explorer.exe {drive}'
-		util.run(cmd, shell=True)
+		if link == 'open_drive':
+			drive = self.param['drive']
+			cmd = fr'start /b c:\windows\explorer.exe {drive}'
+			util.run(cmd, shell=True)
+		elif link == 'install_winfsp':
+			cmd = fr'start /b { self.config["winfsp"] }'
+			util.run(cmd, shell=True)
+
 
 	def showPage(self, page):
 		if page == util.Page.HOST:
@@ -413,6 +422,7 @@ class Window(QMainWindow, Ui_MainWindow):
 
 def run():
 	app = QApplication(sys.argv)
+	util.set_path()
 	window = Window()
 	window.show()
 	sys.exit(app.exec_())
@@ -429,6 +439,5 @@ if __name__ == '__main__':
 	logging.basicConfig(
 		level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S',
 		format='%(asctime)s: %(name)-10s: %(levelname)-7s: %(message)s')
-	util.setPath()
-
+	
 	run()
