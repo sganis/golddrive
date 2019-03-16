@@ -1,0 +1,16 @@
+C:\Users\sant\Documents\golddrive\src\golddrive-ui2\bin\Debug\golddrive-ui2.exe.config
+C:\Users\sant\Documents\golddrive\src\golddrive-ui\bin\Debug\golddrive-ui2.exe.config
+C:\Users\sant\Documents\golddrive\src\golddrive-ui\bin\Debug\golddrive-ui2.exe
+C:\Users\sant\Documents\golddrive\src\golddrive-ui\bin\Debug\golddrive-ui2.pdb
+C:\Users\sant\Documents\golddrive\src\golddrive-ui\bin\Debug\Renci.SshNet.dll
+C:\Users\sant\Documents\golddrive\src\golddrive-ui\obj\Debug\golddrive-ui2.csprojResolveAssemblyReference.cache
+C:\Users\sant\Documents\golddrive\src\golddrive-ui\obj\Debug\MainWindow.g.cs
+C:\Users\sant\Documents\golddrive\src\golddrive-ui\obj\Debug\App.g.cs
+C:\Users\sant\Documents\golddrive\src\golddrive-ui\obj\Debug\golddrive-ui2_MarkupCompile.cache
+C:\Users\sant\Documents\golddrive\src\golddrive-ui\obj\Debug\golddrive-ui2_MarkupCompile.lref
+C:\Users\sant\Documents\golddrive\src\golddrive-ui\obj\Debug\MainWindow.baml
+C:\Users\sant\Documents\golddrive\src\golddrive-ui\obj\Debug\golddrive-ui2.g.resources
+C:\Users\sant\Documents\golddrive\src\golddrive-ui\obj\Debug\golddrive_ui2.Properties.Resources.resources
+C:\Users\sant\Documents\golddrive\src\golddrive-ui\obj\Debug\golddrive-ui2.csproj.GenerateResource.Cache
+C:\Users\sant\Documents\golddrive\src\golddrive-ui\obj\Debug\golddrive-ui2.exe
+C:\Users\sant\Documents\golddrive\src\golddrive-ui\obj\Debug\golddrive-ui2.pdb

@@ -1,0 +1,15 @@
+﻿<Window x:Class="golddrive_ui2.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:golddrive_ui2"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="350" Width="525">
+    <Grid>
+        <Button x:Name="cmdConnect" Content="Connect" HorizontalAlignment="Left" Margin="168,165,0,0" VerticalAlignment="Top" Width="183" Click="button_Click" Height="43"/>
+        <TextBox x:Name="txtUser" HorizontalAlignment="Left" Height="23" Margin="168,94,0,0" TextWrapping="Wrap" Text="sant" VerticalAlignment="Top" Width="183"/>
+        <PasswordBox x:Name="txtPassword" HorizontalAlignment="Left" Margin="168,122,0,0" VerticalAlignment="Top" Width="183"/>
+
+    </Grid>
+</Window>
