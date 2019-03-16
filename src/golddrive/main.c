@@ -63,7 +63,7 @@ static struct fuse_opt fs_opts[] = {
 	fs_OPT("pkey=%s",           pkey, 0),
 	fs_OPT("-k %s",             pkey, 0),
 	fs_OPT("-k=%s",             pkey, 0),
-	fs_OPT("hidden",			   hidden, 1),
+	fs_OPT("hidden",		    hidden, 1),
 
 	FUSE_OPT_KEY("--version",      KEY_VERSION),
 	FUSE_OPT_KEY("--help",         KEY_HELP),
@@ -78,17 +78,23 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 			g_fs.drive = strdup(arg);
 			return 0;
 		}
+		if (!g_fs.npath) {
+			g_fs.npath = strdup(arg);
+			return 0;
+		}
 		fprintf(stderr, "golddrive: invalid argument '%s'\n", arg);
 		return -1;
 	case KEY_HELP:
 		fprintf(stderr,
 			"\n"
-			"Usage: golddrive drive [options]\n"
+			"Usage: golddrive drive [npath] [options]\n"
 			"\n"
+			"drive: letter and colon as Z:\n"
+			"npath: network path as \\\\golddrive\\[[locuser=]user@]host[!port][\\path]\n"
 			"Options:\n"
 			"    --help                     print this help\n"
 			"    --version                  print version\n"
-			"    -o opt,[opt...]            mount options, -o=opt or -oopt is also valid\n"
+			"    -o opt,[opt...]            mount options, -o=opt or -oopt is also valid\n"						
 			"    -h HOST, -o host=HOST      ssh server name or IP, default: random from config file\n"
 			"    -u USER, -o user=USER      user to connect to ssh server, default: current user\n"
 			"    -k PKEY, -o pkey=PKEY      private key, default: %%USERPROFILE%%\\.ssh\\id_rsa\n"
@@ -138,6 +144,83 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 //	return argv;
 //}
 
+static int parse_network_path(fs_config* fs)
+{
+	char *npath, *service, *locuser, *user, *host, *port, *p;
+		
+	/* translate backslash to forward slash */
+	
+	for (p = fs->npath; *p; p++)
+		if ('\\' == *p)
+			*p = '/';
+
+	npath = strdup(fs->npath);
+	/* remove first slash if it has 2 slashes // */
+	size_t len = strlen(npath);
+	if (len > 2 && npath[0] == '/' && npath[1] == '/') {
+		memcpy(fs->npath, npath + 1, len - 1);
+		fs->npath[len - 1] = '\0';
+	}
+	/* get service name (\\golddrive\) */
+	p = npath;
+	while ('/' == *p)
+		p++;
+	service = p;
+	while (*p && '/' != *p)
+		p++;
+	if (*p)
+		*p++ = '\0';
+
+	if (strcmp(service, "golddrive") != 0) {
+		fprintf(stderr, "service name '%s' invalid, only 'golddrive' is supported\n", service);
+		free(npath);
+		return -1;
+	}
+
+	/* parse instance name (syntax: [locuser=]user@host!port/path) */
+	locuser = 0;
+	user = 0;
+	port = 0;
+	host = p;
+	while (*p && '/' != *p) {
+		if ('=' == *p) {
+			*p = '\0';
+			locuser = host;
+			host = p + 1;
+		} else if ('@' == *p) {
+			*p = '\0';
+			user = host;
+			host = p + 1;
+		} else if ('!' == *p) {
+			*p = '\0';
+			port = p + 1;
+		}
+		p++;
+	}
+	if (*p)
+		*p++ = '\0';
+	if(host)
+		fs->host = strdup(host);
+	if (locuser)
+		fs->locuser = strdup(locuser);
+	if(user)
+		fs->user = strdup(user);
+	if(port)
+		fs->port = atoi(port);
+	
+	/* mount root by default, prepend a slash before path if needed */
+	fs->path = strdup(p);
+	if (*p != '/') {
+		char s[256];
+		strcpy(s, "/");
+		strcat(s, p);
+		free(fs->path);
+		fs->path = strdup(s);
+	}
+	free(npath);
+	return 0;
+}
+
 static int load_config_file(fs_config* fs)
 {
 	int rc = 0;
@@ -166,6 +249,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "bad arguments, try --help\n");
 		return -1;
 	}
+
 	if (!g_fs.drive || strlen(g_fs.drive) < 2 || argc < 2) {
 		fuse_opt_add_arg(&args, "--help");
 		fuse_opt_parse(&args, &g_fs, fs_opts, fs_opt_proc);
@@ -177,7 +261,12 @@ int main(int argc, char *argv[])
 	// load missing arguments from config file
 	g_fs.drive[0] = toupper(g_fs.drive[0]);
 	g_fs.letter = g_fs.drive[0];
-	load_config_file(&g_fs);
+	
+	// parse network path
+	if(g_fs.npath)
+		parse_network_path(&g_fs);
+
+	//load_config_file(&g_fs);
 
 	// finally setup missing arguments with defaults
 	// user
@@ -206,12 +295,14 @@ int main(int argc, char *argv[])
 		g_fs.host = g_fs.hostlist[randint(0,g_fs.hostcount-1)];
 	}
 	// show parameters
-	printf("host    = %s\n", g_fs.host);
-	printf("drive   = %s\n", g_fs.drive);
-	printf("port    = %d\n", g_fs.port);
-	printf("user    = %s\n", g_fs.user);
-	printf("pkey    = %s\n", g_fs.pkey);
-	printf("hidden  = %d\n", g_fs.hidden);
+	gdlog("drive   = %s\n", g_fs.drive);
+	gdlog("npath   = %s\n", g_fs.npath);
+	gdlog("user    = %s\n", g_fs.user);
+	gdlog("host    = %s\n", g_fs.host);
+	gdlog("port    = %d\n", g_fs.port);
+	gdlog("pkey    = %s\n", g_fs.pkey);
+	gdlog("hidden  = %d\n", g_fs.hidden);
+
 
 	// initiaize small read/write lock
 	InitializeSRWLock(&g_ssh_lock);
@@ -266,15 +357,20 @@ int main(int argc, char *argv[])
 
 	// run fuse main
 	char volprefix[256];
-	//sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=/fs/%s@%s", g_fs.user, g_fs.host);
-	sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=/golddrive/%c", g_fs.letter);
+	if(g_fs.npath)
+		sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=%s", g_fs.npath);
+	else
+		sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=/golddrive/%c", g_fs.letter);
+	
+	gdlog("VolumePrefix=%s\n", g_fs.npath);
+
 	fuse_opt_add_arg(&args, volprefix);
 	char volname[256];
 	sprintf_s(volname, sizeof(volname), "-ovolname=%s@%s", g_fs.user, g_fs.host);
 	fuse_opt_add_arg(&args, volname);
 	fuse_opt_add_arg(&args, "-oFileSystemName=GOLDDRIVE");
 	fuse_opt_add_arg(&args, "-orellinks");
-	//fuse_opt_add_arg(&args, "-ouid=-1,gid=-1,create_umask=007,mask=007");
+	fuse_opt_add_arg(&args, "-ouid=-1,gid=-1,create_umask=007,mask=007");
 	fuse_opt_parse(&args, &g_fs, fs_opts, fs_opt_proc);
 	
 	// no need to parse the drive, it must be the last argument

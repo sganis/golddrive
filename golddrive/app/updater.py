@@ -41,6 +41,8 @@ class BackgroundWorker(QObject):
 
 	def getLatest(self):
 		versions = []
+		if not os.path.isdir(self.update_url):
+			return []
 		for file in os.listdir(self.update_url):
 			m = re.match(r'golddrive-v([0-9\.]+)-x64\.zip', file)
 			if m:

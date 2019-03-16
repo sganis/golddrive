@@ -44,15 +44,18 @@ extern size_t			g_sftp_cached_calls;
 #endif
 
 typedef struct fs_config {
+	char *npath;
 	char *host;
 	char **hostlist;
 	int hostcount;
+	char *locuser;
 	char *user;
 	char *pkey;
 	char *drive;
 	char *json;
 	char *args;
 	char *home;
+	char *path;
 	char letter;
 	int port;
 	int hidden;
@@ -72,3 +75,5 @@ int jsoneq(const char *json, jsmntok_t *tok, const char *s);
 int load_ini(const char *appdir, fs_config *fs);
 int load_json(fs_config * fs);
 int randint(int min, int max);
+/* logging */
+void gdlog(const char *fmt, ...);

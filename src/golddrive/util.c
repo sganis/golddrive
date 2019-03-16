@@ -260,3 +260,17 @@ int randint(int min, int max)
 	int n = min + (rand() % (max-min+1));
 	return n;
 }	
+
+void gdlog(const char *fmt, ...)
+{
+	char message[1000];
+	va_list args;
+	va_start(args, fmt);
+	vsprintf(message, fmt, args);
+	va_end(args);
+	printf("%s", message);
+	FILE *f = fopen("c:/temp/golddrive.log", "a");
+	if (f != NULL)
+		fprintf(f, "golddrive: %s", message);
+	fclose(f);
+}
