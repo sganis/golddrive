@@ -7,8 +7,8 @@
     <ProjectGuid>{8569489B-D2C3-42CF-B1DF-BFEEEF4A58FD}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>golddrive_ui2</RootNamespace>
-    <AssemblyName>golddrive-ui2</AssemblyName>
+    <RootNamespace>golddrive_ui</RootNamespace>
+    <AssemblyName>golddrive-ui</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>

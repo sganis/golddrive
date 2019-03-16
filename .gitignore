@@ -11,5 +11,7 @@ release/
 .user
 */build/
 */ipch/
-
+obj/
+Release/
+Debug/
 
