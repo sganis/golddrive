@@ -1,3 +1,0 @@
-C:\Users\sant\Documents\golddrive\src\golddrive-ui\bin\Debug\golddrive-ui2.exe.config
-C:\Users\sant\Documents\golddrive\src\golddrive-ui\obj\Debug\golddrive-ui2.exe
-C:\Users\sant\Documents\golddrive\src\golddrive-ui\obj\Debug\golddrive-ui2.pdb
