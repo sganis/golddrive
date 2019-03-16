@@ -181,7 +181,10 @@ def run(cmd, capture=False, detach=False, shell=True, timeout=30):
 	
 def get_app_version():
 	try:
-		with open(os.environ['GOLDDRIVE'] + '\\version.txt') as r:
+		path = os.environ['GOLDDRIVE'] + '\\version.txt'
+		if not os.path.exists(path):
+			path = os.environ['GOLDDRIVE'] + '\\..\\version.txt'			
+		with open(path) as r:
 			return r.read().strip()
 	except:
 		return ''

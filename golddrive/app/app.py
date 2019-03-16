@@ -8,7 +8,7 @@ import getpass
 import logging
 import util
 from worker import Worker
-from updater import UpdateChecker
+from updater import Updater
 from PyQt5.QtCore import (QObject, pyqtSlot, QFile, Qt,
 	QThread, QSize, QSettings, QIODevice, QTextStream,
 	QFileSystemWatcher)
@@ -98,14 +98,14 @@ class Window(QMainWindow, Ui_MainWindow):
 		menu.addAction('&About...', self.mnuAbout)
 		self.pbHamburger.setMenu(menu)
 
-		# worker for background commands
+		# worker for commands
 		self.worker = Worker()
 		self.worker.workDone.connect(self.onWorkDone)
 
 		# worker for update
-		self.updateChecker = UpdateChecker()
-		self.updateChecker.checkUpdateDone.connect(self.onCheckUpdateDone)
-		self.updateChecker.start()
+		self.updater = Updater(self.config["update_url"])
+		self.updater.checkDone.connect(self.onCheckUpdateDone)
+		self.updater.doCheck()
 
 		# worker for watching config.json changes
 		self.watcher = QFileSystemWatcher()
@@ -225,13 +225,13 @@ class Window(QMainWindow, Ui_MainWindow):
 			self.end(msg)
 		self.setPbConnectText(rb.drive_status)
 	
-	@pyqtSlot(util.ReturnBox)
-	def onCheckUpdateDone(self, rb):
-		self.returncode = rb.returncode
+	@pyqtSlot(bool)
+	def onCheckUpdateDone(self, result):
 		logger.info('Check update done')
-		link = util.make_hyperlink('update', 'Update and re-launch now')
-		msg = util.rich_text(f"New version available\n\n{link}")
-		self.end(msg)
+		if result:
+			link = util.make_hyperlink('update', 'Update and re-launch now')
+			msg = util.rich_text(f"New version available\n\n{link}")
+			self.end(msg)
 
 	def onConfigFileChanged(self, path):
 		logger.info('Config file has changed, reloading...')
@@ -362,6 +362,7 @@ class Window(QMainWindow, Ui_MainWindow):
 		util.run(cmd, shell=True)
 
 	def mnuOpenTerminal(self):
+		
 		util.run('start %ComSpec%', shell=True)
 
 	def mnuOpenLogFile(self):
@@ -385,8 +386,7 @@ class Window(QMainWindow, Ui_MainWindow):
 		self.settings.setValue("windowState", self.saveState())			
 		QMainWindow.closeEvent(self, event)
 		self.worker.stop()
-		# self.thread.quit()
-		# self.thread.wait()
+		self.updater.stop()
 
 	def on_pbConnect_released(self):
 		task = self.pbConnect.text().lower().replace('&','')
@@ -410,13 +410,11 @@ class Window(QMainWindow, Ui_MainWindow):
 			util.run(cmd, shell=True)
 		
 		elif link == 'update':
-			from updater import update
-			update()
+			self.updater.doUpdate()
 
 		elif link == 'install_winfsp':
-			cmd = fr'start /b { self.config["winfsp"] }'
+			cmd = fr'start /b { self.config["winfsp_url"] }'
 			util.run(cmd, shell=True)
-
 
 	def showPage(self, page):
 		if page == util.Page.HOST:
