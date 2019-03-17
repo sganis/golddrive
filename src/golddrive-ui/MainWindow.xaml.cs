@@ -1,4 +1,5 @@
-﻿using Renci.SshNet;
+﻿using MahApps.Metro.Controls;
+using Renci.SshNet;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,41 +15,71 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace golddrive_ui2
+namespace golddrive_ui
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : MetroWindow
     {
-        SshClient m_ssh;
-        bool m_connected;
+        Controller mController;
+
+        public bool IsLoginOpen { get; set; }
 
         public MainWindow()
         {
-            InitializeComponent();            
+            InitializeComponent();
+            mController = new Controller();
+            progressBar.Visibility = Visibility.Hidden;
         }
-        private void Connect()
+        
+        void WorkStart(string msg = "")
         {
-            try
-            {
-                m_ssh = new SshClient("192.168.100.201", txtUser.Text, txtPassword.Password);
-                m_ssh.Connect();
-                m_connected = true;
-            }
-            catch (Renci.SshNet.Common.SshAuthenticationException ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
+            btnConnect.IsEnabled = false;
+            progressBar.Visibility = Visibility.Visible;
+            txtStatus.Text = msg;
+        }
+        void WorkProgress(string message)
+        {
+            txtStatus.Text = message;
+        }
+        void WorkEnd(ReturnBox r)
+        {
+            btnConnect.IsEnabled = true;
+            progressBar.Visibility = Visibility.Hidden;
+            txtMessage.Text = r.Output;
+            txtStatus.Text = "Done";
+        }
+        private async Task<bool> Connect()
+        {
+            var r = await Task.Run(() => {
+                    return mController.Connect("192.168.100.201", "sant", "sant");
+                });
+            return r;
+        }
+        private async Task<ReturnBox> ls()
+        {
+            return await Task.Run(() => mController.RunRemote("ls -l"));            
+        }
+        private async Task<ReturnBox> GetGoldDrives()
+        {
+            return await Task.Run(() => mController.RunLocal("net use"));
         }
 
-        private void button_Click(object sender, RoutedEventArgs e)
+        private async void Connect_Click(object sender, RoutedEventArgs e)
         {
-            Connect();
-            if (!m_connected)
-                return;
-            SshCommand cmd = m_ssh.RunCommand("ls -l");    
-            Console.WriteLine(cmd.Result);
+            WorkStart();
+            txtStatus.Text = "Loging in...";
+            bool connected = await Connect();
+            if (connected)
+                WorkProgress("connected");
+            await Task.Delay(2000);
+            var r1 = await ls();
+            WorkEnd(r1);
+            await Task.Delay(2000);
+            var r2 = await GetGoldDrives();
+            WorkEnd(r2);
         }
+
     }
 }
