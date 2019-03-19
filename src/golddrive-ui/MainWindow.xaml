@@ -16,7 +16,7 @@
         MaxWidth="500" MinWidth="300" MinHeight="500"
         ShowIconOnTitleBar="True"
         ResizeMode="CanResizeWithGrip"
-        Height="464.818" Width="418.908">
+        Height="432" Width="472.508">
 
     <metro:MetroWindow.RightWindowCommands>
         <metro:WindowCommands>
@@ -31,38 +31,38 @@
     </metro:MetroWindow.RightWindowCommands>
 
 
-    <StackPanel>
+    <Grid>
         <Grid>
 
 
             <Grid.RowDefinitions>
-                <RowDefinition Height="93*"/>
-                <RowDefinition Height="260*"/>
-                <RowDefinition Height="67*"/>
-                <RowDefinition Height="13*"/>
-                <RowDefinition Height="39*"/>
+                <RowDefinition Height="37*"/>
+                <RowDefinition Height="23*"/>
+                <RowDefinition Height="15*"/>
+                <RowDefinition Height="6*"/>
+                <RowDefinition Height="0*"/>
             </Grid.RowDefinitions>
             <ComboBox x:Name="cboDrives" 
                   FontSize="20"
-                  Margin="84,26,62.8,9.8"/>
+                  Margin="84,26,63,10.4" Height="38"/>
             <TextBlock x:Name="txtMessage" TextWrapping="Wrap"
                    TextAlignment="Center"
                    VerticalAlignment="Center"
                     FontSize="20"
-                   Text="DISCONNECTED" Margin="10,10.2,9.8,8.8" Grid.Row="1"/>
-            
+                   Text="DISCONNECTED" Margin="10,10.6,10,9" Grid.Row="1" Height="26"/>
+
             <Button x:Name="btnConnect"
                 
-                Content="Connect" Click="Connect_Click" Grid.Row="2" Margin="100,0,100.2,3.4" Height="Auto"/>
+                Content="Connect" Click="Connect_Click" Grid.Row="2" Margin="100,0,100,3.6" Height="Auto"/>
 
             <metro:MetroProgressBar
             x:Name="progressBar"
-            IsIndeterminate="True" Grid.Row="3" Margin="100,2,99.8,3.8" />
+            IsIndeterminate="True" Grid.Row="3" Margin="100,2.4,100,3.6" />
 
-            
+
 
         </Grid>
 
-        <local:Login />
-    </StackPanel>
+        <local:Login Visibility="Collapsed" />
+    </Grid>
 </metro:MetroWindow>
