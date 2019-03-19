@@ -2,8 +2,12 @@
 using Renci.SshNet;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -20,66 +24,112 @@ namespace golddrive_ui
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : MetroWindow
+    public partial class MainWindow : MetroWindow, INotifyPropertyChanged
     {
-        Controller mController;
+        public event PropertyChangedEventHandler PropertyChanged;
+        private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
 
-        public bool IsLoginOpen { get; set; }
+        bool mIsLoginOpen;
+        public bool IsLoginOpen
+        {
+            get { return mIsLoginOpen; }
+            set
+            {
+                if (value != this.mIsLoginOpen)
+                {
+                    mIsLoginOpen = value;
+                    NotifyPropertyChanged();
+                }
+            }
+        }
 
+        // constructor
         public MainWindow()
         {
             InitializeComponent();
-            mController = new Controller();
+            App.Controller = new Controller(this);
             progressBar.Visibility = Visibility.Hidden;
+            DataContext = this;
         }
-        
+
         void WorkStart(string msg = "")
         {
             btnConnect.IsEnabled = false;
             progressBar.Visibility = Visibility.Visible;
-            txtStatus.Text = msg;
+            txtMessage.Text = msg;
         }
         void WorkProgress(string message)
         {
-            txtStatus.Text = message;
+            txtMessage.Text = message;
         }
         void WorkEnd(ReturnBox r)
         {
             btnConnect.IsEnabled = true;
             progressBar.Visibility = Visibility.Hidden;
             txtMessage.Text = r.Output;
-            txtStatus.Text = "Done";
+            //txtStatus.Text = "Done";
         }
-        private async Task<bool> Connect()
-        {
-            var r = await Task.Run(() => {
-                    return mController.Connect("192.168.100.201", "sant", "sant");
-                });
-            return r;
-        }
+
         private async Task<ReturnBox> ls()
         {
-            return await Task.Run(() => mController.RunRemote("ls -l"));            
+            return await Task.Run(() => App.Controller.RunRemote("ls -l"));
         }
-        private async Task<ReturnBox> GetGoldDrives()
-        {
-            return await Task.Run(() => mController.RunLocal("net use"));
-        }
+
 
         private async void Connect_Click(object sender, RoutedEventArgs e)
         {
             WorkStart();
-            txtStatus.Text = "Loging in...";
-            bool connected = await Connect();
-            if (connected)
+            //if (!App.Controller.Connected)
+            //{
+            //    txtStatus.Text = "Loging in...";
+
+            //}
+            if (App.Controller.Connected)
+            {
                 WorkProgress("connected");
-            await Task.Delay(2000);
-            var r1 = await ls();
-            WorkEnd(r1);
-            await Task.Delay(2000);
-            var r2 = await GetGoldDrives();
+                var r1 = await ls();
+                WorkEnd(r1);
+                await Task.Delay(1000);
+            }
+
+            var t = new Stopwatch();
+            t.Start();
+            var r2 = await App.Controller.GetGoldDrives();
+            //WorkEnd(r2);
+            txtMessage.Text = t.ElapsedMilliseconds.ToString();
             WorkEnd(r2);
         }
 
+        private void Settings_Click(object sender, RoutedEventArgs e)
+        {
+            // setup ssh
+            //GenerateKeys();
+            TransferPublicKey();
+            //TestSsh();
+        }
+
+        private void TestSsh()
+        {
+            throw new NotImplementedException();
+        }
+
+        private void TransferPublicKey()
+        {
+            App.Controller.UploadFile(
+                @"D:\Users\ganissa\.ssh\id_rsa-ganissa-golddrive.pub",
+                ".ssh",
+                "id_rsa-ganissa-golddrive.pub");
+        }
+
+        private void Login_Click(object sender, RoutedEventArgs e)
+        {
+            IsLoginOpen = true;
+        }
     }
 }
