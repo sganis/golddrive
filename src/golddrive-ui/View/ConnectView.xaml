@@ -1,0 +1,46 @@
+﻿<UserControl x:Class="golddrive_ui.ConnectView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+             xmlns:local="clr-namespace:golddrive_ui"
+             xmlns:metro="http://metro.mahapps.com/winfx/xaml/controls"
+             mc:Ignorable="d" 
+             d:DesignHeight="500" d:DesignWidth="500">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="37*"/>
+            <RowDefinition Height="23*"/>
+            <RowDefinition Height="15*"/>
+        </Grid.RowDefinitions>
+        <ComboBox x:Name="cboDrives" 
+                  FontSize="20"
+                  Margin="84,26,63,10.4" Height="38"
+                  ItemsSource="{Binding Drives}"    
+                  SelectedItem="{Binding Drive}"  
+                  DisplayMemberPath="ComboDisplay">
+            <i:Interaction.Triggers>
+                <i:EventTrigger EventName="SelectionChanged">
+                    <i:InvokeCommandAction Command="{Binding CheckDriveStatusCommand}"/>
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
+        </ComboBox>
+        <TextBlock x:Name="txtMessage" TextWrapping="Wrap"
+                   TextAlignment="Center"
+                   VerticalAlignment="Center"
+                    FontSize="20"
+                    Visibility="{Binding IsLoginOpen, Converter={StaticResource boolToVis}}"
+                   Text="{Binding Message}" 
+                   Margin="10,10.6,10,9" Grid.Row="1" Height="26"/>
+
+        <Button x:Name="btnConnect"
+                Content="{Binding ButtonText}"
+                Command="{Binding ConnectCommand}"
+                IsEnabled="{Binding IsWorking, Converter={StaticResource InverseBooleanConverter}}"
+                FontSize="20"
+                Grid.Row="2"  Width="200" Height="70"  />
+
+
+    </Grid>
+</UserControl>

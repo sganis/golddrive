@@ -14,5 +14,6 @@ namespace golddrive_ui
     public partial class App : Application
     {
         public static Controller Controller;
+        public static MainWindowViewModel MainWindowViewModel;
     }
 }

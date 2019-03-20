@@ -1,0 +1,52 @@
+﻿<metro:MetroWindow x:Class="golddrive_ui.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:golddrive_ui"  
+        mc:Ignorable="d"                     
+        xmlns:metro="http://metro.mahapps.com/winfx/xaml/controls"
+        GlowBrush="{DynamicResource AccentColorBrush}"
+        BorderThickness="1"
+        WindowStartupLocation="CenterScreen"
+        SaveWindowPosition="True"
+        Title="Golddrive" 
+        ShowMaxRestoreButton="False"
+        MaxWidth="500" MinWidth="300" MinHeight="500"
+        ShowIconOnTitleBar="True"
+        ResizeMode="CanResizeWithGrip"
+        Height="432" Width="472.508">
+
+    <Window.Resources>
+        <DataTemplate DataType="{x:Type local:LoginViewModel}">
+            <local:LoginView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type local:ConnectViewModel}">
+            <local:ConnectView/>
+        </DataTemplate>
+    </Window.Resources>
+    <metro:MetroWindow.RightWindowCommands>
+        <metro:WindowCommands>
+            <Button >Login</Button>
+            <!--<Button>
+                <StackPanel Orientation="Horizontal">
+                    <iconPacks:PackIconModern Width="24" Height="24" Kind="Settings" />
+                    <TextBlock Margin="4 0 0 0" VerticalAlignment="Center" Text="Settings" />
+                </StackPanel>
+            </Button>-->
+        </metro:WindowCommands>
+    </metro:MetroWindow.RightWindowCommands>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition Height="56" />
+        </Grid.RowDefinitions>
+        <ContentControl x:Name="Pages" Content="{Binding SelectedViewModel}" Grid.Row="0"/>
+        <metro:MetroProgressBar
+            x:Name="progressBar"
+            Visibility="{Binding IsWorking, Converter={StaticResource boolToVis}}"
+            VerticalAlignment="Top"
+            IsIndeterminate="True" Grid.Row="1" Margin="100,0.6,100,3.4" />
+    </Grid>
+</metro:MetroWindow>

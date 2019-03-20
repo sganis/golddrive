@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Renci.SshNet;
 using System.IO;
 using System.Text.RegularExpressions;
+using Renci.SshNet;
 
 namespace golddrive_ui
 {
@@ -17,11 +14,10 @@ namespace golddrive_ui
         public SftpClient Sftp { get; set; }
         public bool Connected { get; set; }
         public string Error { get; set; }
-        public MainWindow MainWindow;
 
-        public Controller(MainWindow main)
+        public Controller()
         {
-            MainWindow = main;
+
         }
 
         public bool Connect(string host, int port, string user, string password, string pkey)
@@ -168,5 +164,11 @@ namespace golddrive_ui
             r.Output = drives;
             return r;
         }
+
+        public async Task<ReturnBox> ls()
+        {
+            return await Task.Run(() => RunRemote("ls -l"));
+        }
+
     }
 }

@@ -8,13 +8,12 @@ namespace golddrive_ui
     /// <summary>
     /// Interaction logic for Login.xaml
     /// </summary>
-    public partial class Login : UserControl
+    public partial class LoginView : UserControl
     {
-        public Login()
+        public LoginView()
         {
             InitializeComponent();
-            //txtStatus.Text = "";
-            //progressBar.Visibility = Visibility.Hidden;
+            //DataContext = App.ViewModels["LoginViewModel"];
         }
 
         private async void btnLogin_Click(object sender, RoutedEventArgs e)
@@ -50,7 +49,7 @@ namespace golddrive_ui
             {
                // txtStatus.Text = "Done";                
                 await Task.Delay(1000);
-                App.Controller.MainWindow.IsLoginOpen = false;
+                //App.Controller.MainWindow.IsLoginOpen = false;
             }
             //progressBar.Visibility = Visibility.Hidden;
             btnLogin.IsEnabled = true;
