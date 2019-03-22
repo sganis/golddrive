@@ -6,14 +6,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace golddrive_ui
+namespace golddrive
 {
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
     public partial class App : Application
     {
-        public static Controller Controller;
-        public static MainWindowViewModel MainWindowViewModel;
+
     }
 }

@@ -2,7 +2,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace golddrive_ui
+namespace golddrive
 {
     public abstract class Observable : INotifyPropertyChanged
     {

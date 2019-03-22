@@ -13,7 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace golddrive_ui
+namespace golddrive
 {
     /// <summary>
     /// Interaction logic for MainView.xaml

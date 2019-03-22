@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 
-namespace golddrive_ui
+namespace golddrive
 {
     public static class PasswordHelper
     {

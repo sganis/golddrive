@@ -6,24 +6,23 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
-namespace golddrive_ui
+namespace golddrive
 {
     public class MainWindowViewModel : BaseViewModel
     {
         public ICommand ShowLoginCommand { get; set; }
         public ICommand ShowConnectCommand { get; set; }
 
-        private LoginViewModel _loginViewModel = new LoginViewModel();
-        private ConnectViewModel _connectViewModel = new ConnectViewModel();        
-        private BaseViewModel selectedViewModel;
-
-        
+        private MountManager _mountManager;
+        private LoginViewModel _loginViewModel;
+        private ConnectViewModel _connectViewModel;        
+        private BaseViewModel _selectedViewModel;        
 
         public BaseViewModel SelectedViewModel
         {
-            get { return selectedViewModel; }
+            get { return _selectedViewModel; }
             set {
-                selectedViewModel = value;
+                _selectedViewModel = value;
                 NotifyPropertyChanged();
             }
         }
@@ -31,12 +30,14 @@ namespace golddrive_ui
 
         public MainWindowViewModel()
         {
+            _mountManager = new MountManager();
+            _loginViewModel = new LoginViewModel(this, _mountManager);
+            _connectViewModel = new ConnectViewModel(this, _mountManager);
+
             //Messenger.Default.Register<string>(this, OnShowView);
             ShowLoginCommand = new BaseCommand(ShowLogin);
             ShowConnectCommand = new BaseCommand(ShowConnect);
-
             
-
             ShowConnectCommand.Execute(null);
         }
 
@@ -50,19 +51,6 @@ namespace golddrive_ui
             SelectedViewModel = _connectViewModel;
         }
 
-        //private void OnNav(string destination)
-        //{
-        //    switch (destination)
-        //    {
-        //        case "orderPrep":
-        //            SelectedViewModel = _orderPrepViewModel;
-        //            break;
-        //        case "customers":
-        //        default:
-        //            SelectedViewModel = _customerListViewModel;
-        //            break;
-        //    }
-        //}
     }
 
     

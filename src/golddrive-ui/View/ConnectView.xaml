@@ -1,25 +1,31 @@
-﻿<UserControl x:Class="golddrive_ui.ConnectView"
+﻿<UserControl x:Class="golddrive.ConnectView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
-             xmlns:local="clr-namespace:golddrive_ui"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:local="clr-namespace:golddrive"
              xmlns:metro="http://metro.mahapps.com/winfx/xaml/controls"
              mc:Ignorable="d" 
              d:DesignHeight="500" d:DesignWidth="500">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="37*"/>
-            <RowDefinition Height="23*"/>
-            <RowDefinition Height="15*"/>
+            <RowDefinition />
+            <RowDefinition />
+            <RowDefinition />
         </Grid.RowDefinitions>
-        <ComboBox x:Name="cboDrives" 
-                  FontSize="20"
-                  Margin="84,26,63,10.4" Height="38"
-                  ItemsSource="{Binding Drives}"    
-                  SelectedItem="{Binding Drive}"  
-                  DisplayMemberPath="ComboDisplay">
+        <ComboBox 
+            x:Name="cboDrives" 
+            materialDesign:HintAssist.Hint="Drive"
+            materialDesign:HintAssist.FloatingScale="0.50"
+            materialDesign:ComboBoxAssist.ClassicMode="true"
+            Style="{StaticResource MaterialDesignFloatingHintComboBox}"
+            FontSize="24"
+            Margin="5"
+            ItemsSource="{Binding Drives}"    
+            SelectedItem="{Binding Drive}"  
+            DisplayMemberPath="ComboDisplay">
             <i:Interaction.Triggers>
                 <i:EventTrigger EventName="SelectionChanged">
                     <i:InvokeCommandAction Command="{Binding CheckDriveStatusCommand}"/>
@@ -32,7 +38,7 @@
                     FontSize="20"
                     Visibility="{Binding IsLoginOpen, Converter={StaticResource boolToVis}}"
                    Text="{Binding Message}" 
-                   Margin="10,10.6,10,9" Grid.Row="1" Height="26"/>
+                   Margin="5" Grid.Row="1" Height="26"/>
 
         <Button x:Name="btnConnect"
                 Content="{Binding ButtonText}"

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
-namespace golddrive_ui
+namespace golddrive
 {
     public class BaseCommand : ICommand
     {

@@ -3,7 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 
-namespace golddrive_ui
+namespace golddrive
 {
     public static class EnterKeyHelper
     {
