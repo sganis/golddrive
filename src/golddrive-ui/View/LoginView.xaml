@@ -25,16 +25,7 @@
             Margin="15"
             FontSize="24"
             materialDesign:HintAssist.Hint="Hostname"
-            materialDesign:HintAssist.FloatingScale="0.50">
-            <TextBox.Text>
-                <Binding
-                  Path="Host"
-                  UpdateSourceTrigger="PropertyChanged">
-                  <Binding.ValidationRules>
-                        <local:NotEmptyValidationRule ValidatesOnTargetUpdated="True"/>
-                  </Binding.ValidationRules>
-                </Binding>
-            </TextBox.Text>
+            materialDesign:HintAssist.FloatingScale="0.50">            
         </TextBox>        
         <PasswordBox
             x:Name="Password"
@@ -48,14 +39,22 @@
             local:EnterKeyHelper.EnterKeyCommand="{Binding LoginCommand}"  
             VerticalAlignment="Top"
             Margin="15"
-            Grid.Row="2"/>        
-        <Button x:Name="btnLogin"
+            Grid.Row="2"/>
+        <StackPanel Orientation="Horizontal" Grid.Row="3" HorizontalAlignment="Right">
+
+            <Button x:Name="btnCancel"
+            Content="Cancel"
+            Command="{Binding CancelCommand}"
+                    Style="{StaticResource MaterialDesignFlatButton}"
+            Height="28" Width="94" HorizontalAlignment="Right"
+            Margin="5"/>
+            <Button x:Name="btnLogin"
             Content="Login"
             Command="{Binding LoginCommand}"
             Height="28" Width="94" HorizontalAlignment="Right"
-            Margin="5"
-            Grid.Row="3"/>
+            Margin="5"/>
 
+        </StackPanel>
         <TextBlock x:Name="txtMessage" TextWrapping="Wrap"
            Text="{Binding Message}"
            TextAlignment="Center"

@@ -9,7 +9,7 @@ namespace golddrive
     public enum DriveStatus
     {
         NOT_SUPPORTED,
-        HOST_IN_USE,
+        PATH_IN_USE,
         IN_USE,
         BROKEN,
         DISCONNECTED,

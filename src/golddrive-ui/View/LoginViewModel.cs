@@ -12,8 +12,7 @@ namespace golddrive
         #region Properties
 
         public ICommand LoginCommand { get; set; }
-        public IMountManager MountManager { get; set; }
-        public MainWindowViewModel MainWindowViewModel { get; set; }
+        public ICommand CancelCommand { get; set; }
 
         private string host;
         public string Host
@@ -38,19 +37,20 @@ namespace golddrive
 
         #endregion
 
-        public LoginViewModel(MainWindowViewModel mainWindow, IMountManager mountManager)
+        public LoginViewModel(MainWindowViewModel mainWindow, IDriver driver)
         {
             LoginCommand = new BaseCommand(Login);
+            CancelCommand = new BaseCommand(Cancel);
             IsWorking = false;
             Host = "192.168.100.201";
-            MountManager = mountManager;
-            MainWindowViewModel = mainWindow;
+            _driver = driver;
+            _mainViewModel = mainWindow;
         }
 
         private async void Login(object obj)
         {
             IsWorking = true;
-            //App.MainWindowViewModel.IsWorking = true;
+            _mainViewModel.IsWorking = true;
 
             // parse host: user@host:port
             // get user
@@ -58,25 +58,28 @@ namespace golddrive
             string user = "sant";
             int port = 22;
             string pkey = $@"C:\Users\sant\.ssh\id_rsa-{user}-golddrive";
-            if (!MountManager.Connected)
+            if (!_driver.Connected)
             {
-                var r = await Task.Run(() => MountManager.Connect(host, port, user, password, pkey));
-                if(!r)
+                var r = await Task.Run(() => _driver.Connect(host, port, user, password, pkey));
+                if (!r)
                 {
-                    Message = MountManager.Error;
+                    Message = _driver.Error;
 
                 }
             }
-            if (MountManager.Connected)
+            if (_driver.Connected)
             {
-                var r = await MountManager.ls();
-                Message = r.Output;
-                await Task.Delay(2000);
-                MainWindowViewModel.ShowConnectCommand.Execute(null);                
+                Message = await Task.Run(() => _driver.GetUid(user));
+                //await Task.Delay(2000);
+                _mainViewModel.ShowConnectCommand.Execute(null);
             }
-            MainWindowViewModel.IsWorking = false;
+            _mainViewModel.IsWorking = false;
             IsWorking = false;
 
+        }
+        private void Cancel(object obj)
+        {
+            _mainViewModel.ShowConnectCommand.Execute(null);
         }
     }
 }

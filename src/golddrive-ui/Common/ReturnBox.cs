@@ -12,6 +12,7 @@ namespace golddrive
         public string Output { get; set; }
         public int ExitCode { get; set; }
         public bool Success { get; set; }
+        public object Object { get; set; }
 
     }
 }

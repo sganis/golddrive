@@ -1,26 +1,90 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using Renci.SshNet;
+using System.Linq;
+using Microsoft.Win32;
+using System.Reflection;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace golddrive
 {
 
-    public class MountManager : IMountManager
+    public class Driver : IDriver
     {
+        #region Properties
+
         public SshClient Ssh { get; set; }
         public SftpClient Sftp { get; set; }
         public string Error { get; set; }
-
         public bool Connected { get { return Ssh != null && Ssh.IsConnected; } }
 
-        public MountManager()
+        private string appPath;
+        public string AppPath {
+            get
+            {
+                if (appPath == null)
+                {
+                    string codeBase = Assembly.GetExecutingAssembly().CodeBase;
+                    UriBuilder uri = new UriBuilder(codeBase);
+                    string path = Uri.UnescapeDataString(uri.Path);
+                    appPath = Path.GetDirectoryName(path);
+                }
+                return appPath;
+            }
+        }
+
+        #endregion
+
+        public Driver()
         {
 
         }
+
+        #region Serialization
+
+        public void SaveSettingsDrives(List<Drive> drives)
+        {
+            try
+            {
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    BinaryFormatter bf = new BinaryFormatter();
+                    bf.Serialize(ms, drives);
+                    ms.Position = 0;
+                    byte[] buffer = new byte[(int)ms.Length];
+                    ms.Read(buffer, 0, buffer.Length);
+                    Properties.Settings.Default.Drives = Convert.ToBase64String(buffer);
+                    Properties.Settings.Default.Save();
+                }
+            }
+            catch { }
+        }
+
+        private List<Drive> LoadSettingsDrives()
+        {
+            List<Drive> drives = new List<Drive>();
+            try
+            {
+                using (MemoryStream ms = new MemoryStream(
+                    Convert.FromBase64String(Properties.Settings.Default.Drives)))
+                {
+                    BinaryFormatter bf = new BinaryFormatter();  
+                    if(ms.Length > 0)                  
+                        drives = (List<Drive>)bf.Deserialize(ms);
+                }
+            }
+            catch(Exception ex)
+            {
+            }
+            return drives;
+        }
+
+        #endregion
+
+        #region Core Methods
 
         public bool Connect(string host, int port, string user, string password, string pkey)
         {
@@ -60,7 +124,7 @@ namespace golddrive
         public ReturnBox RunLocal(string cmd)
         {
             // 2 secs slower
-            return RunLocal(@"C:\Windows\System32\cmd.exe", "/C " + cmd);
+            return RunLocal("cmd.exe", "/C " + cmd);
         }
 
         public ReturnBox RunLocal(string cmd, string args)
@@ -151,15 +215,19 @@ namespace golddrive
             return r;
         }
 
-        public List<Drive> GetGoldDrives()
+        #endregion
+
+        #region Local Drive Management
+
+        public List<Drive> GetUsedDrives()
         {
             List<Drive> drives = new List<Drive>();
-            // get mounted drives
+            
+            // get mounted drives using net use command
             var r = RunLocal("net.exe", "use");
             foreach (var line in r.Output.Split('\n'))
             {
-                Match match = Regex.Match(line,
-                    @"^([A-Za-z]+)?\s+([A-Z]:)\s+(\\\\golddrive\\[^ ]+)");
+                Match match = Regex.Match(line, @"^([A-Za-z]+)?\s+([A-Z]:)\s+(\\\\[^ ]+)");
                 if (match.Success)
                 {
                     try
@@ -167,16 +235,21 @@ namespace golddrive
                         Drive d = new Drive();
                         d.NetUseStatus = match.Groups[1].Value;
                         d.Letter = match.Groups[2].Value[0].ToString();
-                        d.Remote = match.Groups[3].Value;
-                        d.Label = GetDriveLabel(d.Letter);
-                        if(!String.IsNullOrEmpty(d.Label) && d.Label.Contains("@"))
+                        d.IsGoldDrive = match.Groups[3].Value.Contains(@"\\golddrive\");
+                        if (d.IsGoldDrive == true)
                         {
-                            d.User = d.Label.Split('@')[0];
-                            d.Host = d.Label.Split('@')[1];
+                            d.Label = GetDriveLabel(d.Letter);
+                            if (!String.IsNullOrEmpty(d.Label) && d.Label.Contains("@"))
+                            {
+                                d.User = d.Label.Split('@')[0];
+                                d.Host = d.Label.Split('@')[1];
+                            }
+                            d.Remote = match.Groups[3].Value.Replace(@"\\golddrive\", "");                            
+                            d.Name = GetDriveName(d);
                         }
                         drives.Add(d);
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
 
                     }
@@ -184,7 +257,18 @@ namespace golddrive
             }
             return drives;
         }
-        private string GetDriveLabel(string letter)
+
+        public List<Drive> GetGoldDrives()
+        {
+            List<Drive> drives = GetUsedDrives().Where(x => x.IsGoldDrive == true).ToList();
+            List<Drive> savedDrives = LoadSettingsDrives();
+            foreach (Drive d in savedDrives)
+                if (drives.Find(x => x.Letter == d.Letter) == null)
+                    drives.Add(d);
+            return drives;
+        }
+
+        public string GetDriveLabel(string letter)
         {
             var r = RunLocal($"vol {letter}:");
             foreach (var line in r.Output.Split('\n'))
@@ -195,21 +279,114 @@ namespace golddrive
                     if (match.Success)
                         return match.Groups[1].Value.Trim();
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
 
                 }
             }
             return "";
         }
-        public async Task<ReturnBox> ls()
+
+        public DriveStatus CheckDriveStatus(Drive drive)
         {
-            return await Task.Run(() => RunRemote("ls -l"));
+            if (drive == null ||
+                (drive.Letter.ToCharArray()[0] < 'G' && drive.Letter.ToCharArray()[0] > 'Z'))
+                return DriveStatus.NOT_SUPPORTED;
+            var freeDrives = GetFreeDrives();
+            var drives = GetUsedDrives();
+            var inUse = freeDrives.Find(x => x.Letter == drive.Letter) == null;
+            var isGold = drives.Find(x => x.Letter == drive.Letter && x.IsGoldDrive==true) != null; 
+            var pathUsed = drives.Find(x => x.Letter != drive.Letter && x.Remote == drive.Remote) != null;
+            if (!inUse)
+                return DriveStatus.DISCONNECTED;
+            else if (pathUsed)
+                return DriveStatus.PATH_IN_USE;
+            else if (!isGold)
+                return DriveStatus.IN_USE;
+            else if (!CheckIfDriveWorks(drive))
+                return DriveStatus.BROKEN;
+            else
+                return DriveStatus.CONNECTED;
+        }
+        public bool CheckIfDriveWorks(Drive drive)
+        {
+            int epoch = (int)(DateTime.Now - new DateTime(1970, 1, 1, 0, 0, 0, 0)).TotalSeconds;
+            string tempfile = $@"{ drive.LetterColon }\tmp\{drive.User}@{drive.Host}.{epoch}";
+            var r = RunLocal("type nul > " + tempfile);
+            if(r.ExitCode == 0)
+            {
+                RunLocal("del " + tempfile);
+                return true;
+            }
+            return false;
+        }
+        public string GetDriveName(Drive drive)
+        {
+            try
+            {
+                string key = $@"Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\{drive.MountPoint2}";
+                RegistryKey k = Registry.CurrentUser.OpenSubKey(key);
+                if (k != null)
+                    return k.GetValue("_LabelFromReg")?.ToString();                    
+            }
+            catch (Exception ex)
+            {
+
+            }
+            return "";
+        }
+        public void SetDriveName(Drive drive)
+        {
+            if (String.IsNullOrEmpty(drive.Name))
+                return;
+            try
+            {
+                string key = $@"Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\{drive.MountPoint2}";
+                RegistryKey k = Registry.CurrentUser.CreateSubKey(key);
+                if(k != null)
+                    k.SetValue("_LabelFromReg", drive.Name, RegistryValueKind.String);
+            }
+            catch(Exception ex)
+            {
+
+            }
+        }
+        public void SetDriveIcon(Drive drive, string icoPath)
+        {
+            try
+            {
+                string key = $@"Software\Classes\Applications\Explorer.exe\Drives\{drive.Letter}\";
+                RegistryKey k = Registry.CurrentUser.CreateSubKey(key);
+                if (k != null)
+                    k.SetValue("DefaultIcon", icoPath, RegistryValueKind.String);
+            }
+            catch (Exception ex)
+            {
+
+            }
         }
 
+        public List<Drive> GetFreeDrives()
+        {
+            string GOLDLETTERS = "GHIJKLMNOPQRSTUVWXYZ";
+            List<char> letters = GOLDLETTERS.ToCharArray().ToList();
+            List<Drive> freeDrives = new List<Drive>();
+            DriveInfo[] drives = DriveInfo.GetDrives();
 
-        #region Setup SSH
-        
+            for (int i = 0; i < drives.Length; i++)
+                letters.Remove(drives[i].Name[0]);
+            foreach (char c in letters)
+            {
+                Drive d = new Drive();
+                d.Letter = c.ToString();
+                freeDrives.Add(d);
+            }
+            return freeDrives;
+        }
+        #endregion
+
+        #region SSH Management
+
         ReturnBox TestHost(string user, string host, int port=22)
         {
             ReturnBox rb = new ReturnBox();
@@ -231,8 +408,9 @@ namespace golddrive
             return rb;
         }
 
-        void TestLogin(string userhost, string password, int port=22)
+        ReturnBox TestLogin(Drive drive)
         {
+            ReturnBox rb = new ReturnBox();
             //       def testlogin(userhost, password, port= 22):
             //'''
             //Test ssh password authentication
@@ -268,21 +446,15 @@ namespace golddrive
             //       rb.error = str(ex)
             //finally:
             //	client.close()
-            //return rb
+            return rb;
         }
 
-        void TestSsh(string userhost, string pkey, int port=22)
+        ReturnBox TestSsh(Drive drive)
         {
-            //       def testssh(userhost, seckey, port= 22):
-            //'''
-            //Test ssh key authentication
-            //'''
-
-            //   logger.info(f'Testing ssh keys for {userhost} using key {seckey}...')
-
-            //rb = testhost(userhost, port)
-            //if rb.returncode == util.ReturnCode.BAD_HOST:
-            //	return rb
+            ReturnBox rb = new ReturnBox();
+            rb = TestHost(drive);
+            if (!rb.Success)
+                return rb;
 
             //if not os.path.exists(seckey):
 
@@ -317,7 +489,13 @@ namespace golddrive
 
             //       rb.returncode = util.ReturnCode.BAD_HOST
             //       rb.error = r.stderr
-            //return rb
+            return rb;
+        }
+        ReturnBox TestHost(Drive drive)
+        {
+            ReturnBox rb = new ReturnBox();
+
+            return rb;
         }
 
         void GenerateKeys(string userhost, string pkey)
@@ -498,87 +676,69 @@ namespace golddrive
             //	return rb
         }
 
-
-
-
-
-        //if __name__ == '__main__':
-
-        //	import sys
-
-        //    import os
-
-        //    import getpass
-
-        //    assert(len(sys.argv) > 1 and
-        //			'@' in sys.argv[1]) # usage: prog user@host
-        //	os.environ['PATH'] = f'{DIR}\\..\\client\\sshfs\\bin;' + os.environ['PATH']
-        //    userhost = sys.argv[1]
-
-        //    password = getpass.getpass('Linux password: ')
-        //	port=22
-        //	if ':' in userhost:
-        //		userhost, port = userhost.split(':')                             
-        //	logging.basicConfig(level=logging.INFO)
-
-
-        //    main(userhost, password, port)
-
-
-
-
         #endregion
 
-        #region Mount manager
+        #region Mount Management
 
-        DriveStatus CheckDrive(string drive, string user, string host)
+        public ReturnBox Connect(Drive drive)
         {
-            DriveStatus status = DriveStatus.UNKNOWN;
-
-
-
-            return status;
+            ReturnBox rb = new ReturnBox();
+            if(!IsWinfspInstalled())
+            {
+                rb.Object = MountStatus.BAD_WINFSP;
+                return rb;
+            }
+            DriveStatus status = CheckDriveStatus(drive);
+            if(status != DriveStatus.DISCONNECTED)
+            {
+                rb.Object = MountStatus.BAD_DRIVE;
+                rb.Error = status.ToString();
+                return rb;
+            }
+            rb = TestSsh(drive);
+            if (!rb.Success)
+                return rb;
+            return Mount(drive);
         }
 
-        ReturnBox Mount()
+        private bool IsWinfspInstalled()
+        {
+            return true;
+        }
+
+        public ReturnBox Mount(Drive drive)
+        {
+            ReturnBox rb = RunLocal("net.exe", $"use { drive.LetterColon } { drive.MountPoint }");
+            if(!rb.Success)
+                return rb;
+            SetDriveName(drive);
+            SetDriveIcon(drive, $@"{ AppPath }\golddrive.ico");
+            return rb;
+        }
+
+        public ReturnBox Unmount(Drive drive)
+        {
+            return RunLocal("net.exe", "use /d " + drive.LetterColon);            
+            // TODO: clenup drive name and registry
+        }
+
+        public ReturnBox UnmountAll()
         {
             ReturnBox rb = new ReturnBox();
 
             return rb;
-        }
-
-        ReturnBox Unmount()
-        {
-            ReturnBox rb = new ReturnBox();
-
-            return rb;
-        }
-
-        ReturnBox UnmountAll()
-        {
-            ReturnBox rb = new ReturnBox();
-
-            return rb;
 
         }
 
-        bool IsDriveOk()
-        {
-            return false;
-        }
+        
 
-        List<Drive> GetFreeDrives()
-        {
-            List<Drive> free_drives = new List<Drive>();
-
-            return free_drives;
-        }
-
-
-
+        
         #endregion
 
-
+        public string GetUid(string user)
+        {
+            return RunRemote($"id -u {user}").Output;
+        }
 
 
     }

@@ -22,5 +22,17 @@ namespace golddrive.Properties {
                 return defaultInstance;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string Drives {
+            get {
+                return ((string)(this["Drives"]));
+            }
+            set {
+                this["Drives"] = value;
+            }
+        }
     }
 }

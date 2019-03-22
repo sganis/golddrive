@@ -3,24 +3,28 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"             
         xmlns:local="clr-namespace:golddrive"  
         mc:Ignorable="d"                     
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
-     TextOptions.TextFormattingMode="Ideal"
-     TextOptions.TextRenderingMode="Auto"
-     Background="{DynamicResource MaterialDesignPaper}"
+        TextOptions.TextFormattingMode="Ideal"
+        TextOptions.TextRenderingMode="Auto"
+        Background="{DynamicResource MaterialDesignPaper}"
         TextElement.FontWeight="Medium"
         TextElement.FontSize="14"
         FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto"
         
         WindowStartupLocation="CenterScreen"
         Title="Golddrive" 
-        MaxWidth="500" MinWidth="300" MinHeight="500"
+        MaxWidth="700" MinWidth="300" MinHeight="500"
         ResizeMode="CanResizeWithGrip"
         Height="432" Width="472.508">
 
     <Window.Resources>
+        <DataTemplate DataType="{x:Type local:SettingsViewModel}">
+            <local:SettingsView/>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type local:LoginViewModel}">
             <local:LoginView/>
         </DataTemplate>
@@ -28,19 +32,16 @@
             <local:ConnectView/>
         </DataTemplate>
     </Window.Resources>
-    <!--<metro:MetroWindow.RightWindowCommands>
-        <metro:WindowCommands>
-            <Button >Login</Button>
-            --><!--<Button>
-                <StackPanel Orientation="Horizontal">
-                    <iconPacks:PackIconModern Width="24" Height="24" Kind="Settings" />
-                    <TextBlock Margin="4 0 0 0" VerticalAlignment="Center" Text="Settings" />
-                </StackPanel>
-            </Button>--><!--
-        </metro:WindowCommands>
-    </metro:MetroWindow.RightWindowCommands>-->
-
-    <Grid Margin="100,0">
+    
+    <!--Events-->
+    <i:Interaction.Triggers>
+        <i:EventTrigger EventName="Closing">
+            <i:InvokeCommandAction Command="{Binding WindowClosingCommand}"/>
+        </i:EventTrigger>
+    </i:Interaction.Triggers>
+    
+    <!--View-->
+    <Grid Margin="60,20">
         <Grid.RowDefinitions>
             <RowDefinition />
             <RowDefinition Height="56" />
@@ -52,7 +53,7 @@
             x:Name="progressBar"
             Visibility="{Binding IsWorking, Converter={StaticResource boolToVis}}"
             VerticalAlignment="Top"
-            Margin="10"
+            Margin="20"
             IsIndeterminate="True" Grid.Row="1"  />
     </Grid>
 </Window>
