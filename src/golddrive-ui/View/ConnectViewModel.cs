@@ -107,7 +107,7 @@ namespace golddrive
             IsWorking = true;
             _mainViewModel.IsWorking = true;
             if(Host != null)
-                drive.Remote = Host;
+                drive.MountPoint = Host;
             ReturnBox r;
             if (ButtonText == "Connect")
             {

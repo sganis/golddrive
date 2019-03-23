@@ -23,7 +23,6 @@ namespace golddrive
         public ConnectView()
         {
             InitializeComponent();
-            //DataContext = App.ViewModels["MainViewModel"];
         }
     }
 }

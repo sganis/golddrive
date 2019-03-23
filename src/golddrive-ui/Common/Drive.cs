@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace golddrive
 {
@@ -6,37 +7,36 @@ namespace golddrive
     public class Drive
     {
         public DriveStatus Status { get; set; }
-        public string NetUseStatus { get; set; }
+        public string Letter { get; set; }
+        public string VolumeLabel { get; set; }
+        public string Label { get; set; }
+        public string Host { get; set; }        
+        public string Path { get; set; }        
+        public bool? IsGoldDrive { get; set; }
 
-        private string remote;
-        public string Remote {
-            get { return remote; }
+        public string Name { get { return $"{ Letter }:"; } }
+
+        private string _mountpoint;
+        public string MountPoint
+        {
+            get { return _mountpoint; }
             set
             {
-                remote = value;
-                string hostport = remote;
-                if (remote.Contains("\\"))
+                _mountpoint = value;
+                string hostport = _mountpoint;
+                if (_mountpoint.Contains("\\"))
                 {
-                    hostport = remote.Split('\\')[0];
-                    Path = remote.Substring(remote.IndexOf("\\")).Replace("\\", "/");
+                    hostport = _mountpoint.Split('\\')[0];
+                    Path = _mountpoint.Substring(_mountpoint.IndexOf("\\")).Replace("\\", "/");
                 }
                 if (hostport.Contains("!"))
                 {
-                    hostport = remote.Split('\\')[0];
+                    hostport = _mountpoint.Split('\\')[0];
                     Port = Int32.Parse(hostport.Split('!')[1]);
                 }
             }
 
         }
-        public string Letter { get; set; }
-        public string Label { get; set; }
-        public string Name { get; set; }
-        public string Host { get; set; }
-        
-        public string Path { get; set; }
-        
-        public bool? IsGoldDrive { get; set; }
-
         private string user;
         public string User
         {
@@ -51,13 +51,13 @@ namespace golddrive
             set { port = value; }
         }
 
-        public string MountPoint2
+        public string RegistryMountPoint2
         {
-            get { return MountPoint?.Replace("\\", "#"); }
+            get { return Remote?.Replace("\\", "#"); }
         }        
-        public string MountPoint
+        public string Remote
         {
-            get { return $@"\\golddrive\{Remote}"; }
+            get { return $@"\\golddrive\{MountPoint}"; }
         }
         public string ComboDisplay
         {
@@ -65,7 +65,7 @@ namespace golddrive
             {
                 
                 //int maxLengh = 15;
-                string display = $"{ Letter }: {Name}";
+                string display = $"{ Letter }: {Label}";
                 return display;
 
                 //if (string.IsNullOrEmpty(s))
@@ -75,10 +75,10 @@ namespace golddrive
                 //return $"{ Letter }: {s}";
             }
         }
-        public string LetterColon
-        {
-            get { return $"{ Letter }:"; }
-        }
+    }
 
+    public class DriveList : List<Drive>
+    {
+        public DriveList() { }
     }
 }

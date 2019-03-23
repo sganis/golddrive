@@ -129,6 +129,7 @@ namespace golddrive
 
         public ReturnBox RunLocal(string cmd, string args)
         {
+            Logger.Log($"Running local command: {cmd} {args}");
             ReturnBox r = new ReturnBox();
             Process process = new Process();
             ProcessStartInfo startInfo = new ProcessStartInfo();
@@ -233,19 +234,19 @@ namespace golddrive
                     try
                     {
                         Drive d = new Drive();
-                        d.NetUseStatus = match.Groups[1].Value;
+                        //d.NetUseStatus = match.Groups[1].Value;
                         d.Letter = match.Groups[2].Value[0].ToString();
                         d.IsGoldDrive = match.Groups[3].Value.Contains(@"\\golddrive\");
                         if (d.IsGoldDrive == true)
                         {
-                            d.Label = GetDriveLabel(d.Letter);
-                            if (!String.IsNullOrEmpty(d.Label) && d.Label.Contains("@"))
+                            d.VolumeLabel = GetVolumeName(d.Letter);
+                            if (!String.IsNullOrEmpty(d.VolumeLabel) && d.VolumeLabel.Contains("@"))
                             {
-                                d.User = d.Label.Split('@')[0];
-                                d.Host = d.Label.Split('@')[1];
+                                d.User = d.VolumeLabel.Split('@')[0];
+                                d.Host = d.VolumeLabel.Split('@')[1];
                             }
-                            d.Remote = match.Groups[3].Value.Replace(@"\\golddrive\", "");                            
-                            d.Name = GetDriveName(d);
+                            d.MountPoint = match.Groups[3].Value.Replace(@"\\golddrive\", "");                            
+                            d.Label = GetDriveLabel(d);
                         }
                         drives.Add(d);
                     }
@@ -268,7 +269,7 @@ namespace golddrive
             return drives;
         }
 
-        public string GetDriveLabel(string letter)
+        public string GetVolumeName(string letter)
         {
             var r = RunLocal($"vol {letter}:");
             foreach (var line in r.Output.Split('\n'))
@@ -296,7 +297,7 @@ namespace golddrive
             var drives = GetUsedDrives();
             var inUse = freeDrives.Find(x => x.Letter == drive.Letter) == null;
             var isGold = drives.Find(x => x.Letter == drive.Letter && x.IsGoldDrive==true) != null; 
-            var pathUsed = drives.Find(x => x.Letter != drive.Letter && x.Remote == drive.Remote) != null;
+            var pathUsed = drives.Find(x => x.Letter != drive.Letter && x.MountPoint == drive.MountPoint) != null;
             if (!inUse)
                 return DriveStatus.DISCONNECTED;
             else if (pathUsed)
@@ -311,7 +312,7 @@ namespace golddrive
         public bool CheckIfDriveWorks(Drive drive)
         {
             int epoch = (int)(DateTime.Now - new DateTime(1970, 1, 1, 0, 0, 0, 0)).TotalSeconds;
-            string tempfile = $@"{ drive.LetterColon }\tmp\{drive.User}@{drive.Host}.{epoch}";
+            string tempfile = $@"{ drive.Name }\tmp\{drive.User}@{drive.Host}.{epoch}";
             var r = RunLocal("type nul > " + tempfile);
             if(r.ExitCode == 0)
             {
@@ -320,11 +321,11 @@ namespace golddrive
             }
             return false;
         }
-        public string GetDriveName(Drive drive)
+        public string GetDriveLabel(Drive drive)
         {
             try
             {
-                string key = $@"Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\{drive.MountPoint2}";
+                string key = $@"Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\{drive.RegistryMountPoint2}";
                 RegistryKey k = Registry.CurrentUser.OpenSubKey(key);
                 if (k != null)
                     return k.GetValue("_LabelFromReg")?.ToString();                    
@@ -335,13 +336,13 @@ namespace golddrive
             }
             return "";
         }
-        public void SetDriveName(Drive drive)
+        public void SetDriveLabel(Drive drive)
         {
-            if (String.IsNullOrEmpty(drive.Name))
+            if (String.IsNullOrEmpty(drive.Label))
                 return;
             try
             {
-                string key = $@"Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\{drive.MountPoint2}";
+                string key = $@"Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\{drive.RegistryMountPoint2}";
                 RegistryKey k = Registry.CurrentUser.CreateSubKey(key);
                 if(k != null)
                     k.SetValue("_LabelFromReg", drive.Name, RegistryValueKind.String);
@@ -695,9 +696,9 @@ namespace golddrive
                 rb.Error = status.ToString();
                 return rb;
             }
-            rb = TestSsh(drive);
-            if (!rb.Success)
-                return rb;
+            //rb = TestSsh(drive);
+            //if (!rb.Success)
+            //    return rb;
             return Mount(drive);
         }
 
@@ -708,17 +709,17 @@ namespace golddrive
 
         public ReturnBox Mount(Drive drive)
         {
-            ReturnBox rb = RunLocal("net.exe", $"use { drive.LetterColon } { drive.MountPoint }");
+            ReturnBox rb = RunLocal("net.exe", $"use { drive.Name } { drive.Remote }");
             if(!rb.Success)
                 return rb;
-            SetDriveName(drive);
+            SetDriveLabel(drive);
             SetDriveIcon(drive, $@"{ AppPath }\golddrive.ico");
             return rb;
         }
 
         public ReturnBox Unmount(Drive drive)
         {
-            return RunLocal("net.exe", "use /d " + drive.LetterColon);            
+            return RunLocal("net.exe", "use /d " + drive.Name);            
             // TODO: clenup drive name and registry
         }
 

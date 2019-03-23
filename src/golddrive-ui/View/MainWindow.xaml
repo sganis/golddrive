@@ -41,19 +41,47 @@
     </i:Interaction.Triggers>
     
     <!--View-->
-    <Grid Margin="60,20">
+    <Grid >
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition />
             <RowDefinition Height="56" />
         </Grid.RowDefinitions>
-        <ContentControl x:Name="Pages" 
-                        FocusVisualStyle="{x:Null}"
-                        Content="{Binding SelectedViewModel}" Grid.Row="0"/>
+        
+        <materialDesign:ColorZone 
+            Mode="PrimaryDark" 
+            Padding="16">
+            <DockPanel>
+                <materialDesign:PopupBox
+                  DockPanel.Dock="Right"
+                  PlacementMode="BottomAndAlignRightEdges">
+                    <ListBox>
+                        <ListBoxItem>
+                            Hello World
+                        </ListBoxItem>
+                        <ListBoxItem>
+                            Nice Popup
+                        </ListBoxItem>
+                        <ListBoxItem>
+                            Goodbye.
+                        </ListBoxItem>
+                    </ListBox>
+                </materialDesign:PopupBox>
+                <StackPanel Orientation="Horizontal">
+
+                </StackPanel>
+            </DockPanel>
+        </materialDesign:ColorZone>
+        <ContentControl
+            Grid.Row="1"
+            Margin="60,20,60,0"
+            FocusVisualStyle="{x:Null}"
+            Content="{Binding SelectedViewModel}"/>
         <ProgressBar
-            x:Name="progressBar"
+            Grid.Row="2"
+            Margin="100,20"
             Visibility="{Binding IsWorking, Converter={StaticResource boolToVis}}"
             VerticalAlignment="Top"
-            Margin="20"
-            IsIndeterminate="True" Grid.Row="1"  />
+            IsIndeterminate="True"   />
     </Grid>
 </Window>
