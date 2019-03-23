@@ -1,6 +1,0 @@
-﻿<local:DriveList 
-    xmlns:local="clr-namespace:golddrive" >
-    <local:Drive Letter="T" MountPoint="sant@host" />
-    <local:Drive Letter="U" MountPoint="host" />
-    <local:Drive Letter="V" MountPoint="host\home" />
-</local:DriveList>

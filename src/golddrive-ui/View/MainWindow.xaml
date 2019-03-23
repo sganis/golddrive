@@ -18,8 +18,8 @@
         WindowStartupLocation="CenterScreen"
         Title="Golddrive" 
         MaxWidth="700" MinWidth="300" MinHeight="500"
-        ResizeMode="CanResizeWithGrip"
-        Height="432" Width="472.508">
+        Width="500"
+        ResizeMode="CanResizeWithGrip" d:DesignWidth="503.2" d:DesignHeight="594">
 
     <Window.Resources>
         <DataTemplate DataType="{x:Type local:SettingsViewModel}">
@@ -35,9 +35,13 @@
     
     <!--Events-->
     <i:Interaction.Triggers>
-        <i:EventTrigger EventName="Closing">
-            <i:InvokeCommandAction Command="{Binding WindowClosingCommand}"/>
+        <i:EventTrigger EventName="Loaded">
+            <i:InvokeCommandAction Command="{Binding LoadedCommand}" />
         </i:EventTrigger>
+        <i:EventTrigger EventName="Closing">
+            <i:InvokeCommandAction Command="{Binding ClosingCommand}"/>
+        </i:EventTrigger>
+        
     </i:Interaction.Triggers>
     
     <!--View-->
@@ -50,22 +54,18 @@
         
         <materialDesign:ColorZone 
             Mode="PrimaryDark" 
-            Padding="16">
+            Height="50">
             <DockPanel>
                 <materialDesign:PopupBox
-                  DockPanel.Dock="Right"
+                  DockPanel.Dock="Right"                  
                   PlacementMode="BottomAndAlignRightEdges">
-                    <ListBox>
-                        <ListBoxItem>
-                            Hello World
-                        </ListBoxItem>
-                        <ListBoxItem>
-                            Nice Popup
-                        </ListBoxItem>
-                        <ListBoxItem>
-                            Goodbye.
-                        </ListBoxItem>
-                    </ListBox>
+                    <StackPanel>
+                        <Button Content="Settings"  Command="{Binding SettingsCommand}"/>
+                        <Button Content="Unmout all drives" Command="{Binding UnmoutAllCommand}"/>
+                        <Button Content="Setup SSH" Command="{Binding SetupSshCommand}"/>
+                        <Button Content="Restart Explorer" Command="{Binding RestartExplorerCommand}"/>
+                        <Button Content="About" Command="{Binding AboutCommand}"/>
+                    </StackPanel>
                 </materialDesign:PopupBox>
                 <StackPanel Orientation="Horizontal">
 

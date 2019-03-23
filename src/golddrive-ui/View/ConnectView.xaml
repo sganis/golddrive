@@ -8,8 +8,8 @@
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:local="clr-namespace:golddrive"
     mc:Ignorable="d"              
-    d:DataContext="{d:DesignData Source=/View/SampleDriveList.xaml}"
     d:DesignHeight="500" d:DesignWidth="500">
+    
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -17,9 +17,13 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
+        <!---->
         <StackPanel 
             Grid.Row="0"
-            Visibility="{Binding HasDrives, Converter={StaticResource boolToVis}}">
+           Visibility="{Binding Driver.HasDrives, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource boolToVis}}"
+            >
+
+            
             <ComboBox 
                 x:Name="cboDrives" 
                 materialDesign:HintAssist.Hint="Drive"
@@ -27,8 +31,8 @@
                 materialDesign:ComboBoxAssist.ClassicMode="true"
                 Style="{StaticResource MaterialDesignFloatingHintComboBox}"
                 FontSize="24"
-                ItemsSource="{Binding Drives}"    
-                SelectedItem="{Binding Drive}"  
+                ItemsSource="{Binding Driver.Drives, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"    
+                SelectedItem="{Binding Driver.SelectedDrive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"  
                 VerticalAlignment="Bottom"
                 DisplayMemberPath="ComboDisplay">
                 <i:Interaction.Triggers>
@@ -37,13 +41,10 @@
                     </i:EventTrigger>
                 </i:Interaction.Triggers>
             </ComboBox>
-            <TextBox
-                Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                Text="{Binding Drive.MountPoint}"
-                Margin="0 20 0 0"
-                IsReadOnly="True"
-                materialDesign:HintAssist.Hint="Mount Point"
-                materialDesign:HintAssist.FloatingScale="0.857"/>
+
+            <TextBlock Margin="0 10 0 0"
+                Text="{Binding Driver.SelectedDrive.MountPoint}"/>
+
             <StackPanel>
                 <Button         
                     Style="{StaticResource MaterialDesignFlatButton}"
@@ -52,10 +53,14 @@
                     Settings
                 </Button>
             </StackPanel>
+
+            
         </StackPanel>
+        
         <StackPanel 
-            Grid.Row="0"
-            Visibility="{Binding HasNoDrives, Converter={StaticResource boolToVis}}">
+            Grid.Row="0" 
+            Visibility="{Binding Driver.HasNoDrives, Converter={StaticResource boolToVis}}"
+            >
             <ComboBox 
                 x:Name="cboFreeDrives" 
                 materialDesign:HintAssist.Hint="Drive"
@@ -63,8 +68,8 @@
                 materialDesign:ComboBoxAssist.ClassicMode="true"
                 Style="{StaticResource MaterialDesignFloatingHintComboBox}"
                 FontSize="24"
-                ItemsSource="{Binding FreeDrives}"    
-                SelectedItem="{Binding Drive}"  
+                ItemsSource="{Binding Driver.FreeDrives}"    
+                SelectedItem="{Binding Driver.SelectedDrive}"  
                 VerticalAlignment="Bottom"
                 DisplayMemberPath="ComboDisplay">
             </ComboBox>
@@ -89,8 +94,7 @@
         <Button 
             x:Name="btnConnect"
             Content="{Binding ButtonText}"
-            Command="{Binding ConnectCommand}"
-            IsEnabled="{Binding CanConnect}"
+            Command="{Binding ConnectCommand}"            
             FontSize="20"
             Grid.Row="2"  Width="200" Height="70"  />
 

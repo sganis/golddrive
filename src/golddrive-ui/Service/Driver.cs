@@ -8,11 +8,13 @@ using System.Linq;
 using Microsoft.Win32;
 using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 
 namespace golddrive
 {
 
-    public class Driver : IDriver
+    public class Driver : Observable, IDriver
     {
         #region Properties
 
@@ -35,6 +37,36 @@ namespace golddrive
                 return appPath;
             }
         }
+
+        private ObservableCollection<Drive> _drives;
+        public ObservableCollection<Drive> Drives
+        {
+            get { return _drives; }
+            set { _drives = value; NotifyPropertyChanged(); }
+        }
+
+        private ObservableCollection<Drive> _freeDrives;
+        public ObservableCollection<Drive> FreeDrives
+        {
+            get { return _freeDrives; }
+            set { _freeDrives = value; NotifyPropertyChanged(); }
+        }
+        
+        private Drive _selectedDrive;
+        public Drive SelectedDrive {
+            get { return _selectedDrive; }
+            set {
+                _selectedDrive = value;
+                NotifyPropertyChanged();
+                NotifyPropertyChanged("HasDrives");
+                NotifyPropertyChanged("HasNoDrives");
+
+            }
+        }
+        public bool HasDrives { get { return Drives != null && Drives.Count > 0; } }
+        public bool HasNoDrives { get { return !HasDrives; } }
+
+        //public bool CanConnect { get { return IsDriveSelected && !IsWorking; } }
 
         #endregion
 
@@ -220,6 +252,23 @@ namespace golddrive
 
         #region Local Drive Management
 
+        public async void LoadDrives()
+        {
+            List<Drive> drives = await Task.Run(() => GetGoldDrives());
+            List<Drive> freeDrives = await Task.Run(() => GetFreeDrives());
+            Drives = new ObservableCollection<Drive>();
+            FreeDrives = new ObservableCollection<Drive>();
+            foreach (var d in drives)
+                Drives.Add(d);
+            foreach (var d in freeDrives)
+                FreeDrives.Add(d);
+
+            if (Drives.Count > 0)
+                SelectedDrive = Drives[0];
+
+        }
+    
+
         public List<Drive> GetUsedDrives()
         {
             List<Drive> drives = new List<Drive>();
@@ -345,7 +394,7 @@ namespace golddrive
                 string key = $@"Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\{drive.RegistryMountPoint2}";
                 RegistryKey k = Registry.CurrentUser.CreateSubKey(key);
                 if(k != null)
-                    k.SetValue("_LabelFromReg", drive.Name, RegistryValueKind.String);
+                    k.SetValue("_LabelFromReg", drive.Label, RegistryValueKind.String);
             }
             catch(Exception ex)
             {
@@ -356,10 +405,10 @@ namespace golddrive
         {
             try
             {
-                string key = $@"Software\Classes\Applications\Explorer.exe\Drives\{drive.Letter}\";
+                string key = $@"Software\Classes\Applications\Explorer.exe\Drives\{drive.Letter}\DefaultIcon";
                 RegistryKey k = Registry.CurrentUser.CreateSubKey(key);
                 if (k != null)
-                    k.SetValue("DefaultIcon", icoPath, RegistryValueKind.String);
+                    k.SetValue("", icoPath, RegistryValueKind.String);
             }
             catch (Exception ex)
             {

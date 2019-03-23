@@ -13,7 +13,9 @@ namespace golddrive
         public ICommand ShowLoginCommand { get; set; }
         public ICommand ShowConnectCommand { get; set; }
         public ICommand ShowSettingsCommand { get; set; }
-        public ICommand WindowClosingCommand { get; set; }
+        public ICommand LoadedCommand { get; set; }
+        public ICommand ClosingCommand { get; set; }
+        public ICommand AboutCommand { get; set; }
 
 
         private LoginViewModel _loginViewModel;
@@ -30,19 +32,22 @@ namespace golddrive
             }
         }
 
+        public Task Taks { get; private set; }
 
         public MainWindowViewModel()
         {
-            _driver = new Driver();
-            _loginViewModel = new LoginViewModel(this, _driver);
-            _connectViewModel = new ConnectViewModel(this, _driver);
-            _settingsViewModel = new SettingsViewModel(this, _driver);
+            Driver = new Driver();
+            _loginViewModel = new LoginViewModel(this, Driver);
+            _connectViewModel = new ConnectViewModel(this, Driver);
+            _settingsViewModel = new SettingsViewModel(this, Driver);
 
             //Messenger.Default.Register<string>(this, OnShowView);
             ShowLoginCommand = new BaseCommand(ShowLogin);
             ShowConnectCommand = new BaseCommand(ShowConnect);
             ShowSettingsCommand = new BaseCommand(ShowSettings);
-            WindowClosingCommand = new BaseCommand(WindowClosing);
+            LoadedCommand = new BaseCommand(Loaded);
+            ClosingCommand = new BaseCommand(Closing);
+            AboutCommand = new BaseCommand(About);
 
             ShowConnectCommand.Execute(null);
         }
@@ -60,9 +65,18 @@ namespace golddrive
         {
             SelectedViewModel = _settingsViewModel;
         }
-        private void WindowClosing(object obj)
+        private void Loaded(object obj)
         {
-            _driver.SaveSettingsDrives(_connectViewModel.Drives.ToList());
+            Driver.LoadDrives();
+
+        }
+        private void Closing(object obj)
+        {
+            Driver.SaveSettingsDrives(Driver.Drives.ToList());
+        }
+        private void About(object obj)
+        {
+            
         }
     }
 

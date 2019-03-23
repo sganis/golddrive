@@ -35,96 +35,52 @@ namespace golddrive
             get { return host; }
             set { host = value; NotifyPropertyChanged(); }
         }
-        public bool HasDrives
-        {
-            get { return Drives != null && Drives.Count > 0; }
-        }
-        public bool HasNoDrives
-        {
-            get { return !HasDrives; }
-        }
 
-        private ObservableCollection<Drive> _drives;
-        public ObservableCollection<Drive> Drives
-        {
-            get { return _drives; }
-            set {  _drives = value;  NotifyPropertyChanged();    }
-        }
-        private ObservableCollection<Drive> _freeDrives;
-        public ObservableCollection<Drive> FreeDrives
-        {
-            get { return _freeDrives; }
-            set { _freeDrives = value; NotifyPropertyChanged(); }
-        }
-
-        private Drive drive;
-        public Drive Drive
-        {
-            get { return drive; }
-            set {
-                drive = value;
-                NotifyPropertyChanged();
-                NotifyPropertyChanged("CanConnect");
-                NotifyPropertyChanged("HasDrives");
-                NotifyPropertyChanged("HasNoDrives");
-            }
-        }
-        public bool IsDriveSelected { get { return drive != null; } }
-        public bool CanConnect { get { return IsDriveSelected && !IsWorking; } }
-
+        
+        public bool IsDriveSelected { get { return Driver.SelectedDrive != null; } }
+        
         public ConnectViewModel(
             MainWindowViewModel mainWindowViewModel,
             IDriver driver)
         {
-            _driver = driver;
+            Driver = driver;
             _mainViewModel = mainWindowViewModel;
             ConnectCommand = new BaseCommand(Connect);
             CheckDriveStatusCommand = new BaseCommand(CheckDriveStatus);
             SettingsCommand = new BaseCommand(OpenSettings);
-            Drives = new ObservableCollection<Drive>();
-            FreeDrives = new ObservableCollection<Drive>();
             IsWorking = false;
             ButtonText = "Connect";
 
-            LoadDrives();
+             
         }
-        private async void LoadDrives()
-        {
-            List<Drive> drives = await Task.Run(() => _driver.GetGoldDrives());
-            List<Drive> freeDrives = await Task.Run(() => _driver.GetFreeDrives());
-
-            foreach (var d in drives)
-                Drives.Add(d);
-            foreach (var d in freeDrives)
-                FreeDrives.Add(d);
-
-            if (Drives.Count > 0)
-                Drive = Drives?[0];
-
-        }
+        
         private async void Connect(object obj)
         {
             IsWorking = true;
             _mainViewModel.IsWorking = true;
             if(Host != null)
-                drive.MountPoint = Host;
+                Driver.SelectedDrive.MountPoint = Host;
             ReturnBox r;
             if (ButtonText == "Connect")
             {
                 Message = "Connecting...";
                 await Task.Delay(500);
-                r = await Task.Run(() => _driver.Connect(Drive));
+                r = await Task.Run(() => Driver.Connect(Driver.SelectedDrive));
             }                
             else if (ButtonText == "Disconnect")
             {
                 Message = "Disconnecting...";
                 await Task.Delay(500);
-                r = await Task.Run(() => _driver.Unmount(Drive));
+                r = await Task.Run(() => Driver.Unmount(Driver.SelectedDrive));
             }
             else
             {
 
             }
+            // fixme
+            Drive d = Driver.SelectedDrive;
+            Driver.SelectedDrive = null;
+            Driver.SelectedDrive = d;
 
             CheckDriveStatus(null);
             //_mainViewModel.ShowLoginCommand.Execute(null);
@@ -136,20 +92,20 @@ namespace golddrive
             _mainViewModel.IsWorking = true;
             Message = $"Checking status...";
             await Task.Delay(500);
-            var r = await Task.Run(()=>_driver.CheckDriveStatus(drive));
+            var r = await Task.Run(()=> Driver.CheckDriveStatus(Driver.SelectedDrive));
             if(r == DriveStatus.CONNECTED)
             {
-                Message = r.ToString();
                 ButtonText = "Disconnect";
             } else if (r == DriveStatus.DISCONNECTED)
             {
-                Message = r.ToString();
                 ButtonText = "Connect";
             }
             else
             {
 
             }
+            Message = r.ToString();
+
             //_mainViewModel.ShowLoginCommand.Execute(null);
             _mainViewModel.IsWorking = false;
             IsWorking = false;

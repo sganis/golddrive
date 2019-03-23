@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 
 namespace golddrive
@@ -7,7 +8,13 @@ namespace golddrive
     public interface IDriver
     {
         bool Connected { get; }
-        string Error { get; set; }        
+        string Error { get; set; }
+        bool HasDrives { get; }
+        bool HasNoDrives { get; }
+        ObservableCollection<Drive> Drives { get; set; }
+        ObservableCollection<Drive> FreeDrives { get; set; }
+        Drive SelectedDrive { get; set; }
+        void LoadDrives();
         bool Connect(string host, int port, string user, string password, string pkey);
         ReturnBox DownloadFile(string src, string dst);
         //List<Drive> LoadDrives();

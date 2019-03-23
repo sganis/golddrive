@@ -43,7 +43,7 @@ namespace golddrive
             CancelCommand = new BaseCommand(Cancel);
             IsWorking = false;
             Host = "192.168.100.201";
-            _driver = driver;
+            Driver = driver;
             _mainViewModel = mainWindow;
         }
 
@@ -58,18 +58,18 @@ namespace golddrive
             string user = "sant";
             int port = 22;
             string pkey = $@"C:\Users\sant\.ssh\id_rsa-{user}-golddrive";
-            if (!_driver.Connected)
+            if (!Driver.Connected)
             {
-                var r = await Task.Run(() => _driver.Connect(host, port, user, password, pkey));
+                var r = await Task.Run(() => Driver.Connect(host, port, user, password, pkey));
                 if (!r)
                 {
-                    Message = _driver.Error;
+                    Message = Driver.Error;
 
                 }
             }
-            if (_driver.Connected)
+            if (Driver.Connected)
             {
-                Message = await Task.Run(() => _driver.GetUid(user));
+                Message = await Task.Run(() => Driver.GetUid(user));
                 //await Task.Delay(2000);
                 _mainViewModel.ShowConnectCommand.Execute(null);
             }

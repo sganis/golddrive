@@ -111,6 +111,9 @@
     <Compile Include="Common\PasswordHelper.cs" />
     <Compile Include="Common\Drive.cs" />
     <Compile Include="View\BaseViewModel.cs" />
+    <Compile Include="View\DriveControl.xaml.cs">
+      <DependentUpon>DriveControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="View\LoginViewModel.cs" />
     <Compile Include="View\ConnectViewModel.cs" />
     <Compile Include="View\MainWindowViewModel.cs" />
@@ -125,6 +128,10 @@
       <DependentUpon>SettingsView.xaml</DependentUpon>
     </Compile>
     <Compile Include="View\SettingsViewModel.cs" />
+    <Page Include="View\DriveControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="View\LoginView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -146,12 +153,6 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <DesignData Include="View\SampleDrive.xaml">
-      <SubType>Designer</SubType>
-    </DesignData>
-    <DesignData Include="View\SampleDriveList.xaml">
-      <SubType>Designer</SubType>
-    </DesignData>
     <Page Include="View\SettingsView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -175,6 +176,9 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <Content Include="golddrive.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="NLog.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

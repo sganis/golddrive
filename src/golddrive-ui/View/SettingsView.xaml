@@ -25,80 +25,45 @@
                 Style="{StaticResource MaterialDesignFlatButton}"
                 Command="{Binding DeleteCommand}"/>
             <Button 
+                IsEnabled="False"
                 Content="New" Margin="2" Width="90" 
                 Style="{StaticResource MaterialDesignRaisedButton}"
                 Command="{Binding NewCommand}"/>
         </StackPanel>
+
         <Rectangle  Grid.Row="2" Height="1" HorizontalAlignment="Stretch" Fill="{DynamicResource PrimaryHueMidBrush}"/>
-        <Grid Grid.Row="3" >
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="60"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition />
-            </Grid.ColumnDefinitions>
-            <ListBox
-                ItemsSource="{Binding Drives}"
-                SelectedItem="{Binding SelectedDrive, Mode=TwoWay}"
-                FontSize="28"
-                Foreground="Gray"
-                DisplayMemberPath="Name">
-                <ListBox.ItemContainerStyle>
-                    <Style TargetType="ListBoxItem" BasedOn="{StaticResource MaterialDesignListBoxItem}">
-                        <Style.Triggers>
-                            <Trigger Property="IsSelected" Value="True" >
-                                <Setter Property="FontWeight" Value="Bold" />
-                                <Setter Property="Background" Value="Gainsboro" />
-                                <Setter Property="Foreground" Value="Black" />
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </ListBox.ItemContainerStyle>
-            </ListBox>
-            <Rectangle  Grid.Column="1" VerticalAlignment="Stretch" Fill="{DynamicResource PrimaryHueMidBrush}" Width="1"/>
-            <Grid Grid.Column="2"
-                  Margin="10 0"
-                IsEnabled="{Binding IsWorking, Converter={StaticResource InverseBooleanConverter}}">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition/>
-                </Grid.RowDefinitions>
-                <ComboBox 
-                    x:Name="cboDrives" 
-                    materialDesign:HintAssist.Hint="Drive"
+
+        <StackPanel Grid.Row="3" Margin="10 0">
+            <ComboBox 
+                    x:Name="cboFreeDrives" 
+                    materialDesign:HintAssist.Hint="New Drive"
                     materialDesign:ComboBoxAssist.ClassicMode="true"
                     Margin="5"
                     FontSize="20"
-                    ItemsSource="{Binding Drives}"    
-                    SelectedItem="{Binding SelectedDrive}"  
+                    ItemsSource="{Binding Driver.Drives}"    
+                    SelectedItem="{Binding Driver.SelectedDrive}"  
                     Style="{StaticResource MaterialDesignFloatingHintComboBox}"
                     materialDesign:TextFieldAssist.TextBoxViewMargin="1 0 1 0"
                     materialDesign:HintAssist.FloatingScale="0.50"
                     DisplayMemberPath="ComboDisplay">
-                </ComboBox>
-                <TextBox 
-                    Grid.Row="1"  
-                    Text="{Binding SelectedDrive.MountPoint}"
+            </ComboBox>            
+            <TextBox 
+                    Text="{Binding Driver.SelectedDrive.MountPoint}"
                     Style="{StaticResource MaterialDesignFloatingHintTextBox}"  
                     FontSize="20"
                     materialDesign:TextFieldAssist.TextBoxViewMargin="1 0 1 0"
                     materialDesign:HintAssist.FloatingScale="0.50"
                     Margin="5" 
                     materialDesign:HintAssist.Hint="Mount Point" />
-                <TextBox
-                    Grid.Row="2" 
-                    Text="{Binding SelectedDrive.Label}"
+            <TextBox
+                    Text="{Binding Driver.SelectedDrive.Label}"
                     Style="{StaticResource MaterialDesignFloatingHintTextBox}"                
                     FontSize="20"
                     materialDesign:TextFieldAssist.TextBoxViewMargin="1 0 1 0"
                     materialDesign:HintAssist.FloatingScale="0.50"
                     Margin="5" materialDesign:HintAssist.Hint="Label" />
+        </StackPanel>
 
-            </Grid>
-        </Grid>
         <StackPanel Grid.Row="4" Orientation="Horizontal"  HorizontalAlignment="Right">
             <Button x:Name="btnCancel"
                 Content="Cancel"

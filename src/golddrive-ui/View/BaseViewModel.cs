@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,9 +9,9 @@ namespace golddrive
 {
     public class BaseViewModel : Observable
     {
-        protected IDriver _driver;
+        public IDriver Driver { get; set; }
         protected MainWindowViewModel _mainViewModel;
-
+        
         private bool _isWorking;
         public bool IsWorking
         {
