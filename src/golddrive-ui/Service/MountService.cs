@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 namespace golddrive
 {
 
-    public class Driver : Observable, IDriver
+    public class MountService //, IDriver
     {
         #region Properties
 
@@ -38,39 +38,10 @@ namespace golddrive
             }
         }
 
-        private ObservableCollection<Drive> _drives;
-        public ObservableCollection<Drive> Drives
-        {
-            get { return _drives; }
-            set { _drives = value; NotifyPropertyChanged(); }
-        }
-
-        private ObservableCollection<Drive> _freeDrives;
-        public ObservableCollection<Drive> FreeDrives
-        {
-            get { return _freeDrives; }
-            set { _freeDrives = value; NotifyPropertyChanged(); }
-        }
         
-        private Drive _selectedDrive;
-        public Drive SelectedDrive {
-            get { return _selectedDrive; }
-            set {
-                _selectedDrive = value;
-                NotifyPropertyChanged();
-                NotifyPropertyChanged("HasDrives");
-                NotifyPropertyChanged("HasNoDrives");
-
-            }
-        }
-        public bool HasDrives { get { return Drives != null && Drives.Count > 0; } }
-        public bool HasNoDrives { get { return !HasDrives; } }
-
-        //public bool CanConnect { get { return IsDriveSelected && !IsWorking; } }
-
         #endregion
 
-        public Driver()
+        public MountService()
         {
 
         }
@@ -252,21 +223,7 @@ namespace golddrive
 
         #region Local Drive Management
 
-        public async void LoadDrives()
-        {
-            List<Drive> drives = await Task.Run(() => GetGoldDrives());
-            List<Drive> freeDrives = await Task.Run(() => GetFreeDrives());
-            Drives = new ObservableCollection<Drive>();
-            FreeDrives = new ObservableCollection<Drive>();
-            foreach (var d in drives)
-                Drives.Add(d);
-            foreach (var d in freeDrives)
-                FreeDrives.Add(d);
-
-            if (Drives.Count > 0)
-                SelectedDrive = Drives[0];
-
-        }
+        
     
 
         public List<Drive> GetUsedDrives()
@@ -756,19 +713,23 @@ namespace golddrive
             return true;
         }
 
-        public ReturnBox Mount(Drive drive)
+        private ReturnBox Mount(Drive drive)
         {
             ReturnBox rb = RunLocal("net.exe", $"use { drive.Name } { drive.Remote }");
-            if(!rb.Success)
+            if (!rb.Success)
+            {
+                rb.Object = MountStatus.UNKNOWN;
                 return rb;
+            }
             SetDriveLabel(drive);
             SetDriveIcon(drive, $@"{ AppPath }\golddrive.ico");
+            rb.Object = MountStatus.OK;
             return rb;
         }
 
         public ReturnBox Unmount(Drive drive)
         {
-            return RunLocal("net.exe", "use /d " + drive.Name);            
+            return RunLocal("net.exe", "use /d " + drive.Name);
             // TODO: clenup drive name and registry
         }
 

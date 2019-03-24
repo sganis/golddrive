@@ -6,12 +6,12 @@ namespace golddrive.Tests
     [TestClass()]
     public class MountManagerTest
     {
-        Driver mountManager;
+        MountService mountManager;
 
         [TestInitialize]
         public void Init()
         {
-            mountManager = new Driver();
+            mountManager = new MountService();
         }
 
         [TestMethod()]

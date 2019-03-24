@@ -6,6 +6,14 @@ using System.Threading.Tasks;
 
 namespace golddrive
 {
+    public enum Page
+    {
+        Main,
+        Login,
+        Host,
+        Settings,
+        About,
+    }
     public enum DriveStatus
     {
         NOT_SUPPORTED,

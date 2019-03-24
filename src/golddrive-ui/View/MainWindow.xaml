@@ -1,87 +1,127 @@
-﻿<Window x:Class="golddrive.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"             
-        xmlns:local="clr-namespace:golddrive"  
-        mc:Ignorable="d"                     
-        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
-        TextOptions.TextFormattingMode="Ideal"
-        TextOptions.TextRenderingMode="Auto"
-        Background="{DynamicResource MaterialDesignPaper}"
-        TextElement.FontWeight="Medium"
-        TextElement.FontSize="14"
-        FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto"
-        
-        WindowStartupLocation="CenterScreen"
-        Title="Golddrive" 
-        MaxWidth="700" MinWidth="300" MinHeight="500"
-        Width="500"
-        ResizeMode="CanResizeWithGrip" d:DesignWidth="503.2" d:DesignHeight="594">
-
+﻿<Window
+    x:Class="golddrive.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+    xmlns:local="clr-namespace:golddrive"
+    mc:Ignorable="d"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+    TextOptions.TextFormattingMode="Ideal"
+    TextOptions.TextRenderingMode="Auto"
+    Background="{DynamicResource MaterialDesignPaper}"
+    TextElement.FontWeight="Medium"
+    TextElement.FontSize="14"
+    FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto"
+    WindowStartupLocation="CenterScreen"
+    Title="Golddrive"
+    MaxWidth="700"
+    MinWidth="300"
+    MinHeight="500"
+    Width="500"
+    ResizeMode="CanResizeWithGrip"
+    d:DesignWidth="503.2"
+    d:DesignHeight="594">
     <Window.Resources>
-        <DataTemplate DataType="{x:Type local:SettingsViewModel}">
-            <local:SettingsView/>
-        </DataTemplate>
-        <DataTemplate DataType="{x:Type local:LoginViewModel}">
-            <local:LoginView/>
-        </DataTemplate>
-        <DataTemplate DataType="{x:Type local:ConnectViewModel}">
-            <local:ConnectView/>
-        </DataTemplate>
+        <!--<DataTemplate
+            DataType="{x:Type local:SettingsViewModel}">
+            <local:SettingsView />
+        </DataTemplate>-->
     </Window.Resources>
-    
     <!--Events-->
     <i:Interaction.Triggers>
-        <i:EventTrigger EventName="Loaded">
-            <i:InvokeCommandAction Command="{Binding LoadedCommand}" />
+        <i:EventTrigger
+            EventName="Loaded">
+            <i:InvokeCommandAction
+                Command="{Binding LoadedCommand}" />
         </i:EventTrigger>
-        <i:EventTrigger EventName="Closing">
-            <i:InvokeCommandAction Command="{Binding ClosingCommand}"/>
+        <i:EventTrigger
+            EventName="Closing">
+            <i:InvokeCommandAction
+                Command="{Binding ClosingCommand}" />
         </i:EventTrigger>
-        
     </i:Interaction.Triggers>
-    
     <!--View-->
-    <Grid >
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition
+                Height="Auto" />
             <RowDefinition />
-            <RowDefinition Height="56" />
+            <RowDefinition
+                Height="56" />
         </Grid.RowDefinitions>
-        
-        <materialDesign:ColorZone 
-            Mode="PrimaryDark" 
+        <materialDesign:ColorZone
+            Mode="PrimaryDark"
             Height="50">
             <DockPanel>
                 <materialDesign:PopupBox
-                  DockPanel.Dock="Right"                  
-                  PlacementMode="BottomAndAlignRightEdges">
+                    DockPanel.Dock="Right"
+                    PlacementMode="BottomAndAlignRightEdges">
                     <StackPanel>
-                        <Button Content="Settings"  Command="{Binding SettingsCommand}"/>
-                        <Button Content="Unmout all drives" Command="{Binding UnmoutAllCommand}"/>
-                        <Button Content="Setup SSH" Command="{Binding SetupSshCommand}"/>
-                        <Button Content="Restart Explorer" Command="{Binding RestartExplorerCommand}"/>
-                        <Button Content="About" Command="{Binding AboutCommand}"/>
+                        <Button
+                            Content="Settings"
+                            Command="{Binding SettingsCommand}" />
+                        <Button
+                            Content="Unmout all drives"
+                            Command="{Binding UnmoutAllCommand}" />
+                        <Button
+                            Content="Setup SSH"
+                            Command="{Binding SetupSshCommand}" />
+                        <Button
+                            Content="Restart Explorer"
+                            Command="{Binding RestartExplorerCommand}" />
+                        <Button
+                            Content="About"
+                            Command="{Binding AboutCommand}" />
                     </StackPanel>
                 </materialDesign:PopupBox>
-                <StackPanel Orientation="Horizontal">
-
-                </StackPanel>
+                <StackPanel
+                    Orientation="Horizontal"></StackPanel>
             </DockPanel>
         </materialDesign:ColorZone>
-        <ContentControl
+        <Grid
             Grid.Row="1"
-            Margin="60,20,60,0"
-            FocusVisualStyle="{x:Null}"
-            Content="{Binding SelectedViewModel}"/>
-        <ProgressBar
-            Grid.Row="2"
-            Margin="100,20"
-            Visibility="{Binding IsWorking, Converter={StaticResource boolToVis}}"
-            VerticalAlignment="Top"
-            IsIndeterminate="True"   />
+            Margin="60,20">
+
+            <!-- Drive page-->
+            <Grid
+                Visibility="{Binding CurrentPage, 
+                            Converter={local:PageToVisibilityConverter}, 
+                            ConverterParameter=Main}">
+                <local:DriveControl />
+            </Grid>
+            <!-- Host page-->
+            <StackPanel
+                Visibility="{Binding CurrentPage,
+                            Converter={local:PageToVisibilityConverter}, 
+                            ConverterParameter=Host}">
+                <local:HostControl />
+            </StackPanel>
+            <!-- Login page-->
+            <StackPanel
+                Visibility="{Binding CurrentPage, 
+                            Converter={local:PageToVisibilityConverter}, 
+                            ConverterParameter=Login}">
+                <local:LoginControl />
+            </StackPanel>
+
+            <!-- Settings page-->
+            <StackPanel
+                Visibility="{Binding CurrentPage, 
+                            Converter={local:PageToVisibilityConverter}, 
+                            ConverterParameter=Settings}">
+                <local:SettingsControl />
+            </StackPanel>
+
+            <ProgressBar
+                Grid.Row="2"
+                Margin="100,20"
+                Visibility="{Binding IsWorking, 
+                            Converter={StaticResource BooleanToVisibilityConverter}}"
+                VerticalAlignment="Top"
+                IsIndeterminate="True" />
+        </Grid>
     </Grid>
 </Window>

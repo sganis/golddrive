@@ -104,35 +104,39 @@
     <Compile Include="Common\EnterKeyHelper.cs" />
     <Compile Include="Common\Enumerations.cs" />
     <Compile Include="Common\Logger.cs" />
-    <Compile Include="Service\IDriver.cs" />
+    <Compile Include="View\LoginControl.xaml.cs">
+      <DependentUpon>LoginControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="View\HostControl.xaml.cs">
+      <DependentUpon>HostControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="View\SettingsControl.xaml.cs">
+      <DependentUpon>SettingsControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Service\IMountService.cs" />
     <Compile Include="Common\Messenger.cs" />
     <Compile Include="Common\NotEmptyValidationRule.cs" />
     <Compile Include="Common\Observable.cs" />
     <Compile Include="Common\PasswordHelper.cs" />
     <Compile Include="Common\Drive.cs" />
-    <Compile Include="View\BaseViewModel.cs" />
     <Compile Include="View\DriveControl.xaml.cs">
       <DependentUpon>DriveControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="View\LoginViewModel.cs" />
-    <Compile Include="View\ConnectViewModel.cs" />
     <Compile Include="View\MainWindowViewModel.cs" />
-    <Compile Include="View\LoginView.xaml.cs">
-      <DependentUpon>LoginView.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Common\ReturnBox.cs" />
-    <Compile Include="View\ConnectView.xaml.cs">
-      <DependentUpon>ConnectView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="View\SettingsView.xaml.cs">
-      <DependentUpon>SettingsView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="View\SettingsViewModel.cs" />
     <Page Include="View\DriveControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="View\LoginView.xaml">
+    <Page Include="View\LoginControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="View\HostControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="View\SettingsControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -144,19 +148,11 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Service\Driver.cs" />
+    <Compile Include="Service\MountService.cs" />
     <Compile Include="View\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="View\ConnectView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="View\SettingsView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
@@ -182,9 +178,6 @@
     <Content Include="NLog.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <None Include="NLog.xsd">
-      <SubType>Designer</SubType>
-    </None>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
