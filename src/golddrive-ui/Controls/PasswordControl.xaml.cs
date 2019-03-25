@@ -2,9 +2,9 @@
 
 namespace golddrive
 {
-    public partial class LoginControl : UserControl
+    public partial class PasswordControl : UserControl
     {
-        public LoginControl()
+        public PasswordControl()
         {
             InitializeComponent();
         }

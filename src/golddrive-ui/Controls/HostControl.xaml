@@ -10,7 +10,8 @@
     mc:Ignorable="d"
     d:DesignHeight="300"
     d:DesignWidth="300">
-    <StackPanel>
+    <StackPanel
+        IsEnabled="{Binding IsWorking, Converter={local:NegateBoolConverter}}">
         <ComboBox
             ItemsSource="{Binding FreeDrives}"
             SelectedItem="{Binding SelectedFreeDrive}"
@@ -27,6 +28,7 @@
             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
             materialDesign:HintAssist.Hint="Host (or user@host!port\path)"
             materialDesign:HintAssist.FloatingScale="0.50"
+            local:EnterKeyHelper.EnterKeyCommand="{Binding ConnectHostCommand}"
             Margin="0,10,0,0"
             FontSize="24" />
 
@@ -34,7 +36,7 @@
             Grid.Row="4"
             Orientation="Horizontal"
             HorizontalAlignment="Right"
-            Margin="0,10,0,0">
+            Margin="0,20">
             <Button
                 Content="Cancel"
                 Command="{Binding CancelHostCommand}"
@@ -43,9 +45,13 @@
             <Button
                 Content="Connect"
                 Command="{Binding ConnectHostCommand}"
-                Style="{StaticResource MaterialDesignFlatButton}"
                 HorizontalAlignment="Right" />
         </StackPanel>
-        
+        <TextBlock
+            TextWrapping="Wrap"
+            Text="{Binding Message}"
+            Foreground="{Binding MessageColor}"
+            VerticalAlignment="Top"
+            Grid.Row="5" />
     </StackPanel>
 </UserControl>

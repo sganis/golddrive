@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Markup;
 
@@ -14,25 +15,28 @@ namespace golddrive
         }
     }
 
-    public class InverseBooleanConverter : BaseConverter, IValueConverter
+    public class BoolToVis : BaseConverter, IValueConverter
     {
-        public object Convert(object value, Type targetType, 
-            object parameter, CultureInfo culture)
+        public bool Negate { get; set; }
+        public BoolToVis()
         {
-            if (targetType != typeof(bool))
-                throw new InvalidOperationException("The target must be a boolean");
-
-            return !(bool)value;
+            Negate = false;
+        }
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if(!Negate)
+                return (bool)value ? Visibility.Visible : Visibility.Collapsed;
+            else
+                return !(bool)value ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        public object ConvertBack(object value, Type targetType, 
-            object parameter, CultureInfo culture)
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             throw new NotSupportedException();
         }
     }
     
-    public class PageToVisibilityConverter : BaseConverter, IValueConverter
+    public class PageToVis : BaseConverter, IValueConverter
     {
         public object Convert(object value, Type targetType,
             object parameter, CultureInfo culture)
@@ -45,6 +49,20 @@ namespace golddrive
             object parameter, CultureInfo culture)
         {
             throw new NotSupportedException();
+        }
+    }
+    public class NegateBoolConverter : BaseConverter, IValueConverter    
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            bool original = (bool)value;
+            return !original;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            bool original = (bool)value;
+            return !original;
         }
     }
 }

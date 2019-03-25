@@ -15,14 +15,7 @@
         <StackPanel
             Grid.Row="1"
             Orientation="Horizontal"
-            VerticalAlignment="Top"
-            HorizontalAlignment="Right">
-            <Button
-                Content="Delete"
-                Margin="2"
-                Width="90"
-                Style="{StaticResource MaterialDesignFlatButton}"
-                Command="{Binding DeleteCommand}" />
+            VerticalAlignment="Top">
             <Button
                 IsEnabled="False"
                 Content="New"
@@ -30,6 +23,13 @@
                 Width="90"
                 Style="{StaticResource MaterialDesignRaisedButton}"
                 Command="{Binding NewCommand}" />
+            <Button
+                Content="Delete"
+                Margin="2"
+                Width="90"
+                Style="{StaticResource MaterialDesignFlatButton}"
+                Command="{Binding DeleteCommand}" />
+            
         </StackPanel>
         <Rectangle
             Grid.Row="2"
@@ -69,7 +69,6 @@
             HorizontalAlignment="Right">
             <Button
                 Content="Ok"
-                Style="{StaticResource MaterialDesignFlatButton}"
                 Command="{Binding SaveSettingsCommand}"
                 Width="90"
                 HorizontalAlignment="Right" />

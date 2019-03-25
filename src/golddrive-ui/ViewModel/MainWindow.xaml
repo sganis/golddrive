@@ -88,40 +88,40 @@
             <!-- Drive page-->
             <Grid
                 Visibility="{Binding CurrentPage, 
-                            Converter={local:PageToVisibilityConverter}, 
+                            Converter={local:PageToVis}, 
                             ConverterParameter=Main}">
                 <local:DriveControl />
             </Grid>
             <!-- Host page-->
             <StackPanel
                 Visibility="{Binding CurrentPage,
-                            Converter={local:PageToVisibilityConverter}, 
+                            Converter={local:PageToVis}, 
                             ConverterParameter=Host}">
                 <local:HostControl />
             </StackPanel>
             <!-- Login page-->
             <StackPanel
                 Visibility="{Binding CurrentPage, 
-                            Converter={local:PageToVisibilityConverter}, 
+                            Converter={local:PageToVis}, 
                             ConverterParameter=Login}">
-                <local:LoginControl />
+                <local:PasswordControl />
             </StackPanel>
 
             <!-- Settings page-->
             <StackPanel
                 Visibility="{Binding CurrentPage, 
-                            Converter={local:PageToVisibilityConverter}, 
+                            Converter={local:PageToVis}, 
                             ConverterParameter=Settings}">
                 <local:SettingsControl />
             </StackPanel>
-
-            <ProgressBar
-                Grid.Row="2"
-                Margin="100,20"
-                Visibility="{Binding IsWorking, 
-                            Converter={StaticResource BooleanToVisibilityConverter}}"
-                VerticalAlignment="Top"
-                IsIndeterminate="True" />
         </Grid>
+        <ProgressBar
+            Grid.Row="2"
+            Margin="100,20"
+            Visibility="{Binding IsWorking, 
+                         Converter={StaticResource BooleanToVisibilityConverter}}"
+            VerticalAlignment="Top"
+            IsIndeterminate="True" />
+
     </Grid>
 </Window>

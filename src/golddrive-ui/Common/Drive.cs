@@ -23,16 +23,27 @@ namespace golddrive
             set
             {
                 _mountpoint = value;
-                string hostport = _mountpoint;
-                if (_mountpoint.Contains("\\"))
+                Host = _mountpoint;
+                if (string.IsNullOrEmpty(_mountpoint))
+                    return;
+                
+                string s = _mountpoint;
+                if (s.Contains("\\"))
                 {
-                    hostport = _mountpoint.Split('\\')[0];
-                    Path = _mountpoint.Substring(_mountpoint.IndexOf("\\")).Replace("\\", "/");
+                    Host = s.Split('\\')[0];
+                    Path = s.Substring(s.IndexOf("\\")).Replace("\\", "/");
+                    s = Host;
                 }
-                if (hostport.Contains("!"))
+                if (s.Contains("!"))
                 {
-                    hostport = _mountpoint.Split('\\')[0];
-                    Port = Int32.Parse(hostport.Split('!')[1]);
+                    Host = s.Split('!')[0];
+                    Port = Int32.Parse(s.Split('!')[1]);
+                    s = Host;
+                }
+                if (s.Contains("@"))
+                {
+                    User = s.Split('@')[0];
+                    Host = s.Split('@')[1];                    
                 }
             }
 
@@ -50,6 +61,18 @@ namespace golddrive
             get { return port == 0 ? 22 : port; }
             set { port = value; }
         }
+        public string UserProfile
+        {
+            get { return Environment.ExpandEnvironmentVariables("%USERPROFILE%"); }
+        }
+        public string AppKey
+        {
+            get { return $@"{UserProfile}\.ssh\id_rsa-{User}-golddrive"; }
+        }
+        public string AppPubKey
+        {
+            get { return $@"{AppKey}.pub"; }
+        }
 
         public string RegistryMountPoint2
         {
@@ -62,8 +85,7 @@ namespace golddrive
         public string ComboDisplay
         {
             get
-            {
-                
+            {   
                 //int maxLengh = 15;
                 string display = $"{ Letter }: {Label}";
                 return display;

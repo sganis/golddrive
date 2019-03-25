@@ -10,6 +10,8 @@ using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
+using System.Net.Sockets;
+using Renci.SshNet.Common;
 
 namespace golddrive
 {
@@ -24,7 +26,8 @@ namespace golddrive
         public bool Connected { get { return Ssh != null && Ssh.IsConnected; } }
 
         private string appPath;
-        public string AppPath {
+        public string AppPath
+        {
             get
             {
                 if (appPath == null)
@@ -38,7 +41,7 @@ namespace golddrive
             }
         }
 
-        
+
         #endregion
 
         public MountService()
@@ -74,12 +77,12 @@ namespace golddrive
                 using (MemoryStream ms = new MemoryStream(
                     Convert.FromBase64String(Properties.Settings.Default.Drives)))
                 {
-                    BinaryFormatter bf = new BinaryFormatter();  
-                    if(ms.Length > 0)                  
+                    BinaryFormatter bf = new BinaryFormatter();
+                    if (ms.Length > 0)
                         drives = (List<Drive>)bf.Deserialize(ms);
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
             }
             return drives;
@@ -89,32 +92,22 @@ namespace golddrive
 
         #region Core Methods
 
-        public bool Connect(string host, int port, string user, string password, string pkey)
+        public bool Connect(string host, int port, string user, string pkey)
         {
             try
             {
-                if (!String.IsNullOrEmpty(pkey))
-                {
-                    var pk = new PrivateKeyFile(pkey);
-                    var keyFiles = new[] { pk };
-                    Ssh = new SshClient(host, port, user, keyFiles);
-                    Ssh.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
-                    Ssh.Connect();
-                    Sftp = new SftpClient(host, port, user, keyFiles);
-                    Sftp.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
-                    Sftp.Connect();
-                }
-                else
-                {
-                    Ssh = new SshClient(host, port, user, password);
-                    Ssh.Connect();
-                    Sftp = new SftpClient(host, port, user, password);
-                    Sftp.Connect();
-                }
+                var pk = new PrivateKeyFile(pkey);
+                var keyFiles = new[] { pk };
+                Ssh = new SshClient(host, port, user, keyFiles);
+                Ssh.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
+                Ssh.Connect();
+                Sftp = new SftpClient(host, port, user, keyFiles);
+                Sftp.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
+                Sftp.Connect();
             }
             catch (Renci.SshNet.Common.SshAuthenticationException ex)
             {
-                // wrong password
+                // bad key
                 Error = ex.Message;
             }
             catch (Exception ex)
@@ -223,13 +216,13 @@ namespace golddrive
 
         #region Local Drive Management
 
-        
-    
+
+
 
         public List<Drive> GetUsedDrives()
         {
             List<Drive> drives = new List<Drive>();
-            
+
             // get mounted drives using net use command
             var r = RunLocal("net.exe", "use");
             foreach (var line in r.Output.Split('\n'))
@@ -251,7 +244,7 @@ namespace golddrive
                                 d.User = d.VolumeLabel.Split('@')[0];
                                 d.Host = d.VolumeLabel.Split('@')[1];
                             }
-                            d.MountPoint = match.Groups[3].Value.Replace(@"\\golddrive\", "");                            
+                            d.MountPoint = match.Groups[3].Value.Replace(@"\\golddrive\", "");
                             d.Label = GetDriveLabel(d);
                         }
                         drives.Add(d);
@@ -302,7 +295,7 @@ namespace golddrive
             var freeDrives = GetFreeDrives();
             var drives = GetUsedDrives();
             var inUse = freeDrives.Find(x => x.Letter == drive.Letter) == null;
-            var isGold = drives.Find(x => x.Letter == drive.Letter && x.IsGoldDrive==true) != null; 
+            var isGold = drives.Find(x => x.Letter == drive.Letter && x.IsGoldDrive == true) != null;
             var pathUsed = drives.Find(x => x.Letter != drive.Letter && x.MountPoint == drive.MountPoint) != null;
             if (!inUse)
                 return DriveStatus.DISCONNECTED;
@@ -320,7 +313,7 @@ namespace golddrive
             int epoch = (int)(DateTime.Now - new DateTime(1970, 1, 1, 0, 0, 0, 0)).TotalSeconds;
             string tempfile = $@"{ drive.Name }\tmp\{drive.User}@{drive.Host}.{epoch}";
             var r = RunLocal("type nul > " + tempfile);
-            if(r.ExitCode == 0)
+            if (r.ExitCode == 0)
             {
                 RunLocal("del " + tempfile);
                 return true;
@@ -334,7 +327,7 @@ namespace golddrive
                 string key = $@"Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\{drive.RegistryMountPoint2}";
                 RegistryKey k = Registry.CurrentUser.OpenSubKey(key);
                 if (k != null)
-                    return k.GetValue("_LabelFromReg")?.ToString();                    
+                    return k.GetValue("_LabelFromReg")?.ToString();
             }
             catch (Exception ex)
             {
@@ -350,10 +343,10 @@ namespace golddrive
             {
                 string key = $@"Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\{drive.RegistryMountPoint2}";
                 RegistryKey k = Registry.CurrentUser.CreateSubKey(key);
-                if(k != null)
+                if (k != null)
                     k.SetValue("_LabelFromReg", drive.Label, RegistryValueKind.String);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
 
             }
@@ -394,293 +387,165 @@ namespace golddrive
 
         #region SSH Management
 
-        ReturnBox TestHost(string user, string host, int port=22)
-        {
-            ReturnBox rb = new ReturnBox();
-
-            //	try:
-            //		client.connect(hostname=host, username=user, 
-            //				password='', port=port, timeout=5)	
-            //		rb.returncode = util.ReturnCode.OK
-            //    except(paramiko.ssh_exception.AuthenticationException,
-            //        paramiko.ssh_exception.BadAuthenticationType,
-            //        paramiko.ssh_exception.PasswordRequiredException):
-
-            //        rb.returncode = util.ReturnCode.OK
-            //    except Exception as ex:
-            //		rb.returncode = util.ReturnCode.BAD_HOST
-            //        rb.error = str(ex)
-            //	finally:
-            //		client.close()
-            return rb;
-        }
-
-        ReturnBox TestLogin(Drive drive)
-        {
-            ReturnBox rb = new ReturnBox();
-            //       def testlogin(userhost, password, port= 22):
-            //'''
-            //Test ssh password authentication
-            //'''
-
-            //   logger.info(f'Logging in with password for {userhost}...')
-            //rb = util.ReturnBox()
-            //if not password:
-
-            //       rb.returncode =util.ReturnCode.BAD_LOGIN
-            //       rb.error = 'Empty password'
-            //	return rb
-
-            //   user, host = userhost.split('@')
-
-            //   client = paramiko.SSHClient()
-
-            //   client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
-            //try:
-            //	client.connect(hostname=host, username=user, 
-            //			password=password, port=port, timeout=10, 
-            //			look_for_keys=False)
-            //	rb.returncode = util.ReturnCode.OK
-            //   except(paramiko.ssh_exception.AuthenticationException,
-            //       paramiko.ssh_exception.BadAuthenticationType,
-            //       paramiko.ssh_exception.PasswordRequiredException) as ex:
-            //	rb.returncode = util.ReturnCode.BAD_LOGIN
-            //       rb.error = str(ex)
-
-            //   except Exception as ex:
-            //	rb.returncode = util.ReturnCode.BAD_HOST
-            //       rb.error = str(ex)
-            //finally:
-            //	client.close()
-            return rb;
-        }
-
-        ReturnBox TestSsh(Drive drive)
-        {
-            ReturnBox rb = new ReturnBox();
-            rb = TestHost(drive);
-            if (!rb.Success)
-                return rb;
-
-            //if not os.path.exists(seckey):
-
-            //       seckey_win = seckey.replace('/','\\')
-            //	logger.error(f'Key does not exist: {seckey_win}')
-            //	rb.returncode = util.ReturnCode.BAD_LOGIN
-            //       rb.error = "No key"
-            //	return rb
-
-            //   cmd = f'''ssh.exe
-            //	-i "{seckey}"
-            //	-p { port} 
-            //	-o PasswordAuthentication = no
-            //       - o StrictHostKeyChecking=no 
-            //	-o UserKnownHostsFile =/ dev / null
-            //       - o BatchMode=yes 
-            //	{userhost
-            //   } "echo ok"'''
-            //r = util.run(cmd, capture=True, timeout=10)
-
-            //if r.stdout == 'ok':
-            //	# success
-            //	rb.returncode = util.ReturnCode.OK
-            //   elif 'Permission denied' in r.stderr:
-            //	# wrong user or key issue
-            //	rb.returncode = util.ReturnCode.BAD_LOGIN
-            //       rb.error = 'Access denied'
-            //else:
-            //	# wrong port: connection refused 
-            //	# unknown host: connection timeout
-            //	logger.error(r.stderr)
-
-            //       rb.returncode = util.ReturnCode.BAD_HOST
-            //       rb.error = r.stderr
-            return rb;
-        }
         ReturnBox TestHost(Drive drive)
         {
-            ReturnBox rb = new ReturnBox();
-
-            return rb;
+            ReturnBox r = new ReturnBox();
+            try
+            {
+                using (var client = new TcpClient())
+                {
+                    var result = client.BeginConnect(drive.Host, drive.Port, null, null);
+                    var success = result.AsyncWaitHandle.WaitOne(5000);
+                    if (!success)
+                    {
+                        r.MountStatus = MountStatus.BAD_HOST;
+                    }
+                    client.EndConnect(result);
+                }
+            }
+            catch (Exception ex)
+            {
+                r.MountStatus = MountStatus.BAD_HOST;
+                r.Error = ex.Message;
+            }
+            r.MountStatus = MountStatus.OK;
+            return r;
         }
-
-        void GenerateKeys(string userhost, string pkey)
+        ReturnBox TestPassword(Drive drive, string password)
         {
-             //       def generate_keys(seckey, userhost):
+            ReturnBox r = new ReturnBox();
 
-             //   logger.info('Generating new ssh keys...')
-	            //rb = util.ReturnBox()
-	            //sk = paramiko.RSAKey.generate(2048)
-	            //try:
-	            //	sshdir = os.path.dirname(seckey)
-	            //	if not os.path.exists(sshdir):
+            if (string.IsNullOrEmpty(password))
+            {
+                r.MountStatus = MountStatus.BAD_LOGIN;
+                r.Error = "Empty password";
+                return r;
+            }
+            try
+            {
+                SshClient client = new SshClient(drive.Host, drive.Port, drive.User, password);
+                client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
+                client.Connect();
+                client.Disconnect();
+                r.MountStatus = MountStatus.OK;
+            }
+            catch (Exception ex)
+            {
+                r.Error = ex.Message;
+                if (ex is SshAuthenticationException)
+                {
+                    r.MountStatus = MountStatus.BAD_LOGIN;
+                }
+                else if (ex is SocketException)
+                {
+                    r.MountStatus = MountStatus.BAD_HOST;
+                }
+                else
+                {
 
-             //           os.makedirs(sshdir)
-	            //		os.chmod(sshdir, 0o700)
-	            //	sk.write_private_key_file(seckey)	
-	            //except Exception as ex:
-	            //	logger.error(f'{ex}, {seckey}')
-	            //	rb.error = str(ex)
-	            //	return rb
+                }
 
-             //   pubkey = f'ssh-rsa {sk.get_base64()} {userhost}'
-	
-	            //# try:
-	            //# 	with open(seckey + '.pub', 'wt') as w:
-	            //# 		w.write(pubkey)
-	            //# except Exception as ex:
-	            //# 	logger.error(f'Could not save public key: {ex}')
-
-	            //rb.output = pubkey
-	            //return rb
+            }
+            return r;
         }
-
-        bool HasAppKeys(string user)
+        ReturnBox TestSsh(Drive drive)
         {
-            //def has_app_keys(user):
+            ReturnBox r = new ReturnBox();
 
-            //    appkey = util.get_app_key(user)
-            //	return os.path.exists(appkey)
-            return false;
+            //r = TestHost(drive);
+            //if (r.MountStatus == MountStatus.BAD_HOST)
+            //    return r;
+
+            if (!File.Exists(drive.AppKey))
+            {
+                r.MountStatus = MountStatus.BAD_LOGIN;
+                r.Error = "No ssh key";
+                return r;
+            }
+            try
+            {
+                r.MountStatus = MountStatus.UNKNOWN;
+                var pk = new PrivateKeyFile(drive.AppKey);
+                var keyFiles = new[] { pk };
+                SshClient client = new SshClient(drive.Host, drive.Port, drive.User, keyFiles);
+                client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
+                client.Connect();
+                client.Disconnect();
+                r.MountStatus = MountStatus.OK;
+            }
+            catch (Exception ex)
+            {
+                r.Error = ex.Message;
+                if (ex is SshAuthenticationException)
+                {
+                    r.MountStatus = MountStatus.BAD_LOGIN;
+                }
+                else if (ex is SocketException)
+                {
+                    r.MountStatus = MountStatus.BAD_HOST;
+                }
+                else
+                {
+                    Console.Write(ex.ToString());
+                    r.MountStatus = MountStatus.UNKNOWN;
+                }
+            }            
+            return r;
         }
-
-        void SetKeyPermissions(string user, string pkey)
+        ReturnBox SetupSsh(Drive drive, string password)
         {
-            //       def set_key_permissions(user, pkey):
+            ReturnBox r = new ReturnBox();
+            try
+            {
+                string pubkey = "";
+                if (File.Exists(drive.AppKey) && File.Exists(drive.AppPubKey))
+                {
+                    pubkey = File.ReadAllText(drive.AppPubKey);
+                }
+                else
+                {
+                    pubkey = GenerateKeys(drive);
+                }
+                SshClient client = new SshClient(drive.Host, drive.Port, drive.User, password);
+                client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
+                client.Connect();
+                string cmd = $"exec sh -c \"cd; umask 077; mkdir -p .ssh; echo '{pubkey}' >> .ssh/authorized_keys\"";
+                SshCommand command = client.CreateCommand(cmd);
+                command.CommandTimeout = TimeSpan.FromSeconds(5);
+                r.Output = command.Execute();
+                r.Error = command.Error;
+                r.ExitCode = command.ExitStatus;
+            }
+            catch (Exception ex)
+            {
+                r.Error = ex.Message;
+                return r;
+            }
 
+            r = TestSsh(drive);
+            if (r.MountStatus != MountStatus.OK)
+                return r;
 
-            //   logger.info('setting ssh key permissions...')
-            //ssh_folder = os.path.dirname(pkey)
-            //# Remove Inheritance ::
-            //# subprocess.run(fr'icacls {ssh_folder} /c /t /inheritance:d')
-            //util.run(fr'icacls {pkey} /c /t /inheritance:d', capture=True)
-
-            //# Set Ownership to Owner and SYSTEM account
-            //# subprocess.run(fr'icacls {ssh_folder} /c /t /grant %username%:F')
-            //util.run(fr'icacls {pkey} /c /t /grant {user}:F', capture=True)
-            //util.run(fr'icacls {pkey} /c /t /grant SYSTEM:F', capture=True)
-
-            //# Remove All Users, except for Owner 
-            //# subprocess.run(fr'icacls {ssh_folder} /c /t /remove Administrator BUILTIN\Administrators BUILTIN Everyone System Users')
-            //util.run(fr'icacls {pkey} /c /t /remove Administrator BUILTIN\Administrators BUILTIN Everyone Users', capture=True)
-
-            //# Verify 
-            //# util.run(fr'icacls {pkey}')
+            return r;
         }
-
-        void SetupSsh(string userhost, string password, int port=22)
+        string GenerateKeys(Drive drive)
         {
-            //        def main(userhost, password, port= 22):
-            //	'''
-            //	Setup ssh keys, return ReturnBox
-            //	'''
-            //	logger.info(f'Setting up ssh keys for {userhost}...')
-            //	rb = util.ReturnBox()
+            string pubkey = "";
+            try
+            {
+                string dotssh = $@"{drive.UserProfile}\.ssh";
+                if (!Directory.Exists(dotssh))
+                    Directory.CreateDirectory(dotssh);
+                ReturnBox r = RunLocal($@"D:\Users\ganissa\AppData\Local\Programs\Git\usr\bin\ssh-keygen.exe -m PEM -t rsa -N """" -f {drive.AppKey}");
+                if (File.Exists(drive.AppPubKey))
+                    pubkey = File.ReadAllText(drive.AppPubKey).Trim();
+            }
+            catch (Exception ex)
+            {
+                Logger.Log("Error generating keys: " + ex.Message);
+            }
+            return pubkey;
 
-            //	# app key
-            //	user, host = userhost.split('@')
-            //	seckey = util.get_app_key(user)	
-
-            //	# Check if keys need to be generated
-            //	pubkey = ''
-            //	if has_app_keys(user):
-
-            //        logger.info('Private key already exists.')
-            //		sk = paramiko.RSAKey.from_private_key_file(seckey)
-            //		pubkey = f'ssh-rsa {sk.get_base64()} {userhost}'
-            //	else:
-            //		rbkey = generate_keys(seckey, userhost)
-            //		if rbkey.error:
-            //			rbkey.returncode = util.ReturnCode.BAD_SSH
-            //			return rbkey
-            //		else:
-            //			pubkey = rbkey.output
-
-            //# connect
-            //    client = paramiko.SSHClient()
-
-            //    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
-            //	rb.error = ''
-            //	try:
-            //		logger.info('Connecting using password...')
-            //		client.connect(hostname=host, username=user,
-            //						password=password, port=port, timeout=10,
-            //						look_for_keys=False)     
-            //	except paramiko.ssh_exception.AuthenticationException:
-            //		rb.error = f'User or password wrong'
-
-            //        rb.returncode = 1
-
-            //    except Exception as ex:
-
-            //        rb.error = f'connection error: {ex}'
-
-            //        rb.returncode = 2
-
-            //	if rb.error:
-
-            //        logger.error(rb.error)
-            //		if 'getaddrinfo failed' in rb.error:
-            //			rb.error = f'{host} not found'
-            //		client.close()
-            //		rb.returncode = util.ReturnCode.BAD_SSH
-            //		return rb
-
-            //    set_key_permissions(user, seckey)
-
-
-            //    logger.info(f'Publising public key...')
-
-            //	# Copy to the target machines.
-            //	# cmd = f"exec bash -c \"cd; umask 077; mkdir -p .ssh && echo '{pubkey}' >> .ssh/authorized_keys || exit 1\" || exit 1"
-            //	cmd = f"exec sh -c \"cd; umask 077; mkdir -p .ssh; echo '{pubkey}' >> .ssh/authorized_keys\""
-            //	logger.info(cmd)
-            //	ok = False
-
-            //	try:
-            //		stdin, stdout, stderr = client.exec_command(cmd, timeout=10)
-            //		rc = stdout.channel.recv_exit_status()   
-            //		if rc == 0:
-            //			logger.info('Key transfer successful')
-            //			rb.returncode = util.ReturnCode.OK
-            //		else:
-            //			logger.error(f'Error transfering public key: exit {rc}, error: {stderr}')
-            //	except Exception as ex:
-            //		logger.error(ex)
-            //		rb.returncode = util.ReturnCode.BAD_SSH
-            //        rb.error = f'error transfering public key: {ex}'
-            //		return rb
-            //	finally:
-
-            //        client.close()
-
-
-            //    err = stderr.read()
-            //	if err:
-            //		logger.error(err)
-            //		rb.returncode = util.ReturnCode.BAD_SSH
-            //        rb.error = f'error transfering public key, error: {err}'
-            //		return rb
-
-            //    rb = testssh(userhost, seckey, port)
-            //	if rb.returncode == util.ReturnCode.OK:
-
-            //        rb.output = "SSH setup successfull."
-
-            //        logger.info(rb.output)
-            //	else:
-            //		message = 'SSH setup test failed'
-            //		detail = ''
-            //		if rb.returncode == util.ReturnCode.BAD_LOGIN:
-            //			detail = ': authentication probem'
-            //		else:
-            //			message = ': connection problem'
-            //		rb.error = message
-            //        rb.returncode = util.ReturnCode.BAD_SSH
-            //        logger.error(message + detail)
-            //	return rb
         }
 
         #endregion
@@ -689,25 +554,37 @@ namespace golddrive
 
         public ReturnBox Connect(Drive drive)
         {
-            ReturnBox rb = new ReturnBox();
-            if(!IsWinfspInstalled())
+            ReturnBox r = new ReturnBox();
+            if (!IsWinfspInstalled())
             {
-                rb.Object = MountStatus.BAD_WINFSP;
-                return rb;
+                r.MountStatus = MountStatus.BAD_WINFSP;
+                return r;
             }
             DriveStatus status = CheckDriveStatus(drive);
-            if(status != DriveStatus.DISCONNECTED)
+            if (status != DriveStatus.DISCONNECTED)
             {
-                rb.Object = MountStatus.BAD_DRIVE;
-                rb.Error = status.ToString();
-                return rb;
+                r.MountStatus = MountStatus.BAD_DRIVE;
+                r.Error = status.ToString();
+                return r;
             }
-            //rb = TestSsh(drive);
-            //if (!rb.Success)
-            //    return rb;
+            r = TestSsh(drive);
+            if (r.MountStatus != MountStatus.OK)
+                return r;
+
             return Mount(drive);
         }
+        public ReturnBox ConnectPassword(Drive drive, string password)
+        {
+            ReturnBox r = TestPassword(drive, password);
+            if (r.MountStatus != MountStatus.OK)
+                return r;
 
+            r = SetupSsh(drive, password);
+            if (r.MountStatus != MountStatus.OK)
+                return r;
+
+            return Mount(drive);
+        }
         private bool IsWinfspInstalled()
         {
             return true;
@@ -715,22 +592,33 @@ namespace golddrive
 
         private ReturnBox Mount(Drive drive)
         {
-            ReturnBox rb = RunLocal("net.exe", $"use { drive.Name } { drive.Remote }");
-            if (!rb.Success)
+            ReturnBox r = RunLocal("net.exe", $"use { drive.Name } { drive.Remote }");
+            if (!r.Success)
             {
-                rb.Object = MountStatus.UNKNOWN;
-                return rb;
+                r.Error = r.Error;
+                r.MountStatus = MountStatus.UNKNOWN;
+                return r;
             }
             SetDriveLabel(drive);
             SetDriveIcon(drive, $@"{ AppPath }\golddrive.ico");
-            rb.Object = MountStatus.OK;
-            return rb;
+            r.MountStatus = MountStatus.OK;
+            r.DriveStatus = DriveStatus.CONNECTED;
+            return r;
         }
 
         public ReturnBox Unmount(Drive drive)
         {
-            return RunLocal("net.exe", "use /d " + drive.Name);
+            ReturnBox r = RunLocal("net.exe", "use /d " + drive.Name);
+            if (!r.Success)
+            {
+                r.Error = r.Error;
+                return r;
+            }
             // TODO: clenup drive name and registry
+            r.MountStatus = MountStatus.OK;
+            r.DriveStatus = DriveStatus.DISCONNECTED;
+            return r;
+
         }
 
         public ReturnBox UnmountAll()
@@ -741,9 +629,9 @@ namespace golddrive
 
         }
 
-        
 
-        
+
+
         #endregion
 
         public string GetUid(string user)
@@ -754,3 +642,4 @@ namespace golddrive
 
     }
 }
+

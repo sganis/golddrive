@@ -104,13 +104,13 @@
     <Compile Include="Common\EnterKeyHelper.cs" />
     <Compile Include="Common\Enumerations.cs" />
     <Compile Include="Common\Logger.cs" />
-    <Compile Include="View\LoginControl.xaml.cs">
-      <DependentUpon>LoginControl.xaml</DependentUpon>
+    <Compile Include="Controls\PasswordControl.xaml.cs">
+      <DependentUpon>PasswordControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="View\HostControl.xaml.cs">
+    <Compile Include="Controls\HostControl.xaml.cs">
       <DependentUpon>HostControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="View\SettingsControl.xaml.cs">
+    <Compile Include="Controls\SettingsControl.xaml.cs">
       <DependentUpon>SettingsControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Service\IMountService.cs" />
@@ -119,28 +119,28 @@
     <Compile Include="Common\Observable.cs" />
     <Compile Include="Common\PasswordHelper.cs" />
     <Compile Include="Common\Drive.cs" />
-    <Compile Include="View\DriveControl.xaml.cs">
+    <Compile Include="Controls\DriveControl.xaml.cs">
       <DependentUpon>DriveControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="View\MainWindowViewModel.cs" />
+    <Compile Include="ViewModel\MainWindowViewModel.cs" />
     <Compile Include="Common\ReturnBox.cs" />
-    <Page Include="View\DriveControl.xaml">
+    <Page Include="Controls\DriveControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="View\LoginControl.xaml">
+    <Page Include="Controls\PasswordControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="View\HostControl.xaml">
+    <Page Include="Controls\HostControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="View\SettingsControl.xaml">
+    <Page Include="Controls\SettingsControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="View\MainWindow.xaml">
+    <Page Include="ViewModel\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -149,7 +149,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Service\MountService.cs" />
-    <Compile Include="View\MainWindow.xaml.cs">
+    <Compile Include="ViewModel\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>

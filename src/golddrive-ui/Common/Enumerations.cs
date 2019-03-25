@@ -31,7 +31,6 @@ namespace golddrive
         BAD_HOST,
         BAD_LOGIN,
         BAD_SSH,
-        BAD_MOUNT,
         BAD_WINFSP,
         UNKNOWN,
     }
