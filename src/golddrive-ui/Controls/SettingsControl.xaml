@@ -100,7 +100,7 @@
                 HorizontalAlignment="Right" />
             <Button
                 Content="Ok"
-                Command="{Binding SettingsSaveCommand}"
+                Command="{Binding SettingsOkCommand}"
                 Style="{StaticResource MaterialDesignFlatButton}"
                 Width="90"
                 HorizontalAlignment="Right" />

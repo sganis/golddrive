@@ -131,6 +131,7 @@ namespace golddrive
         #endregion
 
         #region Constructor
+
         public MainWindowViewModel()
         {
             _mountService = new MountService();
@@ -142,8 +143,6 @@ namespace golddrive
         #endregion
 
         #region Async Methods
-
-        
 
         private void WorkStart(string message)
         {
@@ -265,11 +264,8 @@ namespace golddrive
         //    }
         //}
 
-        public ICommand ClosingCommand { get; set; }
-        public ICommand SettingsSaveCommand { get; set; }
-        public ICommand SettingsNewCommand { get; set; }
-        public ICommand SettingsCancelCommand { get; set; }
-
+        
+        
 
         private ICommand _selectedDriveChangedCommand;
         public ICommand SelectedDriveChangedCommand
@@ -381,13 +377,17 @@ namespace golddrive
                         x => { CurrentPage = Page.Password; }));
             }
         }
-
-
-
-        #endregion
-
-        #region Settings
-
+ 
+        private ICommand _settingsOkCommand;
+        public ICommand SettingsOkCommand
+        {
+            get
+            {
+                return _settingsOkCommand ??
+                    (_settingsOkCommand = new RelayCommand(OnSettingsSave));
+            }
+        }
+        
         private void OnSettingsSave(object obj)
         {
             if (IsDriveNew)
@@ -404,9 +404,29 @@ namespace golddrive
                 CurrentPage = Page.Main;
             }
         }
+
+        private ICommand _settingsNewCommand;
+        public ICommand SettingsNewCommand
+        {
+            get
+            {
+                return _settingsNewCommand ??
+                    (_settingsNewCommand = new RelayCommand(OnSettingsNew));
+            }
+        }
         private void OnSettingsNew(object obj)
         {
             IsDriveNew = true;
+        }
+
+        private ICommand _settingsCancelCommand;
+        public ICommand SettingsCancelCommand
+        {
+            get
+            {
+                return _settingsCancelCommand ??
+                    (_settingsCancelCommand = new RelayCommand(OnSettingsCancel));
+            }
         }
         private void OnSettingsCancel(object obj)
         {
@@ -432,21 +452,45 @@ namespace golddrive
                    }));
             }
         }
-        #endregion
 
-        #region Events
-        private void Loaded(object obj)
+
+        private ICommand _closingCommand;
+        public ICommand ClosingCommand
         {
-            //LoadDrives();
-            LoadDrivesAsync();
+            get
+            {
+                return _closingCommand ??
+                    (_closingCommand = new RelayCommand(Closing));
+            }
         }
         private void Closing(object obj)
         {
             // _mountService.SaveSettingsDrives(Drives.ToList());
         }
 
-        #endregion
+        private ICommand _githubCommand;
+        public ICommand GithubCommand
+        {
+            get
+            {
+                return _githubCommand ??
+                    (_githubCommand = new RelayCommand(
+                        url => System.Diagnostics.Process.Start(url.ToString())));
+            }
+        }      
 
+        private ICommand _runTerminalCommand;
+        public ICommand RunTerminalCommand
+        {
+            get
+            {
+                return _runTerminalCommand ??
+                    (_runTerminalCommand = new RelayCommand(
+                        url => System.Diagnostics.Process.Start("cmd.exe")));
+            }
+        }
+
+        #endregion
 
     }
 

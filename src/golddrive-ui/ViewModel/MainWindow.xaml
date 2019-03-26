@@ -23,7 +23,8 @@
     Width="500"
     ResizeMode="CanResizeWithGrip"
     d:DesignWidth="503.2"
-    d:DesignHeight="594">
+    d:DesignHeight="594"
+    Icon="/golddrive-ui;component/golddrive.ico">
     <Window.Resources>
         <!--<DataTemplate
             DataType="{x:Type local:SettingsViewModel}">
@@ -66,6 +67,9 @@
                             Content="Setup Ssh"
                             Command="{Binding SetupSshCommand}" />
                         <Button
+                            Content="Open Terminal"
+                            Command="{Binding RunTerminalCommand}" />
+                        <Button
                             Content="Restart Explorer"
                             Command="{Binding RestartExplorerCommand}" />
                         <Button
@@ -86,21 +90,21 @@
             <Grid
                 Visibility="{Binding CurrentPage, 
                             Converter={local:PageToVis}, 
-                            ConverterParameter=Main}">
+                            ConverterParameter={x:Static local:Page.Main}}">
                 <local:DriveControl />
             </Grid>
             <!-- Host page-->
             <StackPanel
                 Visibility="{Binding CurrentPage,
                             Converter={local:PageToVis}, 
-                            ConverterParameter=Host}">
+                            ConverterParameter={x:Static local:Page.Host}}">
                 <local:HostControl />
             </StackPanel>
             <!-- Login page-->
             <StackPanel
                 Visibility="{Binding CurrentPage, 
                             Converter={local:PageToVis}, 
-                            ConverterParameter=Login}">
+                            ConverterParameter={x:Static local:Page.Password}}">
                 <local:PasswordControl />
             </StackPanel>
 
@@ -108,8 +112,15 @@
             <StackPanel
                 Visibility="{Binding CurrentPage, 
                             Converter={local:PageToVis}, 
-                            ConverterParameter=Settings}">
+                            ConverterParameter={x:Static local:Page.Settings}}">
                 <local:SettingsControl />
+            </StackPanel>
+            <!-- About page-->
+            <StackPanel
+                Visibility="{Binding CurrentPage, 
+                            Converter={local:PageToVis}, 
+                            ConverterParameter={x:Static local:Page.About}}">
+                <local:AboutControl />
             </StackPanel>
         </Grid>
         <ProgressBar
