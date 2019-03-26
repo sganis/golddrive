@@ -99,7 +99,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Common\BaseCommand.cs" />
+    <Compile Include="Common\RelayCommand.cs" />
     <Compile Include="Common\Converters.cs" />
     <Compile Include="Common\EnterKeyHelper.cs" />
     <Compile Include="Common\Enumerations.cs" />

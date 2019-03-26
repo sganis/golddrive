@@ -33,7 +33,7 @@
                     <i:EventTrigger
                         EventName="SelectionChanged">
                         <i:InvokeCommandAction
-                            Command="{Binding DriveChangedCommand}" />
+                            Command="{Binding SelectedDriveChangedCommand}" />
                     </i:EventTrigger>
                 </i:Interaction.Triggers>
             </ComboBox>
@@ -45,7 +45,8 @@
             <StackPanel>
                 <Button
                     Content="Settings"
-                    Command="{Binding ShowSettingsCommand}"
+                    Command="{Binding ShowPageCommand}"
+                    CommandParameter="{x:Static local:Page.Settings}"
                     Style="{StaticResource MaterialDesignFlatButton}"
                     HorizontalAlignment="Right" />
             </StackPanel>

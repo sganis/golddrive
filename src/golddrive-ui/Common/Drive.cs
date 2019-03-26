@@ -4,17 +4,28 @@ using System.Collections.Generic;
 namespace golddrive
 {
     [Serializable()]
-    public class Drive
+    public class Drive : Observable
     {
         public DriveStatus Status { get; set; }
         public string Letter { get; set; }
-        public string VolumeLabel { get; set; }
-        public string Label { get; set; }
+        public string VolumeLabel { get; set; }        
         public string Host { get; set; }        
         public string Path { get; set; }        
         public bool? IsGoldDrive { get; set; }
 
         public string Name { get { return $"{ Letter }:"; } }
+
+        private string _label;
+        public string Label
+        {
+            get { return _label; }
+            set
+            {
+                _label = value;
+                NotifyPropertyChanged();
+                NotifyPropertyChanged("ComboDisplay");
+            }
+        }
 
         private string _mountpoint;
         public string MountPoint
@@ -33,18 +44,26 @@ namespace golddrive
                     Host = s.Split('\\')[0];
                     Path = s.Substring(s.IndexOf("\\")).Replace("\\", "/");
                     s = Host;
+                    NotifyPropertyChanged("Path");
                 }
                 if (s.Contains("!"))
                 {
                     Host = s.Split('!')[0];
-                    Port = Int32.Parse(s.Split('!')[1]);
+                    int p;
+                    int.TryParse(s.Split('!')[1], out p);
+                    if (p > 0)
+                        Port = p;
                     s = Host;
+                    NotifyPropertyChanged("Port");
                 }
                 if (s.Contains("@"))
                 {
                     User = s.Split('@')[0];
-                    Host = s.Split('@')[1];                    
+                    Host = s.Split('@')[1];
+                    NotifyPropertyChanged("User");
                 }
+                NotifyPropertyChanged();
+                NotifyPropertyChanged("Host");            
             }
 
         }
@@ -85,9 +104,9 @@ namespace golddrive
         public string ComboDisplay
         {
             get
-            {   
+            {
                 //int maxLengh = 15;
-                string display = $"{ Letter }: {Label}";
+                string display = $"{ Name } {Label}";
                 return display;
 
                 //if (string.IsNullOrEmpty(s))
@@ -96,6 +115,10 @@ namespace golddrive
                 //    s = "..." + s.Substring(s.Length - maxLengh);
                 //return $"{ Letter }: {s}";
             }
+        }
+        public override string ToString()
+        {
+            return $"{ Name } {MountPoint}"; ;
         }
     }
 

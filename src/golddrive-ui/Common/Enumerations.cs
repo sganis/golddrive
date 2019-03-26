@@ -9,7 +9,7 @@ namespace golddrive
     public enum Page
     {
         Main,
-        Login,
+        Password,
         Host,
         Settings,
         About,

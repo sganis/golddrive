@@ -33,11 +33,6 @@
     <!--Events-->
     <i:Interaction.Triggers>
         <i:EventTrigger
-            EventName="Loaded">
-            <i:InvokeCommandAction
-                Command="{Binding LoadedCommand}" />
-        </i:EventTrigger>
-        <i:EventTrigger
             EventName="Closing">
             <i:InvokeCommandAction
                 Command="{Binding ClosingCommand}" />
@@ -62,23 +57,25 @@
                     <StackPanel>
                         <Button
                             Content="Settings"
-                            Command="{Binding SettingsCommand}" />
+                            Command="{Binding ShowPageCommand}"
+                            CommandParameter="{x:Static local:Page.Settings}" />
                         <Button
-                            Content="Unmout all drives"
-                            Command="{Binding UnmoutAllCommand}" />
+                            Content="Disconnect all drives"
+                            Command="{Binding DisconnectAllCommand}" />
                         <Button
-                            Content="Setup SSH"
+                            Content="Setup Ssh"
                             Command="{Binding SetupSshCommand}" />
                         <Button
                             Content="Restart Explorer"
                             Command="{Binding RestartExplorerCommand}" />
                         <Button
                             Content="About"
-                            Command="{Binding AboutCommand}" />
+                            Command="{Binding ShowPageCommand}"
+                            CommandParameter="{x:Static local:Page.About}" />
                     </StackPanel>
                 </materialDesign:PopupBox>
                 <StackPanel
-                    Orientation="Horizontal"></StackPanel>
+                    Orientation="Horizontal" />
             </DockPanel>
         </materialDesign:ColorZone>
         <Grid

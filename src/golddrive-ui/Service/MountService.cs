@@ -287,26 +287,35 @@ namespace golddrive
             return "";
         }
 
-        public DriveStatus CheckDriveStatus(Drive drive)
+        public ReturnBox CheckDriveStatus(Drive drive)
         {
+            ReturnBox r = new ReturnBox();
+            r.MountStatus = MountStatus.OK;
+
             if (drive == null ||
                 (drive.Letter.ToCharArray()[0] < 'G' && drive.Letter.ToCharArray()[0] > 'Z'))
-                return DriveStatus.NOT_SUPPORTED;
-            var freeDrives = GetFreeDrives();
-            var drives = GetUsedDrives();
-            var inUse = freeDrives.Find(x => x.Letter == drive.Letter) == null;
-            var isGold = drives.Find(x => x.Letter == drive.Letter && x.IsGoldDrive == true) != null;
-            var pathUsed = drives.Find(x => x.Letter != drive.Letter && x.MountPoint == drive.MountPoint) != null;
-            if (!inUse)
-                return DriveStatus.DISCONNECTED;
-            else if (pathUsed)
-                return DriveStatus.PATH_IN_USE;
-            else if (!isGold)
-                return DriveStatus.IN_USE;
-            else if (!CheckIfDriveWorks(drive))
-                return DriveStatus.BROKEN;
+            {
+                r.DriveStatus = DriveStatus.NOT_SUPPORTED;
+            }
             else
-                return DriveStatus.CONNECTED;
+            {
+                var freeDrives = GetFreeDrives();
+                var drives = GetUsedDrives();
+                var inUse = freeDrives.Find(x => x.Letter == drive.Letter) == null;
+                var isGold = drives.Find(x => x.Letter == drive.Letter && x.IsGoldDrive == true) != null;
+                var pathUsed = drives.Find(x => x.Letter != drive.Letter && x.MountPoint == drive.MountPoint) != null;
+                if (!inUse)
+                    r.DriveStatus = DriveStatus.DISCONNECTED;
+                else if (pathUsed)
+                    r.DriveStatus = DriveStatus.PATH_IN_USE;
+                else if (!isGold)
+                    r.DriveStatus = DriveStatus.IN_USE;
+                else if (!CheckIfDriveWorks(drive))
+                    r.DriveStatus = DriveStatus.BROKEN;
+                else
+                    r.DriveStatus = DriveStatus.CONNECTED;
+            }
+            return r;
         }
         public bool CheckIfDriveWorks(Drive drive)
         {
@@ -381,6 +390,7 @@ namespace golddrive
                 d.Letter = c.ToString();
                 freeDrives.Add(d);
             }
+            freeDrives.Reverse();
             return freeDrives;
         }
         #endregion
@@ -560,11 +570,11 @@ namespace golddrive
                 r.MountStatus = MountStatus.BAD_WINFSP;
                 return r;
             }
-            DriveStatus status = CheckDriveStatus(drive);
-            if (status != DriveStatus.DISCONNECTED)
+            r = CheckDriveStatus(drive);
+            if (r.DriveStatus != DriveStatus.DISCONNECTED)
             {
                 r.MountStatus = MountStatus.BAD_DRIVE;
-                r.Error = status.ToString();
+                r.Error = r.DriveStatus.ToString();
                 return r;
             }
             r = TestSsh(drive);

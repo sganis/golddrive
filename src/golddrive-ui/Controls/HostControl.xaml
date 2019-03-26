@@ -39,7 +39,8 @@
             Margin="0,20">
             <Button
                 Content="Cancel"
-                Command="{Binding CancelHostCommand}"
+                Command="{Binding ShowPageCommand}"
+                CommandParameter="{x:Static local:Page.Main}"
                 Style="{StaticResource MaterialDesignFlatButton}"
                 HorizontalAlignment="Right" />
             <Button

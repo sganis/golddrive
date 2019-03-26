@@ -13,22 +13,14 @@ namespace golddrive
     {
         #region Properties
 
-        public ICommand ShowMainCommand { get; set; }
-        public ICommand ShowLoginCommand { get; set; }
-        public ICommand ShowSettingsCommand { get; set; }
-        public ICommand ShowAboutCommand { get; set; }
-        public ICommand LoadedCommand { get; set; }
-        public ICommand ClosingCommand { get; set; }
-        public ICommand ConnectCommand { get; set; }
-        public ICommand ConnectHostCommand { get; set; }
-        public ICommand CancelHostCommand { get; set; }
-        public ICommand ConnectPasswordCommand { get; set; }
-        public ICommand CancelPasswordCommand { get; set; }
-        public ICommand DriveChangedCommand { get; set; }
-        public ICommand SaveSettingsCommand { get; set; }
-        //public ICommand CancelDriveNewCommand { get; set; }
-
         private MountService _mountService;
+
+        private bool _isDriveNew;
+        public bool IsDriveNew
+        {
+            get { return _isDriveNew; }
+            set { _isDriveNew = value; NotifyPropertyChanged(); }
+        }
 
         private Page _currentPage;
         public Page CurrentPage
@@ -143,67 +135,29 @@ namespace golddrive
         {
             _mountService = new MountService();
             //Messenger.Default.Register<string>(this, OnShowView);
-            InitCommands();
-            ConnectButtonText = "Connect";
-            Message = "";
             CurrentPage = Page.Main;
-        }
-
-        private void InitCommands()
-        {
-            ShowMainCommand = new BaseCommand(OnShowMain);
-            ShowLoginCommand = new BaseCommand(OnShowLogin);
-            ShowSettingsCommand = new BaseCommand(OnShowSettings);
-            ShowAboutCommand = new BaseCommand(OnShowAbout);
-            SaveSettingsCommand = new BaseCommand(OnSaveSettings);
-            LoadedCommand = new BaseCommand(Loaded);
-            ClosingCommand = new BaseCommand(Closing);
-            ConnectCommand = new BaseCommand(OnConnect);
-            ConnectHostCommand = new BaseCommand(OnConnectHost);
-            ConnectPasswordCommand = new BaseCommand(OnConnectPassword);
-            CancelHostCommand = new BaseCommand(OnCancelHost);
-            CancelPasswordCommand = new BaseCommand(OnCancelPassword);
-            DriveChangedCommand = new BaseCommand(OnDriveChanged);
+            LoadDrivesAsync();
         }
 
         #endregion
 
         #region Async Methods
 
-        public async void LoadDrivesAsync()
-        {
-            List<Drive> drives = new List<Drive>();
-            List<Drive> freeDrives = new List<Drive>();
-            await Task.Run(() => {
-                drives = _mountService.GetGoldDrives();
-                freeDrives = _mountService.GetFreeDrives();
-            });
-            Drives = new ObservableCollection<Drive>(drives);
-            FreeDrives = new ObservableCollection<Drive>(freeDrives);
-            if (FreeDrives.Count > 0)
-                SelectedFreeDrive = FreeDrives[freeDrives.Count - 1];
-            if (Drives.Count > 0)
-                SelectedDrive = Drives[0];
-            else
-                CurrentPage = Page.Host;
-        }
-        private void Delete(object obj)
-        {
-            _mountService.Unmount(SelectedDrive);
-            Drives.Remove(SelectedDrive);
-            _mountService.SaveSettingsDrives(Drives.ToList());
-            if (Drives.Count > 0)
-                SelectedDrive = Drives[0];
-        }
+        
 
         private void WorkStart(string message)
         {
             Message = message;
             IsWorking = true;
         }
-        private void WorkDone(ReturnBox r)
+        private void WorkDone(ReturnBox r=null)
         {
-            Message = r.Error;
+            IsWorking = false;
+            if (r == null)
+            {
+                Message = "";
+                return;
+            }
             MountStatus = r.MountStatus;
             switch (r.MountStatus)
             {
@@ -213,7 +167,7 @@ namespace golddrive
                     Message = r.Error;
                     break;
                 case MountStatus.BAD_LOGIN:
-                    CurrentPage = Page.Login;
+                    CurrentPage = Page.Password;
                     Message = r.Error;
                     break;
                 case MountStatus.BAD_WINFSP:
@@ -243,6 +197,32 @@ namespace golddrive
             IsWorking = false;
 
         }
+        public async void LoadDrivesAsync()
+        {
+            ConnectButtonText = "Connect";
+            WorkStart("Exploring local drives...");
+            List<Drive> drives = new List<Drive>();
+            List<Drive> freeDrives = new List<Drive>();
+            await Task.Run(() =>
+            {
+                drives = _mountService.GetGoldDrives();
+                freeDrives = _mountService.GetFreeDrives();
+            });
+            Drives = new ObservableCollection<Drive>(drives);
+            FreeDrives = new ObservableCollection<Drive>(freeDrives);
+            if (FreeDrives.Count > 0)
+                SelectedFreeDrive = FreeDrives[0];
+            if (Drives.Count > 0)
+            {
+                SelectedDrive = Drives[0];
+                CheckDriveStatusAsync();
+            }
+            else
+            {
+                CurrentPage = Page.Host;
+                WorkDone();
+            }
+        }
         private async void ConnectAsync()
         {
             WorkStart("Connecting");
@@ -253,36 +233,72 @@ namespace golddrive
         private async void CheckDriveStatusAsync()
         {
             WorkStart("Checking status...");
-            DriveStatus status = await Task.Run(() => _mountService.CheckDriveStatus(SelectedDrive));
-            Message = status.ToString();
-            if (status == DriveStatus.CONNECTED)
-            {
-                ConnectButtonText = "Disconnect";
-            }
-            else if (status == DriveStatus.DISCONNECTED)
-            {
-                ConnectButtonText = "Connect";
-            }
-            else
-            {
-
-            }
-            IsWorking = false;
+            ReturnBox r = await Task.Run(() => _mountService.CheckDriveStatus(SelectedDrive));
+            WorkDone(r);
         }
 
 
         #endregion
 
-        #region Command Methods
+        #region Commands
 
-        private void OnDriveChanged(object obj)
+        //private ICommand _cmd;
+        //public ICommand Cmd
+        //{
+        //    get
+        //    {
+        //        if (_cmd == null)
+        //        {
+        //            _cmd = new RelayCommand(
+        //                // action
+        //                x =>
+        //                {
+
+        //                },
+        //                // can execute
+        //                x =>
+        //                {
+        //                    return true;
+        //                });
+        //        }
+        //        return _cmd;
+        //    }
+        //}
+
+        public ICommand ClosingCommand { get; set; }
+        public ICommand SettingsSaveCommand { get; set; }
+        public ICommand SettingsNewCommand { get; set; }
+        public ICommand SettingsCancelCommand { get; set; }
+
+
+        private ICommand _selectedDriveChangedCommand;
+        public ICommand SelectedDriveChangedCommand
         {
-            if(SelectedDrive != OldSelectedDrive)
+            get
             {
-                OldSelectedDrive = SelectedDrive;
-                CheckDriveStatusAsync();
+                return _selectedDriveChangedCommand ?? (_selectedDriveChangedCommand = new RelayCommand(
+                   // action
+                   x => {
+                       if (CurrentPage != Page.Main)
+                           return;
+                       if (OldSelectedDrive == null)
+                           OldSelectedDrive = SelectedDrive;
+                       if (SelectedDrive != OldSelectedDrive)
+                       {
+                           OldSelectedDrive = SelectedDrive;
+                           CheckDriveStatusAsync();
+                       }
+                   }));
             }
-                
+        }
+        private ICommand _connectCommand;
+        public ICommand ConnectCommand
+        {
+            get
+            {
+                return _connectCommand ?? 
+                    (_connectCommand = new RelayCommand(OnConnect));
+            }
         }
         private async void OnConnect(object obj)
         {
@@ -303,6 +319,16 @@ namespace golddrive
             }
 
         }
+
+        private ICommand _connectHostCommand;
+        public ICommand ConnectHostCommand
+        {
+            get
+            {
+                return _connectHostCommand ??
+                    (_connectHostCommand = new RelayCommand(OnConnectHost));
+            }
+        }
         private void OnConnectHost(object obj)
         {
             SelectedFreeDrive.MountPoint = NewMountPoint;
@@ -315,6 +341,28 @@ namespace golddrive
             }
             ConnectAsync();
         }
+        private ICommand _showPageCommand;
+        public ICommand ShowPageCommand
+        {
+            get
+            {
+                return _showPageCommand ??
+                    (_showPageCommand = new RelayCommand(
+                        x => {
+                            CurrentPage = (Page)x;
+                        }
+                        ));
+            }
+        }
+        private ICommand _connectPasswordCommand;
+        public ICommand ConnectPasswordCommand
+        {
+            get
+            {
+                return _connectPasswordCommand ??
+                    (_connectPasswordCommand = new RelayCommand(OnConnectPassword));
+            }
+        }
         private async void OnConnectPassword(object obj)
         {
             CurrentPage = Page.Main;
@@ -322,36 +370,68 @@ namespace golddrive
             ReturnBox r = await Task.Run(() => _mountService.ConnectPassword(SelectedDrive, password));
             WorkDone(r);
         }
-        private void OnCancelHost(object obj)
+       
+        private ICommand _showPasswordCommand;
+        public ICommand ShowLoginCommand
         {
-            CurrentPage = Page.Main;
-        }
-        private void OnCancelPassword(object obj)
-        {
-            CurrentPage = Page.Main;
-        }
-        private void OnShowLogin(object obj)
-        {
-            CurrentPage = Page.Login;
-        }
-
-        private void OnShowMain(object obj)
-        {
-            CurrentPage = Page.Main;
-        }
-        private void OnShowSettings(object obj)
-        {
-            CurrentPage = Page.Settings;
-        }
-        private void OnShowAbout(object obj)
-        {
-            CurrentPage = Page.About;
-        }
-        private void OnSaveSettings(object obj)
-        {
-            CurrentPage = Page.Main;
+            get
+            {
+                return _showPasswordCommand ??
+                    (_showPasswordCommand = new RelayCommand(
+                        x => { CurrentPage = Page.Password; }));
+            }
         }
 
+
+
+        #endregion
+
+        #region Settings
+
+        private void OnSettingsSave(object obj)
+        {
+            if (IsDriveNew)
+            {
+                Drives.Add(SelectedFreeDrive);
+                SelectedDrive = SelectedFreeDrive;
+                FreeDrives.Remove(SelectedFreeDrive);
+                if (FreeDrives.Count > 0)
+                    SelectedFreeDrive = FreeDrives[0];
+                IsDriveNew = false;
+            }
+            else
+            {
+                CurrentPage = Page.Main;
+            }
+        }
+        private void OnSettingsNew(object obj)
+        {
+            IsDriveNew = true;
+        }
+        private void OnSettingsCancel(object obj)
+        {
+            IsDriveNew = false;
+        }
+
+        private ICommand _settingsDeleteCommand;
+        public ICommand SettingsDeleteCommand
+        {
+            get
+            {
+                return _settingsDeleteCommand ?? (_settingsDeleteCommand = new RelayCommand(
+                   // action
+                   x => {
+                       if (Drives.Contains(SelectedDrive))
+                           Drives.Remove(SelectedDrive);
+                       if (Drives.Count > 0)
+                           SelectedDrive = Drives[0];
+                   },
+                   // can execute
+                   x => {
+                       return Drives != null && Drives.Count > 0;
+                   }));
+            }
+        }
         #endregion
 
         #region Events
