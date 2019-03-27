@@ -11,7 +11,7 @@
 #include <Shlwapi.h> /* PathRemoveFileSpecA */
 #pragma comment(lib, "shlwapi.lib")
 
-#define VERSION "1.1.6"
+#define VERSION "1.1.8"
 
 /* global variables */
 size_t		g_sftp_calls;

@@ -12,6 +12,8 @@ using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Net.Sockets;
 using Renci.SshNet.Common;
+using System.Runtime.Serialization;
+using System.Xml;
 
 namespace golddrive
 {
@@ -50,43 +52,78 @@ namespace golddrive
         }
 
         #region Serialization
+        public List<Drive> LoadSettingsDrives()
+        {
+            string filename = AppPath + "\\settings.xml";
+            List<Drive> drives = new List<Drive>();
 
+            if (File.Exists(filename))
+            {
+                try
+                {
+                    using (Stream fileStream = File.Open(filename, FileMode.Open))
+                    {
+                        var ds = new DataContractSerializer(typeof(List<Drive>));
+                        drives = (List<Drive>)ds.ReadObject(fileStream);
+                    }
+                }
+                catch { }
+            }
+            return drives;
+        }
         public void SaveSettingsDrives(List<Drive> drives)
         {
             try
             {
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    BinaryFormatter bf = new BinaryFormatter();
-                    bf.Serialize(ms, drives);
-                    ms.Position = 0;
-                    byte[] buffer = new byte[(int)ms.Length];
-                    ms.Read(buffer, 0, buffer.Length);
-                    Properties.Settings.Default.Drives = Convert.ToBase64String(buffer);
-                    Properties.Settings.Default.Save();
-                }
+                string filename = AppPath + "\\settings.xml";
+                DataContractSerializer ds = new DataContractSerializer(typeof(List<Drive>));
+                var settings = new XmlWriterSettings { Indent = true };
+                using (var w = XmlWriter.Create(filename, settings))
+                    ds.WriteObject(w, drives);                
             }
             catch { }
         }
 
-        private List<Drive> LoadSettingsDrives()
-        {
-            List<Drive> drives = new List<Drive>();
-            try
-            {
-                using (MemoryStream ms = new MemoryStream(
-                    Convert.FromBase64String(Properties.Settings.Default.Drives)))
-                {
-                    BinaryFormatter bf = new BinaryFormatter();
-                    if (ms.Length > 0)
-                        drives = (List<Drive>)bf.Deserialize(ms);
-                }
-            }
-            catch (Exception ex)
-            {
-            }
-            return drives;
-        }
+        
+        //public void SaveSettingsDrives(List<Drive> drives)
+        //{
+        //    try
+        //    {
+        //        using (MemoryStream ms = new MemoryStream())
+        //        {
+        //            BinaryFormatter bf = new BinaryFormatter();
+        //            bf.Serialize(ms, drives);
+        //            ms.Position = 0;
+        //            byte[] buffer = new byte[(int)ms.Length];
+        //            ms.Read(buffer, 0, buffer.Length);
+        //            Properties.Settings.Default.Drives = Convert.ToBase64String(buffer);
+        //            Properties.Settings.Default.Save();
+        //        }
+        //    }
+        //    catch (Exception ex )
+        //    {
+
+        //    }
+        //}
+
+        //private List<Drive> LoadSettingsDrives()
+        //{
+        //    List<Drive> drives = new List<Drive>();
+        //    try
+        //    {
+        //        using (MemoryStream ms = new MemoryStream(
+        //            Convert.FromBase64String(Properties.Settings.Default.Drives)))
+        //        {
+        //            BinaryFormatter bf = new BinaryFormatter();
+        //            if (ms.Length > 0)
+        //                drives = (List<Drive>)bf.Deserialize(ms);
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //    }
+        //    return drives;
+        //}
 
         #endregion
 
@@ -546,7 +583,7 @@ namespace golddrive
                 string dotssh = $@"{drive.UserProfile}\.ssh";
                 if (!Directory.Exists(dotssh))
                     Directory.CreateDirectory(dotssh);
-                ReturnBox r = RunLocal($@"D:\Users\ganissa\AppData\Local\Programs\Git\usr\bin\ssh-keygen.exe -m PEM -t rsa -N """" -f {drive.AppKey}");
+                ReturnBox r = RunLocal($@"{AppPath}\ssh-keygen.exe -m PEM -t rsa -N """" -f {drive.AppKey}");
                 if (File.Exists(drive.AppPubKey))
                     pubkey = File.ReadAllText(drive.AppPubKey).Trim();
             }
@@ -597,9 +634,38 @@ namespace golddrive
         }
         private bool IsWinfspInstalled()
         {
-            return true;
+            string winfsp = Environment.ExpandEnvironmentVariables(@"%ProgramFiles(x86)%\WinFsp\bin\winfsp-x64.dll");
+            return File.Exists(winfsp);            
         }
+        
+        public string GetVersions()
+        {
+            try
+            {
+                string ui = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+                string golddrive = "n/a";
+                string winfsp = "n/a";
+                string golddrive_cli = Environment.ExpandEnvironmentVariables(@"%USERPROFILE%\Golddrive\golddrive.exe");
+                string winfsp_dll = Environment.ExpandEnvironmentVariables(@"%ProgramFiles(x86)%\WinFsp\bin\winfsp-x64.dll");
 
+                if (File.Exists(golddrive_cli))
+                {
+                    var r = RunLocal($@"{golddrive_cli} --version");
+                    golddrive = r.Error.Trim();
+                }
+                if (IsWinfspInstalled())
+                {
+                    FileVersionInfo info = FileVersionInfo.GetVersionInfo(winfsp_dll);
+                    winfsp = $"{info.FileMajorPart}.{info.FileMinorPart}.{info.FileBuildPart}";
+                }
+                return $"GUI version {ui}\nCLI version {golddrive}\nWinFsp version {winfsp}";
+            }
+            catch (Exception ex)
+            {
+                
+            }
+            return "n/a";
+        }
         private ReturnBox Mount(Drive drive)
         {
             ReturnBox r = RunLocal("net.exe", $"use { drive.Name } { drive.Remote }");

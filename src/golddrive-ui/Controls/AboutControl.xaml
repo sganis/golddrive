@@ -24,10 +24,6 @@
                 Margin="0 10"
                 HorizontalAlignment="Center" />
             <TextBlock
-                Text="{Binding Dependencies}"
-                Margin="0 10"
-                HorizontalAlignment="Center" />
-            <TextBlock
                 Margin="0 10"
                 HorizontalAlignment="Center">                                
                 <Hyperlink

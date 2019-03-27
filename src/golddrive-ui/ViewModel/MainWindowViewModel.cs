@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -15,6 +16,14 @@ namespace golddrive
 
         private MountService _mountService;
 
+        private string _version;
+
+        public string Version
+        {
+            get { return _version; }
+            set { _version = value; NotifyPropertyChanged(); }
+        }
+        
         private bool _isDriveNew;
         public bool IsDriveNew
         {
@@ -138,6 +147,7 @@ namespace golddrive
             //Messenger.Default.Register<string>(this, OnShowView);
             CurrentPage = Page.Main;
             LoadDrivesAsync();
+            GetVersions();
         }
 
         #endregion
@@ -236,6 +246,10 @@ namespace golddrive
             WorkDone(r);
         }
 
+        private async void GetVersions()
+        {
+            Version = await Task.Run(() => _mountService.GetVersions());            
+        }
 
         #endregion
 
@@ -264,8 +278,8 @@ namespace golddrive
         //    }
         //}
 
-        
-        
+
+
 
         private ICommand _selectedDriveChangedCommand;
         public ICommand SelectedDriveChangedCommand
@@ -465,7 +479,8 @@ namespace golddrive
         }
         private void Closing(object obj)
         {
-            // _mountService.SaveSettingsDrives(Drives.ToList());
+            if(Drives != null)
+                _mountService.SaveSettingsDrives(Drives.ToList());
         }
 
         private ICommand _githubCommand;

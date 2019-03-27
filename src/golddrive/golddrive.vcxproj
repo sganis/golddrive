@@ -190,6 +190,7 @@ copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
       <AdditionalLibraryDirectories>$(ProjectDir)lib\libssh2\lib;$(ProjectDir)lib\openssl\lib</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4099 /NODEFAULTLIB:LIBCMT %(AdditionalOptions)</AdditionalOptions>
       <Profile>true</Profile>
+      <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
     </Link>
     <PostBuildEvent>
       <Command>copy $(ProjectDir)golddrive.ini $(Outdir)
