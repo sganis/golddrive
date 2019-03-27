@@ -330,7 +330,7 @@ namespace golddrive
             r.MountStatus = MountStatus.OK;
 
             if (drive == null ||
-                (drive.Letter.ToCharArray()[0] < 'G' && drive.Letter.ToCharArray()[0] > 'Z'))
+                (drive.Letter.ToCharArray()[0] < 'G' || drive.Letter.ToCharArray()[0] > 'Z'))
             {
                 r.DriveStatus = DriveStatus.NOT_SUPPORTED;
             }
@@ -341,12 +341,13 @@ namespace golddrive
                 var inUse = freeDrives.Find(x => x.Letter == drive.Letter) == null;
                 var isGold = drives.Find(x => x.Letter == drive.Letter && x.IsGoldDrive == true) != null;
                 var pathUsed = drives.Find(x => x.Letter != drive.Letter && x.MountPoint == drive.MountPoint) != null;
-                if (!inUse)
+
+                if (pathUsed && !inUse)
+                    r.DriveStatus = DriveStatus.MOUNTPOINT_IN_USE;
+                else if (!inUse)
                     r.DriveStatus = DriveStatus.DISCONNECTED;
-                else if (pathUsed)
-                    r.DriveStatus = DriveStatus.PATH_IN_USE;
                 else if (!isGold)
-                    r.DriveStatus = DriveStatus.IN_USE;
+                    r.DriveStatus = DriveStatus.LETTER_IN_USE;
                 else if (!CheckIfDriveWorks(drive))
                     r.DriveStatus = DriveStatus.BROKEN;
                 else

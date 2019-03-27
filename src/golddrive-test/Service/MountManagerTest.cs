@@ -8,19 +8,19 @@ namespace golddrive.Tests
     [TestClass()]
     public class MountManagerTest
     {
-        MountService _mountService;
-        Drive _drive;
-
+        MountService _mountService = new MountService();
+        static string _host = System.Environment.ExpandEnvironmentVariables("%GOLDDRIVE_HOST%");
+        Drive _drive = new Drive
+            {
+                Letter = "X",
+                MountPoint = _host,
+                Label = "GOLDDRIVE"
+            };
+    
         [TestInitialize]
         public void Init()
         {
-            _mountService = new MountService();
-            _drive = new Drive
-            {
-                Letter = "X",
-                MountPoint = "vlcc31",
-                Label = "GOLDDRIVE"
-            };
+
         }
         [TestCleanup]
         public void Teardown()
@@ -81,6 +81,7 @@ namespace golddrive.Tests
         {
             Mount();
             Unmount();
+
         }
         [TestMethod()]
         public void FreeUsedDrivesTest()
@@ -104,13 +105,13 @@ namespace golddrive.Tests
             Drive w = new Drive { Letter = "W", MountPoint = "vlcc31" };
             Drive y = new Drive { Letter = "Y", MountPoint = "vlcc31" };
             Assert.AreEqual(_mountService.CheckDriveStatus(c).DriveStatus, DriveStatus.NOT_SUPPORTED);
-            Assert.AreEqual(_mountService.CheckDriveStatus(w).DriveStatus, DriveStatus.IN_USE);
+            Assert.AreEqual(_mountService.CheckDriveStatus(w).DriveStatus, DriveStatus.LETTER_IN_USE);
             Assert.AreEqual(_mountService.CheckDriveStatus(_drive).DriveStatus, DriveStatus.DISCONNECTED);
             Mount();
             Assert.AreEqual(_mountService.CheckDriveStatus(_drive).DriveStatus, DriveStatus.CONNECTED);
-
-            Assert.AreEqual(_mountService.CheckDriveStatus(_drive).DriveStatus, DriveStatus.CONNECTED);
-
+            Drive t = new Drive { Letter = "T", MountPoint = _host };
+            Assert.AreEqual(_mountService.CheckDriveStatus(t).DriveStatus, DriveStatus.MOUNTPOINT_IN_USE);
+            Unmount();
             _mountService.RunLocal("subst W: /d");
         }
     }
