@@ -75,5 +75,6 @@ int jsoneq(const char *json, jsmntok_t *tok, const char *s);
 int load_ini(const char *appdir, fs_config *fs);
 int load_json(fs_config * fs);
 int randint(int min, int max);
-/* logging */
+void gen_random(char *s, const int len);
 void gdlog(const char *fmt, ...);
+int directory_exists(const char* path);

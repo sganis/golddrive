@@ -1,9 +1,9 @@
-#include <libssh2_sftp.h>
+#include <libssh2_sftp.h> 
+#include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
 #include "util.h"
 #include "golddrive.h"
-#include "cache.h"
 
 
 SANSSH * san_init_ssh(const char* hostname,	int port, const char* username, const char* pkey)
@@ -15,6 +15,7 @@ SANSSH * san_init_ssh(const char* hostname,	int port, const char* username, cons
 	HOSTENT *he;
 	SOCKET sock;
 	LIBSSH2_SESSION* ssh = NULL;
+	LIBSSH2_CHANNEL *channel;
 	LIBSSH2_SFTP* sftp = NULL;
 	int thread = GetCurrentThreadId();
 
@@ -94,6 +95,17 @@ SANSSH * san_init_ssh(const char* hostname,	int port, const char* username, cons
 			time_mu(), thread, __func__, __LINE__, rc, errmsg);
 		return 0;
 	}
+
+	// init ssh channel
+	channel = libssh2_channel_open_session(ssh);
+	if (!channel) {
+		rc = libssh2_session_last_error(ssh, &errmsg, &errlen, 0);
+		fprintf(stderr, "%zd: %d :ERROR: %s: %d: "
+			"failed to start ssh channel [rc=%d, %s]\n",
+			time_mu(), thread, __func__, __LINE__, rc, errmsg);
+		return 0;
+	}
+	
 
 	// init sftp channel
 	sftp = libssh2_sftp_init(ssh);
@@ -315,7 +327,6 @@ int f_statfs(const char * path, struct fuse_statvfs *stbuf)
 	return rc;
 }
 
-
 int f_opendir(const char *path, struct fuse_file_info *fi)
 {
 	realpath(path);
@@ -351,19 +362,43 @@ size_t san_dirfd(DIR *dirp)
 	return (size_t)dirp->san_handle;
 }
 
-SAN_HANDLE * san_open(const char *path, int is_dir, unsigned int mode, struct fuse_file_info *fi)
+SAN_HANDLE * san_open(const char *path, int is_dir, unsigned int mode, 
+	struct fuse_file_info *fi)
 {
 	LIBSSH2_SFTP_HANDLE* handle;
 	SAN_HANDLE *sh = malloc(sizeof(SAN_HANDLE));
 	debug("OPEN SAN_HANDLE: %zu, %s\n", (size_t)sh, path);
 	
 	unsigned int pflags;
-	if ((fi->flags & O_ACCMODE) == O_RDONLY)
+	if ((fi->flags & O_ACCMODE) == O_RDONLY) {
 		pflags = LIBSSH2_FXF_READ;
-	else if ((fi->flags & O_ACCMODE) == O_WRONLY)
+	}
+	else if ((fi->flags & O_ACCMODE) == O_WRONLY) {
 		pflags = LIBSSH2_FXF_WRITE;
-	else if ((fi->flags & O_ACCMODE) == O_RDWR)
+		if (!is_dir) {
+			// check for hard link
+			char cmd[MAX_PATH + 10], out[100], err[100];
+			sprintf_s(cmd, sizeof cmd, "stat -c%%h %s\n", path);
+			run_command(cmd, out, err);
+			int hlinks = atoi(out);
+			if (hlinks > 1) {
+				//error("opening for writing hard linked file: %s\n"
+				//	"number of links: %d\n", path, hlinks);
+				
+				// backup file
+				char backup[PATH_MAX];
+				sprintf_s(backup, sizeof backup, "%s.%zd.hlink", path, time_mu());
+				f_rename(path, backup, 0);
+
+				// create new file
+				sprintf_s(cmd, sizeof cmd, "touch %s\n", path);
+				run_command(cmd, out, err);
+			}
+		}
+	}
+	else if ((fi->flags & O_ACCMODE) == O_RDWR) {
 		pflags = LIBSSH2_FXF_READ | LIBSSH2_FXF_WRITE;
+	}
 	else
 		return 0;
 
@@ -613,6 +648,15 @@ int f_write(const char *path, const char *buf, size_t size, fuse_off_t offset, s
 
 	debug("WRITING HANDLE: %zu:%zu size: %zu\n", (size_t)sh, (size_t)handle, size);
 
+	// working in hard links
+	if (offset == 0) {
+		printf("writing first buffer to file: %s", path);
+	}
+	else {
+		printf("writing %s", path);
+	}
+
+
 	lock();
 	curpos = libssh2_sftp_tell64(handle);
 	if (offset != curpos)
@@ -654,25 +698,42 @@ int f_release(const char *path, struct fuse_file_info *fi)
 	return san_close(sh);	
 }
 
-int f_rename(const char *oldpath, const char *newpath, unsigned int flags)
+
+int f_rename(const char *from, const char *to, unsigned int flags)
 {
 	int rc;
-	realpath(oldpath);
-	realpath(newpath);
-	info("%s -> %s\n", oldpath, newpath);
+	realpath(from);
+	realpath(to);
+	info("%s -> %s\n", from, to);
+	size_t fromlen = strlen(from);
+	size_t tolen = strlen(to);
 	lock();
-	rc = libssh2_sftp_rename_ex(g_ssh->sftp, 
-		oldpath, (int)strlen(oldpath),
-		newpath, (int)strlen(newpath),
-		LIBSSH2_SFTP_RENAME_OVERWRITE | 
-		LIBSSH2_SFTP_RENAME_ATOMIC | 
-		LIBSSH2_SFTP_RENAME_NATIVE);
+	rc = libssh2_sftp_rename_ex(g_ssh->sftp, from, (int)fromlen, to, (int)tolen,
+		LIBSSH2_SFTP_RENAME_OVERWRITE | LIBSSH2_SFTP_RENAME_ATOMIC | LIBSSH2_SFTP_RENAME_NATIVE);
 	g_sftp_calls++;
-	if (rc) {
-		san_error(oldpath);
-		san_error(newpath);
-	}
 	unlock();
+
+	if (rc) {
+
+		if (tolen + 8 < PATH_MAX) {
+			char totmp[PATH_MAX];
+			strcpy(totmp, to);
+			gen_random(totmp + tolen, 8);
+			rc = f_rename(to, totmp, 0);
+			if (!rc) {
+				rc = f_rename(from, to, 0);
+				if (!rc)
+					rc = f_unlink(totmp);
+				else
+					f_rename(totmp, to, 0);
+			}
+			if (rc) {
+				rc = libssh2_sftp_last_error(g_ssh->sftp);
+				san_error(from);
+				san_error(to);
+			}
+		}
+	}
 	return rc ? -1 : 0;
 
 }

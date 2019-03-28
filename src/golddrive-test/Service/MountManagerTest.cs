@@ -20,7 +20,7 @@ namespace golddrive.Tests
         [TestInitialize]
         public void Init()
         {
-
+            Assert.IsTrue(_host!=null, "set GOLDDRIVE_HOST env var");
         }
         [TestCleanup]
         public void Teardown()

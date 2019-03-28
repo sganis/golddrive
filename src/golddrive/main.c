@@ -7,7 +7,6 @@
 #include <fuse_opt.h>
 #include "util.h"
 #include "golddrive.h"
-#include "cache.h"
 #include <Shlwapi.h> /* PathRemoveFileSpecA */
 #pragma comment(lib, "shlwapi.lib")
 

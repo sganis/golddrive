@@ -269,8 +269,27 @@ void gdlog(const char *fmt, ...)
 	vsprintf(message, fmt, args);
 	va_end(args);
 	printf("%s", message);
-	//FILE *f = fopen("c:/temp/golddrive.log", "a");
-	//if (f != NULL)
-	//	fprintf(f, "golddrive: %s", message);
-	//fclose(f);
+	if (directory_exists("c:\\temp")) {
+		FILE *f = fopen("c:\\temp\\golddrive.log", "a");
+		if (f != NULL)
+			fprintf(f, "golddrive: %s", message);
+		fclose(f);
+	}
+}
+
+void gen_random(char *s, const int len)
+{
+	static const char alphanum[] =
+		"0123456789"
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+		"abcdefghijklmnopqrstuvwxyz";
+	for (int i = 0; i < len; ++i) {
+		s[i] = alphanum[rand() % (sizeof(alphanum) - 1)];
+	}
+	s[len] = 0;
+}
+int directory_exists(const char* path)
+{
+	DWORD attr = GetFileAttributesA(path);
+	return (attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY));
 }
