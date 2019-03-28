@@ -567,8 +567,9 @@ int f_create(const char *path, fuse_mode_t mode, struct fuse_file_info *fi)
 	info("%s\n", path);
 	SAN_HANDLE *sh;
 	int rc;
-	
-	sh = san_open(path, FILE_ISREG, mode, fi);
+	fuse_mode_t mod = mode & 438; // 0o666 to remove execution bit
+
+	sh = san_open(path, FILE_ISREG, mod, fi);
 	
 
 	if (!sh)
@@ -745,12 +746,12 @@ int f_mkdir(const char * path, fuse_mode_t  mode)
 	info("%s\n", path);
 	info("MODE: %u\n", mode);
 
-	unsigned int mod = LIBSSH2_SFTP_S_IRWXU |
-		LIBSSH2_SFTP_S_IRWXG |
-		LIBSSH2_SFTP_S_IROTH | LIBSSH2_SFTP_S_IXOTH;
-	info("MOD : %u\n", mod);
+	//unsigned int mod = LIBSSH2_SFTP_S_IRWXU |
+	//				   LIBSSH2_SFTP_S_IRWXG |
+	//				   LIBSSH2_SFTP_S_IROTH | LIBSSH2_SFTP_S_IXOTH;
+	//info("MOD : %u\n", mod);
 	lock();
-	rc = libssh2_sftp_mkdir_ex(g_ssh->sftp, path, (int)strlen(path), mod);
+	rc = libssh2_sftp_mkdir_ex(g_ssh->sftp, path, (int)strlen(path), mode);
 	g_sftp_calls++;
 	unlock();
 	if (rc) {
