@@ -10,7 +10,7 @@
 #include <Shlwapi.h> /* PathRemoveFileSpecA */
 #pragma comment(lib, "shlwapi.lib")
 
-#define VERSION "1.1.8"
+#define VERSION "1.0.9"
 
 /* global variables */
 size_t		g_sftp_calls;
@@ -88,7 +88,7 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 			"\n"
 			"Usage: golddrive drive [npath] [options]\n"
 			"\n"
-			"drive: letter and colon as Z:\n"
+			"drive: letter and colon (ex Z:)\n"
 			"npath: network path as \\\\golddrive\\[[locuser=]user@]host[!port][\\path]\n"
 			"Options:\n"
 			"    --help                     print this help\n"
@@ -103,8 +103,7 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 			"WinFsp-FUSE options:\n"
 			"    -s                         disable multi-threaded operation\n"
 			"    -d, -o debug               enable debug output\n"
-			"    -o umask=MASK              set file permissions (octal)\n"
-			"    -o create_umask=MASK       set newly created file permissions (octal)\n"
+			"    -o create_umask=MASK       set file umask permissions (octal, overriten by server)\n"
 			"    -o rellinks                interpret absolute symlinks as volume relative\n"
 			"    -o DebugLog=FILE           debug log file (requires -d)\n"
 			"    -o FileInfoTimeout=N       metadata timeout (millis, -1 for data caching)\n"
@@ -232,6 +231,7 @@ static int load_config_file(fs_config* fs)
 		rc = load_json(fs);
 	return rc;
 }
+
 int main(int argc, char *argv[])
 {
 	// load fuse dll
