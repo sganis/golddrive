@@ -1,12 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:bal="http://schemas.microsoft.com/wix/BalExtension">
 	<Bundle Name="Golddrive" Version="1.0.0.0" Manufacturer="Golddrive Inc."
             UpgradeCode="6004d72e-b0b7-46f3-a1fb-954b18a476c2">
-		<BootstrapperApplicationRef Id="WixStandardBootstrapperApplication.RtfLicense" />
+        <BootstrapperApplicationRef Id="WixStandardBootstrapperApplication.HyperlinkLicense">
+
+            <bal:WixStandardBootstrapperApplication
+                SuppressOptionsUI="yes"
+              LicenseUrl=""
+              xmlns:bal="http://schemas.microsoft.com/wix/BalExtension" />
+        </BootstrapperApplicationRef>
 
 		<Chain>
-            <MsiPackage SourceFile="$(var.golddrive-msi.TargetPath)" />
-                        
-		</Chain>
+            <MsiPackage SourceFile="winfsp\winfsp-1.4.19049.msi" />
+            <MsiPackage SourceFile="$(var.golddrive-msi.TargetPath)" />            
+        </Chain>
 	</Bundle>
 </Wix>
