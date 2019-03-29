@@ -7,13 +7,11 @@ using Renci.SshNet;
 using System.Linq;
 using Microsoft.Win32;
 using System.Reflection;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Collections.ObjectModel;
-using System.Threading.Tasks;
 using System.Net.Sockets;
 using Renci.SshNet.Common;
 using System.Runtime.Serialization;
 using System.Xml;
+using System.ServiceProcess;
 
 namespace golddrive
 {
@@ -635,8 +633,13 @@ namespace golddrive
         }
         private bool IsWinfspInstalled()
         {
-            string winfsp = Environment.ExpandEnvironmentVariables(@"%ProgramFiles(x86)%\WinFsp\bin\winfsp-x64.dll");
-            return File.Exists(winfsp);            
+            //string winfsp = Environment.ExpandEnvironmentVariables(@"%ProgramFiles(x86)%\WinFsp\bin\winfsp-x64.dll");
+            //return File.Exists(winfsp);
+
+            
+            ServiceController sc = new ServiceController("WinFsp.launcher");
+            return sc.Status == ServiceControllerStatus.Running;
+
         }
         
         public string GetVersions()

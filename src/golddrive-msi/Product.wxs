@@ -23,7 +23,6 @@
 
         <Media Id="1" Cabinet="Golddrive.cab" EmbedCab="yes" />
 
-        <Property Id="P.LauncherName">WinFsp.Launcher</Property>
         <Property Id="P.LauncherRegistryKey">Software\WOW6432Node\WinFsp\Services</Property>
         <Property Id="P.RegistryKey">Software\WinFsp</Property>
         
@@ -38,57 +37,24 @@
 
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="ProgramFiles64Folder">
-                <Directory Id="INSTALLDIR" Name="Golddrive">
-                    <Directory Id="WINFSPDIR" Name="winfsp" />
-                    <Directory Id="UIDIR" Name="ui" />
-                </Directory>
+                <Directory Id="INSTALLDIR" Name="Golddrive" />
             </Directory>
         </Directory>
-
-        <DirectoryRef Id="WINFSPDIR" FileSource=".\winfsp">
-            <Component Id="C.winfsp_x64.sys">
-                <File Name="winfsp-x64.sys" KeyPath="yes" />
-            </Component>
-            <Component Id="C.winfsp_x64.dll.selfreg" 
-                       Guid="5D0C2101-3F69-4CF7-80AF-E3A913EF7D0E">
-                <File Id="FILE.winfsp_x64.dll.selfreg" 
-                      Name="winfsp-x64.dll" KeyPath="yes" SelfRegCost="1" />
-            </Component>
-            <Component Id="C.launcher_x64.exe.svcinst">
-                <File Id="launcher_x64.exe.svcinst" 
-                      Name="launcher-x64.exe" KeyPath="yes" />
-                <ServiceInstall
-                    Id="launcher_x64.exe.svcinst"
-                    Name="[P.LauncherName]"
-                    Description="$(var.MyDescription)"
-                    Type="ownProcess"
-                    Start="auto"
-                    ErrorControl="ignore" />
-                <ServiceControl
-                    Id="launcher_x64.exe.svcinst"
-                    Name="[P.LauncherName]"
-                    Start="install"
-                    Stop="both"
-                    Remove="uninstall" />
-                <Condition>VersionNT64</Condition>
-            </Component>
-            <Component Id="C.launchctl_x64.exe" 
-                       Guid="12BD612A-862B-46A3-802B-87F442D20655">
-                <File Name="launchctl-x64.exe" KeyPath="yes" />
-            </Component>            
-        </DirectoryRef>
          
         <DirectoryRef Id="INSTALLDIR" FileSource="..\build\$(var.Configuration)">
-            <Component Id="C.INSTALLDIR" Guid="{484112DF-8AFC-4507-A256-436EE155C84E}" KeyPath="yes">
+            <!--<Component Id="C.INSTALLDIR" Guid="{484112DF-8AFC-4507-A256-436EE155C84E}" KeyPath="yes">
                 <RegistryValue
                     Root="HKLM"
                     Key="[P.RegistryKey]"
                     Name="InstallDir"
                     Type="string"
                     Value="[INSTALLDIR]" />               
-            </Component>
+            </Component>-->
             <Component Id="C.golddrive.exe">
                 <File Name="golddrive.exe" KeyPath="yes" />
+            </Component>
+            <Component Id="C.golddrive.pdb">
+                <File Name="golddrive.pdb" KeyPath="yes" />
             </Component>
             <Component Id="C.golddrive.reg" Guid="{3EF97966-E49E-4A0B-B68D-5EB2BDA61C21}">
                 <RegistryKey
@@ -122,30 +88,62 @@
             </Component>
         </DirectoryRef>
   
-        <DirectoryRef Id="UIDIR" FileSource="..\golddrive-ui\bin\$(var.Configuration)">
+        <DirectoryRef Id="INSTALLDIR" FileSource="..\golddrive-ui\bin\$(var.Configuration)">
             <Component Id="C.golddrive_ui.exe">
                 <File Name="golddrive-ui.exe" KeyPath="yes" />
             </Component>            
             <Component Id="C.golddrive.ico">
                 <File Name="golddrive.ico" KeyPath="yes" />
             </Component>            
+            <Component Id="C.ControlzEx.dll">
+                <File Name="ControlzEx.dll" KeyPath="yes" />
+            </Component>            
+            <Component Id="C.MahApps.Metro.dll">
+                <File Name="MahApps.Metro.dll" KeyPath="yes" />
+            </Component>            
+            <Component Id="C.MaterialDesignColors.dll">
+                <File Name="MaterialDesignColors.dll" KeyPath="yes" />
+            </Component>            
+            <Component Id="C.MaterialDesignThemes.Wpf.dll">
+                <File Name="MaterialDesignThemes.Wpf.dll" KeyPath="yes" />
+            </Component>            
+            <Component Id="C.NLog.dll"><File Name="NLog.dll" KeyPath="yes" /></Component>            
+            <Component Id="C.NLog.config"><File Name="NLog.config" KeyPath="yes" /></Component>            
+            <Component Id="C.Renci.SshNet.dll"><File Name="Renci.SshNet.dll" KeyPath="yes" /></Component>            
+            <Component Id="C.System.Windows.Interactivity.dll"><File Name="System.Windows.Interactivity.dll" KeyPath="yes" /></Component>            
         </DirectoryRef>
-   
-        <ComponentGroup Id="C.WinFsp">
-            <ComponentRef Id="C.winfsp_x64.sys" />
-            <ComponentRef Id="C.winfsp_x64.dll.selfreg" />
-            <ComponentRef Id="C.launcher_x64.exe.svcinst" />
-            <ComponentRef Id="C.launchctl_x64.exe" />            
-        </ComponentGroup>
 
-        <ComponentGroup Id="C.Golddrive">
+        <DirectoryRef Id="INSTALLDIR" FileSource="..\..\tools\openssh">
+            <Component Id="C.ssh.exe"><File Name="ssh.exe" KeyPath="yes" /></Component>
+            <Component Id="C.ssh_keygen.exe"><File Name="ssh-keygen.exe" KeyPath="yes" /></Component>
+            <Component Id="C.sftp.exe"><File Name="sftp.exe" KeyPath="yes" /></Component>
+            <Component Id="C.libcrypto.dll"><File Name="libcrypto.dll" KeyPath="yes" /></Component>
+        </DirectoryRef>
+        
+        <ComponentGroup Id="C.Golddrive_cli">
             <ComponentRef Id="C.golddrive.exe" />
+            <ComponentRef Id="C.golddrive.pdb" />
             <ComponentRef Id="C.golddrive.reg" />
         </ComponentGroup>
   
         <ComponentGroup Id="C.Golddrive_ui">
             <ComponentRef Id="C.golddrive_ui.exe" />
             <ComponentRef Id="C.golddrive.ico" />
+            <ComponentRef Id="C.ControlzEx.dll" />
+            <ComponentRef Id="C.MahApps.Metro.dll" />
+            <ComponentRef Id="C.MaterialDesignColors.dll" />
+            <ComponentRef Id="C.MaterialDesignThemes.Wpf.dll" />
+            <ComponentRef Id="C.NLog.dll" />
+            <ComponentRef Id="C.NLog.config" />
+            <ComponentRef Id="C.Renci.SshNet.dll" />
+            <ComponentRef Id="C.System.Windows.Interactivity.dll" />
+        </ComponentGroup>
+        
+       <ComponentGroup Id="C.ssh">
+            <ComponentRef Id="C.ssh.exe" />
+            <ComponentRef Id="C.sftp.exe" />
+            <ComponentRef Id="C.ssh_keygen.exe" />
+            <ComponentRef Id="C.libcrypto.dll" />
         </ComponentGroup>
 
         <Feature
@@ -153,10 +151,9 @@
             Level="1"
             Title="$(var.MyProductName) $(var.MyProductVersion)"
             Description="$(var.MyDescription)">
-            <ComponentRef Id="C.INSTALLDIR" />
-            <ComponentGroupRef Id="C.WinFsp" />
-            <ComponentGroupRef Id="C.Golddrive" />    
+            <ComponentGroupRef Id="C.Golddrive_cli" />    
             <ComponentGroupRef Id="C.Golddrive_ui" />  
+            <ComponentGroupRef Id="C.ssh" />  
         </Feature>
 
         <UI Id="WixUI_Minimal">

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Bundle Name="Golddrive" Version="1.0.0.0" Manufacturer="Golddrive Inc."
+            UpgradeCode="6004d72e-b0b7-46f3-a1fb-954b18a476c2">
+		<BootstrapperApplicationRef Id="WixStandardBootstrapperApplication.RtfLicense" />
+
+		<Chain>
+            <MsiPackage SourceFile="$(var.golddrive-msi.TargetPath)" />
+                        
+		</Chain>
+	</Bundle>
+</Wix>
