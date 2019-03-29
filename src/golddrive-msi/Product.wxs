@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Product
+        Id="*"
+        Name="$(var.MyProductName) $(var.MyProductVersion)"
+        Manufacturer="$(var.MyCompanyName)"
+        Version="$(var.MyVersion)"
+        Language="1033"
+        UpgradeCode="39F33CFA-2562-4866-AE81-0A863342BE23">
+
+        <Package
+            Description="$(var.MyProductName) - $(var.MyDescription)"
+            InstallerVersion="200" Compressed="yes"
+            InstallScope="perMachine" 
+            Platform="x64"/>
+
+        <MajorUpgrade
+            Disallow="yes"
+            AllowDowngrades="no"
+            AllowSameVersionUpgrades="no"
+            DisallowUpgradeErrorMessage="An older version of $(var.MyProductName) is already installed. You must uninstall it before you can install this version."
+            DowngradeErrorMessage="A newer version of $(var.MyProductName) is already installed." />
+
+        <Media Id="1" Cabinet="Golddrive.cab" EmbedCab="yes" />
+
+        <Property Id="P.LauncherName">WinFsp.Launcher</Property>
+        <Property Id="P.LauncherRegistryKey">Software\WOW6432Node\WinFsp\Services</Property>
+        <Property Id="P.RegistryKey">Software\WinFsp</Property>
+        
+        <Property Id="INSTALLDIR">
+            <RegistrySearch
+                Id="R.INSTALLDIR"
+                Root="HKLM"
+                Key="[P.RegistryKey]"
+                Name="InstallDir"
+                Type="raw" />
+        </Property>
+
+        <Directory Id="TARGETDIR" Name="SourceDir">
+            <Directory Id="ProgramFiles64Folder">
+                <Directory Id="INSTALLDIR" Name="Golddrive">
+                    <Directory Id="WINFSPDIR" Name="winfsp" />
+                    <Directory Id="UIDIR" Name="ui" />
+                </Directory>
+            </Directory>
+        </Directory>
+
+        <DirectoryRef Id="WINFSPDIR" FileSource=".\winfsp">
+            <Component Id="C.winfsp_x64.sys">
+                <File Name="winfsp-x64.sys" KeyPath="yes" />
+            </Component>
+            <Component Id="C.winfsp_x64.dll.selfreg" 
+                       Guid="5D0C2101-3F69-4CF7-80AF-E3A913EF7D0E">
+                <File Id="FILE.winfsp_x64.dll.selfreg" 
+                      Name="winfsp-x64.dll" KeyPath="yes" SelfRegCost="1" />
+            </Component>
+            <Component Id="C.launcher_x64.exe.svcinst">
+                <File Id="launcher_x64.exe.svcinst" 
+                      Name="launcher-x64.exe" KeyPath="yes" />
+                <ServiceInstall
+                    Id="launcher_x64.exe.svcinst"
+                    Name="[P.LauncherName]"
+                    Description="$(var.MyDescription)"
+                    Type="ownProcess"
+                    Start="auto"
+                    ErrorControl="ignore" />
+                <ServiceControl
+                    Id="launcher_x64.exe.svcinst"
+                    Name="[P.LauncherName]"
+                    Start="install"
+                    Stop="both"
+                    Remove="uninstall" />
+                <Condition>VersionNT64</Condition>
+            </Component>
+            <Component Id="C.launchctl_x64.exe" 
+                       Guid="12BD612A-862B-46A3-802B-87F442D20655">
+                <File Name="launchctl-x64.exe" KeyPath="yes" />
+            </Component>            
+        </DirectoryRef>
+         
+        <DirectoryRef Id="INSTALLDIR" FileSource="..\build\$(var.Configuration)">
+            <Component Id="C.INSTALLDIR" Guid="{484112DF-8AFC-4507-A256-436EE155C84E}" KeyPath="yes">
+                <RegistryValue
+                    Root="HKLM"
+                    Key="[P.RegistryKey]"
+                    Name="InstallDir"
+                    Type="string"
+                    Value="[INSTALLDIR]" />               
+            </Component>
+            <Component Id="C.golddrive.exe">
+                <File Name="golddrive.exe" KeyPath="yes" />
+            </Component>
+            <Component Id="C.golddrive.reg" Guid="{3EF97966-E49E-4A0B-B68D-5EB2BDA61C21}">
+                <RegistryKey
+                    Root="HKLM"
+                    Key="[P.LauncherRegistryKey]">
+                    <RegistryKey
+                        Key="golddrive">
+                        <RegistryValue
+                            Type="string"
+                            Name="Executable"
+                            Value="[INSTALLDIR]golddrive.exe"
+                            KeyPath="yes" />
+                        <RegistryValue
+                            Type="string"
+                            Name="CommandLine"
+                            Value="%2 %1" />
+                        <RegistryValue
+                            Type="string"
+                            Name="Security"
+                            Value="D:P(A;;RPWPLC;;;WD)" />
+                        <RegistryValue
+                            Type="string"
+                            Name="RunAs"
+                            Value="." />
+                        <RegistryValue
+                            Type="integer"
+                            Name="JobControl"
+                            Value="1" />                        
+                    </RegistryKey>
+                </RegistryKey>
+            </Component>
+        </DirectoryRef>
+  
+        <DirectoryRef Id="UIDIR" FileSource="..\golddrive-ui\bin\$(var.Configuration)">
+            <Component Id="C.golddrive_ui.exe">
+                <File Name="golddrive-ui.exe" KeyPath="yes" />
+            </Component>            
+            <Component Id="C.golddrive.ico">
+                <File Name="golddrive.ico" KeyPath="yes" />
+            </Component>            
+        </DirectoryRef>
+   
+        <ComponentGroup Id="C.WinFsp">
+            <ComponentRef Id="C.winfsp_x64.sys" />
+            <ComponentRef Id="C.winfsp_x64.dll.selfreg" />
+            <ComponentRef Id="C.launcher_x64.exe.svcinst" />
+            <ComponentRef Id="C.launchctl_x64.exe" />            
+        </ComponentGroup>
+
+        <ComponentGroup Id="C.Golddrive">
+            <ComponentRef Id="C.golddrive.exe" />
+            <ComponentRef Id="C.golddrive.reg" />
+        </ComponentGroup>
+  
+        <ComponentGroup Id="C.Golddrive_ui">
+            <ComponentRef Id="C.golddrive_ui.exe" />
+            <ComponentRef Id="C.golddrive.ico" />
+        </ComponentGroup>
+
+        <Feature
+            Id="F.Main"
+            Level="1"
+            Title="$(var.MyProductName) $(var.MyProductVersion)"
+            Description="$(var.MyDescription)">
+            <ComponentRef Id="C.INSTALLDIR" />
+            <ComponentGroupRef Id="C.WinFsp" />
+            <ComponentGroupRef Id="C.Golddrive" />    
+            <ComponentGroupRef Id="C.Golddrive_ui" />  
+        </Feature>
+
+        <UI Id="WixUI_Minimal">
+            <TextStyle Id="WixUI_Font_Normal" FaceName="Tahoma" Size="8" />
+            <TextStyle Id="WixUI_Font_Bigger" FaceName="Tahoma" Size="12" />
+            <TextStyle Id="WixUI_Font_Title" FaceName="Tahoma" Size="9" Bold="yes" />
+
+            <Property Id="DefaultUIFont" Value="WixUI_Font_Normal" />
+            <Property Id="WixUI_Mode" Value="Minimal" />
+
+            <DialogRef Id="ErrorDlg" />
+            <DialogRef Id="FatalError" />
+            <DialogRef Id="FilesInUse" />
+            <DialogRef Id="MsiRMFilesInUse" />
+            <DialogRef Id="PrepareDlg" />
+            <DialogRef Id="ProgressDlg" />
+            <DialogRef Id="ResumeDlg" />
+            <DialogRef Id="UserExit" />
+
+            <!-- This is the welcome dialog you specified-->
+            <DialogRef Id="WelcomeDlg" />
+
+            <!-- Hook the new welcome dialog to the next one in the stack-->
+            <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="PrepareDlg">1</Publish>
+
+            <Publish Dialog="ExitDialog" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
+
+            <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="MaintenanceTypeDlg">1</Publish>
+
+            <Publish Dialog="MaintenanceWelcomeDlg" Control="Next" Event="NewDialog" Value="MaintenanceTypeDlg">1</Publish>
+
+            <Publish Dialog="MaintenanceTypeDlg" Control="RepairButton" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
+            <Publish Dialog="MaintenanceTypeDlg" Control="RemoveButton" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
+            <Publish Dialog="MaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg">1</Publish>
+
+            <Property Id="ARPNOMODIFY" Value="1" />
+        </UI>
+
+        <UIRef Id="WixUI_Common" />
+ 
+    </Product>
+</Wix>

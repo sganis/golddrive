@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "golddrive-ui", "golddrive-u
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "golddrive-test", "golddrive-test\golddrive-test.csproj", "{36435D2D-63B1-4E6F-8148-B6D35D142AD8}"
 EndProject
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "golddrive-msi", "golddrive-msi\golddrive-msi.wixproj", "{DF1247C6-970E-4B88-9965-FB29C2AD4301}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -119,6 +121,28 @@ Global
 		{36435D2D-63B1-4E6F-8148-B6D35D142AD8}.RelWithDebInfo|x64.Build.0 = Release|Any CPU
 		{36435D2D-63B1-4E6F-8148-B6D35D142AD8}.RelWithDebInfo|x86.ActiveCfg = Release|Any CPU
 		{36435D2D-63B1-4E6F-8148-B6D35D142AD8}.RelWithDebInfo|x86.Build.0 = Release|Any CPU
+		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.Debug|x64.ActiveCfg = Debug|x64
+		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.Debug|x64.Build.0 = Debug|x64
+		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.Debug|x86.ActiveCfg = Debug|x86
+		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.Debug|x86.Build.0 = Debug|x86
+		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.MinSizeRel|Any CPU.ActiveCfg = Release|x86
+		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.MinSizeRel|Any CPU.Build.0 = Release|x86
+		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.MinSizeRel|x64.ActiveCfg = Release|x86
+		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.MinSizeRel|x64.Build.0 = Release|x86
+		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.MinSizeRel|x86.ActiveCfg = Release|x86
+		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.MinSizeRel|x86.Build.0 = Release|x86
+		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.Release|Any CPU.ActiveCfg = Release|x86
+		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.Release|x64.ActiveCfg = Release|x64
+		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.Release|x64.Build.0 = Release|x64
+		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.Release|x86.ActiveCfg = Release|x86
+		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.Release|x86.Build.0 = Release|x86
+		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.RelWithDebInfo|Any CPU.ActiveCfg = Release|x86
+		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.RelWithDebInfo|Any CPU.Build.0 = Release|x86
+		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.RelWithDebInfo|x64.ActiveCfg = Release|x86
+		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.RelWithDebInfo|x64.Build.0 = Release|x86
+		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.RelWithDebInfo|x86.ActiveCfg = Release|x86
+		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.RelWithDebInfo|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

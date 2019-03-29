@@ -567,7 +567,7 @@ int f_create(const char *path, fuse_mode_t mode, struct fuse_file_info *fi)
 	info("%s\n", path);
 	SAN_HANDLE *sh;
 	int rc;
-	fuse_mode_t mod = mode & 438; // 0o666 to remove execution bit
+	fuse_mode_t mod = mode & 438; // 438 = 0666 to remove execution bit
 
 	sh = san_open(path, FILE_ISREG, mod, fi);
 	
