@@ -136,10 +136,10 @@
     </Link>
     <PostBuildEvent>
       <Command>copy $(ProjectDir)golddrive.ini $(Outdir)
-copy $(ProjectDir)golddrive.ini $(SolutionDir)..\tools\golddrive
-copy $(ProjectDir)golddrive.ini $(SolutionDir)..\golddrive\bin
-copy $(OutDir)golddrive.exe $(SolutionDir)..\golddrive\bin
-copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
+rem copy $(ProjectDir)golddrive.ini $(SolutionDir)..\tools\golddrive
+rem copy $(ProjectDir)golddrive.ini $(SolutionDir)..\golddrive\bin
+rem copy $(OutDir)golddrive.exe $(SolutionDir)..\golddrive\bin
+rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -195,10 +195,10 @@ copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
     </Link>
     <PostBuildEvent>
       <Command>copy $(ProjectDir)golddrive.ini $(Outdir)
-copy $(ProjectDir)golddrive.ini $(SolutionDir)..\tools\golddrive
-copy $(ProjectDir)golddrive.ini $(SolutionDir)..\golddrive\bin
-copy $(OutDir)golddrive.exe $(SolutionDir)..\golddrive\bin
-copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
+rem copy $(ProjectDir)golddrive.ini $(SolutionDir)..\tools\golddrive
+rem copy $(ProjectDir)golddrive.ini $(SolutionDir)..\golddrive\bin
+rem copy $(OutDir)golddrive.exe $(SolutionDir)..\golddrive\bin
+rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
