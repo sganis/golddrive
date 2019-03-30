@@ -157,7 +157,7 @@
             <ComponentGroupRef Id="C.ssh" />
             <Feature
                 Id="F.App"
-                Level="1000"
+                Level="1"
                 Title="$(var.MyProductName) App"
                 Description="Installs the $(var.MyProductName) App to manage drives and setup ssh keys"
                 AllowAdvertise="no"

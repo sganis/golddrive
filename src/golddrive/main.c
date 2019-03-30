@@ -367,7 +367,7 @@ int main(int argc, char *argv[])
 	char volname[256];
 	sprintf_s(volname, sizeof(volname), "-ovolname=%s@%s", g_fs.user, g_fs.host);
 	fuse_opt_add_arg(&args, volname);
-	fuse_opt_add_arg(&args, "-oFileSystemName=GOLDDRIVE");
+	fuse_opt_add_arg(&args, "-oFileSystemName=Golddrive");
 	fuse_opt_add_arg(&args, "-orellinks");
 	fuse_opt_add_arg(&args, "-ouid=-1,gid=-1,create_umask=007");
 	fuse_opt_parse(&args, &g_fs, fs_opts, fs_opt_proc);

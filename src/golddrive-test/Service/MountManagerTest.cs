@@ -14,7 +14,7 @@ namespace golddrive.Tests
             {
                 Letter = "X",
                 MountPoint = _host,
-                Label = "GOLDDRIVE"
+                Label = "Golddrive"
             };
     
         [TestInitialize]

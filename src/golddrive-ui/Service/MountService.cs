@@ -77,12 +77,12 @@ namespace golddrive
                 DataContractSerializer ds = new DataContractSerializer(typeof(List<Drive>));
                 var settings = new XmlWriterSettings { Indent = true };
                 using (var w = XmlWriter.Create(filename, settings))
-                    ds.WriteObject(w, drives);                
+                    ds.WriteObject(w, drives);
             }
             catch { }
         }
 
-        
+
         //public void SaveSettingsDrives(List<Drive> drives)
         //{
         //    try
@@ -396,6 +396,17 @@ namespace golddrive
 
             }
         }
+        public void CleanDriveLabel(Drive drive)
+        {
+            if (String.IsNullOrEmpty(drive.RegistryMountPoint2))
+                return;
+            try
+            {
+                string key = $@"Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\{drive.RegistryMountPoint2}";
+                Registry.CurrentUser.DeleteSubKey(key);
+            }
+            catch { }
+        }
         public void SetDriveIcon(Drive drive, string icoPath)
         {
             try
@@ -535,7 +546,7 @@ namespace golddrive
                     Console.Write(ex.ToString());
                     r.MountStatus = MountStatus.UNKNOWN;
                 }
-            }            
+            }
             return r;
         }
         ReturnBox SetupSsh(Drive drive, string password)
@@ -636,33 +647,49 @@ namespace golddrive
             //string winfsp = Environment.ExpandEnvironmentVariables(@"%ProgramFiles(x86)%\WinFsp\bin\winfsp-x64.dll");
             //return File.Exists(winfsp);
 
-            
+
             ServiceController sc = new ServiceController("WinFsp.launcher");
             return sc.Status == ServiceControllerStatus.Running;
 
         }
-        
+
+        private string GetGolddriveCliPath()
+        {
+            try
+            {
+                string key = $@"Software\WOW6432Node\WinFsp\Services\golddrive";
+                RegistryKey k = Registry.LocalMachine.OpenSubKey(key);
+                if (k != null)
+                    return k.GetValue("Executable")?.ToString();
+            }
+            catch (Exception ex)
+            {
+
+            }
+            return "";
+        }
+
         public string GetVersions()
         {
             try
             {
-                string ui = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-                string golddrive = "n/a";
+                string app = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+                string cli = "n/a";
                 string winfsp = "n/a";
-                string golddrive_cli = Environment.ExpandEnvironmentVariables(@"%USERPROFILE%\Golddrive\golddrive.exe");
+                string golddrive_cli = GetGolddriveCliPath();
                 string winfsp_dll = Environment.ExpandEnvironmentVariables(@"%ProgramFiles(x86)%\WinFsp\bin\winfsp-x64.dll");
 
                 if (File.Exists(golddrive_cli))
                 {
-                    var r = RunLocal($@"{golddrive_cli} --version");
-                    golddrive = r.Error.Trim();
+                    var r = RunLocal($@"""{golddrive_cli}"" --version");
+                    cli = r.Error.Trim();
                 }
                 if (IsWinfspInstalled())
                 {
                     FileVersionInfo info = FileVersionInfo.GetVersionInfo(winfsp_dll);
                     winfsp = $"{info.FileMajorPart}.{info.FileMinorPart}.{info.FileBuildPart}";
                 }
-                return $"GUI version {ui}\nCLI version {golddrive}\nWinFsp version {winfsp}";
+                return $"App version {app}\nCLI version {cli}\nWinFsp version {winfsp}";
             }
             catch (Exception ex)
             {
@@ -695,6 +722,8 @@ namespace golddrive
                 return r;
             }
             // TODO: clenup drive name and registry
+            CleanDriveLabel(drive);
+
             r.MountStatus = MountStatus.OK;
             r.DriveStatus = DriveStatus.DISCONNECTED;
             return r;

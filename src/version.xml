@@ -26,7 +26,7 @@
  -->        
 
         <!-- try to get this from git tag -->
-        <MyCanonicalVersion>1.3</MyCanonicalVersion>
+        <MyCanonicalVersion>2.0</MyCanonicalVersion>
 
         <MyVersion>$(MyCanonicalVersion).$(MyBuildNumber)</MyVersion>
         <MyProductVersion>$(MyCanonicalVersion)</MyProductVersion>
