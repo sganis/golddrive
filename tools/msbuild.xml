@@ -6,6 +6,19 @@
         <Output TaskParameter="Lines" PropertyName="GitDescribe" /> 
     </ReadLinesFromFile>
     <Delete Files="gitdescribe.txt" />
-    <Message Text="Git describe: $(GitDescribe)" />
+    <PropertyGroup>
+    	<MyGitDescribe Condition="'$(GitDescribe)' != ''">
+    	$([System.Text.RegularExpressions.Regex]::Match($(GitDescribe),'v(.+)').Groups[1].Value.Trim())</MyGitDescribe>
+    	<MyGitTag Condition="'$(GitDescribe)' != ''">
+    	$([System.Text.RegularExpressions.Regex]::Match($(GitDescribe),'v([0-9\.]+).*').Groups[1].Value.Trim())</MyGitTag>
+    	<MyGitTagCommits Condition="'$(GitDescribe)' != ''">
+    	$([System.Text.RegularExpressions.Regex]::Match($(GitDescribe),'v([0-9\.\-]+)-g.*').Groups[1].Value.Trim())</MyGitTagCommits>
+   </PropertyGroup>
+	
+	<!-- <Message Text="Git describe: $(GitDescribe)" /> -->
+	<Message Text="MyGitDescribe: $(MyGitDescribe)" />
+	<Message Text="MyGitTag: $(MyGitTag)" />
+	<Message Text="MyGitTagCommits: $(MyGitTagCommits)" />
+	
 </Target>
 </Project>

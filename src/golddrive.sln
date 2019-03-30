@@ -11,7 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "golddrive-test", "golddrive
 EndProject
 Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "golddrive-msi", "golddrive-msi\golddrive-msi.wixproj", "{DF1247C6-970E-4B88-9965-FB29C2AD4301}"
 EndProject
-Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "golddrive-setup", "golddrive-setup\golddrive-setup.wixproj", "{6004D72E-B0B7-46F3-A1FB-954B18A476C2}"
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "golddrive-bundle", "golddrive-bundle\golddrive-bundle.wixproj", "{6004D72E-B0B7-46F3-A1FB-954B18A476C2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

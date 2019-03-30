@@ -1,40 +1,57 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+<!--     <Target Name="GetVersion">
+        <Exec Command="git describe > gitdescribe.txt" />
+        <ReadLinesFromFile File="gitdescribe.txt">
+            <Output TaskParameter="Lines" PropertyName="GitDescribe" /> 
+        </ReadLinesFromFile>
+    </Target>-->
+
     <PropertyGroup>
         <!-- build number: concat 2-digit year with 3-digit day of the year (16-bits until 2066) -->
-        <MyBuildNumber>$([System.DateTime]::Now.ToString(`yy`))$([System.DateTime]::Now.DayOfYear.ToString(`000`))</MyBuildNumber>
+        <MyBuildNumber>$([System.DateTime]::Now.DayOfYear.ToString(`000`))</MyBuildNumber>
 
-        <!-- git revision -->
+        <!-- git version -->      
         <MyGitRoot>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), .git/HEAD))</MyGitRoot>
         <MyGitHead>$([System.IO.File]::ReadAllText($(MyGitRoot)/.git/HEAD).Trim())</MyGitHead>
         <MyGitRevision Condition="$(MyGitHead.StartsWith(ref: )) And  Exists('$(MyGitRoot)/.git/$(MyGitHead.Substring(5))')">$([System.IO.File]::ReadAllText($(MyGitRoot)/.git/$(MyGitHead.Substring(5))).Trim().Substring(0, 7))</MyGitRevision>
         <MyGitRevision Condition="$(MyGitHead.StartsWith(ref: )) And !Exists('$(MyGitRoot)/.git/$(MyGitHead.Substring(5))')">$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText($(MyGitRoot)/.git/packed-refs)), '[0-9a-fA-F]{40,}.*$(MyGitHead.Substring(5))').Value.Substring(0, 7))</MyGitRevision>
         <MyGitRevision Condition="!$(MyGitHead.StartsWith(ref: ))">$(MyGitHead.Substring(0, 7))</MyGitRevision>
+<!--         
+        <GitDescribe>$([System.IO.File]::ReadAllText("gitdescribe.txt"))</GitDescribe>
+        <MyGitDescribe Condition="'$(GitDescribe)' != ''">$([System.Text.RegularExpressions.Regex]::Match($(GitDescribe),'v(.+)').Groups[1].Value.Trim())</MyGitDescribe>
+        <MyGitTag Condition="'$(GitDescribe)' != ''">$([System.Text.RegularExpressions.Regex]::Match($(GitDescribe),'v([0-9\.]+).*').Groups[1].Value.Trim())</MyGitTag>
+        <MyGitTagCommits Condition="'$(GitDescribe)' != ''">$([System.Text.RegularExpressions.Regex]::Match($(GitDescribe),'v([0-9\.\-]+)-g.*').Groups[1].Value.Trim())</MyGitTagCommits>
+ -->        
 
-        <MyProductName>Golddrive</MyProductName>
-        <MyDescription>Golddrive</MyDescription>
-        <MyCompanyName>Golddrive Inc.</MyCompanyName>
-        <MyCopyright>2018-$([System.DateTime]::Now.ToString(`yyyy`)) Golddrive Inc.</MyCopyright>
-
-        <MyCanonicalVersion>1.0</MyCanonicalVersion>
-
-        <MyProductVersion>2019.2</MyProductVersion>
-        <MyProductStage>Gold</MyProductStage>
+        <!-- try to get this from git tag -->
+        <MyCanonicalVersion>1.3</MyCanonicalVersion>
 
         <MyVersion>$(MyCanonicalVersion).$(MyBuildNumber)</MyVersion>
+        <MyProductVersion>$(MyCanonicalVersion)</MyProductVersion>
         <MyVersionWithCommas>$(MyVersion.Replace('.',',')),0</MyVersionWithCommas>
-        <MyFullVersion>$(MyCanonicalVersion).$(MyBuildNumber).$(MyGitRevision)</MyFullVersion>
+        <MyFullVersion>$(MyVersion)-$(MyGitRevision)</MyFullVersion>
+        
+        <MyProductName>Golddrive</MyProductName>
+        <MyProductFullName>Golddrive $(MyFullVersion)</MyProductFullName>
+        <MyDescription>Secury Network Drive</MyDescription>
+        <MyCompanyName>Golddrive Inc.</MyCompanyName>
+        <MyCopyright>$([System.DateTime]::Now.ToString(`yyyy`)) $(MyCompanyName)</MyCopyright>
 
         <MyAssemblyPolicyVersion>$(MyCanonicalVersion.Substring(0,$(MyVersion.IndexOf('.')))).0</MyAssemblyPolicyVersion>
         <MyAssemblyVersion>$(MyAssemblyPolicyVersion).0.0</MyAssemblyVersion>
+
+
     </PropertyGroup>
 
+    
     <ItemDefinitionGroup>
         <ClCompile>
             <PreprocessorDefinitions>NTDDI_VERSION=0x06010000;_WIN32_WINNT=0x0601</PreprocessorDefinitions>
         </ClCompile>
         <ResourceCompile>
-            <PreprocessorDefinitions>MyProductName=$(MyProductName);MyDescription=$(MyDescription);MyCompanyName=$(MyCompanyName);MyCopyright=$(MyCopyright);MyProductVersion=$(MyProductVersion);MyProductStage=$(MyProductStage);MyVersion=$(MyVersion);MyVersionWithCommas=$(MyVersionWithCommas);MyFullVersion=$(MyFullVersion)</PreprocessorDefinitions>
+            <PreprocessorDefinitions>MyProductName=$(MyProductName);MyProductFullName=$(MyProductFullName);MyDescription=$(MyDescription);MyCompanyName=$(MyCompanyName);MyCopyright=$(MyCopyright);MyProductVersion=$(MyProductVersion);MyVersion=$(MyVersion);MyVersionWithCommas=$(MyVersionWithCommas);MyFullVersion=$(MyFullVersion)</PreprocessorDefinitions>
         </ResourceCompile>
     </ItemDefinitionGroup>
 </Project>
