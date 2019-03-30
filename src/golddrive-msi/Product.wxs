@@ -11,7 +11,7 @@
         <Package
             Description="$(var.MyProductName) - $(var.MyDescription)"
             InstallerVersion="200" Compressed="yes"
-            InstallScope="perMachine" 
+            InstallScope="perUser" 
             Platform="x64"/>
 
         <MajorUpgrade
@@ -26,15 +26,6 @@
         <Property Id="P.LauncherRegistryKey">Software\WOW6432Node\WinFsp\Services</Property>
         <Property Id="P.RegistryKey">Software\WinFsp</Property>
         
-        <Property Id="INSTALLDIR">
-            <RegistrySearch
-                Id="R.INSTALLDIR"
-                Root="HKLM"
-                Key="[P.RegistryKey]"
-                Name="InstallDir"
-                Type="raw" />
-        </Property>
-
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="ProgramFiles64Folder">
                 <Directory Id="INSTALLDIR" Name="Golddrive" />
@@ -42,14 +33,6 @@
         </Directory>
          
         <DirectoryRef Id="INSTALLDIR" FileSource="..\build\$(var.Configuration)">
-            <!--<Component Id="C.INSTALLDIR" Guid="{484112DF-8AFC-4507-A256-436EE155C84E}" KeyPath="yes">
-                <RegistryValue
-                    Root="HKLM"
-                    Key="[P.RegistryKey]"
-                    Name="InstallDir"
-                    Type="string"
-                    Value="[INSTALLDIR]" />               
-            </Component>-->
             <Component Id="C.golddrive.exe">
                 <File Name="golddrive.exe" KeyPath="yes" />
             </Component>
