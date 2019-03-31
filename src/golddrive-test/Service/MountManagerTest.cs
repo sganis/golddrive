@@ -41,7 +41,7 @@ namespace golddrive.Tests
         }
 
 
-        [TestMethod()]
+        [TestMethod]
         public void SetGetDrivelLabelTest()
         {
             string current_label = _drive.Label;
@@ -56,7 +56,7 @@ namespace golddrive.Tests
 
 
 
-        [TestMethod()]
+        [TestMethod, TestCategory("Aappveyor")]
         public void LoadSaveSettingsDrivesTest()
         {
             string settings_path = _mountService.AppPath + "\\settings.xml";

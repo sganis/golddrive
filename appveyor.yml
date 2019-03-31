@@ -1,4 +1,4 @@
-version: 1.0.{build}
+version: 2.0.{build}
 image: 
 - Visual Studio 2015
 # - Ubuntu
@@ -12,18 +12,12 @@ environment:
   GOLDDRIVE_PORT: 2222
   WINFSP: winfsp-1.4.18270
 install:
-  # - choco install -y docker
-  # - choco install -y docker-machine
-  # - ps: $Env:ProgramFiles\Docker\Docker\DockerCli.exe -SwitchDaemon
-  # - ps: restart-service *docker*
-  # - ps: docker-machine env default
-  # - docker version
-  - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
-  - start /wait msiexec /i %WINFSP%.msi /qn ADDLOCAL=ALL
+  # - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
+  - start /wait msiexec /i src\golddrive-bundle\winfsp\winfsp-1.4.19049.msi /qn ADDLOCAL=ALL
   - ps: Restart-Computer -Force 
   - ps: Start-Sleep -s 10
   - ps: Write-host "Reboot complete." 
-  - C:\Python37\python -m pip install --upgrade paramiko pytest pyyaml psutil
+  # - C:\Python37\python -m pip install --upgrade paramiko pytest pyyaml psutil
 build:
   project: src\golddrive.sln
   verbosity: minimal
@@ -31,10 +25,18 @@ before_test:
   # - cd docker
   # - docker build -t ssh-server .
   # - docker run --rm -d -p 2222:22 -t ssh-server
-test_script:
-  - set PATH=C:\Python37;C:\Python37\Scripts;%PATH%
-  - cd test
-  - pytest test_dep.py
+
+test:
+  # only categories to test
+  categories:
+    only:
+      - Appveyor
+
+      
+# test_script:
+#   - set PATH=C:\Python37;C:\Python37\Scripts;%PATH%
+#   - cd test
+  # - pytest test_dep.py
 
 # for:
 # # Windows only
