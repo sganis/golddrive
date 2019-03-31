@@ -269,8 +269,8 @@ void gdlog(const char *fmt, ...)
 	vsprintf(message, fmt, args);
 	va_end(args);
 	printf("%s", message);
-	if (directory_exists("c:\\temp")) {
-		FILE *f = fopen("c:\\temp\\golddrive.log", "a");
+	if (g_logfile) {
+		FILE *f = fopen(g_logfile, "a");
 		if (f != NULL)
 			fprintf(f, "golddrive: %s", message);
 		fclose(f);

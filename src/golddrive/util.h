@@ -4,8 +4,9 @@
 #include <stdarg.h>
 #include "jsmn.h"
 
-extern size_t			g_sftp_calls;
-extern size_t			g_sftp_cached_calls;
+extern size_t		g_sftp_calls;
+extern size_t		g_sftp_cached_calls;
+extern char*		g_logfile;
 
 #define STATS		0
 #define USE_CACHE	0

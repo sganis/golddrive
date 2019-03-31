@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <direct.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <fuse.h>
@@ -18,6 +19,7 @@ size_t		g_sftp_cached_calls;
 SANSSH *	g_ssh;
 SRWLOCK		g_ssh_lock;
 fs_config	g_fs;
+char*		g_logfile;
 
 /* supported fs operations */
 static struct fuse_operations fs_ops = {
@@ -232,14 +234,35 @@ static int load_config_file(fs_config* fs)
 	return rc;
 }
 
+static void init_logging()
+{
+	char* appdata = getenv("LOCALAPPDATA");
+	char logfolder[PATH_MAX];
+	sprintf_s(logfolder, MAX_PATH, "%s\\Golddrive", appdata);
+	
+	if (!directory_exists(logfolder)) 
+		_mkdir(logfolder);
+	if (directory_exists(logfolder)) {
+		g_logfile = malloc(PATH_MAX);
+		sprintf_s(g_logfile, MAX_PATH, "%s\\golddrive.log", logfolder);
+	}
+	else {
+		g_logfile = 0;	
+	}
+}
+
 int main(int argc, char *argv[])
 {
-	// load fuse dll
+	// load fuse driver
 	if (FspLoad(0) != STATUS_SUCCESS) {
 		fprintf(stderr, "failed to load winfsp driver, either dll not present or wrong version\n");
 		return -1;
 	}
 
+	// logging
+	init_logging();
+	
+	// parameters
 	int rc;
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 	memset(&g_fs, 0, sizeof(g_fs));
@@ -274,8 +297,9 @@ int main(int argc, char *argv[])
 	}
 	// private key
 	if (!g_fs.pkey) {
-		char profile[BUFFER_SIZE];
-		ExpandEnvironmentStringsA("%USERPROFILE%", profile, BUFFER_SIZE);
+		//char profile[BUFFER_SIZE];
+		//ExpandEnvironmentStringsA("%USERPROFILE%", profile, BUFFER_SIZE);
+		char* profile = getenv("USERPROFILE");
 		g_fs.pkey = malloc(MAX_PATH);
 		sprintf_s(g_fs.pkey, MAX_PATH, "%s\\.ssh\\id_rsa-%s-golddrive", profile, g_fs.user);
 		//strcpy_s(g_fs.pkey, MAX_PATH, profile);
