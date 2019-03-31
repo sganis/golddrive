@@ -56,7 +56,7 @@ namespace golddrive.Tests
 
 
 
-        [TestMethod, TestCategory("Aappveyor")]
+        [TestMethod, TestCategory("Appveyor")]
         public void LoadSaveSettingsDrivesTest()
         {
             string settings_path = _mountService.AppPath + "\\settings.xml";
