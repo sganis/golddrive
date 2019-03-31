@@ -31,7 +31,7 @@
     TitleCaps="False"
     WindowTransitionsEnabled="False"
     SaveWindowPosition="True"
-    Icon="/golddrive-ui;component/golddrive.ico">
+    Icon="/golddrive-app;component/golddrive.ico">
     
     <Controls:MetroWindow.IconTemplate>
         <DataTemplate>
