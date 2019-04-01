@@ -1,0 +1,17 @@
+{
+	"args" 	            : "-o FileInfoTimeout=3000,DirInfoTimeout=5000,VolumeInfoTimeout=20000",	
+	
+	"drives" : {
+		"S:" : {
+			"label"  	: "Simulation",
+			"mountpoint": "sant@mac",
+			"hosts"  	: ["mac","192.168.99.100"],
+		},
+		"W:" : {
+			"label"     : "Docker",
+			"mountpoint": "support@localhost",
+			"hosts" 	: ["localhost"],			
+		}
+	}
+}
+

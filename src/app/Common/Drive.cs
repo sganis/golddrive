@@ -1,24 +1,65 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 
 namespace golddrive
 {
-    [Serializable()]
+    [JsonObject(MemberSerialization.OptIn)]
     public class Drive : Observable
     {
+        public string VolumeLabel { get; set; }
+        
         public DriveStatus Status { get; set; }
-        public string Letter { get; set; }
-        public string VolumeLabel { get; set; }        
-        public string Host { get; set; }        
-        public string Path { get; set; }        
+
+        public string Path { get; set; }
+
         public bool? IsGoldDrive { get; set; }
+
+        public string Host
+        {
+            get
+            {
+                return Hosts.Count > 0 ? Hosts[0] : null;
+            }
+            set
+            {
+                if (!Hosts.Contains(value))
+                    Hosts.Add(value);
+            }
+        }
+        private List<string> _hosts;
+        [JsonProperty]
+        public List<string> Hosts
+        {
+            get
+            {
+                return _hosts ?? new List<string>();
+            }
+            set
+            {
+                _hosts = value;
+            }
+        }
 
         public string Name { get { return $"{ Letter }:"; } }
 
+        public string Letter { get; set; }
+
+        private string _args;
+        [JsonProperty]
+        public string Args
+        {
+            get { return _args ?? (_args = ""); }
+            set { _args = value; }
+        }
+
+
         private string _label;
+
+        [JsonProperty]
         public string Label
         {
-            get { return _label; }
+            get { return _label ?? (_label = ""); }
             set
             {
                 _label = value;
@@ -28,9 +69,10 @@ namespace golddrive
         }
 
         private string _mountpoint;
+        [JsonProperty]
         public string MountPoint
         {
-            get { return _mountpoint; }
+            get { return _mountpoint ?? (_mountpoint = ""); }
             set
             {
                 _mountpoint = value;

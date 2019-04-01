@@ -12,6 +12,7 @@ using Renci.SshNet.Common;
 using System.Runtime.Serialization;
 using System.Xml;
 using System.ServiceProcess;
+using Newtonsoft.Json;
 
 namespace golddrive
 {
@@ -59,37 +60,105 @@ namespace golddrive
         }
 
         #region Serialization
+        
+
         public List<Drive> LoadSettingsDrives()
         {
-            string filename = LocalAppData + "\\settings.xml";
+            string filename = LocalAppData + "\\config.json";
             List<Drive> drives = new List<Drive>();
 
-            if (File.Exists(filename))
+            if (!File.Exists(filename))
+                return drives;
+            
+            try
             {
-                try
+                string args = "";
+                var json = JsonConvert.DeserializeObject<Dictionary<string, object>>(File.ReadAllText(filename));
+                if (json.ContainsKey("Args"))
+                    args = json["Args"].ToString();
+                if (!json.ContainsKey("Drives"))
+                    return drives;                 
+                var _drives = JsonConvert.DeserializeObject<Dictionary<string, object>>(json["Drives"].ToString());
+                foreach (var _d in _drives.Keys)
                 {
-                    using (Stream fileStream = File.Open(filename, FileMode.Open))
-                    {
-                        var ds = new DataContractSerializer(typeof(List<Drive>));
-                        drives = (List<Drive>)ds.ReadObject(fileStream);
-                    }
-                }
-                catch { }
+                    if (_d.Length < 2)
+                        continue;
+                    Drive d = new Drive();
+                    d.Letter = _d[0].ToString();
+                    d.Args = args;
+                    var data = JsonConvert.DeserializeObject<Dictionary<string, object>>(_drives[_d].ToString());
+                    if (data.ContainsKey("Args"))
+                        d.Args = data["Args"].ToString();
+                    if (data.ContainsKey("Label"))
+                        d.Label = data["Label"].ToString();
+                    if (data.ContainsKey("Mountpoint"))
+                        d.MountPoint = data["Mountpoint"].ToString();
+                    if (data.ContainsKey("Hosts"))
+                        d.Hosts = JsonConvert.DeserializeObject<List<string>>(data["Hosts"].ToString());
+                    drives.Add(d);
+               } 
             }
+            catch(Exception ex)
+            {
+            }
+            
             return drives;
         }
+
         public void SaveSettingsDrives(List<Drive> drives)
         {
             try
             {
-                string filename = LocalAppData + "\\settings.xml";
-                DataContractSerializer ds = new DataContractSerializer(typeof(List<Drive>));
-                var settings = new XmlWriterSettings { Indent = true };
-                using (var w = XmlWriter.Create(filename, settings))
-                    ds.WriteObject(w, drives);
+                string filename = LocalAppData + "\\config.json";
+                Settings settings = new Settings();
+                settings.Args = "some args";
+                settings.Drives = new Dictionary<string, Drive>();
+                foreach(var d in drives)
+                    settings.Drives[d.Name] = d;
+                
+                using (var file = File.CreateText(filename))
+                {
+                    var json = JsonConvert.SerializeObject(settings, Newtonsoft.Json.Formatting.Indented);
+                    file.Write(json);
+                }
             }
-            catch { }
+            catch (Exception ex)
+            {
+            }
         }
+
+
+        //public List<Drive> LoadSettingsDrives()
+        //{
+        //    string filename = LocalAppData + "\\settings.xml";
+        //    List<Drive> drives = new List<Drive>();
+
+        //    if (File.Exists(filename))
+        //    {
+        //        try
+        //        {
+        //            using (Stream fileStream = File.Open(filename, FileMode.Open))
+        //            {
+        //                var ds = new DataContractSerializer(typeof(List<Drive>));
+        //                drives = (List<Drive>)ds.ReadObject(fileStream);
+        //            }
+        //        }
+        //        catch { }
+        //    }
+        //    return drives;
+        //}
+        //public void SaveSettingsDrives(List<Drive> drives)
+        //{
+        //    try
+        //    {
+        //        string filename = LocalAppData + "\\settings.xml";
+        //        DataContractSerializer ds = new DataContractSerializer(typeof(List<Drive>));
+        //        var settings = new XmlWriterSettings { Indent = true };
+        //        using (var w = XmlWriter.Create(filename, settings))
+        //            ds.WriteObject(w, drives);
+        //    }
+        //    catch { }
+        //}
 
 
         //public void SaveSettingsDrives(List<Drive> drives)
