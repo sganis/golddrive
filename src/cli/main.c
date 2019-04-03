@@ -79,8 +79,8 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 			g_fs.drive = strdup(arg);
 			return 0;
 		}
-		if (!g_fs.npath) {
-			g_fs.npath = strdup(arg);
+		if (!g_fs.remote) {
+			g_fs.remote = strdup(arg);
 			return 0;
 		}
 		fprintf(stderr, "golddrive: invalid argument '%s'\n", arg);
@@ -150,16 +150,16 @@ static int parse_network_path(fs_config* fs)
 		
 	/* translate backslash to forward slash */
 	
-	for (p = fs->npath; *p; p++)
+	for (p = fs->remote; *p; p++)
 		if ('\\' == *p)
 			*p = '/';
 
-	npath = strdup(fs->npath);
+	npath = strdup(fs->remote);
 	/* remove first slash if it has 2 slashes // */
 	size_t len = strlen(npath);
 	if (len > 2 && npath[0] == '/' && npath[1] == '/') {
-		memcpy(fs->npath, npath + 1, len - 1);
-		fs->npath[len - 1] = '\0';
+		memcpy(fs->remote, npath + 1, len - 1);
+		fs->remote[len - 1] = '\0';
 	}
 	/* get service name (\\golddrive\) */
 	p = npath;
@@ -224,14 +224,21 @@ static int parse_network_path(fs_config* fs)
 static int load_config_file(fs_config* fs)
 {
 	int rc = 0;
-	// app dir
-	char appdir[MAX_PATH];
-	GetModuleFileNameA(NULL, appdir, MAX_PATH);
-	PathRemoveFileSpecA(appdir);
-	rc = load_ini(appdir, fs);
-	if (!rc)
-		rc = load_json(fs);
+	//// app dir
+	//char appdir[MAX_PATH];
+	//GetModuleFileNameA(NULL, appdir, MAX_PATH);
+	//PathRemoveFileSpecA(appdir);
+	//rc = load_ini(appdir, fs);
+	//if (!rc)
+	//	rc = load_json(fs);
+	//return rc;
+	char* appdata = getenv("LOCALAPPDATA");
+	char jsonfile[PATH_MAX];
+	sprintf_s(jsonfile, MAX_PATH, "%s\\Golddrive\\config.json", appdata);
+	fs->json = strdup(jsonfile);
+	rc = load_json(fs);
 	return rc;
+		
 }
 
 static void init_logging()
@@ -262,6 +269,7 @@ int main(int argc, char *argv[])
 	// logging
 	init_logging();
 	
+
 	// parameters
 	int rc;
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
@@ -283,12 +291,13 @@ int main(int argc, char *argv[])
 	// load missing arguments from config file
 	g_fs.drive[0] = toupper(g_fs.drive[0]);
 	g_fs.letter = g_fs.drive[0];
-	
+	load_config_file(&g_fs);
+
 	// parse network path
-	if(g_fs.npath)
+	if(g_fs.remote)
 		parse_network_path(&g_fs);
 
-	//load_config_file(&g_fs);
+
 
 	// finally setup missing arguments with defaults
 	// user
@@ -313,13 +322,14 @@ int main(int argc, char *argv[])
 		g_fs.port = 22;
 	}
 
-	if (!g_fs.host && g_fs.hostcount > 0) {
-		// pick random host
-		g_fs.host = g_fs.hostlist[randint(0,g_fs.hostcount-1)];
-	}
+//	if (!g_fs.host && g_fs.hostcount > 0) {
+//		// pick random host
+//		g_fs.host = g_fs.hostlist[randint(0,g_fs.hostcount-1)];
+//	}
+
 	// show parameters
 	gdlog("drive   = %s\n", g_fs.drive);
-	gdlog("npath   = %s\n", g_fs.npath);
+	gdlog("remote  = %s\n", g_fs.remote);
 	gdlog("user    = %s\n", g_fs.user);
 	gdlog("host    = %s\n", g_fs.host);
 	gdlog("port    = %d\n", g_fs.port);
@@ -355,48 +365,27 @@ int main(int argc, char *argv[])
 		printf("home    = %s\n", g_fs.home);
 	}
 
-	// get gid
-	//snprintf(cmd, sizeof(cmd), "id -g %s\n", user);
-	//rc = run_command(cmd, out, err);
-	//if (rc == 0) {
-	//	out[strcspn(out, "\r\n")] = 0;
-	//	gid = atoi(out);
-	//	printf("gid=%d\n", gid);
-	//}
-		
-	// get number of links
-	//int nlinks;
-	//const char *path = "~";
-	//snprintf(cmd, sizeof(cmd), "stat -c %%h %s\n", path);
-	//rc = run_command(cmd, out, err);
-	//if (rc == 0) {
-	//	out[strcspn(out, "\r\n")] = 0;
-	//	nlinks = atoi(out);
-	//	printf("%s nlinks=%d\n", path, nlinks);
-	//}
-
 	// number of threads
 	//printf("Threads = %d\n", san_threads(5, get_number_of_processors()));
 
 	// run fuse main
 	char volprefix[256];
-	if(g_fs.npath)
-		sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=%s", g_fs.npath);
+	if(g_fs.remote)
+		sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=%s", g_fs.remote);
 	else
 		sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=/golddrive/%c", g_fs.letter);
-	
-	gdlog("VolumePrefix=%s\n", g_fs.npath);
-
+	gdlog("VolumePrefix=%s\n", g_fs.remote);
 	fuse_opt_add_arg(&args, volprefix);
 	char volname[256];
 	sprintf_s(volname, sizeof(volname), "-ovolname=%s@%s", g_fs.user, g_fs.host);
 	fuse_opt_add_arg(&args, volname);
-	fuse_opt_add_arg(&args, "-oFileSystemName=Golddrive");
-	fuse_opt_add_arg(&args, "-orellinks");
-	fuse_opt_add_arg(&args, "-ouid=-1,gid=-1,create_umask=007");
+	fuse_opt_add_arg(&args, "-oFileSystemName=Golddrive,rellinks,uid=-1,gid=-1");
+
+	// add json args
+	fuse_opt_add_arg(&args, g_fs.args);
 	fuse_opt_parse(&args, &g_fs, fs_opts, fs_opt_proc);
 	
-	// no need to parse the drive, it must be the last argument
+	// drive must be the last argument for winfsp
 	fuse_opt_add_arg(&args, g_fs.drive);
 
 	// debug arguments

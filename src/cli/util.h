@@ -45,10 +45,10 @@ extern char*		g_logfile;
 #endif
 
 typedef struct fs_config {
-	char *npath;
+	char *remote;
 	char *host;
-	char **hostlist;
-	int hostcount;
+	//char **hostlist;
+	//int hostcount;
 	char *locuser;
 	char *user;
 	char *pkey;
@@ -57,6 +57,7 @@ typedef struct fs_config {
 	char *args;
 	char *home;
 	char *path;
+	char *mountpoint;
 	char letter;
 	int port;
 	int hidden;

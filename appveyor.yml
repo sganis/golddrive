@@ -1,6 +1,6 @@
 version: 2.0.{build}
 image: 
-- Visual Studio 2017
+- Visual Studio 2015
 # - Ubuntu
 platform: x64
 configuration: Release
@@ -12,11 +12,11 @@ environment:
   GOLDDRIVE_PORT: 2222
   WINFSP: winfsp-1.4.18270
 install:
-  # - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
   - start /wait msiexec /i src\golddrive-bundle\winfsp\winfsp-1.4.19049.msi /qn ADDLOCAL=ALL
   - ps: Restart-Computer -Force 
   - ps: Start-Sleep -s 10
   - ps: Write-host "Reboot complete." 
+  # - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
   # - C:\Python37\python -m pip install --upgrade paramiko pytest pyyaml psutil
 build:
   project: src\golddrive.sln

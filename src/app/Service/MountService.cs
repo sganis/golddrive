@@ -91,8 +91,8 @@ namespace golddrive
                         d.Args = data["Args"].ToString();
                     if (data.ContainsKey("Label"))
                         d.Label = data["Label"].ToString();
-                    if (data.ContainsKey("Mountpoint"))
-                        d.MountPoint = data["Mountpoint"].ToString();
+                    if (data.ContainsKey("MountPoint"))
+                        d.MountPoint = data["MountPoint"].ToString();
                     if (data.ContainsKey("Hosts"))
                         d.Hosts = JsonConvert.DeserializeObject<List<string>>(data["Hosts"].ToString());
                     drives.Add(d);
@@ -111,14 +111,15 @@ namespace golddrive
             {
                 string filename = LocalAppData + "\\config.json";
                 Settings settings = new Settings();
-                settings.Args = "some args";
-                settings.Drives = new Dictionary<string, Drive>();
-                foreach(var d in drives)
-                    settings.Drives[d.Name] = d;
+                settings.Args = "";
+                settings.AddDrives(drives);
                 
                 using (var file = File.CreateText(filename))
                 {
-                    var json = JsonConvert.SerializeObject(settings, Newtonsoft.Json.Formatting.Indented);
+                    var json = JsonConvert.SerializeObject(
+                        settings, 
+                        Newtonsoft.Json.Formatting.Indented,
+                        new JsonSerializerSettings { NullValueHandling=NullValueHandling.Ignore});
                     file.Write(json);
                 }
             }
@@ -352,11 +353,11 @@ namespace golddrive
                         if (d.IsGoldDrive == true)
                         {
                             d.VolumeLabel = GetVolumeName(d.Letter);
-                            if (!String.IsNullOrEmpty(d.VolumeLabel) && d.VolumeLabel.Contains("@"))
-                            {
-                                d.User = d.VolumeLabel.Split('@')[0];
-                                d.Host = d.VolumeLabel.Split('@')[1];
-                            }
+                            //if (!String.IsNullOrEmpty(d.VolumeLabel) && d.VolumeLabel.Contains("@"))
+                            //{
+                            //    d.User = d.VolumeLabel.Split('@')[0];
+                            //    d.Host = d.VolumeLabel.Split('@')[1];
+                            //}
                             d.MountPoint = match.Groups[3].Value.Replace(@"\\golddrive\", "");
                             d.Label = GetDriveLabel(d);
                         }
@@ -373,11 +374,24 @@ namespace golddrive
 
         public List<Drive> GetGoldDrives()
         {
-            List<Drive> drives = GetUsedDrives().Where(x => x.IsGoldDrive == true).ToList();
-            List<Drive> savedDrives = LoadSettingsDrives();
-            foreach (Drive d in savedDrives)
-                if (drives.Find(x => x.Letter == d.Letter) == null)
-                    drives.Add(d);
+            List<Drive> usedDrives = GetUsedDrives().Where(x => x.IsGoldDrive == true).ToList();
+            List<Drive> drives = LoadSettingsDrives();
+            foreach (Drive u in usedDrives)
+            {
+                var d1 = drives.Find(x1 => x1.Letter == u.Letter);
+                if(d1 == null)
+                {
+                    drives.Add(u);
+                }
+                else
+                {
+                    var d2 = drives.Find(x2 => (x2.Letter == u.Letter && x2.MountPoint == u.MountPoint));
+                    if(d2 == null)
+                    {
+                        d1.MountPoint = u.MountPoint;                       
+                    }
+                }                
+            }
             return drives;
         }
 

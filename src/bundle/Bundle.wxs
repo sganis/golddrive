@@ -7,11 +7,15 @@
             <bal:WixStandardBootstrapperApplication
                 SuppressOptionsUI="yes"
                 ShowVersion="yes"
+                LogoFile="icon_64.png"
                 LicenseUrl=""
                 LogoSideFile="logoside.png"/>
         </BootstrapperApplicationRef>
+        <Variable Name="Feature" Value="ALL" />
 		<Chain>
-            <MsiPackage SourceFile="winfsp\winfsp-1.4.19049.msi" />
+            <MsiPackage SourceFile="winfsp\winfsp-1.4.19049.msi" >
+                <MsiProperty Name="ADDLOCAL" Value="[Feature]" />
+            </MsiPackage>
             <MsiPackage SourceFile="$(var.msi.TargetPath)" />            
         </Chain>
 	</Bundle>

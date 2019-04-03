@@ -101,7 +101,12 @@
             <Component Id="C.MaterialDesignThemes.Wpf.dll">
                 <File Name="MaterialDesignThemes.Wpf.dll" KeyPath="yes" />
             </Component>            
-            <Component Id="C.NLog.dll"><File Name="NLog.dll" KeyPath="yes" /></Component>            
+            <Component Id="C.Newtonsoft.Json.dll">
+                <File Name="Newtonsoft.Json.dll" KeyPath="yes" />
+            </Component>
+            <Component Id="C.NLog.dll">
+                <File Name="NLog.dll" KeyPath="yes" />
+            </Component>
             <Component Id="C.NLog.config"><File Name="NLog.config" KeyPath="yes" /></Component>            
             <Component Id="C.Renci.SshNet.dll"><File Name="Renci.SshNet.dll" KeyPath="yes" /></Component>            
             <Component Id="C.System.Windows.Interactivity.dll"><File Name="System.Windows.Interactivity.dll" KeyPath="yes" /></Component>            
@@ -127,6 +132,7 @@
             <ComponentRef Id="C.MahApps.Metro.dll" />
             <ComponentRef Id="C.MaterialDesignColors.dll" />
             <ComponentRef Id="C.MaterialDesignThemes.Wpf.dll" />
+            <ComponentRef Id="C.Newtonsoft.Json.dll" />
             <ComponentRef Id="C.NLog.dll" />
             <ComponentRef Id="C.NLog.config" />
             <ComponentRef Id="C.Renci.SshNet.dll" />

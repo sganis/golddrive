@@ -311,6 +311,11 @@ namespace golddrive
         {
             if (Drives.Count == 0 || string.IsNullOrEmpty(SelectedDrive.Host))
             {
+                if (SelectedDrive != null)
+                {
+                    FreeDrives.Add(SelectedDrive);
+                    SelectedFreeDrive = SelectedDrive;
+                }
                 CurrentPage = Page.Host;
                 return;
             }
@@ -413,6 +418,7 @@ namespace golddrive
             else
             {
                 CurrentPage = Page.Main;
+                CheckDriveStatusAsync();
             }
         }
 

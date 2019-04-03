@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System.Collections.Generic;
+using System;
 
 namespace golddrive
 {
@@ -15,5 +16,14 @@ namespace golddrive
         }
 
         public Dictionary<string,Drive> Drives { get; set; }
+
+        public void AddDrives(List<Drive> drives)
+        {
+            Drives = new Dictionary<string, Drive>();
+            foreach (var d in drives)
+            {
+                Drives[d.Name] = d;
+            }
+        }
     }
 }

@@ -9,7 +9,7 @@ char *strndup(char *str, int chars)
 	buffer = (char *)malloc(chars + 1);
 	if (buffer) {
 		memcpy(buffer, str, chars);
-		buffer[chars+1] = 0;
+		buffer[chars] = 0;
 	}
 	return buffer;
 }
@@ -106,7 +106,12 @@ int load_json(fs_config * fs)
 	/* Loop over all keys of the root object */
 	for (i = 1; i < r; i++) {
 		/* only interested in drives key */
-		if (jsoneq(JSON_STRING, &t[i], fs->drive) == 0) {
+		if (jsoneq(JSON_STRING, &t[i], "Args") == 0) {
+			jsmntok_t *targs = &t[i+1];
+			char * args = strndup(JSON_STRING + targs->start, targs->end - targs->start);
+			fs->args = strdup(args);
+		}
+		else if (jsoneq(JSON_STRING, &t[i], fs->drive) == 0) {
 			// drives object
 			jsmntok_t *d = &t[i + 1];
 			int j;
@@ -119,65 +124,33 @@ int load_json(fs_config * fs)
 					if (v->type == JSMN_STRING) {
 						char * val = strndup(JSON_STRING + v->start, v->end - v->start);
 						//printf("%s : %s\n", key, val);
-						if (!fs->user && strcmp(key, "user") == 0)
-							fs->user = strdup(val);
-						else if (!fs->port && strcmp(key, "port") == 0)
-							fs->port = atoi(val);
-						else if (strcmp(key, "args") == 0)
-							fs->args = strdup(val);
+						//if (strcmp(key, "Args") == 0)
+						//	fs->args = strdup(val);
+						//else if (!fs->mountpoint && strcmp(key, "MountPoint") == 0)
+						//	fs->mountpoint = strdup(val);
 						free(val);
 						i++;
 					}
 					else if (v->type == JSMN_ARRAY) {
-						fs->hostcount = v->size;
-						fs->hostlist = malloc(v->size);
-						for (int u = 0; u < v->size; u++) {
-							jsmntok_t *h = &t[i+j+u+4];
-							int ssize = h->end - h->start;
-							//printf("  * %.*s\n", h->end - h->start, JSON_STRING + h->start); 
-							fs->hostlist[u] = strndup(JSON_STRING + h->start, ssize);
-							fs->hostlist[u][ssize] = '\0';
-							//printf("host %d: %s\n", u+1, fs->hostlist[u]);
-							
-						}
+						//fs->hostcount = v->size;
+						//fs->hostlist = malloc(v->size);
+						//for (int u = 0; u < v->size; u++) {
+						//	jsmntok_t *h = &t[i+j+u+4];
+						//	int ssize = h->end - h->start;
+						//	//printf("  * %.*s\n", h->end - h->start, JSON_STRING + h->start); 
+						//	fs->hostlist[u] = strndup(JSON_STRING + h->start, ssize);
+						//	fs->hostlist[u][ssize] = '\0';
+						//	//printf("host %d: %s\n", u+1, fs->hostlist[u]);
+						//	
+						//}
 						//i += t[i + 1].size + 1;
 
 						i = i + v->size + 1;
 					}
-					free(key);	
-					
+					free(key);						
 				}
-				
-				
-
 			}			
-		}
-		//if (jsoneq(JSON_STRING, &t[i], "hosts") == 0) {
-		//	int j;
-		//	if (t[i + 1].type != JSMN_ARRAY)
-		//		continue;
-		//	for (j = 0; j < t[i + 1].size; j++) {
-		//		jsmntok_t *g = &t[i + j + 2];
-		//		//json->hosts[j] = _strdup(JSON_STRING + g->start, g->end - g->start);
-		//	}
-		//	i += t[i + 1].size + 1;
-		//}
-		//else if (jsoneq(JSON_STRING, &t[i], "port") == 0) {
-		//	//json->port = strndup(JSON_STRING + t[i + 1].start, t[i + 1].end - t[i + 1].start);
-		//	i++;
-		//}
-		//else if (jsoneq(JSON_STRING, &t[i], "drive") == 0) {
-		//	//json->drive = strndup(JSON_STRING + t[i + 1].start, t[i + 1].end - t[i + 1].start);
-		//	i++;
-		//}
-		//else if (jsoneq(JSON_STRING, &t[i], "path") == 0) {
-		//	//json->path = strndup(JSON_STRING + t[i + 1].start, t[i + 1].end - t[i + 1].start);
-		//	i++;
-		//}
-		//else {
-		//	// ignore
-		//	//printf("Unexpected key: %.*s\n", t[i].end-t[i].start, JSON_STRING + t[i].start);
-		//}
+		}		
 	}
 	free(JSON_STRING);
 	//printf("Hosts:\n");
