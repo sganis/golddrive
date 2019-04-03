@@ -20,7 +20,7 @@
     Title="Golddrive"
     MaxWidth="700"
     MinWidth="300"
-    MinHeight="500"
+    MinHeight="600"
     Width="500"
     ResizeMode="CanResizeWithGrip"
     d:DesignWidth="503.2"

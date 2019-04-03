@@ -27,7 +27,7 @@
                 materialDesign:HintAssist.Hint="Drive"
                 materialDesign:HintAssist.FloatingScale="0.50"
                 Style="{StaticResource MaterialDesignFloatingHintComboBox}"
-                Margin="0,10,0,0"
+                Margin="0,10"
                 FontSize="24">
                 <i:Interaction.Triggers>
                     <i:EventTrigger
@@ -40,7 +40,7 @@
 
             <TextBlock
                 Text="{Binding SelectedDrive.MountPoint}"
-                Margin="0,10,0,0" />
+                Margin="0,10" />
 
             <StackPanel>
                 <Button

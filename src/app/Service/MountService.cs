@@ -47,7 +47,7 @@ namespace golddrive
             get
             {
                 if (localAppData == null)
-                    localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\Golddrive";
+                    localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\golddrive";
                 return localAppData;
             }
         }
@@ -62,59 +62,20 @@ namespace golddrive
         #region Serialization
         
 
-        public List<Drive> LoadSettingsDrives()
+        public Settings LoadSettings()
         {
-            string filename = LocalAppData + "\\config.json";
-            List<Drive> drives = new List<Drive>();
-
-            if (!File.Exists(filename))
-                return drives;
-            
-            try
-            {
-                string args = "";
-                var json = JsonConvert.DeserializeObject<Dictionary<string, object>>(File.ReadAllText(filename));
-                if (json.ContainsKey("Args"))
-                    args = json["Args"].ToString();
-                if (!json.ContainsKey("Drives"))
-                    return drives;                 
-                var _drives = JsonConvert.DeserializeObject<Dictionary<string, object>>(json["Drives"].ToString());
-                foreach (var _d in _drives.Keys)
-                {
-                    if (_d.Length < 2)
-                        continue;
-                    Drive d = new Drive();
-                    d.Letter = _d[0].ToString();
-                    d.Args = args;
-                    var data = JsonConvert.DeserializeObject<Dictionary<string, object>>(_drives[_d].ToString());
-                    if (data.ContainsKey("Args"))
-                        d.Args = data["Args"].ToString();
-                    if (data.ContainsKey("Label"))
-                        d.Label = data["Label"].ToString();
-                    if (data.ContainsKey("MountPoint"))
-                        d.MountPoint = data["MountPoint"].ToString();
-                    if (data.ContainsKey("Hosts"))
-                        d.Hosts = JsonConvert.DeserializeObject<List<string>>(data["Hosts"].ToString());
-                    drives.Add(d);
-               } 
-            }
-            catch(Exception ex)
-            {
-            }
-            
-            return drives;
+            Settings settings = new Settings();
+            settings.Filename = LocalAppData + "\\config.json";
+            settings.Load();
+            return settings;
         }
 
-        public void SaveSettingsDrives(List<Drive> drives)
+        public void SaveSettingsDrives(Settings settings)
         {
             try
             {
-                string filename = LocalAppData + "\\config.json";
-                Settings settings = new Settings();
-                settings.Args = "";
-                settings.AddDrives(drives);
-                
-                using (var file = File.CreateText(filename))
+                settings.Filename = LocalAppData + "\\config.json";
+                using (var file = File.CreateText(settings.Filename))
                 {
                     var json = JsonConvert.SerializeObject(
                         settings, 
@@ -372,27 +333,29 @@ namespace golddrive
             return drives;
         }
 
-        public List<Drive> GetGoldDrives()
+        public List<Drive> GetGoldDrives(List<Drive> settingsDrives)
         {
             List<Drive> usedDrives = GetUsedDrives().Where(x => x.IsGoldDrive == true).ToList();
-            List<Drive> drives = LoadSettingsDrives();
+            //Settings settings = LoadSettings();
+            
+            //List<Drive> drives = settings.Drives.Values.ToList();
             foreach (Drive u in usedDrives)
             {
-                var d1 = drives.Find(x1 => x1.Letter == u.Letter);
+                var d1 = settingsDrives.Find(x1 => x1.Letter == u.Letter);
                 if(d1 == null)
                 {
-                    drives.Add(u);
+                    settingsDrives.Add(u);
                 }
                 else
                 {
-                    var d2 = drives.Find(x2 => (x2.Letter == u.Letter && x2.MountPoint == u.MountPoint));
+                    var d2 = settingsDrives.Find(x2 => (x2.Letter == u.Letter && x2.MountPoint == u.MountPoint));
                     if(d2 == null)
                     {
                         d1.MountPoint = u.MountPoint;                       
                     }
                 }                
             }
-            return drives;
+            return settingsDrives;
         }
 
         public string GetVolumeName(string letter)

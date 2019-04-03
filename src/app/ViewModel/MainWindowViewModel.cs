@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -35,6 +36,13 @@ namespace golddrive
             set { _currentPage = value; NotifyPropertyChanged(); }
         }
 
+        private string _globalArgs;
+
+        public string GlobalArgs
+        {
+            get { return _globalArgs; }
+            set { _globalArgs = value; NotifyPropertyChanged(); }
+        }
 
         private ObservableCollection<Drive> _drives;
         public ObservableCollection<Drive> Drives
@@ -134,6 +142,8 @@ namespace golddrive
 
         public bool IsDriveSelected { get { return SelectedDrive != null; } }
 
+        
+
         #endregion
 
         #region Constructor
@@ -211,7 +221,9 @@ namespace golddrive
             List<Drive> freeDrives = new List<Drive>();
             await Task.Run(() =>
             {
-                drives = _mountService.GetGoldDrives();
+                Settings settings = _mountService.LoadSettings();
+                GlobalArgs = settings.Args;
+                drives = _mountService.GetGoldDrives(settings.Drives.Values.ToList());
                 freeDrives = _mountService.GetFreeDrives();
             });
             Drives = new ObservableCollection<Drive>(drives);
@@ -405,7 +417,7 @@ namespace golddrive
         }
         
         private void OnSettingsSave(object obj)
-        {
+        {            
             if (IsDriveNew)
             {
                 Drives.Add(SelectedFreeDrive);
@@ -419,6 +431,7 @@ namespace golddrive
             {
                 CurrentPage = Page.Main;
                 CheckDriveStatusAsync();
+                GlobalArgs.ToString();
             }
         }
 
@@ -482,8 +495,15 @@ namespace golddrive
         }
         private void Closing(object obj)
         {
-            if(Drives != null)
-                _mountService.SaveSettingsDrives(Drives.ToList());
+            if (Drives != null)
+            {
+                Settings settings = new Settings
+                {
+                    Args = GlobalArgs
+                };
+                settings.AddDrives(Drives.ToList());
+                _mountService.SaveSettingsDrives(settings);
+            }
         }
 
         private ICommand _githubCommand;

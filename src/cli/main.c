@@ -88,10 +88,10 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 	case KEY_HELP:
 		fprintf(stderr,
 			"\n"
-			"Usage: golddrive drive [npath] [options]\n"
+			"Usage: golddrive drive [remote] [options]\n"
 			"\n"
-			"drive: letter and colon (ex Z:)\n"
-			"npath: network path as \\\\golddrive\\[[locuser=]user@]host[!port][\\path]\n"
+			"drive : letter and colon (ex Z:)\n"
+			"remote: remote network path as \\\\golddrive\\[[locuser=]user@]host[!port][\\path]\n"
 			"Options:\n"
 			"    --help                     print this help\n"
 			"    --version                  print version\n"
@@ -234,7 +234,7 @@ static int load_config_file(fs_config* fs)
 	//return rc;
 	char* appdata = getenv("LOCALAPPDATA");
 	char jsonfile[PATH_MAX];
-	sprintf_s(jsonfile, MAX_PATH, "%s\\Golddrive\\config.json", appdata);
+	sprintf_s(jsonfile, MAX_PATH, "%s\\golddrive\\config.json", appdata);
 	fs->json = strdup(jsonfile);
 	rc = load_json(fs);
 	return rc;
@@ -245,7 +245,7 @@ static void init_logging()
 {
 	char* appdata = getenv("LOCALAPPDATA");
 	char logfolder[PATH_MAX];
-	sprintf_s(logfolder, MAX_PATH, "%s\\Golddrive", appdata);
+	sprintf_s(logfolder, MAX_PATH, "%s\\golddrive", appdata);
 	
 	if (!directory_exists(logfolder)) 
 		_mkdir(logfolder);
