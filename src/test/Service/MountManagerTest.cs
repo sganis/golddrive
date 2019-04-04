@@ -13,7 +13,7 @@ namespace golddrive.Tests
         static string _host = Environment.GetEnvironmentVariable("GOLDDRIVE_HOST");
         Drive _drive = new Drive
             {
-                Letter = "Q",
+                Letter = "X",
                 MountPoint = _host,
                 Label = "Golddrive"
             };
