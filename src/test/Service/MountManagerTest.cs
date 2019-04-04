@@ -28,7 +28,7 @@ namespace golddrive.Tests
         [TestCleanup]
         public void Teardown()
         {
-
+            Unmount();
         }
         public void Mount()
         {
