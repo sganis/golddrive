@@ -19,11 +19,7 @@ install:
 build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
 test_script:
-  - cmd: set GOLDDRIVE_HOST=%my_ip%
-  - cmd: set GOLDDRIVE_PASS=%my_variable%
-  - cmd: set GOLDDRIVE_USER=support
-  - cmd: set GOLDDRIVE_PORT=%my_port%
-  - vstest.console /logger:Appveyor src\test\bin\Release\golddrive-test.dll
+  - test\test.bat
   # categories:
   #   only:
   #     - Appveyor
