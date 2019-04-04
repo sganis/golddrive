@@ -20,17 +20,18 @@ install:
   # - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
   # - C:\Python37\python -m pip install --upgrade paramiko pytest pyyaml psutil
 build_script:
-  - set GOLDDRIVE_HOST=%my_ip%
-  - set GOLDDRIVE_PASS=%my_variable%
-  - set GOLDDRIVE_USER=support
-  - set GOLDDRIVE_PORT=%my_port%
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 before_test:
   # - cd docker
   # - docker build -t ssh-server .
   # - docker run --rm -d -p 2222:22 -t ssh-server
 
-test:
+test_script:
+  - set GOLDDRIVE_HOST=%my_ip%
+  - set GOLDDRIVE_PASS=%my_variable%
+  - set GOLDDRIVE_USER=support
+  - set GOLDDRIVE_PORT=%my_port%
+  - vstest.console /logger:Appveyor src\test\bin\Release\golddrive-test.dll
   # only categories to test
   # categories:
   #   only:
