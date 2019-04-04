@@ -6,10 +6,6 @@ platform: x64
 configuration: Release
 environment:
   # APPVEYOR_SSH_KEY: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDGlxioqCbDubblzttEHvEMJ5rspJZ7JpcMSeHNGEui17hxcIZKfgS5xpAG3W1gLRo191SZS2NkNZwW5P39SWF/kBvXyVPiCu9E6q5FuwtYZXr0SKUtca8/V5s6UGeKMATDCNl6iuBTa4R7xa6ubEho8UykmY8dHKzuqas4RXSL31QUD2AFbmzGVV0wHxOobrTEGeLzILIfhC9QxjeAo+uD+KWpTN46ilcivvpMtG4rnQ7C8NgdZyzVT0f+RIYa6HCRTL2O+vVvG0AnHVkatY2Cpgtv2K7thQCINjoM8JlDicDtaOOCxkiB++KbbJJt00db9lpxv9Oumdke5p2GzStH
-  GOLDDRIVE_HOST: 95.219.148.103
-  GOLDDRIVE_PASS: support
-  GOLDDRIVE_USER: support
-  GOLDDRIVE_PORT: 2222
 install:
   - start /wait msiexec /i src\bundle\winfsp\winfsp-1.4.19049.msi /qn ADDLOCAL=ALL
   - ps: Restart-Computer -Force 
@@ -18,6 +14,10 @@ install:
   # - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
   # - C:\Python37\python -m pip install --upgrade paramiko pytest pyyaml psutil
 build:
+  - set GOLDDRIVE_HOST=95.219.148.103
+  - set GOLDDRIVE_PASS=support
+  - set GOLDDRIVE_USER=support
+  - set GOLDDRIVE_PORT=2222
   project: src\golddrive.sln
   verbosity: minimal
 before_test:
