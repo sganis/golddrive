@@ -10,7 +10,7 @@ namespace golddrive.Tests
     public class MountManagerTest
     {
         MountService _mountService = new MountService();
-        static string _host = System.Environment.GetEnvironmentVariable("%GOLDDRIVE_HOST%");
+        static string _host = Environment.GetEnvironmentVariable("GOLDDRIVE_HOST");
         Drive _drive = new Drive
             {
                 Letter = "X",
