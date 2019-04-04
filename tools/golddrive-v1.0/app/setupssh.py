@@ -267,9 +267,9 @@ if __name__ == '__main__':
 	import getpass
 	assert (len(sys.argv) > 1 and
 			'@' in sys.argv[1]) # usage: prog user@host
-	os.environ['PATH'] = f'{DIR}\\..\\client\\sshfs\\bin;' + os.environ['PATH']
+	os.environ['PATH'] = f'{DIR}\\..\\..\\openssh;' + os.environ['PATH']
 	userhost = sys.argv[1]
-	password = getpass.getpass('Linux password: ')
+	password = os.environ['GOLDDRIVE_PASS']
 	port=22
 	if ':' in userhost:
 		userhost, port = userhost.split(':')                             
