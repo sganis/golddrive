@@ -20,6 +20,7 @@ install:
 build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
   - start /wait msiexec /i src\build\Release\golddrive-*.msi /qn
+test: off
 # test_script:
 #   - set GOLDDRIVE_HOST=%my_ip%
 #   - set GOLDDRIVE_PASS=%my_variable%
