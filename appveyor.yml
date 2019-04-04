@@ -18,7 +18,7 @@ install:
   # - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
 build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
-  - start /wait msiexec /i src\build\Release\golddrive-2.0.094.msi
+  - start /wait msiexec /i src\build\Release\golddrive-*.msi /qn
 test_script:
   - set GOLDDRIVE_HOST=%my_ip%
   - set GOLDDRIVE_PASS=%my_variable%
