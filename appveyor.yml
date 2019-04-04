@@ -20,8 +20,7 @@ build:
   - set GOLDDRIVE_PASS=%my_variable%
   - set GOLDDRIVE_USER=support
   - set GOLDDRIVE_PORT=2222
-  project: src\golddrive.sln
-  verbosity: minimal
+  - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 before_test:
   # - cd docker
   # - docker build -t ssh-server .
