@@ -61,25 +61,32 @@ namespace golddrive.Tests
         [TestMethod, TestCategory("Appveyor")]
         public void LoadSaveSettingsDrivesTest()
         {
-            const string V = "\\settings.xml";
-            string settings_path = _mountService.LocalAppData + V;
+            //const string V = "\\settings.xml";
+            //string settings_path = _mountService.LocalAppData + V;
 
-            if (File.Exists(settings_path))
-            {
-                File.Delete(settings_path);
-            }
-
+            //if (File.Exists(settings_path))
+            //{
+            //    File.Delete(settings_path);
+            //}
+            var src = _mountService.LocalAppData + "\\config.json";
+            var dst = src + ".bak";
+            if (File.Exists(dst))
+                File.Delete(dst);
+            if (File.Exists(src))
+                File.Move(src, dst);
+            var settings = _mountService.LoadSettings();
+            Assert.AreEqual(settings.Drives.Count, 0);
             var drives = new List<Drive>();
             drives.Add(_drive);
-            var saved_drives = _mountService.LoadSettingsDrives();
-            Assert.AreEqual(saved_drives.Count, 0);
-            _mountService.SaveSettingsDrives(drives);
-            saved_drives = _mountService.LoadSettingsDrives();
-            Assert.AreEqual(saved_drives.Count, 1);
-            var d = saved_drives[0];
+            settings.AddDrives(drives);
+            _mountService.SaveSettings(settings);
+            settings = _mountService.LoadSettings();
+            Assert.AreEqual(settings.Drives.Count, 1);
+            var d = settings.Drives["X:"];
             Assert.AreEqual(d.Name, _drive.Name);
             Assert.AreEqual(d.MountPoint, _drive.MountPoint);
-            File.Delete(settings_path);
+            File.Delete(src);
+            File.Move(dst, src);
         }
 
 

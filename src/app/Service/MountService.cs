@@ -70,7 +70,7 @@ namespace golddrive
             return settings;
         }
 
-        public void SaveSettingsDrives(Settings settings)
+        public void SaveSettings(Settings settings)
         {
             try
             {
@@ -648,7 +648,7 @@ namespace golddrive
                 string dotssh = $@"{drive.UserProfile}\.ssh";
                 if (!Directory.Exists(dotssh))
                     Directory.CreateDirectory(dotssh);
-                ReturnBox r = RunLocal($@"{AppPath}\ssh-keygen.exe -m PEM -t rsa -N """" -f {drive.AppKey}");
+                ReturnBox r = RunLocal($@"""{AppPath}\ssh-keygen.exe""", $@"-m PEM -t rsa -N """" -f ""{drive.AppKey}""");
                 if (File.Exists(drive.AppPubKey))
                     pubkey = File.ReadAllText(drive.AppPubKey).Trim();
             }

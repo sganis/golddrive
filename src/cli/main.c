@@ -328,6 +328,7 @@ int main(int argc, char *argv[])
 //	}
 
 	// show parameters
+	gdlog("Golddrive arguments:\n");
 	gdlog("drive   = %s\n", g_fs.drive);
 	gdlog("remote  = %s\n", g_fs.remote);
 	gdlog("user    = %s\n", g_fs.user);
@@ -355,14 +356,14 @@ int main(int argc, char *argv[])
 	if (rc == 0) {
 		out[strcspn(out, "\r\n")] = 0;
 		g_fs.remote_uid = atoi(out);
-		printf("uid     = %d\n", g_fs.remote_uid);
+		gdlog("uid     = %d\n", g_fs.remote_uid);
 	}
 	rc = run_command("echo $HOME\n", out, err);
 	if (rc == 0) {
 		out[strcspn(out, "\r\n")] = 0;
 		g_fs.home = malloc(sizeof out);
 		strcpy_s(g_fs.home, sizeof out, out);
-		printf("home    = %s\n", g_fs.home);
+		gdlog("home    = %s\n", g_fs.home);
 	}
 
 	// number of threads
@@ -374,23 +375,27 @@ int main(int argc, char *argv[])
 		sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=%s", g_fs.remote);
 	else
 		sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=/golddrive/%c", g_fs.letter);
-	gdlog("VolumePrefix=%s\n", g_fs.remote);
+	gdlog("Prefix  = %s\n", g_fs.remote);
+	gdlog("WinFsp arguments:\n");
 	fuse_opt_add_arg(&args, volprefix);
 	char volname[256];
 	sprintf_s(volname, sizeof(volname), "-ovolname=%s@%s", g_fs.user, g_fs.host);
 	fuse_opt_add_arg(&args, volname);
-	fuse_opt_add_arg(&args, "-oFileSystemName=Golddrive,rellinks,uid=-1,gid=-1");
+	fuse_opt_add_arg(&args, "-oFileSystemName=Golddrive");
+	fuse_opt_add_arg(&args, "-orellinks");
+	fuse_opt_add_arg(&args, "-ouid=-1,gid=-1");
 
 	// add json args
-	fuse_opt_add_arg(&args, g_fs.args);
-	fuse_opt_parse(&args, &g_fs, fs_opts, fs_opt_proc);
-	
+	if (strcmp(g_fs.args, "") != 0) {
+		fuse_opt_add_arg(&args, g_fs.args);
+		fuse_opt_parse(&args, &g_fs, fs_opts, fs_opt_proc);
+	}
 	// drive must be the last argument for winfsp
 	fuse_opt_add_arg(&args, g_fs.drive);
 
 	// debug arguments
 	for (int i = 1; i < args.argc; i++)
-		printf("arg %d   = %s\n", i, args.argv[i]);
+		gdlog("arg %d   = %s\n", i, args.argv[i]);
 
 	rc = fuse_main(args.argc, args.argv, &fs_ops, NULL);
 	

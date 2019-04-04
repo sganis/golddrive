@@ -430,8 +430,13 @@ namespace golddrive
             else
             {
                 CurrentPage = Page.Main;
+                Task.Run(() => {
+                    Settings settings = _mountService.LoadSettings();
+                    settings.Args = GlobalArgs;
+                    settings.AddDrives(Drives.ToList());
+                    _mountService.SaveSettings(settings);
+                });
                 CheckDriveStatusAsync();
-                GlobalArgs.ToString();
             }
         }
 
@@ -502,7 +507,7 @@ namespace golddrive
                     Args = GlobalArgs
                 };
                 settings.AddDrives(Drives.ToList());
-                _mountService.SaveSettingsDrives(settings);
+                _mountService.SaveSettings(settings);
             }
         }
 
@@ -527,7 +532,16 @@ namespace golddrive
                         url => System.Diagnostics.Process.Start("cmd.exe")));
             }
         }
-
+        private ICommand _openLogsFolderCommand;
+        public ICommand OpenLogsFolderCommand
+        {
+            get
+            {
+                return _openLogsFolderCommand ??
+                    (_openLogsFolderCommand = new RelayCommand(
+                        url => System.Diagnostics.Process.Start("explorer.exe", _mountService.LocalAppData)));
+            }
+        }
         #endregion
 
     }

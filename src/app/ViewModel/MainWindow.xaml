@@ -85,6 +85,9 @@
                             Content="Open Terminal"
                             Command="{Binding RunTerminalCommand}" />
                         <Button
+                            Content="Open Logs Folder"
+                            Command="{Binding OpenLogsFolderCommand}" />
+                        <Button
                             Content="About"
                             Command="{Binding ShowPageCommand}"
                             CommandParameter="{x:Static local:Page.About}" />
