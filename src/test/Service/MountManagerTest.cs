@@ -28,7 +28,7 @@ namespace golddrive.Tests
         [TestCleanup]
         public void Teardown()
         {
-            Unmount();
+            _mountService.Unmount(_drive);
         }
         public void Mount()
         {
@@ -69,6 +69,8 @@ namespace golddrive.Tests
             //{
             //    File.Delete(settings_path);
             //}
+            if (!Directory.Exists(_mountService.LocalAppData))
+                Directory.CreateDirectory(_mountService.LocalAppData);
             var src = _mountService.LocalAppData + "\\config.json";
             var dst = src + ".bak";
             if (File.Exists(dst))
@@ -87,7 +89,8 @@ namespace golddrive.Tests
             Assert.AreEqual(d.Name, _drive.Name);
             Assert.AreEqual(d.MountPoint, _drive.MountPoint);
             File.Delete(src);
-            File.Move(dst, src);
+            if(File.Exists(dst))
+                File.Move(dst, src);
         }
 
 
