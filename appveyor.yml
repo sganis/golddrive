@@ -11,7 +11,7 @@ environment:
   GOLDDRIVE_USER: support
   GOLDDRIVE_PORT: 2222
 install:
-  - start /wait msiexec /i src\golddrive-bundle\winfsp\winfsp-1.4.19049.msi /qn ADDLOCAL=ALL
+  - start /wait msiexec /i src\bundle\winfsp\winfsp-1.4.19049.msi /qn ADDLOCAL=ALL
   - ps: Restart-Computer -Force 
   - ps: Start-Sleep -s 10
   - ps: Write-host "Reboot complete." 
