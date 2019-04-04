@@ -10,7 +10,7 @@ namespace golddrive.Tests
     public class MountManagerTest
     {
         MountService _mountService = new MountService();
-        static string _host = System.Environment.ExpandEnvironmentVariables("%GOLDDRIVE_HOST%");
+        static string _host = System.Environment.GetEnvironmentVariable("%GOLDDRIVE_HOST%");
         Drive _drive = new Drive
             {
                 Letter = "X",
@@ -21,7 +21,8 @@ namespace golddrive.Tests
         [TestInitialize]
         public void Init()
         {
-            Assert.IsTrue(_host!=null, "set GOLDDRIVE_HOST env var");
+            _mountService.RunLocal("subst /d W:");
+            Assert.IsFalse(string.IsNullOrEmpty(_host), "set GOLDDRIVE_HOST env var");
         }
 
         [TestCleanup]

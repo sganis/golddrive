@@ -12,7 +12,7 @@
         <StackPanel
             HorizontalAlignment="Center">
             <Image
-                Source="/golddrive-ui;component/golddrive.png"
+                Source="/golddrive-app;component/golddrive.png"
                 Width="100" />
             <TextBlock
                 Text="Golddrive"

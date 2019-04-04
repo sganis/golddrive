@@ -39,7 +39,8 @@
             <Component Id="C.golddrive.pdb">
                 <File Name="golddrive.pdb" KeyPath="yes" />
             </Component>
-            <Component Id="C.golddrive.reg" Guid="{3EF97966-E49E-4A0B-B68D-5EB2BDA61C21}">
+          
+          <Component Id="C.golddrive.reg" Guid="{3EF97966-E49E-4A0B-B68D-5EB2BDA61C21}">
                 <RegistryKey
                     Root="HKLM"
                     Key="[P.LauncherRegistryKey]">
@@ -122,7 +123,7 @@
         <ComponentGroup Id="C.Golddrive_cli">
             <ComponentRef Id="C.golddrive.exe" />
             <ComponentRef Id="C.golddrive.pdb" />
-            <ComponentRef Id="C.golddrive.reg" />
+            <ComponentRef Id="C.golddrive.reg" />          
         </ComponentGroup>
   
         <ComponentGroup Id="C.Golddrive_ui">

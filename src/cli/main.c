@@ -386,7 +386,7 @@ int main(int argc, char *argv[])
 	fuse_opt_add_arg(&args, "-ouid=-1,gid=-1");
 
 	// add json args
-	if (strcmp(g_fs.args, "") != 0) {
+	if (g_fs.args && strcmp(g_fs.args, "") != 0) {
 		fuse_opt_add_arg(&args, g_fs.args);
 		fuse_opt_parse(&args, &g_fs, fs_opts, fs_opt_proc);
 	}
