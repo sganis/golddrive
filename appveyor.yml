@@ -11,6 +11,7 @@ environment:
   my_pass:
     secure: 25BPcFmVEe3pnXeQiOkyzw==
 install:
+  - net use
   - start /wait msiexec /i src\bundle\winfsp\winfsp-1.4.19049.msi /qn ADDLOCAL=ALL
   - ps: Restart-Computer -Force 
   - ps: Start-Sleep -s 10
@@ -25,5 +26,4 @@ test_script:
   - set GOLDDRIVE_USER=support
   - set GOLDDRIVE_PORT=%my_port%
   - vstest.console /logger:Appveyor src\test\bin\Release\golddrive-test.dll  # categories:
-  #   only:
-  #     - Appveyor
+
