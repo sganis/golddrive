@@ -20,7 +20,7 @@ install:
   # - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
   # - C:\Python37\python -m pip install --upgrade paramiko pytest pyyaml psutil
 build_script:
-  - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
 before_test:
   # - cd docker
   # - docker build -t ssh-server .
