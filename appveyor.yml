@@ -15,7 +15,7 @@ install:
   - ps: Write-host "Reboot complete." 
   # - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
   # - C:\Python37\python -m pip install --upgrade paramiko pytest pyyaml psutil
-build:
+build_script:
   - set GOLDDRIVE_HOST=95.219.148.103
   - set GOLDDRIVE_PASS=%my_variable%
   - set GOLDDRIVE_USER=support
