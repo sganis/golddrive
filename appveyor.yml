@@ -21,6 +21,7 @@ build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
   - start /wait msiexec /i src\build\Release\golddrive-*.msi /qn
   - C:\Python37\python -m pip install --upgrade paramiko pytest pyyaml psutil
+  - echo testing host: %GOLDDRIVE_HOST%
   - C:\Python37\python tools\setupssh.py support@%GOLDDRIVE_HOST%:%GOLDDRIVE_PORT%
 test: off
 # test_script:

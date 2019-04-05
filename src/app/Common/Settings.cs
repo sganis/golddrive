@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿#pragma warning disable CS0168
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System;
 using System.IO;
@@ -43,9 +44,11 @@ namespace golddrive
                 {
                     if (_d.Length < 2)
                         continue;
-                    Drive d = new Drive();
-                    d.Letter = _d[0].ToString();
-                    d.Args = args;
+                    Drive d = new Drive
+                    {
+                        Letter = _d[0].ToString(),
+                        Args = args
+                    };
                     var data = JsonConvert.DeserializeObject<Dictionary<string, object>>(_drives[_d].ToString());
                     if (data.ContainsKey("Args"))
                         d.Args = data["Args"].ToString();

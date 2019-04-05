@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using golddrive;
 using System.Collections.Generic;
 using System.IO;
@@ -79,8 +80,7 @@ namespace golddrive.Tests
                 File.Move(src, dst);
             var settings = _mountService.LoadSettings();
             Assert.AreEqual(settings.Drives.Count, 0);
-            var drives = new List<Drive>();
-            drives.Add(_drive);
+            var drives = new List<Drive> { _drive };
             settings.AddDrives(drives);
             _mountService.SaveSettings(settings);
             settings = _mountService.LoadSettings();

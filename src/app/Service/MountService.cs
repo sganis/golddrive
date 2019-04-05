@@ -1,4 +1,5 @@
-﻿using System;
+﻿#pragma warning disable CS0168
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -64,8 +65,10 @@ namespace golddrive
 
         public Settings LoadSettings()
         {
-            Settings settings = new Settings();
-            settings.Filename = LocalAppData + "\\config.json";
+            Settings settings = new Settings
+            {
+                Filename = LocalAppData + "\\config.json"
+            };
             settings.Load();
             return settings;
         }
@@ -203,14 +206,16 @@ namespace golddrive
             Logger.Log($"Running local command: {cmd} {args}");
             ReturnBox r = new ReturnBox();
             Process process = new Process();
-            ProcessStartInfo startInfo = new ProcessStartInfo();
-            startInfo.WindowStyle = ProcessWindowStyle.Hidden;
-            startInfo.CreateNoWindow = true;
-            startInfo.RedirectStandardError = true;
-            startInfo.RedirectStandardOutput = true;
-            startInfo.UseShellExecute = false;
-            startInfo.FileName = cmd;
-            startInfo.Arguments = args;
+            ProcessStartInfo startInfo = new ProcessStartInfo
+            {
+                WindowStyle = ProcessWindowStyle.Hidden,
+                CreateNoWindow = true,
+                RedirectStandardError = true,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                FileName = cmd,
+                Arguments = args
+            };
             process.StartInfo = startInfo;
             process.Start();
             process.WaitForExit();
@@ -307,10 +312,12 @@ namespace golddrive
                 {
                     try
                     {
-                        Drive d = new Drive();
-                        //d.NetUseStatus = match.Groups[1].Value;
-                        d.Letter = match.Groups[2].Value[0].ToString();
-                        d.IsGoldDrive = match.Groups[3].Value.Contains(@"\\golddrive\");
+                        Drive d = new Drive
+                        {
+                            //d.NetUseStatus = match.Groups[1].Value;
+                            Letter = match.Groups[2].Value[0].ToString(),
+                            IsGoldDrive = match.Groups[3].Value.Contains(@"\\golddrive\")
+                        };
                         if (d.IsGoldDrive == true)
                         {
                             d.VolumeLabel = GetVolumeName(d.Letter);
@@ -379,8 +386,10 @@ namespace golddrive
 
         public ReturnBox CheckDriveStatus(Drive drive)
         {
-            ReturnBox r = new ReturnBox();
-            r.MountStatus = MountStatus.OK;
+            ReturnBox r = new ReturnBox
+            {
+                MountStatus = MountStatus.OK
+            };
 
             if (drive == null ||
                 (drive.Letter.ToCharArray()[0] < 'G' || drive.Letter.ToCharArray()[0] > 'Z'))
@@ -488,8 +497,10 @@ namespace golddrive
                 letters.Remove(drives[i].Name[0]);
             foreach (char c in letters)
             {
-                Drive d = new Drive();
-                d.Letter = c.ToString();
+                Drive d = new Drive
+                {
+                    Letter = c.ToString()
+                };
                 freeDrives.Add(d);
             }
             freeDrives.Reverse();

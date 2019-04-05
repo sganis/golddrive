@@ -164,7 +164,7 @@ def main(userhost, password, port=22):
 	'''
 	Setup ssh keys, return ReturnBox
 	'''
-	logger.info(f'Setting up ssh keys for {userhost}...')
+	logger.info(f'Setting up ssh keys for {userhost} port {port}...')
 	rb = util.ReturnBox()
 
 	# app key
