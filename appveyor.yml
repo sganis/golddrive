@@ -11,16 +11,15 @@ environment:
   GOLDDRIVE_PASS:
     secure: 25BPcFmVEe3pnXeQiOkyzw==
 install:
-  - net use
   - start /wait msiexec /i src\bundle\winfsp\winfsp-1.4.19049.msi /qn ADDLOCAL=ALL
   - ps: Restart-Computer -Force 
-  - ps: Start-Sleep -s 10
+  - ps: Start-Sleep -s 1
   - ps: Write-host "Reboot complete." 
   # - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
 build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
   - start /wait msiexec /i src\build\Release\golddrive-*.msi /qn
-  - C:\Python37\python -m pip install paramiko
+  - C:\Python37\python -m pip install paramiko pyyaml psutil
   - echo "test host %GOLDDRIVE_HOST%"
   - C:\Python37\python tools\setupssh.py support@%GOLDDRIVE_HOST%:%GOLDDRIVE_PORT%
 test: off
