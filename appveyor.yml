@@ -21,12 +21,7 @@ build_script:
   - start /wait msiexec /i src\build\Release\golddrive-*.msi /qn
   - C:\Python37\python -m pip install paramiko pyyaml psutil
   - echo "test host %GOLDDRIVE_HOST%"
-  - C:\Python37\python tools\setupssh.py support@%GOLDDRIVE_HOST%:%GOLDDRIVE_PORT%
-test: off
-# test_script:
-#   - set GOLDDRIVE_HOST=%my_ip%
-#   - set GOLDDRIVE_PASS=%my_variable%
-#   - set GOLDDRIVE_USER=support
-#   - set GOLDDRIVE_PORT=%my_port%
+test:
 #   - vstest.console /logger:Appveyor src\test\bin\Release\golddrive-test.dll  # categories:
-
+  categories:
+    - Appveyor
