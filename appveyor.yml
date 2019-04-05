@@ -12,9 +12,9 @@ environment:
     secure: 25BPcFmVEe3pnXeQiOkyzw==
 install:
   - start /wait msiexec /i src\bundle\winfsp\winfsp-1.4.19049.msi /qn ADDLOCAL=ALL
+  - ps: Write-host "Rebooting..." 
   - ps: Restart-Computer -Force 
   - ps: Start-Sleep -s 1
-  - ps: Write-host "Reboot complete." 
   # - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
 build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
