@@ -11,7 +11,7 @@ environment:
   GOLDDRIVE_PASS:
     secure: 25BPcFmVEe3pnXeQiOkyzw==
 install:
-  - start /wait msiexec /i src\bundle\winfsp\winfsp-1.4.19049.msi /qn ADDLOCAL=ALL
+  - start /wait msiexec /i src\bundle\winfsp\winfsp-1.5.19090.msi /qn ADDLOCAL=ALL
   - ps: Write-host "Rebooting..." 
   - ps: Restart-Computer -Force 
   - ps: Start-Sleep -s 1
