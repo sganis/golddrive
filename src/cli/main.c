@@ -11,8 +11,6 @@
 #include <Shlwapi.h> /* PathRemoveFileSpecA */
 #pragma comment(lib, "shlwapi.lib")
 
-#define VERSION "1.0.9"
-
 /* global variables */
 size_t		g_sftp_calls;
 size_t		g_sftp_cached_calls;
@@ -73,6 +71,7 @@ static struct fuse_opt fs_opts[] = {
 
 static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *outargs)
 {
+	char exepath[MAX_PATH];
 	switch (key) {
 	case FUSE_OPT_KEY_NONOPT:
 		if (!g_fs.drive) {
@@ -119,7 +118,13 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 		exit(1);
 
 	case KEY_VERSION:
-		fprintf(stderr, "Golddrive v%s\nBuild date: %s\n", VERSION, __DATE__);
+		
+		GetModuleFileNameA(NULL, exepath, MAX_PATH);
+		//PathRemoveFileSpecA(appdir);
+		char* version = calloc(100, sizeof(char));
+		get_file_version(exepath, version);
+		fprintf(stderr, "Golddrive v%s\nBuild date: %s\n", version, __DATE__);
+		free(version);
 		fuse_opt_add_arg(outargs, "--version");
 		fuse_main(outargs->argc, outargs->argv, &fs_ops, NULL);
 		exit(0);
@@ -146,10 +151,9 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 
 static int parse_network_path(fs_config* fs)
 {
-	char *npath, *service, *locuser, *user, *host, *port, *p;
-		
-	/* translate backslash to forward slash */
+	char *npath, *locuser, *user, *host, *port, *p;
 	
+	/* translate backslash to forward slash */
 	for (p = fs->remote; *p; p++)
 		if ('\\' == *p)
 			*p = '/';
@@ -160,22 +164,32 @@ static int parse_network_path(fs_config* fs)
 	if (len > 2 && npath[0] == '/' && npath[1] == '/') {
 		memcpy(fs->remote, npath + 1, len - 1);
 		fs->remote[len - 1] = '\0';
+		len--;
 	}
+
+	if (strncmp(fs->remote, "/golddrive/", 11) != 0) {
+		gdlog("Invalid service name, only '\\\\golddrive' is supported: %s\n", fs->remote);
+		return -1;
+	}
+
+	char mountpoint[256];
+	memcpy(mountpoint, fs->remote + 11, len-11);
+	mountpoint[len-11] = '\0';
+	fs->mountpoint = strdup(mountpoint);
+	
+	
+	
 	/* get service name (\\golddrive\) */
 	p = npath;
 	while ('/' == *p)
 		p++;
-	service = p;
+	//service = p;
 	while (*p && '/' != *p)
 		p++;
 	if (*p)
 		*p++ = '\0';
 
-	if (strcmp(service, "golddrive") != 0) {
-		fprintf(stderr, "service name '%s' invalid, only 'golddrive' is supported\n", service);
-		free(npath);
-		return -1;
-	}
+	
 
 	/* parse instance name (syntax: [locuser=]user@host!port/path) */
 	locuser = 0;
@@ -331,6 +345,7 @@ int main(int argc, char *argv[])
 	gdlog("Golddrive arguments:\n");
 	gdlog("drive   = %s\n", g_fs.drive);
 	gdlog("remote  = %s\n", g_fs.remote);
+	gdlog("mountp  = %s\n", g_fs.mountpoint);
 	gdlog("user    = %s\n", g_fs.user);
 	gdlog("host    = %s\n", g_fs.host);
 	gdlog("port    = %d\n", g_fs.port);
@@ -379,7 +394,7 @@ int main(int argc, char *argv[])
 	gdlog("WinFsp arguments:\n");
 	fuse_opt_add_arg(&args, volprefix);
 	char volname[256];
-	sprintf_s(volname, sizeof(volname), "-ovolname=%s@%s", g_fs.user, g_fs.host);
+	sprintf_s(volname, sizeof(volname), "-ovolname=%s", g_fs.mountpoint);
 	fuse_opt_add_arg(&args, volname);
 	fuse_opt_add_arg(&args, "-oFileSystemName=Golddrive");
 	fuse_opt_add_arg(&args, "-orellinks");

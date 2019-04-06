@@ -16,12 +16,13 @@ namespace golddrive
     }
     public enum DriveStatus
     {
-        NOT_SUPPORTED,
+        FREE,
+        IN_USE,
         MOUNTPOINT_IN_USE,
-        LETTER_IN_USE,
         BROKEN,
         DISCONNECTED,
         CONNECTED,
+        NOT_SUPPORTED,
         UNKNOWN,
     }
     public enum MountStatus
@@ -29,7 +30,8 @@ namespace golddrive
         OK,
         BAD_DRIVE,
         BAD_HOST,
-        BAD_LOGIN,
+        BAD_KEY,
+        BAD_PASSWORD,
         BAD_SSH,
         BAD_WINFSP,
         UNKNOWN,

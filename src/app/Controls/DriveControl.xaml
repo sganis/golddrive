@@ -19,15 +19,17 @@
                 Height="Auto" />
         </Grid.RowDefinitions>
         <StackPanel
-            IsEnabled="{Binding IsWorking, Converter={local:NegateBoolConverter}}">
+            IsEnabled="{Binding IsWorking, Converter={local:NegateBoolConverter}}"
+            Visibility="{Binding HasDrives, Converter={local:BoolToVis}}"
+            Margin="50 0">
+            
             <ComboBox
-                ItemsSource="{Binding Drives}"
+                ItemsSource="{Binding GoldDrives}"
                 SelectedItem="{Binding SelectedDrive}"
                 DisplayMemberPath="ComboDisplay"
                 materialDesign:HintAssist.Hint="Drive"
                 materialDesign:HintAssist.FloatingScale="0.50"
                 Style="{StaticResource MaterialDesignFloatingHintComboBox}"
-                Margin="0,10"
                 FontSize="24">
                 <i:Interaction.Triggers>
                     <i:EventTrigger
@@ -41,19 +43,18 @@
             <TextBlock
                 Text="{Binding SelectedDrive.MountPoint}"
                 Margin="0,10" />
+            <Button
+                Content="Settings"
+                Command="{Binding ShowPageCommand}"
+                CommandParameter="{x:Static local:Page.Settings}"
+                Style="{StaticResource MaterialDesignFlatButton}"
+                HorizontalAlignment="Right" />
 
-            <StackPanel>
-                <Button
-                    Content="Settings"
-                    Command="{Binding ShowPageCommand}"
-                    CommandParameter="{x:Static local:Page.Settings}"
-                    Style="{StaticResource MaterialDesignFlatButton}"
-                    HorizontalAlignment="Right" />
-            </StackPanel>
         </StackPanel>
-
+        
         <TextBlock
             Text="{Binding Message}"
+            Visibility="{Binding HasDrives, Converter={local:BoolToVis}}"
             Foreground="{Binding MessageColor}"
             TextWrapping="Wrap"
             TextAlignment="Center"
@@ -61,6 +62,14 @@
             FontSize="24"
             Margin="5"
             Grid.Row="1" />
+        <TextBlock
+            Visibility="{Binding HasDrives, Converter={local:BoolToVis Negate=True}}"
+            Text="Golddrive"
+            FontSize="60"
+            VerticalAlignment="Center"
+            TextAlignment="Center"
+            Grid.Row="1"
+            Opacity="0.05" />
         <Button
             Command="{Binding ConnectCommand}"
             Content="{Binding ConnectButtonText}"

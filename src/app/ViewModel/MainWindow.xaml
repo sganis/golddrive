@@ -19,8 +19,8 @@
     WindowStartupLocation="CenterScreen"
     Title="Golddrive"
     MaxWidth="700"
-    MinWidth="300"
-    MinHeight="600"
+    MinWidth="400"
+    MinHeight="700"
     Width="500"
     ResizeMode="CanResizeWithGrip"
     d:DesignWidth="503.2"
@@ -30,7 +30,7 @@
     BorderThickness="1"
     TitleCaps="False"
     WindowTransitionsEnabled="False"
-    SaveWindowPosition="True"
+    
     Icon="/golddrive-app;component/golddrive.ico">
     
     <Controls:MetroWindow.IconTemplate>
@@ -46,10 +46,7 @@
     </Controls:MetroWindow.IconTemplate>
     
     <Window.Resources>
-        <!--<DataTemplate
-            DataType="{x:Type local:SettingsViewModel}">
-            <local:SettingsView />
-        </DataTemplate>-->
+        
     </Window.Resources>
     <!--Events-->
     <i:Interaction.Triggers>
@@ -141,7 +138,7 @@
         </Grid>
         <ProgressBar
             Grid.Row="2"
-            Margin="100,20"
+            Width="200"
             Visibility="{Binding IsWorking, 
                          Converter={StaticResource BooleanToVisibilityConverter}}"
             VerticalAlignment="Top"

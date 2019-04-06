@@ -80,3 +80,4 @@ int randint(int min, int max);
 void gen_random(char *s, const int len);
 void gdlog(const char *fmt, ...);
 int directory_exists(const char* path);
+int get_file_version(char* filename, char *version);

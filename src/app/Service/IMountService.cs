@@ -10,7 +10,6 @@ namespace golddrive
         bool Connected { get; }
         string Error { get; set; }
         bool HasDrives { get; }
-        bool HasNoDrives { get; }
         ObservableCollection<Drive> Drives { get; set; }
         ObservableCollection<Drive> FreeDrives { get; set; }
         Drive SelectedDrive { get; set; }

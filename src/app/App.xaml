@@ -44,7 +44,20 @@
             <SolidColorBrush x:Key="MahApps.Metro.Brushes.ToggleSwitchButton.OnSwitchBrush.Win10" Color="{DynamicResource Primary500}" />
             <SolidColorBrush x:Key="MahApps.Metro.Brushes.ToggleSwitchButton.OnSwitchMouseOverBrush.Win10" Color="{DynamicResource Primary400}" />
             <SolidColorBrush x:Key="MahApps.Metro.Brushes.ToggleSwitchButton.ThumbIndicatorCheckedBrush.Win10" Color="{DynamicResource Primary500Foreground}" />
-            
+
+            <Style
+                TargetType="TextBlock"
+                x:Key="Title">
+                <Setter
+                    Property="Opacity"
+                    Value="0.9" />
+                <Setter
+                    Property="Foreground"
+                    Value="{StaticResource AccentColorBrush}" />
+            </Style>
+
         </ResourceDictionary>
+
+        
     </Application.Resources>
 </Application>

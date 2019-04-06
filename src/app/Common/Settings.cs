@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System.Collections.Generic;
 using System;
 using System.IO;
+using System.Linq;
 
 namespace golddrive
 {
@@ -10,6 +11,7 @@ namespace golddrive
     public class Settings
     {
         public string Args { get; set; }
+        public string Selected { get; set; }
         public Dictionary<string,Drive> Drives { get; set; }
 
         public void AddDrives(List<Drive> drives)
@@ -18,6 +20,14 @@ namespace golddrive
             foreach (var d in drives)
                 Drives[d.Name] = d;            
         }
+        public void AddDrive(Drive drive)
+        {
+            Drives[drive.Name] = drive;
+        }
+
+        [JsonIgnore]
+        public Drive SelectedDrive { get; set; }
+
         [JsonIgnore]
         public string Filename { get; set; }
 
@@ -37,6 +47,8 @@ namespace golddrive
                 var json = JsonConvert.DeserializeObject<Dictionary<string, object>>(File.ReadAllText(Filename));
                 if (json.ContainsKey("Args"))
                     Args = json["Args"].ToString();
+                if (json.ContainsKey("Selected"))
+                    Selected = json["Selected"].ToString();
                 if (!json.ContainsKey("Drives"))
                     return;
                 var _drives = JsonConvert.DeserializeObject<Dictionary<string, object>>(json["Drives"].ToString());
@@ -59,6 +71,11 @@ namespace golddrive
                     if (data.ContainsKey("Hosts"))
                         d.Hosts = JsonConvert.DeserializeObject<List<string>>(data["Hosts"].ToString());
                     Drives[d.Name] = d;
+                }
+                var selected = Drives.Values.ToList().Find(x=>x.Name == Selected);
+                if (selected != null)
+                {
+                    SelectedDrive = selected;
                 }
             }
             catch (Exception ex)

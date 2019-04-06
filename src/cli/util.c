@@ -2,6 +2,7 @@
 #include <Windows.h>
 #include <time.h>
 #include <string.h>
+#include <stdio.h>
 
 char *strndup(char *str, int chars)
 {
@@ -82,7 +83,7 @@ int load_json(fs_config * fs)
 	fseek(fp, 0, SEEK_END); /* Go to end of file */
 	size = ftell(fp); /* How many bytes did we pass ? */
 	rewind(fp);
-	JSON_STRING = malloc((size + 1) * sizeof(*JSON_STRING)); /* size + 1 byte for the \0 */
+	JSON_STRING = calloc(size + 1, sizeof(char*)); /* size + 1 byte for the \0 */
 	fread(JSON_STRING, size, 1, fp); /* Read 1 chunk of size bytes from fp into buffer */
 	JSON_STRING[size] = '\0';
 	fclose(fp);
@@ -90,6 +91,9 @@ int load_json(fs_config * fs)
 	int i, r;
 	jsmn_parser p;
 	jsmntok_t t[1024]; /* We expect no more than 128 tokens */
+	jsmntok_t *tok;
+	char* val;
+
 	jsmn_init(&p);
 	r = jsmn_parse(&p, JSON_STRING, strlen(JSON_STRING), t, sizeof(t) / sizeof(t[0]));
 	if (r < 0) {
@@ -107,50 +111,75 @@ int load_json(fs_config * fs)
 	for (i = 1; i < r; i++) {
 		/* only interested in drives key */
 		if (jsoneq(JSON_STRING, &t[i], "Args") == 0) {
-			jsmntok_t *targs = &t[i+1];
-			char * args = strndup(JSON_STRING + targs->start, targs->end - targs->start);
-			fs->args = strdup(args);
+			tok = &t[i + 1];
+			val = strndup(JSON_STRING + tok->start, tok->end - tok->start);
+			fs->args = strdup(val);
+			free(val);
+			i++;
 		}
-		else if (jsoneq(JSON_STRING, &t[i], fs->drive) == 0) {
-			// drives object
-			jsmntok_t *d = &t[i + 1];
-			int j;
+		else if (jsoneq(JSON_STRING, &t[i], "Drives") == 0) {
 			int size = t[i + 1].size;
-			for (j = 0; j < size; j++) {
-				jsmntok_t *k = &t[i + j + 2];
-				if (k->type == JSMN_STRING) {
-					char * key = strndup(JSON_STRING + k->start, k->end - k->start);
-					jsmntok_t *v = &t[i + j + 3];
-					if (v->type == JSMN_STRING) {
-						char * val = strndup(JSON_STRING + v->start, v->end - v->start);
-						//printf("%s : %s\n", key, val);
-						//if (strcmp(key, "Args") == 0)
-						//	fs->args = strdup(val);
-						//else if (!fs->mountpoint && strcmp(key, "MountPoint") == 0)
-						//	fs->mountpoint = strdup(val);
-						free(val);
-						i++;
-					}
-					else if (v->type == JSMN_ARRAY) {
-						//fs->hostcount = v->size;
-						//fs->hostlist = malloc(v->size);
-						//for (int u = 0; u < v->size; u++) {
-						//	jsmntok_t *h = &t[i+j+u+4];
-						//	int ssize = h->end - h->start;
-						//	//printf("  * %.*s\n", h->end - h->start, JSON_STRING + h->start); 
-						//	fs->hostlist[u] = strndup(JSON_STRING + h->start, ssize);
-						//	fs->hostlist[u][ssize] = '\0';
-						//	//printf("host %d: %s\n", u+1, fs->hostlist[u]);
-						//	
-						//}
-						//i += t[i + 1].size + 1;
+			i++;
+			for (int j = 0; j < size; j++) {
+				tok = &t[i + 1];
+				char * key = strndup(JSON_STRING + tok->start, tok->end - tok->start);
+				jsmntok_t *v = &t[i + 2];
 
-						i = i + v->size + 1;
+				if (strcmp(key, fs->drive) == 0) {
+					i = i + 3;
+					for (int k = 0; k < v->size; k++) {
+						tok = &t[i + 1];
+						if (tok->type == JSMN_STRING) {
+							val = strndup(JSON_STRING + tok->start, tok->end - tok->start);
+							if (jsoneq(JSON_STRING, &t[i], "Args") == 0) {
+								fs->args = strdup(val);
+								free(val);
+							}
+							i = i + 2;
+						}
+						else if (tok->type == JSMN_ARRAY) {
+							i = i + tok->size + 1;
+						}
 					}
-					free(key);						
 				}
-			}			
+				else {
+					i = i + 3;
+					for (int k = 0; k < v->size; k++) {
+						tok = &t[i + 1];
+						if (tok->type == JSMN_STRING) {
+							i=i+2;
+						}
+						else if (tok->type == JSMN_ARRAY) {
+							i = i + tok->size + 1;
+						}
+					}
+				}
+				free(key);
+
+				//else if (v->type == JSMN_ARRAY) {
+				//	//fs->hostcount = v->size;
+				//	//fs->hostlist = malloc(v->size);
+				//	//for (int u = 0; u < v->size; u++) {
+				//	//	jsmntok_t *h = &t[i+j+u+4];
+				//	//	int ssize = h->end - h->start;
+				//	//	//printf("  * %.*s\n", h->end - h->start, JSON_STRING + h->start); 
+				//	//	fs->hostlist[u] = strndup(JSON_STRING + h->start, ssize);
+				//	//	fs->hostlist[u][ssize] = '\0';
+				//	//	//printf("host %d: %s\n", u+1, fs->hostlist[u]);
+				//	//	
+				//	//}
+				//	//i += t[i + 1].size + 1;
+
+				//	i = i + v->size + 1;
+				//}
+				//free(key);
+
+			}
 		}		
+		else {
+			// assume key with 1 value, skip it
+			i++;
+		}
 	}
 	free(JSON_STRING);
 	//printf("Hosts:\n");
@@ -266,3 +295,42 @@ int directory_exists(const char* path)
 	DWORD attr = GetFileAttributesA(path);
 	return (attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY));
 }
+
+int get_file_version(char* filename, char *version)
+{
+	int rc = 1;
+	DWORD  verHandle = 0;
+	UINT   size = 0;
+	LPBYTE lpBuffer = NULL;
+	DWORD  verSize = GetFileVersionInfoSizeA(filename, &verHandle);
+
+	if (verSize != NULL)
+	{
+		LPSTR verData = malloc(verSize);
+
+		if (GetFileVersionInfoA(filename, verHandle, verSize, verData))
+		{
+			if (VerQueryValueA(verData, "\\", (VOID FAR* FAR*)&lpBuffer, &size))
+			{
+				if (size)
+				{
+					VS_FIXEDFILEINFO *verInfo = (VS_FIXEDFILEINFO *)lpBuffer;
+					if (verInfo->dwSignature == 0xfeef04bd)
+					{
+						sprintf_s(version, 1000, "%d.%d.%d.%d",
+							(verInfo->dwFileVersionMS >> 16) & 0xffff,
+							(verInfo->dwFileVersionMS >> 0) & 0xffff,
+							(verInfo->dwFileVersionLS >> 16) & 0xffff,
+							(verInfo->dwFileVersionLS >> 0) & 0xffff
+						);
+						rc = 0;
+					}
+				}
+			}
+		}
+		free(verData);
+		return rc;
+	}
+	
+}
+

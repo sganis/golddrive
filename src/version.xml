@@ -35,7 +35,7 @@
         
         <MyProductName>Golddrive</MyProductName>
         <MyProductFullName>Golddrive $(MyFullVersion)</MyProductFullName>
-        <MyDescription>Secury Network Drive</MyDescription>
+        <MyDescription>Secure Network Drive</MyDescription>
         <MyCompanyName>Golddrive Inc.</MyCompanyName>
         <MyCopyright>$([System.DateTime]::Now.ToString(`yyyy`)) $(MyCompanyName)</MyCopyright>
 

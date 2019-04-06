@@ -11,13 +11,80 @@
     mc:Ignorable="d"
     d:DesignHeight="300"
     d:DesignWidth="300">
-
+    
     <StackPanel>
+        <DockPanel>            
+            <StackPanel
+                Orientation="Horizontal" 
+                Margin="0 0 0 20"
+                DockPanel.Dock="Left">
+                <Button
+                    IsEnabled="{Binding IsDriveNew , Converter={local:NegateBoolConverter }}"
+                    Command="{Binding ShowPageCommand}"
+                    CommandParameter="{x:Static local:Page.Main}"
+                    Style="{StaticResource MaterialDesignFloatingActionMiniLightButton}"
+                    ToolTip="Go Back"
+                    Width="30"
+                    Height="30">
+                    <materialDesign:PackIcon
+                        Kind="ArrowLeft"
+                        Width="20"
+                        Height="20" />
+                </Button>
+                <Button
+                    IsEnabled="{Binding IsDriveNew , Converter={local:NegateBoolConverter }}"
+                    Visibility="{Binding IsDrivesTabSelected, Converter={local:BoolToVis}}"
+                    Command="{Binding SettingsNewCommand}"
+                    Style="{StaticResource MaterialDesignFloatingActionMiniLightButton}"
+                    ToolTip="Add new drive"
+                    Margin="20 0 0 0"
+                    Width="30"
+                    Height="30">
+                    <materialDesign:PackIcon
+                        Kind="Add"
+                        Height="20"
+                        Width="20" />
+                </Button>
+                <Button
+                    IsEnabled="{Binding IsDriveNew , Converter={local:NegateBoolConverter }}"
+                    Visibility="{Binding IsDrivesTabSelected, Converter={local:BoolToVis}}"
+                    Command="{Binding SettingsDeleteCommand}"
+                    Style="{StaticResource MaterialDesignFloatingActionMiniLightButton}"
+                    ToolTip="Delete current drive"
+                    Margin="10 0 0 0"
+                    Width="30"
+                    Height="30">
+                    <materialDesign:PackIcon
+                        Kind="Minus"
+                        Width="20"
+                        Height="20" />
+                </Button>
+            </StackPanel>
+            <StackPanel
+                Margin="0 0 0 20"
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                DockPanel.Dock="Right">
+                <Button
+                    Content="Cancel"
+                    Visibility="{Binding IsDriveNew, Converter={local:BoolToVis}}"
+                    Command="{Binding SettingsCancelCommand}"
+                    Style="{StaticResource MaterialDesignFlatButton}"
+                    Width="80"
+                    Margin="5 0" />
+                <Button
+                    Content="Save"
+                    Command="{Binding SettingsOkCommand}"
+                    Width="80"/>
+            </StackPanel>
+        </DockPanel>
         <TabControl 
             Controls:TabControlHelper.Underlined="TabPanel"
             Controls:ControlsHelper.HeaderFontSize="12"
             Background="Transparent"
-            Padding="20" >
+            SelectedIndex="{Binding SelectedTabIndex}"
+            Margin="10"
+            Padding="20 30" >
             <TabItem>
                 <TabItem.Header>
                     <TextBlock
@@ -25,12 +92,18 @@
                 </TabItem.Header>
                 
                 <StackPanel>
+                    <TextBlock
+                        Text="Arguments for all drives" 
+                        Style="{StaticResource Title}" />
                     <TextBox
                         Text="{Binding GlobalArgs}"
-                        Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                        materialDesign:HintAssist.Hint="Argruments"
-                        materialDesign:HintAssist.FloatingScale="0.50"
-                        FontSize="20" Margin="0 10" />
+                        TextWrapping="Wrap"
+                        Height="100"
+                        VerticalScrollBarVisibility="Auto"
+                        VerticalContentAlignment="Top"
+                        materialDesign:HintAssist.Hint="-oarg1,arg2,..."
+                        materialDesign:HintAssist.HintOpacity=".25"
+                        FontSize="20" Margin="0 0 0 10" />
                 </StackPanel>
             </TabItem>
             <TabItem>
@@ -39,112 +112,95 @@
                         Text="Drives"
                         FontSize="14" />
                 </TabItem.Header>
-                <StackPanel>                    
-                    <StackPanel>
-                        <StackPanel
-                            Visibility="{Binding IsDriveNew, Converter={local:BoolToVis}}">
-                            <ComboBox
-                                ItemsSource="{Binding FreeDrives}"
-                                SelectedItem="{Binding SelectedFreeDrive}"
-                                Style="{StaticResource MaterialDesignFloatingHintComboBox}"
-                                materialDesign:HintAssist.Hint="Drive"
-                                materialDesign:HintAssist.FloatingScale="0.50"
-                                DisplayMemberPath="ComboDisplay"
-                                FontSize="20" Margin="0 10"/>
-                            <TextBox
-                                Text="{Binding SelectedFreeDrive.MountPoint}"
-                                Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                materialDesign:HintAssist.Hint="Mount Point"
-                                materialDesign:HintAssist.FloatingScale="0.50"
-                                FontSize="20"
-                                Margin="0 10" />
-                            <TextBox
-                                Text="{Binding SelectedFreeDrive.Label}"
-                                Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                materialDesign:HintAssist.Hint="Label"
-                                materialDesign:HintAssist.FloatingScale="0.50"
-                                FontSize="20"
-                                Margin="0 10" />
-                        </StackPanel>
-                        <StackPanel
-                            Visibility="{Binding IsDriveNew, Converter={local:BoolToVis Negate=True}}">
-                            <ComboBox
-                                ItemsSource="{Binding Drives}"
-                                SelectedItem="{Binding SelectedDrive}"
-                                DisplayMemberPath="ComboDisplay"
-                                materialDesign:HintAssist.Hint="Drive"
-                                materialDesign:HintAssist.FloatingScale="0.50"
-                                Style="{StaticResource MaterialDesignFloatingHintComboBox}"
-                                FontSize="20"
-                                Margin="0 10">
-                            </ComboBox>
-                            <TextBox
-                                Text="{Binding SelectedDrive.MountPoint}"
-                                Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                materialDesign:HintAssist.Hint="Mount Point"
-                                materialDesign:HintAssist.FloatingScale="0.50"
-                                FontSize="20"
-                                Margin="0 10" />
-                            <TextBox
-                                Text="{Binding SelectedDrive.Label}"
-                                Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                materialDesign:HintAssist.Hint="Label"
-                                materialDesign:HintAssist.FloatingScale="0.50"
-                                FontSize="20"
-                                Margin="0 10" />
-                        </StackPanel>
+                <StackPanel>
+
+                    <StackPanel
+                        Visibility="{Binding IsDriveNew, Converter={local:BoolToVis}}">
+                        <TextBlock
+                            Text="New Drive"
+                            Style="{StaticResource Title}" />
+                        <ComboBox
+                            ItemsSource="{Binding FreeDrives}"
+                            SelectedItem="{Binding SelectedFreeDrive}"
+                            materialDesign:HintAssist.Hint="Select Drive"
+                            materialDesign:HintAssist.HintOpacity=".25"
+                            DisplayMemberPath="ComboDisplay"
+                            FontSize="20"
+                            Margin="0 0 0 30" />
+                        <TextBlock
+                            Text="Mount Point"
+                            Style="{StaticResource Title}" />
+                        <TextBox
+                            Text="{Binding SelectedFreeDrive.MountPoint}"
+                            materialDesign:HintAssist.Hint="Hostname or user@host!port\path"
+                            materialDesign:HintAssist.HintOpacity=".25"
+                            FontSize="20"
+                            Margin="0 0 0 30" />
+                        <TextBlock
+                            Text="Label"
+                            Style="{StaticResource Title}" />
+                        <TextBox
+                            Text="{Binding SelectedFreeDrive.Label}"
+                            materialDesign:HintAssist.Hint="ex: Golddrive"
+                            materialDesign:HintAssist.HintOpacity=".25"
+                            FontSize="20"
+                            Margin="0 0 0 30" />
+                        <TextBlock
+                            Text="Optional Arguments"
+                            Style="{StaticResource Title}" />
+                        <TextBox
+                            Text="{Binding SelectedFreeDrive.Args}"
+                            materialDesign:HintAssist.Hint="-oarg1,arg2,..."
+                            materialDesign:HintAssist.HintOpacity=".25"
+                            FontSize="20"
+                            Margin="0 0 0 30" />
                     </StackPanel>
                     <StackPanel
-                        Orientation="Horizontal"
-                        VerticalAlignment="Top">
-                        <Button
-                            IsEnabled="{Binding IsDriveNew , Converter={local:NegateBoolConverter }}"
-                            Command="{Binding SettingsNewCommand}"
-                            Style="{StaticResource MaterialDesignFloatingActionMiniLightButton}"
-                            ToolTip="Add new drive"
-                            Width="30" Height="30">
-                            <materialDesign:PackIcon
-                                Kind="Add"
-                                Height="20"
-                                Width="20" />
-                        </Button>
-                        <Button
-                            IsEnabled="{Binding IsDriveNew , Converter={local:NegateBoolConverter }}"
-                            Command="{Binding SettingsDeleteCommand}"
-                            Style="{StaticResource MaterialDesignFloatingActionMiniLightButton}"
-                            ToolTip="Delete current drive"
-                            Margin="10 0 0 0"
-                            Width="30"
-                            Height="30">
-                            <materialDesign:PackIcon
-                                Kind="Minus"
-                                Width="20"
-                                Height="20" />
-                        </Button>
+                        Visibility="{Binding IsDriveNew, Converter={local:BoolToVis Negate=True}}">
+                        <TextBlock
+                            Text="Drive"
+                            Style="{StaticResource Title}" />
+                        <ComboBox
+                            ItemsSource="{Binding GoldDrives}"
+                            SelectedItem="{Binding SelectedDrive}"
+                            materialDesign:HintAssist.Hint="Select Drive"
+                            materialDesign:HintAssist.HintOpacity=".25"
+                            DisplayMemberPath="ComboDisplay"
+                            FontSize="20"
+                            Margin="0 0 0 30" />
+                        <TextBlock
+                            Text="Mount Point"
+                            Style="{StaticResource Title}" />
+                        <TextBox
+                            Text="{Binding SelectedDrive.MountPoint}"
+                            materialDesign:HintAssist.Hint="host or user@host!port\path"
+                            materialDesign:HintAssist.HintOpacity=".25"
+                            FontSize="20"
+                            Margin="0 0 0 30" />
+                        <TextBlock
+                            Text="Label"
+                            Style="{StaticResource Title}" />
+                        <TextBox
+                            Text="{Binding SelectedDrive.Label}"
+                            materialDesign:HintAssist.Hint="ex: Golddrive "
+                            materialDesign:HintAssist.HintOpacity=".25"
+                            FontSize="20"
+                            Margin="0 0 0 30" />
+                        <TextBlock
+                            Text="Optional Arguments"
+                            Style="{StaticResource Title}" />
+                        <TextBox
+                            Text="{Binding SelectedDrive.Args}"
+                            materialDesign:HintAssist.Hint="-oarg1,arg2,..."
+                            materialDesign:HintAssist.HintOpacity=".25"
+                            FontSize="20"
+                            Margin="0 0 0 30" />
                     </StackPanel>
                 </StackPanel>
-            </TabItem>            
+
+            </TabItem>
         </TabControl>
         
-        <StackPanel            
-            Margin="0 10"
-            Orientation="Horizontal"
-            HorizontalAlignment="Right">
-            <Button
-                Content="Cancel"
-                Visibility="{Binding IsDriveNew, Converter={local:BoolToVis}}"
-                Command="{Binding SettingsCancelCommand}"
-                Style="{StaticResource MaterialDesignFlatButton}"
-                Width="90"
-                Margin="2"
-                HorizontalAlignment="Right" />
-            <Button
-                Content="Ok"
-                Command="{Binding SettingsOkCommand}"
-                Style="{StaticResource MaterialDesignFlatButton}"
-                Width="90"
-                Margin="2"
-                HorizontalAlignment="Right" />
-        </StackPanel>
+        
     </StackPanel>
 </UserControl>

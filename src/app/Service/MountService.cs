@@ -26,6 +26,24 @@ namespace golddrive
         public SftpClient Sftp { get; set; }
         public string Error { get; set; }
         public bool Connected { get { return Ssh != null && Ssh.IsConnected; } }
+        public List<Drive> Drives { get; } = new List<Drive>();
+        public List<Drive> GoldDrives
+        {
+            get
+            {
+                return Drives.Where(x => x.Status != DriveStatus.FREE && x.IsGoldDrive==true).ToList();
+            }
+        }
+        public List<Drive> FreeDrives
+        {
+            get
+            {
+                List<Drive> list = new List<Drive>(
+                    Drives.Where(x => x.Status == DriveStatus.FREE).ToList());
+                list.Reverse();
+                return list;
+            }
+        }
 
         private string appPath;
         public string AppPath
@@ -65,10 +83,7 @@ namespace golddrive
 
         public Settings LoadSettings()
         {
-            Settings settings = new Settings
-            {
-                Filename = LocalAppData + "\\config.json"
-            };
+            Settings settings = new Settings { Filename = LocalAppData + "\\config.json" };
             settings.Load();
             return settings;
         }
@@ -297,7 +312,71 @@ namespace golddrive
         #region Local Drive Management
 
 
+        public void UpdateDrives(Settings settings)
+        {
+            string GOLDLETTERS = "GHIJKLMNOPQRSTUVWXYZ";
+            List<char> letters = GOLDLETTERS.ToCharArray().ToList();
 
+            DriveInfo[] drives = DriveInfo.GetDrives();
+            Drives.Clear();
+            List<Drive> settingsDrives = settings.Drives.Values.ToList();
+
+            foreach (char c in letters)
+            {
+                if (c == 'W')
+                    c.ToString();
+                bool used = false;
+                Drive d = new Drive { Letter = c.ToString() };
+                for (int i = 0; i < drives.Length; i++)
+                {
+                    DriveInfo dinfo = drives[i];
+                    if (dinfo.Name[0] == c)
+                    {
+                        used = true;
+                        d.Status = DriveStatus.UNKNOWN;
+                        d.IsGoldDrive = dinfo.DriveFormat == "FUSE-Golddrive";
+                        if (d.IsGoldDrive == true)
+                        {
+                            d.MountPoint = dinfo.VolumeLabel.Replace("/","\\");
+                            d.Label = GetExplorerDriveLabel(d);
+                            if (dinfo.IsReady)
+                                d.Status = DriveStatus.CONNECTED;
+                            else
+                                d.Status = DriveStatus.BROKEN;
+                            var d1 = settingsDrives.Find(x => x.Letter == d.Letter);
+                            if (d1 != null)
+                            {
+                                //d.MountPoint = d1.MountPoint;
+                                d.Args = d1.Args;
+                                d.Label = d1.Label;
+                            }
+                        }
+                        Drives.Add(d);
+                        break;
+                    }                    
+                }
+                
+
+                if (!used)
+                {
+                    // add settings drives
+                    var d1 = settingsDrives.Find(x => x.Letter == d.Letter);
+                    if (d1 != null)
+                    {
+                        d.Status = DriveStatus.DISCONNECTED;
+                        d.MountPoint = d1.MountPoint;
+                        d.Args = d1.Args;
+                        d.Label = d1.Label;
+                        d.IsGoldDrive = true;
+                    }
+                    else
+                    {
+                        d.Status = DriveStatus.FREE;
+                    }
+                    Drives.Add(d);
+                }
+            }
+        }
 
         public List<Drive> GetUsedDrives()
         {
@@ -320,14 +399,14 @@ namespace golddrive
                         };
                         if (d.IsGoldDrive == true)
                         {
-                            d.VolumeLabel = GetVolumeName(d.Letter);
+                            //d.VolumeLabel = GetVolumeName(d.Letter);
                             //if (!String.IsNullOrEmpty(d.VolumeLabel) && d.VolumeLabel.Contains("@"))
                             //{
                             //    d.User = d.VolumeLabel.Split('@')[0];
                             //    d.Host = d.VolumeLabel.Split('@')[1];
                             //}
                             d.MountPoint = match.Groups[3].Value.Replace(@"\\golddrive\", "");
-                            d.Label = GetDriveLabel(d);
+                            d.Label = GetExplorerDriveLabel(d);
                         }
                         drives.Add(d);
                     }
@@ -342,11 +421,11 @@ namespace golddrive
 
         public List<Drive> GetGoldDrives(List<Drive> settingsDrives)
         {
-            List<Drive> usedDrives = GetUsedDrives().Where(x => x.IsGoldDrive == true).ToList();
+            //List<Drive> usedDrives = GetUsedDrives().Where(x => x.IsGoldDrive == true).ToList();
             //Settings settings = LoadSettings();
             
             //List<Drive> drives = settings.Drives.Values.ToList();
-            foreach (Drive u in usedDrives)
+            foreach (Drive u in GoldDrives)
             {
                 var d1 = settingsDrives.Find(x1 => x1.Letter == u.Letter);
                 if(d1 == null)
@@ -364,7 +443,26 @@ namespace golddrive
             }
             return settingsDrives;
         }
+        public List<Drive> GetFreeDrives()
+        {
+            string GOLDLETTERS = "GHIJKLMNOPQRSTUVWXYZ";
+            List<char> letters = GOLDLETTERS.ToCharArray().ToList();
+            List<Drive> freeDrives = new List<Drive>();
+            DriveInfo[] drives = DriveInfo.GetDrives();
 
+            for (int i = 0; i < drives.Length; i++)
+                letters.Remove(drives[i].Name[0]);
+            foreach (char c in letters)
+            {
+                Drive d = new Drive
+                {
+                    Letter = c.ToString()
+                };
+                freeDrives.Add(d);
+            }
+            freeDrives.Reverse();
+            return freeDrives;
+        }
         public string GetVolumeName(string letter)
         {
             var r = RunLocal($"vol {letter}:");
@@ -398,23 +496,27 @@ namespace golddrive
             }
             else
             {
-                var freeDrives = GetFreeDrives();
-                var drives = GetUsedDrives();
-                var inUse = freeDrives.Find(x => x.Letter == drive.Letter) == null;
-                var isGold = drives.Find(x => x.Letter == drive.Letter && x.IsGoldDrive == true) != null;
-                var pathUsed = drives.Find(x => x.Letter != drive.Letter && x.MountPoint == drive.MountPoint) != null;
+                Settings settings = LoadSettings();
+                UpdateDrives(settings);
+                var free = FreeDrives.Find(x => x.Letter == drive.Letter) != null;
+                var isGold = GoldDrives.Find(x => x.Letter == drive.Letter) != null;
+                var disconnected = GoldDrives.Find(x => x.Letter == drive.Letter && x.Status == DriveStatus.DISCONNECTED) != null;
+                var pathUsed = GoldDrives.Find(x => x.Letter != drive.Letter && x.MountPoint == drive.MountPoint) != null;
 
-                if (pathUsed && !inUse)
+                if (pathUsed && free)
                     r.DriveStatus = DriveStatus.MOUNTPOINT_IN_USE;
-                else if (!inUse)
+                else if (free)
+                    r.DriveStatus = DriveStatus.DISCONNECTED;
+                else if (disconnected)
                     r.DriveStatus = DriveStatus.DISCONNECTED;
                 else if (!isGold)
-                    r.DriveStatus = DriveStatus.LETTER_IN_USE;
+                    r.DriveStatus = DriveStatus.IN_USE;
                 else if (!CheckIfDriveWorks(drive))
                     r.DriveStatus = DriveStatus.BROKEN;
                 else
                     r.DriveStatus = DriveStatus.CONNECTED;
             }
+            r.Object = drive;
             return r;
         }
         public bool CheckIfDriveWorks(Drive drive)
@@ -429,7 +531,7 @@ namespace golddrive
             }
             return false;
         }
-        public string GetDriveLabel(Drive drive)
+        public string GetExplorerDriveLabel(Drive drive)
         {
             try
             {
@@ -444,7 +546,7 @@ namespace golddrive
             }
             return "";
         }
-        public void SetDriveLabel(Drive drive)
+        public void SetExplorerDriveLabel(Drive drive)
         {
             if (String.IsNullOrEmpty(drive.Label))
                 return;
@@ -460,7 +562,7 @@ namespace golddrive
 
             }
         }
-        public void CleanDriveLabel(Drive drive)
+        public void CleanExplorerDriveLabel(Drive drive)
         {
             if (String.IsNullOrEmpty(drive.RegistryMountPoint2))
                 return;
@@ -486,26 +588,7 @@ namespace golddrive
             }
         }
 
-        public List<Drive> GetFreeDrives()
-        {
-            string GOLDLETTERS = "GHIJKLMNOPQRSTUVWXYZ";
-            List<char> letters = GOLDLETTERS.ToCharArray().ToList();
-            List<Drive> freeDrives = new List<Drive>();
-            DriveInfo[] drives = DriveInfo.GetDrives();
-
-            for (int i = 0; i < drives.Length; i++)
-                letters.Remove(drives[i].Name[0]);
-            foreach (char c in letters)
-            {
-                Drive d = new Drive
-                {
-                    Letter = c.ToString()
-                };
-                freeDrives.Add(d);
-            }
-            freeDrives.Reverse();
-            return freeDrives;
-        }
+        
         #endregion
 
         #region SSH Management
@@ -540,7 +623,7 @@ namespace golddrive
 
             if (string.IsNullOrEmpty(password))
             {
-                r.MountStatus = MountStatus.BAD_LOGIN;
+                r.MountStatus = MountStatus.BAD_PASSWORD;
                 r.Error = "Empty password";
                 return r;
             }
@@ -557,7 +640,7 @@ namespace golddrive
                 r.Error = ex.Message;
                 if (ex is SshAuthenticationException)
                 {
-                    r.MountStatus = MountStatus.BAD_LOGIN;
+                    r.MountStatus = MountStatus.BAD_PASSWORD;
                 }
                 else if (ex is SocketException)
                 {
@@ -581,7 +664,7 @@ namespace golddrive
 
             if (!File.Exists(drive.AppKey))
             {
-                r.MountStatus = MountStatus.BAD_LOGIN;
+                r.MountStatus = MountStatus.BAD_PASSWORD;
                 r.Error = "No ssh key";
                 return r;
             }
@@ -601,16 +684,32 @@ namespace golddrive
                 r.Error = ex.Message;
                 if (ex is SshAuthenticationException)
                 {
-                    r.MountStatus = MountStatus.BAD_LOGIN;
+                    r.MountStatus = MountStatus.BAD_PASSWORD;
                 }
                 else if (ex is SocketException)
                 {
                     r.MountStatus = MountStatus.BAD_HOST;
                 }
+                else if (ex is SshConnectionException)
+                {
+                    r.MountStatus = MountStatus.BAD_HOST;
+                }
+                else if (ex is InvalidOperationException)
+                {
+                    r.MountStatus = MountStatus.BAD_HOST;
+                }
                 else
                 {
-                    Console.Write(ex.ToString());
-                    r.MountStatus = MountStatus.UNKNOWN;
+                    if (ex.Message.Contains("milliseconds"))
+                    {
+                        r.Error = "Host does not respond";
+                        r.MountStatus = MountStatus.BAD_HOST;
+                    }
+                    else
+                    {
+                        r.MountStatus = MountStatus.UNKNOWN;
+
+                    }
                 }
             }
             return r;
@@ -772,10 +871,15 @@ namespace golddrive
                 r.MountStatus = MountStatus.UNKNOWN;
                 return r;
             }
-            SetDriveLabel(drive);
+            SetExplorerDriveLabel(drive);
             SetDriveIcon(drive, $@"{ AppPath }\golddrive.ico");
+            Settings settings = LoadSettings();
+            settings.AddDrive(drive);
+            SaveSettings(settings);
+            UpdateDrives(settings);
             r.MountStatus = MountStatus.OK;
             r.DriveStatus = DriveStatus.CONNECTED;
+            r.Object = drive;            
             return r;
         }
 
@@ -788,10 +892,13 @@ namespace golddrive
                 return r;
             }
             // TODO: clenup drive name and registry
-            CleanDriveLabel(drive);
-
+            CleanExplorerDriveLabel(drive);
+            Settings settings = LoadSettings();
+            SaveSettings(settings);
+            UpdateDrives(settings);
             r.MountStatus = MountStatus.OK;
             r.DriveStatus = DriveStatus.DISCONNECTED;
+            r.Object = drive;
             return r;
 
         }

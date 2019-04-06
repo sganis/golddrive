@@ -7,15 +7,22 @@ namespace golddrive
     [JsonObject(MemberSerialization.OptIn)]
     public class Drive : Observable
     {
-        public string VolumeLabel { get; set; }
         public DriveStatus Status { get; set; }
+        public bool? IsGoldDrive { get; set; }
+        //public string VolumeLabel { get; set; }
         public string Path { get; set; }
         public string Host { get; set; }
-        public bool? IsGoldDrive { get; set; }
         public string Letter { get; set; }
+        public string Name { get { return $"{ Letter }:"; } }
+
+        private string _args;
 
         [JsonProperty]
-        public string Args { get; set; }
+        public string Args
+        {
+            get { return string.IsNullOrEmpty(_args) ? null : _args; }
+            set { _args = value; }
+        }
 
         private List<string> _hosts;
         [JsonProperty]
@@ -30,10 +37,6 @@ namespace golddrive
                 _hosts = value;
             }
         }
-
-        public string Name { get { return $"{ Letter }:"; } }
-
-
 
         private string _label;
         [JsonProperty]
@@ -71,8 +74,7 @@ namespace golddrive
                 if (s.Contains("!"))
                 {
                     Host = s.Split('!')[0];
-                    int p;
-                    int.TryParse(s.Split('!')[1], out p);
+                    int.TryParse(s.Split('!')[1], out int p);
                     if (p > 0)
                         Port = p;
                     s = Host;
@@ -89,6 +91,7 @@ namespace golddrive
             }
 
         }
+
         private string user;
         public string User
         {

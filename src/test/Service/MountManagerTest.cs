@@ -1,6 +1,5 @@
 ﻿
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using golddrive;
 using System.Collections.Generic;
 using System.IO;
 using System;
@@ -13,11 +12,13 @@ namespace golddrive.Tests
         MountService _mountService = new MountService();
         static string _host = Environment.GetEnvironmentVariable("GOLDDRIVE_HOST");
         Drive _drive = new Drive
-            {
-                Letter = "X",
-                MountPoint = _host,
-                Label = "Golddrive"
-            };
+        {
+            Letter = "X",
+            MountPoint = _host,
+            Label = "Golddrive",
+            IsGoldDrive = true,
+            Status = DriveStatus.DISCONNECTED,
+        };
     
         [TestInitialize]
         public void Init()
@@ -51,8 +52,8 @@ namespace golddrive.Tests
             string current_label = _drive.Label;
             Mount();
             _drive.Label = "NEWLABEL";
-            _mountService.SetDriveLabel(_drive);
-            string label = _mountService.GetDriveLabel(_drive);
+            _mountService.SetExplorerDriveLabel(_drive);
+            string label = _mountService.GetExplorerDriveLabel(_drive);
             Assert.AreEqual(label, "NEWLABEL");
             Unmount();
             _drive.Label = current_label;
@@ -63,13 +64,6 @@ namespace golddrive.Tests
         [TestMethod, TestCategory("Appveyor")]
         public void LoadSaveSettingsDrivesTest()
         {
-            //const string V = "\\settings.xml";
-            //string settings_path = _mountService.LocalAppData + V;
-
-            //if (File.Exists(settings_path))
-            //{
-            //    File.Delete(settings_path);
-            //}
             if (!Directory.Exists(_mountService.LocalAppData))
                 Directory.CreateDirectory(_mountService.LocalAppData);
             var src = _mountService.LocalAppData + "\\config.json";
@@ -123,7 +117,7 @@ namespace golddrive.Tests
             Drive w = new Drive { Letter = "W", MountPoint = "vlcc31" };
             Drive y = new Drive { Letter = "Y", MountPoint = "vlcc31" };
             Assert.AreEqual(_mountService.CheckDriveStatus(c).DriveStatus, DriveStatus.NOT_SUPPORTED);
-            Assert.AreEqual(_mountService.CheckDriveStatus(w).DriveStatus, DriveStatus.LETTER_IN_USE);
+            Assert.AreEqual(_mountService.CheckDriveStatus(w).DriveStatus, DriveStatus.IN_USE);
             Assert.AreEqual(_mountService.CheckDriveStatus(_drive).DriveStatus, DriveStatus.DISCONNECTED);
             Mount();
             Assert.AreEqual(_mountService.CheckDriveStatus(_drive).DriveStatus, DriveStatus.CONNECTED);
