@@ -361,7 +361,44 @@ size_t san_dirfd(DIR *dirp)
 {
 	return (size_t)dirp->san_handle;
 }
+int check_hlink(const char *path)
+{
+	// check for hard link
+	int rc = 0;
+	char cmd[MAX_PATH + 10], out[100], err[100];
+	sprintf_s(cmd, sizeof cmd, "stat -c%%h %s\n", path);
+	run_command(cmd, out, err);
+	int hlinks = atoi(out);
+	if (hlinks > 1) {
+		//error("opening for writing hard linked file: %s\n"
+		//	"number of links: %d\n", path, hlinks);
 
+		// backup file
+		char backup[PATH_MAX];
+		sprintf_s(backup, sizeof backup, "%s.%zd.hlink", path, time_mu());
+		f_rename(path, backup, 0);
+
+		// create new file 
+		// fixme: use san_create function instead of linux command
+		//sprintf_s(cmd, sizeof cmd, "touch %s\n", path);
+		//run_command(cmd, out, err);
+		//f_create(path, mode, fi);
+		
+		lock();
+		LIBSSH2_SFTP_HANDLE* handle;
+		// fixme: AND mode with -o create_umask arg
+		unsigned int mode = 432; // oct 660
+		unsigned flags = LIBSSH2_FXF_READ | LIBSSH2_FXF_WRITE 
+						| LIBSSH2_FXF_CREAT | LIBSSH2_FXF_EXCL; // int 43
+		handle = libssh2_sftp_open_ex(g_ssh->sftp, path, (int)strlen(path),
+										flags, mode, LIBSSH2_SFTP_OPENFILE);
+		rc = libssh2_sftp_close_handle(handle);
+		g_sftp_calls += 2;
+		unlock();
+	}
+	return rc;
+	
+}
 SAN_HANDLE * san_open(const char *path, int is_dir, unsigned int mode, 
 	struct fuse_file_info *fi)
 {
@@ -374,27 +411,7 @@ SAN_HANDLE * san_open(const char *path, int is_dir, unsigned int mode,
 		pflags = LIBSSH2_FXF_READ;
 	}
 	else if ((fi->flags & O_ACCMODE) == O_WRONLY) {
-		pflags = LIBSSH2_FXF_WRITE;
-		if (!is_dir) {
-			// check for hard link
-			char cmd[MAX_PATH + 10], out[100], err[100];
-			sprintf_s(cmd, sizeof cmd, "stat -c%%h %s\n", path);
-			run_command(cmd, out, err);
-			int hlinks = atoi(out);
-			if (hlinks > 1) {
-				//error("opening for writing hard linked file: %s\n"
-				//	"number of links: %d\n", path, hlinks);
-				
-				// backup file
-				char backup[PATH_MAX];
-				sprintf_s(backup, sizeof backup, "%s.%zd.hlink", path, time_mu());
-				f_rename(path, backup, 0);
-
-				// create new file
-				sprintf_s(cmd, sizeof cmd, "touch %s\n", path);
-				run_command(cmd, out, err);
-			}
-		}
+		pflags = LIBSSH2_FXF_WRITE;		
 	}
 	else if ((fi->flags & O_ACCMODE) == O_RDWR) {
 		pflags = LIBSSH2_FXF_READ | LIBSSH2_FXF_WRITE;
@@ -414,28 +431,36 @@ SAN_HANDLE * san_open(const char *path, int is_dir, unsigned int mode,
 	if (fi->flags & O_APPEND)
 		pflags |= LIBSSH2_FXF_APPEND;
 
-	info("%s, pflags: %d\n", path, pflags);
+	//error("%s, pflags: %d\n", path, pflags);
 	sh->flags = pflags;
 	sh->is_dir = is_dir;
 	sh->mode = mode;
 	strcpy_s(sh->path, MAX_PATH, path);
 
-	lock();
-	if (sh->is_dir)
+	
+	if (sh->is_dir) {
+		lock();
 		handle = libssh2_sftp_open_ex(g_ssh->sftp, sh->path, (int)strlen(sh->path),
 			sh->flags, sh->mode, LIBSSH2_SFTP_OPENDIR);
-	else
+		unlock();
+	} 
+	else {
+		if (sh->flags == LIBSSH2_FXF_WRITE 
+			|| sh->flags == (LIBSSH2_FXF_READ | LIBSSH2_FXF_WRITE)) {
+			check_hlink(path);
+		}
+		lock();
 		handle = libssh2_sftp_open_ex(g_ssh->sftp, sh->path, (int)strlen(sh->path),
 			sh->flags, sh->mode, LIBSSH2_SFTP_OPENFILE);
+		unlock();
+	}
 	g_sftp_calls++;
 	
 	if (!handle) {
 		int rc;
 		san_error(sh->path);
-		unlock();
 		return 0;
 	}
-	unlock();
 	
 	info("OPEN HANDLE : %zu:%zu: %s, flags: %d, mode: %d\n",
 		(size_t)sh,(size_t)handle, sh->path, sh->flags, sh->mode);

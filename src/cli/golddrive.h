@@ -216,7 +216,7 @@ int utimensat(int dirfd, const char *path, const struct fuse_timespec times[2], 
 size_t san_dirfd(DIR *dirp);
 SANSSH *san_init_ssh(const char *host, int port, const char *user, const char *pkey);
 int san_finalize(void);
-
+int check_hlink(const char *path);
 
 // hash table for connection pool
 //void ht_ssh_add(SANSSH *value);
