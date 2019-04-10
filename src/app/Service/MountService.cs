@@ -688,7 +688,13 @@ namespace golddrive
                 }
                 else if (ex is SocketException)
                 {
-                    r.MountStatus = MountStatus.BAD_HOST;
+                    if (ex.Message.Contains("actively refused it"))
+                        r.MountStatus = MountStatus.BAD_KEY;
+                    else
+                    {
+                        r.MountStatus = MountStatus.BAD_HOST;
+                    }
+                    
                 }
                 else if (ex is SshConnectionException)
                 {
@@ -731,7 +737,12 @@ namespace golddrive
                 SshClient client = new SshClient(drive.Host, drive.Port, drive.User, password);
                 client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
                 client.Connect();
-                string cmd = $"exec sh -c \"cd; umask 077; mkdir -p .ssh; echo '{pubkey}' >> .ssh/authorized_keys\"";
+                string cmd = "";
+                bool linux = false;
+                if(linux)
+                    cmd = $"exec sh -c \"cd; umask 077; mkdir -p .ssh; echo '{pubkey}' >> .ssh/authorized_keys\"";
+                else
+                    cmd = $"mkdir %USERPROFILE%\\.ssh 2>NUL || echo {pubkey.Trim()} >> %USERPROFILE%\\.ssh\\authorized_keys";
                 SshCommand command = client.CreateCommand(cmd);
                 command.CommandTimeout = TimeSpan.FromSeconds(5);
                 r.Output = command.Execute();

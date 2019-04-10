@@ -188,6 +188,7 @@ namespace golddrive
                     Message = r.Error;
                     break;
                 case MountStatus.BAD_PASSWORD:
+                case MountStatus.BAD_KEY:
                     CurrentPage = Page.Password;
                     Message = r.Error;
                     break;
