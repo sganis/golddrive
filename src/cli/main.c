@@ -359,7 +359,7 @@ int main(int argc, char *argv[])
 	g_sftp_calls = 0;
 	g_sftp_cached_calls = 0;
 
-	g_ssh = san_init_ssh(g_fs.host, g_fs.port, g_fs.user, g_fs.pkey);
+	g_ssh = _init_ssh(g_fs.host, g_fs.port, g_fs.user, g_fs.pkey);
 	if (!g_ssh) 
 		return 1;
 
@@ -416,6 +416,6 @@ int main(int argc, char *argv[])
 	
 	// cleanup
 	InitializeSRWLock(&g_ssh_lock);
-	san_finalize();
+	_finalize();
 	return rc;
 }

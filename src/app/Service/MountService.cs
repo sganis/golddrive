@@ -419,30 +419,30 @@ namespace golddrive
             return drives;
         }
 
-        public List<Drive> GetGoldDrives(List<Drive> settingsDrives)
-        {
-            //List<Drive> usedDrives = GetUsedDrives().Where(x => x.IsGoldDrive == true).ToList();
-            //Settings settings = LoadSettings();
+        //public List<Drive> GetGoldDrives(List<Drive> settingsDrives)
+        //{
+        //    //List<Drive> usedDrives = GetUsedDrives().Where(x => x.IsGoldDrive == true).ToList();
+        //    //Settings settings = LoadSettings();
             
-            //List<Drive> drives = settings.Drives.Values.ToList();
-            foreach (Drive u in GoldDrives)
-            {
-                var d1 = settingsDrives.Find(x1 => x1.Letter == u.Letter);
-                if(d1 == null)
-                {
-                    settingsDrives.Add(u);
-                }
-                else
-                {
-                    var d2 = settingsDrives.Find(x2 => (x2.Letter == u.Letter && x2.MountPoint == u.MountPoint));
-                    if(d2 == null)
-                    {
-                        d1.MountPoint = u.MountPoint;                       
-                    }
-                }                
-            }
-            return settingsDrives;
-        }
+        //    //List<Drive> drives = settings.Drives.Values.ToList();
+        //    foreach (Drive u in GoldDrives)
+        //    {
+        //        var d1 = settingsDrives.Find(x1 => x1.Letter == u.Letter);
+        //        if(d1 == null)
+        //        {
+        //            settingsDrives.Add(u);
+        //        }
+        //        else
+        //        {
+        //            var d2 = settingsDrives.Find(x2 => (x2.Letter == u.Letter && x2.MountPoint == u.MountPoint));
+        //            if(d2 == null)
+        //            {
+        //                d1.MountPoint = u.MountPoint;                       
+        //            }
+        //        }                
+        //    }
+        //    return settingsDrives;
+        //}
         public List<Drive> GetFreeDrives()
         {
             string GOLDLETTERS = "GHIJKLMNOPQRSTUVWXYZ";
@@ -463,24 +463,24 @@ namespace golddrive
             freeDrives.Reverse();
             return freeDrives;
         }
-        public string GetVolumeName(string letter)
-        {
-            var r = RunLocal($"vol {letter}:");
-            foreach (var line in r.Output.Split('\n'))
-            {
-                try
-                {
-                    Match match = Regex.Match(line, $@"^\s*Volume in drive {letter} is ([^ ]+)");
-                    if (match.Success)
-                        return match.Groups[1].Value.Trim();
-                }
-                catch (Exception ex)
-                {
+        //public string GetVolumeName(string letter)
+        //{
+        //    var r = RunLocal($"vol {letter}:");
+        //    foreach (var line in r.Output.Split('\n'))
+        //    {
+        //        try
+        //        {
+        //            Match match = Regex.Match(line, $@"^\s*Volume in drive {letter} is ([^ ]+)");
+        //            if (match.Success)
+        //                return match.Groups[1].Value.Trim();
+        //        }
+        //        catch (Exception ex)
+        //        {
 
-                }
-            }
-            return "";
-        }
+        //        }
+        //    }
+        //    return "";
+        //}
 
         public ReturnBox CheckDriveStatus(Drive drive)
         {
@@ -739,10 +739,10 @@ namespace golddrive
                 client.Connect();
                 string cmd = "";
                 bool linux = false;
-                if(linux)
+                //if(linux)
                     cmd = $"exec sh -c \"cd; umask 077; mkdir -p .ssh; echo '{pubkey}' >> .ssh/authorized_keys\"";
-                else
-                    cmd = $"mkdir %USERPROFILE%\\.ssh 2>NUL || echo {pubkey.Trim()} >> %USERPROFILE%\\.ssh\\authorized_keys";
+                //else
+                //    cmd = $"mkdir %USERPROFILE%\\.ssh 2>NUL || echo {pubkey.Trim()} >> %USERPROFILE%\\.ssh\\authorized_keys";
                 SshCommand command = client.CreateCommand(cmd);
                 command.CommandTimeout = TimeSpan.FromSeconds(5);
                 r.Output = command.Execute();
@@ -875,7 +875,7 @@ namespace golddrive
         }
         private ReturnBox Mount(Drive drive)
         {
-            ReturnBox r = RunLocal("net.exe", $"use { drive.Name } { drive.Remote }");
+            ReturnBox r = RunLocal("net.exe", $"use { drive.Name } { drive.Remote } /persistent:yes");
             if (!r.Success)
             {
                 r.Error = r.Error;

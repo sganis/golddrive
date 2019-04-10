@@ -96,12 +96,14 @@ static const char *sftp_errors[] = {
 #define san_error(path) {											\
 	int thread = GetCurrentThreadId();								\
 	rc = libssh2_session_last_errno(g_ssh->ssh);					\
+	/*printf("libssh2_session_last_errno: %d\n", rc);*/				\
 	if (rc > 0 || rc < -47)											\
 		rc = -48;													\
 	const char* msg = ssh_errors[-rc];								\
 	int skip = 0;													\
 	if (rc == LIBSSH2_ERROR_SFTP_PROTOCOL) {						\
 		rc = libssh2_sftp_last_error(g_ssh->sftp);					\
+		/*printf("libssh2_sftp_last_error: %d\n", rc);*/			\
 		if (rc <0 || rc>21)											\
 			rc = 22;												\
 		/* skip some common errors	*/								\
@@ -209,14 +211,15 @@ int f_utimens(const char *path, const struct fuse_timespec tv[2], struct fuse_fi
 int f_truncate(const char *path, fuse_off_t size, struct fuse_file_info *fi);
 int f_fsync(const char *path, int datasync, struct fuse_file_info *fi);
 
-SAN_HANDLE * san_open(const char *path, int is_dir, unsigned int mode, struct fuse_file_info *fi);
-int san_stat(const char *path, struct fuse_stat *stbuf);
-int san_close(SAN_HANDLE* sh);
+SAN_HANDLE * _openfile(const char *path, int is_dir, unsigned int mode, struct fuse_file_info *fi);
+int _stat(const char *path, struct fuse_stat *stbuf);
+int _close(SAN_HANDLE* sh);
+int _rename(const char *oldpath, const char *newpath);
 int utimensat(int dirfd, const char *path, const struct fuse_timespec times[2], int flag);
 size_t san_dirfd(DIR *dirp);
-SANSSH *san_init_ssh(const char *host, int port, const char *user, const char *pkey);
-int san_finalize(void);
-int check_hlink(const char *path);
+SANSSH *_init_ssh(const char *host, int port, const char *user, const char *pkey);
+int _finalize(void);
+int _check_hlink(const char *path);
 
 // hash table for connection pool
 //void ht_ssh_add(SANSSH *value);
