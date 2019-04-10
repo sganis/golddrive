@@ -738,7 +738,7 @@ namespace golddrive
                 client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
                 client.Connect();
                 string cmd = "";
-                bool linux = false;
+                //bool linux = false;
                 //if(linux)
                     cmd = $"exec sh -c \"cd; umask 077; mkdir -p .ssh; echo '{pubkey}' >> .ssh/authorized_keys\"";
                 //else
