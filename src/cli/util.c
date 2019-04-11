@@ -263,7 +263,7 @@ int randint(int min, int max)
 	return n;
 }	
 
-void gdlog(const char *fmt, ...)
+void gd_log(const char *fmt, ...)
 {
 	char message[1000];
 	va_list args;
@@ -279,7 +279,7 @@ void gdlog(const char *fmt, ...)
 	}
 }
 
-void gen_random(char *s, const int len)
+void gd_random_string(char *s, const int len)
 {
 	static const char alphanum[] =
 		"0123456789"
@@ -302,9 +302,10 @@ int get_file_version(char* filename, char *version)
 	DWORD  verHandle = 0;
 	UINT   size = 0;
 	LPBYTE lpBuffer = NULL;
-	DWORD  verSize = GetFileVersionInfoSizeA(filename, &verHandle);
+	DWORD  verSize = 0;
+	verSize = GetFileVersionInfoSizeA(filename, &verHandle);
 
-	if (verSize != NULL)
+	if (verSize)
 	{
 		LPSTR verData = malloc(verSize);
 
@@ -329,8 +330,8 @@ int get_file_version(char* filename, char *version)
 			}
 		}
 		free(verData);
-		return rc;
+		
 	}
-	
+	return rc;
 }
 

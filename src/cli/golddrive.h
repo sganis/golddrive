@@ -4,7 +4,7 @@
 #include <winfsp/winfsp.h>
 #include <fuse.h>
 #include <fcntl.h>
-#include "uthash.h"
+
 
 #define BUFFER_SIZE 32767
 #define ERROR_LEN MAXERRORLENGTH
@@ -93,7 +93,7 @@ static const char *sftp_errors[] = {
 	"SFTP_UNKNOWN"
 };
 
-#define san_error(path) {											\
+#define gd_error(path) {											\
 	int thread = GetCurrentThreadId();								\
 	rc = libssh2_session_last_errno(g_ssh->ssh);					\
 	/*printf("libssh2_session_last_errno: %d\n", rc);*/				\
@@ -126,10 +126,10 @@ static const char *sftp_errors[] = {
 #define fi_fh(fi, MASK)                 ((fi)->fh & (MASK))
 #define fi_setfh(fi, FH, MASK)          ((fi)->fh = (size_t)(FH) | (MASK))
 #define fi_fd(fi)                       (fi_fh(fi, fi_dirbit) ? \
-										san_dirfd((DIR *)(size_t)fi_fh(fi, ~fi_dirbit)) : \
+										san_dirfd((gd_dir_t *)(size_t)fi_fh(fi, ~fi_dirbit)) : \
 										(size_t)fi_fh(fi, ~fi_dirbit))
 #define fi_setfd(fi, fd)                (fi_setfh(fi, fd, 0))
-#define fi_dirp(fi)                     ((DIR *)(size_t)fi_fh(fi, ~fi_dirbit))
+#define fi_dirp(fi)                     ((gd_dir_t *)(size_t)fi_fh(fi, ~fi_dirbit))
 #define fi_setdirp(fi, dirp)            (fi_setfh(fi, dirp, fi_dirbit))
 
 #define concat_path(s1, s2, s)			(sizeof s > (unsigned)snprintf(s, sizeof s, "%s%s", s1, s2))
@@ -147,33 +147,32 @@ static const char *sftp_errors[] = {
 /* n is the -o ThreadCount=n arg, c is number of cores*/
 int san_threads(int n, int c);
 
-typedef struct SANSSH {
+typedef struct gdssh_t {
 	int thread;						/* key, thread id that owns this struct */
 	SOCKET socket;					/* sockey id */
 	LIBSSH2_SESSION *ssh;			/* ssh session struct */
 	LIBSSH2_SFTP *sftp;				/* sftp session struct */
 	int rc;							/* return code from the last ssh/sftp call */
-	UT_hash_handle hh;				/* uthash to make this struct hashable */
-} SANSSH;
+} gdssh_t;
 
-typedef struct SAN_HANDLE {
+typedef struct gdhandle_t {
 	LIBSSH2_SFTP_HANDLE *handle;	/* key, remote file handler				*/
 	int is_dir;						/* is directory							*/
 	int flags;						/* open flags							*/
 	int mode;						/* open mode							*/
 	char path[PATH_MAX];			/* file full path						*/
-} SAN_HANDLE;
+} gd_handle_t;
 
-struct dirent {
+struct gd_dirent_t {
 	struct fuse_stat d_stat;		/* file stats */
 	char d_name[FILENAME_MAX];		/* file name  */
 };
 
-typedef struct DIR {
-	SAN_HANDLE *san_handle;			/* file handle			*/
-	struct dirent de;				/* file item entry		*/
+typedef struct gd_dir_t {
+	gd_handle_t *handle;			/* file handle			*/
+	struct gd_dirent_t de;			/* file item entry		*/
 	char path[PATH_MAX];			/* directory full path	*/
-} DIR;
+} gd_dir_t;
 
 enum _FILE_TYPE {
 	FILE_ISREG = 0,
@@ -187,7 +186,7 @@ void print_statvfs(const char* path, LIBSSH2_SFTP_STATVFS *st);
 void get_filetype(unsigned long perm, char* filetype);
 int run_command(const char *cmd, char *out, char *err);
 //char * realpath(const char * path);
-int waitsocket(SANSSH* sanssh);
+int waitsocket(gdssh_t* sanssh);
 void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs);
 
 // fs operations
@@ -211,49 +210,21 @@ int f_utimens(const char *path, const struct fuse_timespec tv[2], struct fuse_fi
 int f_truncate(const char *path, fuse_off_t size, struct fuse_file_info *fi);
 int f_fsync(const char *path, int datasync, struct fuse_file_info *fi);
 
-SAN_HANDLE * _openfile(const char *path, int is_dir, unsigned int mode, struct fuse_file_info *fi);
-int _stat(const char *path, struct fuse_stat *stbuf);
-int _close(SAN_HANDLE* sh);
-int _rename(const char *oldpath, const char *newpath);
+gd_handle_t * gd_openfile(const char *path, int is_dir, unsigned int mode, struct fuse_file_info *fi);
+int gd_stat(const char *path, struct fuse_stat *stbuf);
+int gd_close(gd_handle_t* sh);
+int gd_rename(const char *oldpath, const char *newpath);
 int utimensat(int dirfd, const char *path, const struct fuse_timespec times[2], int flag);
-size_t san_dirfd(DIR *dirp);
-SANSSH *_init_ssh(const char *host, int port, const char *user, const char *pkey);
-int _finalize(void);
-int _check_hlink(const char *path);
+size_t san_dirfd(gd_dir_t *dirp);
+gdssh_t *gd_init_ssh(const char *host, int port, const char *user, const char *pkey);
+int gd_finalize(void);
+int gd_check_hlink(const char *path);
 
-// hash table for connection pool
-//void ht_ssh_add(SANSSH *value);
-//void ht_ssh_del(SANSSH *value);
-//SANSSH* ht_ssh_find(int thread);
-//SANSSH* get_ssh(void);
-
-
-extern SANSSH *g_ssh;
+extern gdssh_t *g_ssh;
 extern SRWLOCK g_ssh_lock;
 
 
-inline void lock() { AcquireSRWLockExclusive(&g_ssh_lock); }
-inline void unlock() { ReleaseSRWLockExclusive(&g_ssh_lock); }
+inline void gd_lock() { AcquireSRWLockExclusive(&g_ssh_lock); }
+inline void gd_unlock() { ReleaseSRWLockExclusive(&g_ssh_lock); }
 
-//inline void ht_ssh_lock(int lock) {
-//	lock ? EnterCriticalSection(&g_ssh_lock) : LeaveCriticalSection(&g_ssh_lock);
-//}
 
-// hash table with handles to close
-//extern SAN_HANDLE * g_handle_open_ht;
-//extern SAN_HANDLE * g_handle_close_ht;
-
-//extern CRITICAL_SECTION g_handle_lock;
-//
-//void ht_handle_add(SAN_HANDLE *sh, HANDLE_T *value);
-//void ht_handle_del(SAN_HANDLE *sh, HANDLE_T *value);
-//HANDLE_T* ht_handle_find(SAN_HANDLE *sh, int thread);
-//
-//void ht_handle_close_add(SAN_HANDLE *value);
-//void ht_handle_close_del(SAN_HANDLE *value);
-//SAN_HANDLE* ht_handle_close_find(void *id);
-//
-//inline void ht_handle_lock(int lock)
-//{
-//	lock ? EnterCriticalSection(&g_handle_lock) :	LeaveCriticalSection(&g_handle_lock);
-//}

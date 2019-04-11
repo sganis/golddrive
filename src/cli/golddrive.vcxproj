@@ -136,7 +136,7 @@
       <AdditionalOptions>/ignore:4099 /NODEFAULTLIB:LIBCMT %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(ProjectDir)golddrive.ini $(Outdir)
+      <Command>rem copy $(ProjectDir)golddrive.ini $(Outdir)
 rem copy $(ProjectDir)golddrive.ini $(SolutionDir)..\tools\golddrive
 rem copy $(ProjectDir)golddrive.ini $(SolutionDir)..\golddrive\bin
 rem copy $(OutDir)golddrive.exe $(SolutionDir)..\golddrive\bin
@@ -195,7 +195,7 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
       <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(ProjectDir)golddrive.ini $(Outdir)
+      <Command>rem copy $(ProjectDir)golddrive.ini $(Outdir)
 rem copy $(ProjectDir)golddrive.ini $(SolutionDir)..\tools\golddrive
 rem copy $(ProjectDir)golddrive.ini $(SolutionDir)..\golddrive\bin
 rem copy $(OutDir)golddrive.exe $(SolutionDir)..\golddrive\bin
@@ -212,14 +212,7 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
   <ItemGroup>
     <ClInclude Include="jsmn.h" />
     <ClInclude Include="golddrive.h" />
-    <ClInclude Include="uthash.h" />
     <ClInclude Include="util.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="golddrive.ini">
-      <DeploymentContent>false</DeploymentContent>
-      <FileType>Document</FileType>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="version.rc" />

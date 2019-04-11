@@ -14,7 +14,7 @@
 /* global variables */
 size_t		g_sftp_calls;
 size_t		g_sftp_cached_calls;
-SANSSH *	g_ssh;
+gdssh_t *	g_ssh;
 SRWLOCK		g_ssh_lock;
 fs_config	g_fs;
 char*		g_logfile;
@@ -95,21 +95,21 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 			"    --help                     print this help\n"
 			"    --version                  print version\n"
 			"    -o opt,[opt...]            mount options, -o=opt or -oopt is also valid\n"						
-			"    -h HOST, -o host=HOST      ssh server name or IP, default: random from config file\n"
+			"    -h HOST, -o host=HOST      ssh server name or IP\n"
 			"    -u USER, -o user=USER      user to connect to ssh server, default: current user\n"
-			"    -k PKEY, -o pkey=PKEY      private key, default: %%USERPROFILE%%\\.ssh\\id_rsa\n"
+			"    -k PKEY, -o pkey=PKEY      private key, default: %%USERPROFILE%%\\.ssh\\id_rsa-user-golddrive\n"
 			"    -p PORT, -o port=PORT      server port, default: 22\n"
 			"    -o hidden                  show hidden files\n"
 			"\n"
 			"WinFsp-FUSE options:\n"
 			"    -s                         disable multi-threaded operation\n"
 			"    -d, -o debug               enable debug output\n"
-			"    -o create_umask=MASK       set file umask permissions (octal, overriten by server)\n"
-			"    -o rellinks                interpret absolute symlinks as volume relative\n"
+			"    -o create_umask=MASK       file creation umask permissions\n"
 			"    -o DebugLog=FILE           debug log file (requires -d)\n"
 			"    -o FileInfoTimeout=N       metadata timeout (millis, -1 for data caching)\n"
 			"    -o DirInfoTimeout=N        directory info timeout (millis)\n"
 			"    -o VolumeInfoTimeout=N     volume info timeout (millis)\n"
+			"    -o EaTimeout=N             extended attribute timeout (millis)"
 			"    -o KeepFileCache           do not discard cache when files are closed\n"
 			"    -o ThreadCount             number of file system dispatcher threads\n"
 		);
@@ -168,7 +168,7 @@ static int parse_network_path(fs_config* fs)
 	}
 
 	if (strncmp(fs->remote, "/golddrive/", 11) != 0) {
-		gdlog("Invalid service name, only '\\\\golddrive' is supported: %s\n", fs->remote);
+		gd_log("Invalid service name, only '\\\\golddrive' is supported: %s\n", fs->remote);
 		return -1;
 	}
 
@@ -282,13 +282,14 @@ int main(int argc, char *argv[])
 
 	// logging
 	init_logging();
-	
 
 	// parameters
 	int rc;
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 	memset(&g_fs, 0, sizeof(g_fs));
+
 	rc = fuse_opt_parse(&args, &g_fs, fs_opts, fs_opt_proc);
+
 	if (rc) {
 		fprintf(stderr, "bad arguments, try --help\n");
 		return -1;
@@ -300,8 +301,6 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	
-	fuse_opt_parse(&args, &g_fs, fs_opts, fs_opt_proc);
-
 	// load missing arguments from config file
 	g_fs.drive[0] = toupper(g_fs.drive[0]);
 	g_fs.letter = g_fs.drive[0];
@@ -311,8 +310,6 @@ int main(int argc, char *argv[])
 	if(g_fs.remote)
 		parse_network_path(&g_fs);
 
-
-
 	// finally setup missing arguments with defaults
 	// user
 	if (!g_fs.user) {
@@ -320,13 +317,9 @@ int main(int argc, char *argv[])
 	}
 	// private key
 	if (!g_fs.pkey) {
-		//char profile[BUFFER_SIZE];
-		//ExpandEnvironmentStringsA("%USERPROFILE%", profile, BUFFER_SIZE);
 		char* profile = getenv("USERPROFILE");
 		g_fs.pkey = malloc(MAX_PATH);
 		sprintf_s(g_fs.pkey, MAX_PATH, "%s\\.ssh\\id_rsa-%s-golddrive", profile, g_fs.user);
-		//strcpy_s(g_fs.pkey, MAX_PATH, profile);
-		//strcat_s(g_fs.pkey, MAX_PATH, "\\.ssh\\id_rsa-");
 	}
 	if (!file_exists(g_fs.pkey)) {
 		fprintf(stderr, "error: cannot read private key: %s\n", g_fs.pkey);
@@ -342,15 +335,15 @@ int main(int argc, char *argv[])
 //	}
 
 	// show parameters
-	gdlog("Golddrive arguments:\n");
-	gdlog("drive   = %s\n", g_fs.drive);
-	gdlog("remote  = %s\n", g_fs.remote);
-	gdlog("mountp  = %s\n", g_fs.mountpoint);
-	gdlog("user    = %s\n", g_fs.user);
-	gdlog("host    = %s\n", g_fs.host);
-	gdlog("port    = %d\n", g_fs.port);
-	gdlog("pkey    = %s\n", g_fs.pkey);
-	gdlog("hidden  = %d\n", g_fs.hidden);
+	gd_log("Golddrive arguments:\n");
+	gd_log("drive   = %s\n", g_fs.drive);
+	gd_log("remote  = %s\n", g_fs.remote);
+	gd_log("mountp  = %s\n", g_fs.mountpoint);
+	gd_log("user    = %s\n", g_fs.user);
+	gd_log("host    = %s\n", g_fs.host);
+	gd_log("port    = %d\n", g_fs.port);
+	gd_log("pkey    = %s\n", g_fs.pkey);
+	gd_log("hidden  = %d\n", g_fs.hidden);
 
 
 	// initiaize small read/write lock
@@ -359,7 +352,7 @@ int main(int argc, char *argv[])
 	g_sftp_calls = 0;
 	g_sftp_cached_calls = 0;
 
-	g_ssh = _init_ssh(g_fs.host, g_fs.port, g_fs.user, g_fs.pkey);
+	g_ssh = gd_init_ssh(g_fs.host, g_fs.port, g_fs.user, g_fs.pkey);
 	if (!g_ssh) 
 		return 1;
 
@@ -371,51 +364,53 @@ int main(int argc, char *argv[])
 	if (rc == 0) {
 		out[strcspn(out, "\r\n")] = 0;
 		g_fs.remote_uid = atoi(out);
-		gdlog("uid     = %d\n", g_fs.remote_uid);
+		gd_log("uid     = %d\n", g_fs.remote_uid);
 	}
 	rc = run_command("echo $HOME\n", out, err);
 	if (rc == 0) {
 		out[strcspn(out, "\r\n")] = 0;
 		g_fs.home = malloc(sizeof out);
 		strcpy_s(g_fs.home, sizeof out, out);
-		gdlog("home    = %s\n", g_fs.home);
+		gd_log("home    = %s\n", g_fs.home);
 	}
 
 	// number of threads
 	//printf("Threads = %d\n", san_threads(5, get_number_of_processors()));
 
 	// run fuse main
-	char volprefix[256];
+	char volprefix[256], volname[256];
 	if(g_fs.remote)
 		sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=%s", g_fs.remote);
 	else
 		sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=/golddrive/%c", g_fs.letter);
-	gdlog("Prefix  = %s\n", g_fs.remote);
-	gdlog("WinFsp arguments:\n");
-	fuse_opt_add_arg(&args, volprefix);
-	char volname[256];
 	sprintf_s(volname, sizeof(volname), "-ovolname=%s", g_fs.mountpoint);
-	fuse_opt_add_arg(&args, volname);
-	fuse_opt_add_arg(&args, "-oFileSystemName=Golddrive");
-	fuse_opt_add_arg(&args, "-orellinks");
-	fuse_opt_add_arg(&args, "-ouid=-1,gid=-1");
+	gd_log("Prefix  = %s\n", g_fs.remote);
+
+	fuse_opt_insert_arg(&args, 1, volprefix);
+	fuse_opt_insert_arg(&args, 2, volname);
+	fuse_opt_insert_arg(&args, 3, "-oFileSystemName=Golddrive");
+	fuse_opt_insert_arg(&args, 4, "-orellinks");
+	fuse_opt_insert_arg(&args, 5, "-ouid=-1,gid=-1");
+	fuse_opt_insert_arg(&args, 6, "-oumask=000");
 
 	// add json args
 	if (g_fs.args && strcmp(g_fs.args, "") != 0) {
-		fuse_opt_add_arg(&args, g_fs.args);
-		fuse_opt_parse(&args, &g_fs, fs_opts, fs_opt_proc);
+		fuse_opt_insert_arg(&args, 7, g_fs.args);
 	}
+
 	// drive must be the last argument for winfsp
+	fuse_opt_parse(&args, &g_fs, fs_opts, fs_opt_proc);
 	fuse_opt_add_arg(&args, g_fs.drive);
 
 	// debug arguments
+	gd_log("WinFsp arguments:\n");
 	for (int i = 1; i < args.argc; i++)
-		gdlog("arg %d   = %s\n", i, args.argv[i]);
+		gd_log("arg %d   = %s\n", i, args.argv[i]);
 
 	rc = fuse_main(args.argc, args.argv, &fs_ops, NULL);
 	
 	// cleanup
 	InitializeSRWLock(&g_ssh_lock);
-	_finalize();
+	gd_finalize();
 	return rc;
 }
