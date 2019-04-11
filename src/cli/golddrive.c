@@ -683,25 +683,18 @@ int f_write(const char *path, const char *buf, size_t size, fuse_off_t offset, s
 
 	debug("WRITING HANDLE: %zu:%zu size: %zu\n", (size_t)sh, (size_t)handle, size);
 
-	// working in hard links
-	if (offset == 0) {
-		printf("writing first buffer to file: %s", path);
-	}
-	else {
-		printf("writing %s", path);
-	}
-
-
 	gd_lock();
 	curpos = libssh2_sftp_tell64(handle);
 	if (offset != curpos)
 		libssh2_sftp_seek64(handle, offset);
+	//gd_unlock();
 	//printf("thread buffer size    offset         bytes read     bytes written  total bytes\n");
 	ssize_t byteswritten = 0;
 	ssize_t total = 0;
 	size_t chunk = size;
 	const char* pos = buf;
 
+	//gd_lock();
 	while (chunk) {
 		byteswritten = libssh2_sftp_write(handle, pos, chunk);
 		g_sftp_calls++;

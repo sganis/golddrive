@@ -386,23 +386,24 @@ int main(int argc, char *argv[])
 	sprintf_s(volname, sizeof(volname), "-ovolname=%s", g_fs.mountpoint);
 	gd_log("Prefix  = %s\n", g_fs.remote);
 
-	fuse_opt_insert_arg(&args, 1, volprefix);
-	fuse_opt_insert_arg(&args, 2, volname);
-	fuse_opt_insert_arg(&args, 3, "-oFileSystemName=Golddrive");
-	fuse_opt_insert_arg(&args, 4, "-orellinks");
-	fuse_opt_insert_arg(&args, 5, "-ouid=-1,gid=-1");
-	fuse_opt_insert_arg(&args, 6, "-oumask=000");
-
-	// add json args
+	// default arguments
+	int pos = 1;
+	fuse_opt_insert_arg(&args, pos++, volprefix);
+	fuse_opt_insert_arg(&args, pos++, volname);
+	fuse_opt_insert_arg(&args, pos++, "-oFileSystemName=Golddrive");
+	fuse_opt_insert_arg(&args, pos++, "-oFileInfoTimeout=1000,DirInfoTimeout=1000,VolumeInfoTimeout=1000");
+	fuse_opt_insert_arg(&args, pos++, "-orellinks,uid=-1,gid=-1,umask=000,create_umask=000");
+	
+	// config file arguments
 	if (g_fs.args && strcmp(g_fs.args, "") != 0) {
-		fuse_opt_insert_arg(&args, 7, g_fs.args);
+		fuse_opt_insert_arg(&args, pos++, g_fs.args);
 	}
 
 	// drive must be the last argument for winfsp
 	fuse_opt_parse(&args, &g_fs, fs_opts, fs_opt_proc);
 	fuse_opt_add_arg(&args, g_fs.drive);
 
-	// debug arguments
+	// print arguments
 	gd_log("WinFsp arguments:\n");
 	for (int i = 1; i < args.argc; i++)
 		gd_log("arg %d   = %s\n", i, args.argv[i]);
