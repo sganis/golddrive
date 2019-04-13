@@ -329,31 +329,38 @@ namespace golddrive
                 Drive d = new Drive { Letter = c.ToString() };
                 for (int i = 0; i < drives.Length; i++)
                 {
-                    DriveInfo dinfo = drives[i];
-                    if (dinfo.Name[0] == c)
+                    try
                     {
-                        used = true;
-                        d.Status = DriveStatus.UNKNOWN;
-                        d.IsGoldDrive = dinfo.DriveFormat == "FUSE-Golddrive";
-                        if (d.IsGoldDrive == true)
+                        DriveInfo dinfo = drives[i];
+                        if (dinfo.Name[0] == c)
                         {
-                            d.MountPoint = dinfo.VolumeLabel.Replace("/","\\");
-                            d.Label = GetExplorerDriveLabel(d);
-                            if (dinfo.IsReady)
-                                d.Status = DriveStatus.CONNECTED;
-                            else
-                                d.Status = DriveStatus.BROKEN;
-                            var d1 = settingsDrives.Find(x => x.Letter == d.Letter);
-                            if (d1 != null)
+                            used = true;
+                            d.Status = DriveStatus.UNKNOWN;
+                            d.IsGoldDrive = dinfo.DriveFormat == "FUSE-Golddrive";
+                            if (d.IsGoldDrive == true)
                             {
-                                //d.MountPoint = d1.MountPoint;
-                                d.Args = d1.Args;
-                                d.Label = d1.Label;
+                                d.MountPoint = dinfo.VolumeLabel.Replace("/", "\\");
+                                d.Label = GetExplorerDriveLabel(d);
+                                if (dinfo.IsReady)
+                                    d.Status = DriveStatus.CONNECTED;
+                                else
+                                    d.Status = DriveStatus.BROKEN;
+                                var d1 = settingsDrives.Find(x => x.Letter == d.Letter);
+                                if (d1 != null)
+                                {
+                                    //d.MountPoint = d1.MountPoint;
+                                    d.Args = d1.Args;
+                                    d.Label = d1.Label;
+                                }
                             }
+                            Drives.Add(d);
+                            break;
                         }
-                        Drives.Add(d);
-                        break;
-                    }                    
+                    }
+                    catch (Exception ex)
+                    {
+
+                    }
                 }
                 
 

@@ -204,14 +204,17 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="gd.c" />
     <ClCompile Include="jsmn.c" />
     <ClCompile Include="main.c" />
-    <ClCompile Include="golddrive.c" />
+    <ClCompile Include="fs.c" />
     <ClCompile Include="util.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="gd.h" />
+    <ClInclude Include="global.h" />
     <ClInclude Include="jsmn.h" />
-    <ClInclude Include="golddrive.h" />
+    <ClInclude Include="fs.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>

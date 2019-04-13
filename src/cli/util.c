@@ -1,10 +1,11 @@
-#include "util.h"
-#include <Windows.h>
+#include <windows.h>
+#include <strsafe.h>
 #include <time.h>
 #include <string.h>
 #include <stdio.h>
+#include "util.h"
 
-char *strndup(char *str, int chars)
+char *str_ndup(char *str, int chars)
 {
 	char *buffer;
 	buffer = (char *)malloc(chars + 1);
@@ -63,180 +64,53 @@ int file_exists(const char* path)
 	return (attr != INVALID_FILE_ATTRIBUTES && !(attr & FILE_ATTRIBUTE_DIRECTORY));
 }
 
-int jsoneq(const char *json, jsmntok_t *tok, const char *s)
-{
-	return (tok->type == JSMN_STRING
-		&& (int)strlen(s) == tok->end - tok->start
-		&& strncmp(json + tok->start, s, tok->end - tok->start) == 0) ? 0 : -1;
-}
 
-int load_json(fs_config * fs)
-{
-	// fill json with json->drive parameters
-	if (!file_exists(fs->json)) {
-		fprintf(stderr, "cannot read json file: %s\n", fs->json);
-		return 1;
-	}
-	char* JSON_STRING = 0;
-	size_t size = 0;
-	FILE *fp = fopen(fs->json, "r");
-	fseek(fp, 0, SEEK_END); /* Go to end of file */
-	size = ftell(fp); /* How many bytes did we pass ? */
-	rewind(fp);
-	JSON_STRING = calloc(size + 1, sizeof(char*)); /* size + 1 byte for the \0 */
-	fread(JSON_STRING, size, 1, fp); /* Read 1 chunk of size bytes from fp into buffer */
-	JSON_STRING[size] = '\0';
-	fclose(fp);
 
-	int i, r;
-	jsmn_parser p;
-	jsmntok_t t[1024]; /* We expect no more than 128 tokens */
-	jsmntok_t *tok;
-	char* val;
+//int load_ini(const char* appdir, fs_config * fs)
+//{
+//	//printf("loading ini..., json.jsonfile=%s\n",json->jsonfile);
+//	char key[100] = { '\0' };
+//	char val[FILENAME_MAX] = { '\0' };
+//	char line[300] = { '\0' };
+//	size_t span = 0;
+//	char ini_path[FILENAME_MAX];
+//	snprintf(ini_path, sizeof ini_path, "%s\\golddrive.ini", appdir);
+//	//printf("ini path=%s\n", ini_path);
+//	FILE *ini_file = fopen(ini_path, "r");
+//	if (!ini_file) {
+//		fprintf(stderr, "json config will not be used, cannot read ini file: %s\n", ini_path);
+//		return 1;
+//	}
+//	else {
+//		while (fgets(line, sizeof(line), ini_file)) {
+//			char *equal = strpbrk(line, "="); //find the equal
+//			if (equal) {
+//				span = equal - line;
+//				memcpy(key, line, span);
+//				key[span] = '\0';
+//				str_trim(key);
+//				if (strcmp(key, "json") == 0) {
+//					equal++; //advance past the =
+//					char *nl = strpbrk(equal, "\n"); //fine the newline
+//					if (nl) {
+//						span = nl - equal;
+//						//printf("span=%d\n", span);
+//						strncpy(val, equal, span);
+//						str_trim(val);
+//						fs->json = strdup(val);
+//					}
+//					else {
+//						//printf("no nl\n");
+//					}
+//				}
+//			}
+//		}
+//	}
+//	fclose(ini_file);
+//	return 0;
+//}
 
-	jsmn_init(&p);
-	r = jsmn_parse(&p, JSON_STRING, strlen(JSON_STRING), t, sizeof(t) / sizeof(t[0]));
-	if (r < 0) {
-		fprintf(stderr, "Failed to parse JSON: %d\n", r);
-		return 1;
-	}
-
-	/* Assume the top-level element is an object */
-	if (r < 1 || t[0].type != JSMN_OBJECT) {
-		fprintf(stderr, "Object expected, json type=%d\n", t[0].type);
-		return 1;
-	}
-	
-	/* Loop over all keys of the root object */
-	for (i = 1; i < r; i++) {
-		/* only interested in drives key */
-		if (jsoneq(JSON_STRING, &t[i], "Args") == 0) {
-			tok = &t[i + 1];
-			val = strndup(JSON_STRING + tok->start, tok->end - tok->start);
-			fs->args = strdup(val);
-			free(val);
-			i++;
-		}
-		else if (jsoneq(JSON_STRING, &t[i], "Drives") == 0) {
-			int size = t[i + 1].size;
-			i++;
-			for (int j = 0; j < size; j++) {
-				tok = &t[i + 1];
-				char * key = strndup(JSON_STRING + tok->start, tok->end - tok->start);
-				jsmntok_t *v = &t[i + 2];
-
-				if (strcmp(key, fs->drive) == 0) {
-					i = i + 3;
-					for (int k = 0; k < v->size; k++) {
-						tok = &t[i + 1];
-						if (tok->type == JSMN_STRING) {
-							val = strndup(JSON_STRING + tok->start, tok->end - tok->start);
-							if (jsoneq(JSON_STRING, &t[i], "Args") == 0) {
-								fs->args = strdup(val);
-								free(val);
-							}
-							i = i + 2;
-						}
-						else if (tok->type == JSMN_ARRAY) {
-							i = i + tok->size + 1;
-						}
-					}
-				}
-				else {
-					i = i + 3;
-					for (int k = 0; k < v->size; k++) {
-						tok = &t[i + 1];
-						if (tok->type == JSMN_STRING) {
-							i=i+2;
-						}
-						else if (tok->type == JSMN_ARRAY) {
-							i = i + tok->size + 1;
-						}
-					}
-				}
-				free(key);
-
-				//else if (v->type == JSMN_ARRAY) {
-				//	//fs->hostcount = v->size;
-				//	//fs->hostlist = malloc(v->size);
-				//	//for (int u = 0; u < v->size; u++) {
-				//	//	jsmntok_t *h = &t[i+j+u+4];
-				//	//	int ssize = h->end - h->start;
-				//	//	//printf("  * %.*s\n", h->end - h->start, JSON_STRING + h->start); 
-				//	//	fs->hostlist[u] = strndup(JSON_STRING + h->start, ssize);
-				//	//	fs->hostlist[u][ssize] = '\0';
-				//	//	//printf("host %d: %s\n", u+1, fs->hostlist[u]);
-				//	//	
-				//	//}
-				//	//i += t[i + 1].size + 1;
-
-				//	i = i + v->size + 1;
-				//}
-				//free(key);
-
-			}
-		}		
-		else {
-			// assume key with 1 value, skip it
-			i++;
-		}
-	}
-	free(JSON_STRING);
-	//printf("Hosts:\n");
-	//i = 0;
-	//while (json->hosts[i])
-	//	printf("  - %s\n", json->hosts[i++]);
-	//printf("Port: %s\n", json->port);
-	//printf("Drive: %s\n", json->drive);
-	//printf("Path: %s\n", json->path);
-	return 0;
-}
-
-int load_ini(const char* appdir, fs_config * fs)
-{
-	//printf("loading ini..., json.jsonfile=%s\n",json->jsonfile);
-	char key[100] = { '\0' };
-	char val[FILENAME_MAX] = { '\0' };
-	char line[300] = { '\0' };
-	size_t span = 0;
-	char ini_path[FILENAME_MAX];
-	snprintf(ini_path, sizeof ini_path, "%s\\golddrive.ini", appdir);
-	//printf("ini path=%s\n", ini_path);
-	FILE *ini_file = fopen(ini_path, "r");
-	if (!ini_file) {
-		fprintf(stderr, "json config will not be used, cannot read ini file: %s\n", ini_path);
-		return 1;
-	}
-	else {
-		while (fgets(line, sizeof(line), ini_file)) {
-			char *equal = strpbrk(line, "="); //find the equal
-			if (equal) {
-				span = equal - line;
-				memcpy(key, line, span);
-				key[span] = '\0';
-				strtrim(key);
-				if (strcmp(key, "json") == 0) {
-					equal++; //advance past the =
-					char *nl = strpbrk(equal, "\n"); //fine the newline
-					if (nl) {
-						span = nl - equal;
-						//printf("span=%d\n", span);
-						strncpy(val, equal, span);
-						strtrim(val);
-						fs->json = strdup(val);
-					}
-					else {
-						//printf("no nl\n");
-					}
-				}
-			}
-		}
-	}
-	fclose(ini_file);
-	return 0;
-}
-
-void strtrim(char *str)
+void str_trim(char *str)
 {
 	char *end;
 
@@ -263,21 +137,7 @@ int randint(int min, int max)
 	return n;
 }	
 
-void gd_log(const char *fmt, ...)
-{
-	char message[1000];
-	va_list args;
-	va_start(args, fmt);
-	vsprintf(message, fmt, args);
-	va_end(args);
-	printf("%s", message);
-	if (g_logfile) {
-		FILE *f = fopen(g_logfile, "a");
-		if (f != NULL)
-			fprintf(f, "golddrive: %s", message);
-		fclose(f);
-	}
-}
+
 
 void gd_random_string(char *s, const int len)
 {
@@ -335,3 +195,98 @@ int get_file_version(char* filename, char *version)
 	return rc;
 }
 
+void str_replace(const char *s, const char *oldW, const char *newW, char *result)
+{
+	// result must be char result[MAX_PATH]
+	int i, cnt = 0;
+	int newWlen = (int)strlen(newW);
+	int oldWlen = (int)strlen(oldW);
+
+	// Counting the number of times old word 
+	// occur in the string 
+	for (i = 0; s[i] != '\0'; i++)
+	{
+		if (strstr(&s[i], oldW) == &s[i])
+		{
+			cnt++;
+
+			// Jumping to index after the old word. 
+			i += oldWlen - 1;
+		}
+	}
+
+	// Making new string of enough length 
+	//result = (char *)malloc(i + cnt * (newWlen - oldWlen) + 1);
+
+	i = 0;
+	while (*s)
+	{
+		// compare the substring with the result 
+		if (strstr(s, oldW) == s)
+		{
+			strcpy(&result[i], newW);
+			i += newWlen;
+			s += oldWlen;
+		}
+		else
+			result[i++] = *s++;
+	}
+
+	result[i] = '\0';
+	//return result;
+}
+
+int str_contains(const char *str, const char* word)
+{
+	return strstr(str, word) != NULL;
+}
+
+int str_startswith(const char *str, const char* beg)
+{
+	size_t lenbeg = strlen(beg);
+	size_t lenstr = strlen(str);
+	return lenstr < lenbeg ? 0 : strncmp(beg, str, lenbeg) == 0;
+}
+
+int path_concat(const char *s1, const char *s2, char *s3)
+{
+	strcpy_s(s3, MAX_PATH, s1);
+	int pathlen = (int)strlen(s1);
+	if (!(pathlen > 0 && s1[pathlen - 1] == '/'))
+		strcat_s(s3, MAX_PATH, "/");
+	strcat_s(s3, MAX_PATH, s2);
+	return 0;
+}
+
+void ShowLastError()
+{
+	// Retrieve the system error message for the last-error code
+
+	LPVOID lpMsgBuf;
+	LPVOID lpDisplayBuf;
+	DWORD dw = GetLastError();
+
+	FormatMessage(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER |
+		FORMAT_MESSAGE_FROM_SYSTEM |
+		FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL,
+		dw,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		(LPTSTR)&lpMsgBuf,
+		0, NULL);
+
+	// Display the error message and exit the process
+
+	lpDisplayBuf = (LPVOID)LocalAlloc(LMEM_ZEROINIT,
+		(lstrlen((LPCTSTR)lpMsgBuf) +  40) * sizeof(TCHAR));
+	StringCchPrintf((LPTSTR)lpDisplayBuf,
+		LocalSize(lpDisplayBuf) / sizeof(TCHAR),
+		TEXT("Function failed with error %d: %s"),
+		dw, lpMsgBuf);
+	MessageBox(NULL, (LPCTSTR)lpDisplayBuf, TEXT("Error"), MB_OK);
+
+	LocalFree(lpMsgBuf);
+	LocalFree(lpDisplayBuf);
+	ExitProcess(dw);
+}

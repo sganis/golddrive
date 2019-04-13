@@ -7,7 +7,8 @@
 #include <fuse.h>
 #include <fuse_opt.h>
 #include "util.h"
-#include "golddrive.h"
+#include "fs.h"
+#include "gd.h"
 #include <Shlwapi.h> /* PathRemoveFileSpecA */
 #pragma comment(lib, "shlwapi.lib")
 
@@ -21,25 +22,26 @@ char*		g_logfile;
 
 /* supported fs operations */
 static struct fuse_operations fs_ops = {
-	.init = f_init,
-	.statfs = f_statfs,
-	.getattr = f_getattr,
-	.opendir = f_opendir,
-	.readdir = f_readdir,
-	.releasedir = f_releasedir,
-	.unlink = f_unlink,
-	.rename = f_rename,
+	.chmod = f_chmod,
+	.chown = f_chown,
 	.create = f_create,
-	.open = f_open,
-	.read = f_read,
-	.write = f_write,
-	.release = f_release,
-	/*.flush = f_flush,*/
-	.mkdir = f_mkdir,
-	.rmdir = f_rmdir,
-	.truncate = f_truncate,
 	.fsync = f_fsync,
+	.getattr = f_getattr,
+	.init = f_init,
+	.mkdir = f_mkdir,
+	.open = f_open,
+	.opendir = f_opendir,
+	.read = f_read,
+	.readdir = f_readdir,
+	.release = f_release,
+	.releasedir = f_releasedir,
+	.rename = f_rename,
+	.rmdir = f_rmdir,
+	.statfs = f_statfs,
+	.truncate = f_truncate,
+	.unlink = f_unlink,
 	.utimens = f_utimens,
+	.write = f_write,
 };
 
 enum {
@@ -84,6 +86,8 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 		}
 		fprintf(stderr, "golddrive: invalid argument '%s'\n", arg);
 		return -1;
+	//case FUSE_OPT_KEY_OPT:
+	//	return 1;
 	case KEY_HELP:
 		fprintf(stderr,
 			"\n"
@@ -149,7 +153,7 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 //	return argv;
 //}
 
-static int parse_network_path(fs_config* fs)
+static int parse_remote(fs_config* fs)
 {
 	char *npath, *locuser, *user, *host, *port, *p;
 	
@@ -222,15 +226,24 @@ static int parse_network_path(fs_config* fs)
 	if(port)
 		fs->port = atoi(port);
 	
-	/* mount root by default, prepend a slash before path if needed */
-	fs->path = strdup(p);
+	fs->root = strdup(p);
+
+	/* mount root by default, prepend a slash before path if needed in remote linux file system
+	 * not in windows
+	 */
+	char s[MAX_PATH];
 	if (*p != '/') {
-		char s[256];
 		strcpy(s, "/");
 		strcat(s, p);
-		free(fs->path);
-		fs->path = strdup(s);
+		free(fs->root);
+		fs->root = strdup(s);
+		//fs->realroot = fs->root;
 	}
+	// fixme: support all letters, not only C:
+	//if (str_startswith(fs->root, "/C:/")) {
+	//	str_replace(fs->root, "/C:/", "/C/", s);
+	//	fs->realroot = strdup(s);
+	//}
 	free(npath);
 	return 0;
 }
@@ -289,10 +302,9 @@ int main(int argc, char *argv[])
 	memset(&g_fs, 0, sizeof(g_fs));
 
 	rc = fuse_opt_parse(&args, &g_fs, fs_opts, fs_opt_proc);
-
 	if (rc) {
-		fprintf(stderr, "bad arguments, try --help\n");
-		return -1;
+		gd_log("bad arguments, try --help\n");
+		return 1;
 	}
 
 	if (!g_fs.drive || strlen(g_fs.drive) < 2 || argc < 2) {
@@ -308,7 +320,7 @@ int main(int argc, char *argv[])
 
 	// parse network path
 	if(g_fs.remote)
-		parse_network_path(&g_fs);
+		parse_remote(&g_fs);
 
 	// finally setup missing arguments with defaults
 	// user
@@ -342,6 +354,7 @@ int main(int argc, char *argv[])
 	gd_log("user    = %s\n", g_fs.user);
 	gd_log("host    = %s\n", g_fs.host);
 	gd_log("port    = %d\n", g_fs.port);
+	gd_log("root    = %s\n", g_fs.root);
 	gd_log("pkey    = %s\n", g_fs.pkey);
 	gd_log("hidden  = %d\n", g_fs.hidden);
 
@@ -377,16 +390,19 @@ int main(int argc, char *argv[])
 	// number of threads
 	//printf("Threads = %d\n", san_threads(5, get_number_of_processors()));
 
-	// run fuse main
-	char volprefix[256], volname[256];
-	if(g_fs.remote)
-		sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=%s", g_fs.remote);
+	// default arguments
+	char volprefix[256], volname[256], prefix[256];
+	strcpy(prefix, g_fs.remote);
+	if (str_contains(g_fs.remote, ":"))
+		str_replace(g_fs.remote, ":", "", prefix);
+
+	if(prefix)
+		sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=%s", prefix);
 	else
 		sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=/golddrive/%c", g_fs.letter);
 	sprintf_s(volname, sizeof(volname), "-ovolname=%s", g_fs.mountpoint);
-	gd_log("Prefix  = %s\n", g_fs.remote);
+	gd_log("Prefix  = %s\n", prefix);
 
-	// default arguments
 	int pos = 1;
 	fuse_opt_insert_arg(&args, pos++, volprefix);
 	fuse_opt_insert_arg(&args, pos++, volname);
