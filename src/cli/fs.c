@@ -272,7 +272,8 @@ int f_create(const char *path, fuse_mode_t mode, struct fuse_file_info *fi)
 {
 	realpath(path);
 	int fd;
-	fuse_mode_t mod = mode & 438; // 438 = 0666 to remove execution bit
+	// remove execution bit in files
+	fuse_mode_t mod = mode & 0666; // int 438 
 	return -1 != (fd = gd_open(path, fi->flags, mod)) ? (fi_setfd(fi, fd), 0) : -errno;
 }
 

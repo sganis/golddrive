@@ -113,7 +113,7 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 			"    -o FileInfoTimeout=N       metadata timeout (millis, -1 for data caching)\n"
 			"    -o DirInfoTimeout=N        directory info timeout (millis)\n"
 			"    -o VolumeInfoTimeout=N     volume info timeout (millis)\n"
-			"    -o EaTimeout=N             extended attribute timeout (millis)"
+			"    -o EaTimeout=N             extended attribute timeout (millis)\n"
 			"    -o KeepFileCache           do not discard cache when files are closed\n"
 			"    -o ThreadCount             number of file system dispatcher threads\n"
 		);
@@ -121,10 +121,8 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 		//fuse_main(outargs->argc, outargs->argv, &fs_ops, NULL);
 		exit(1);
 
-	case KEY_VERSION:
-		
+	case KEY_VERSION:		
 		GetModuleFileNameA(NULL, exepath, MAX_PATH);
-		//PathRemoveFileSpecA(appdir);
 		char* version = calloc(100, sizeof(char));
 		get_file_version(exepath, version);
 		fprintf(stderr, "Golddrive v%s\nBuild date: %s\n", version, __DATE__);
@@ -341,10 +339,10 @@ int main(int argc, char *argv[])
 		g_fs.port = 22;
 	}
 
-//	if (!g_fs.host && g_fs.hostcount > 0) {
-//		// pick random host
-//		g_fs.host = g_fs.hostlist[randint(0,g_fs.hostcount-1)];
-//	}
+	//if (!g_fs.host && g_fs.hostcount > 0) {
+	//	// pick random host
+	//	g_fs.host = g_fs.hostlist[randint(0,g_fs.hostcount-1)];
+	//}
 
 	// show parameters
 	gd_log("Golddrive arguments:\n");
@@ -388,7 +386,7 @@ int main(int argc, char *argv[])
 	}
 
 	// number of threads
-	//printf("Threads = %d\n", san_threads(5, get_number_of_processors()));
+	//printf("Threads = %d\n", gd_threads(5, get_number_of_processors()));
 
 	// default arguments
 	char volprefix[256], volname[256], prefix[256];
@@ -408,7 +406,7 @@ int main(int argc, char *argv[])
 	fuse_opt_insert_arg(&args, pos++, volname);
 	fuse_opt_insert_arg(&args, pos++, "-oFileSystemName=Golddrive");
 	fuse_opt_insert_arg(&args, pos++, "-oFileInfoTimeout=1000,DirInfoTimeout=1000,VolumeInfoTimeout=1000");
-	fuse_opt_insert_arg(&args, pos++, "-orellinks,uid=-1,gid=-1,umask=000,create_umask=000");
+	fuse_opt_insert_arg(&args, pos++, "-orellinks,uid=-1,gid=-1,create_umask=000");
 	
 	// config file arguments
 	if (g_fs.args && strcmp(g_fs.args, "") != 0) {
@@ -420,7 +418,7 @@ int main(int argc, char *argv[])
 	fuse_opt_add_arg(&args, g_fs.drive);
 
 	// print arguments
-	gd_log("WinFsp arguments:\n");
+	gd_log("\nWinFsp arguments:\n");
 	for (int i = 1; i < args.argc; i++)
 		gd_log("arg %d   = %s\n", i, args.argv[i]);
 
