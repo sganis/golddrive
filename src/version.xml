@@ -7,10 +7,13 @@
             <Output TaskParameter="Lines" PropertyName="GitDescribe" /> 
         </ReadLinesFromFile>
     </Target>-->
-
+ 
     <PropertyGroup>
         <!-- build number: concat 2-digit year with 3-digit day of the year (16-bits until 2066) -->
-        <MyBuildNumber>$([System.DateTime]::Now.DayOfYear.ToString(`000`))</MyBuildNumber>
+        <!-- <MyBuildNumber>$([System.DateTime]::Now.DayOfYear.ToString(`000`))</MyBuildNumber> -->
+
+        <!-- Harcoded git tag until I find a different way -->
+		<!-- <MyBuildNumber>2.2</MyBuildNumber> -->
 
         <!-- git version -->      
         <MyGitRoot>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), .git/HEAD))</MyGitRoot>
@@ -26,10 +29,15 @@
  -->        
 
         <!-- try to get this from git tag -->
-        <MyCanonicalVersion>2.0</MyCanonicalVersion>
+        <MyCanonicalVersion>2</MyCanonicalVersion>
 
-        <MyVersion>$(MyCanonicalVersion).$(MyBuildNumber)</MyVersion>
-        <MyProductVersion>$(MyCanonicalVersion)</MyProductVersion>
+        <!-- <MyVersion>$(MyCanonicalVersion).$(MyBuildNumber)</MyVersion> -->
+        <!-- Harcoded git tag until I find a different way -->
+        <MyVersion>2.2.2</MyVersion>
+
+
+        <!-- <MyProductVersion>$(MyCanonicalVersion)</MyProductVersion> -->
+        <MyProductVersion>$(MyVersion)</MyProductVersion>
         <MyVersionWithCommas>$(MyVersion.Replace('.',',')),0</MyVersionWithCommas>
         <MyFullVersion>$(MyVersion)-$(MyGitRevision)</MyFullVersion>
         
@@ -39,7 +47,7 @@
         <MyCompanyName>Golddrive Inc.</MyCompanyName>
         <MyCopyright>$([System.DateTime]::Now.ToString(`yyyy`)) $(MyCompanyName)</MyCopyright>
 
-        <MyAssemblyPolicyVersion>$(MyCanonicalVersion.Substring(0,$(MyVersion.IndexOf('.')))).0</MyAssemblyPolicyVersion>
+        <MyAssemblyPolicyVersion>$(MyVersion.Substring(0,$(MyVersion.IndexOf('.')))).0</MyAssemblyPolicyVersion>
         <MyAssemblyVersion>$(MyAssemblyPolicyVersion).0.0</MyAssemblyVersion>
 
 
