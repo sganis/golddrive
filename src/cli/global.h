@@ -156,15 +156,18 @@ static const char *sftp_errors[] = {
 	"SFTP_UNKNOWN"
 };
 
+
 /* macros */
 #define fi_dirbit                       (0x8000000000000000ULL)
 #define fi_fh(fi, MASK)                 ((fi)->fh & (MASK))
 #define fi_setfh(fi, FH, MASK)          ((fi)->fh = (intptr_t)(FH) | (MASK))
 #define fi_fd(fi)                       (fi_fh(fi, fi_dirbit) ? \
 										gd_dirfd((gd_dir_t *)(intptr_t)fi_fh(fi, ~fi_dirbit)) : \
-										(int)fi_fh(fi, ~fi_dirbit))
+										(intptr_t)fi_fh(fi, ~fi_dirbit))
 #define fi_setfd(fi, fd)                (fi_setfh(fi, fd, 0))
 #define fi_dirp(fi)                     ((gd_dir_t *)(intptr_t)fi_fh(fi, ~fi_dirbit))
+//#define fi_dirp(fi)                     ((DIR *)(intptr_t)fi_fh(fi, ~fi_dirbit))
+
 #define fi_setdirp(fi, dirp)            (fi_setfh(fi, dirp, fi_dirbit))
 
 #define concat_path(s1, s2, s)			(sizeof s > (unsigned)snprintf(s, sizeof s, "%s%s", s1, s2))

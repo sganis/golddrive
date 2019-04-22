@@ -21,7 +21,7 @@ int f_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_file_info *
 	}
 	else
 	{
-		int fd = fi_fd(fi);
+		intptr_t fd = fi_fd(fi);
 		rc = -1 != gd_fstat(fd, stbuf) ? 0 : -errno;
 	}
 	if (rc) {
@@ -102,7 +102,7 @@ int f_truncate(const char *path, fuse_off_t size, struct fuse_file_info *fi)
 	}
 	else
 	{
-		int fd = fi_fd(fi);
+		intptr_t fd = fi_fd(fi);
 		return -1 != gd_ftruncate(fd, size) ? 0 : -errno;
 	}
 }
@@ -110,20 +110,20 @@ int f_truncate(const char *path, fuse_off_t size, struct fuse_file_info *fi)
 int f_open(const char *path, struct fuse_file_info *fi)
 {
 	realpath(path);
-	int fd;
+	intptr_t fd;
 	return -1 != (fd = gd_open(path, fi->flags, 0)) ? (fi_setfd(fi, fd), 0) : -errno;
 }
 
 int f_read(const char *path, char *buf, size_t size, fuse_off_t off, struct fuse_file_info *fi)
 {
-	int fd = fi_fd(fi);
+	intptr_t fd = fi_fd(fi);
 	int nb;
 	return -1 != (nb = gd_read(fd, buf, size, off)) ? nb : -errno;
 }
 
 int f_write(const char *path, const char *buf, size_t size, fuse_off_t off,	struct fuse_file_info *fi)
 {
-	int fd = fi_fd(fi);
+	intptr_t fd = fi_fd(fi);
 	int nb;
 	return -1 != (nb = gd_write(fd, buf, size, off)) ? nb : -errno;
 }
@@ -136,14 +136,14 @@ int f_statfs(const char *path, struct fuse_statvfs *stbuf)
 
 int f_release(const char *path, struct fuse_file_info *fi)
 {
-	int fd = fi_fd(fi);
+	intptr_t fd = fi_fd(fi);
 	gd_close(fd);
 	return 0;
 }
 
 int f_fsync(const char *path, int datasync, struct fuse_file_info *fi)
 {
-	int fd = fi_fd(fi);
+	intptr_t fd = fi_fd(fi);
 	return -1 != gd_fsync(fd) ? 0 : -errno;
 }
 
@@ -290,10 +290,11 @@ int f_releasedir(const char *path, struct fuse_file_info *fi)
 int f_create(const char *path, fuse_mode_t mode, struct fuse_file_info *fi)
 {
 	realpath(path);
-	int fd;
+	intptr_t fd;
 	// remove execution bit in files
 	fuse_mode_t mod = mode & 0666; // int 438 
-	return -1 != (fd = gd_open(path, fi->flags, mod)) ? (fi_setfd(fi, fd), 0) : -errno;
+	int rc = -1 != (fd = gd_open(path, fi->flags, mod)) ? (fi_setfd(fi, fd), 0) : -errno;
+	return rc;
 }
 
 int f_utimens(const char *path, const struct fuse_timespec tv[2], struct fuse_file_info *fi)

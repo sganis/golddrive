@@ -1,3 +1,5 @@
+#define FSP_FUSE_USE_STAT_EX
+
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -324,6 +326,9 @@ int main(int argc, char *argv[])
 	// user
 	if (!g_fs.user) {
 		g_fs.user = getenv("USERNAME");
+		// lower case
+		char* u = g_fs.user;
+		for (; *u; ++u) * u = tolower(*u);
 	}
 	// private key
 	if (!g_fs.pkey) {
@@ -355,6 +360,8 @@ int main(int argc, char *argv[])
 	gd_log("root    = %s\n", g_fs.root);
 	gd_log("pkey    = %s\n", g_fs.pkey);
 	gd_log("hidden  = %d\n", g_fs.hidden);
+	//gd_log("intptr_t= %ld\n", sizeof(intptr_t));
+	//gd_log("long    = %ld\n", sizeof(long));
 
 
 	// initiaize small read/write lock

@@ -195,9 +195,9 @@ int gd_stat(const char * path, struct fuse_stat *stbuf)
 	return 0;
 }
 
-int gd_fstat(int fd, struct fuse_stat *stbuf)
+int gd_fstat(intptr_t fd, struct fuse_stat *stbuf)
 {
-	gd_handle_t* sh = (gd_handle_t*)(intptr_t)fd;
+	gd_handle_t* sh = (gd_handle_t*)fd;
 	log_info("gd_fstat HANDLE: %zu:%zu, %s\n", (size_t)sh, (size_t)sh->handle, sh->path);
 	int rc = gd_stat(sh->path, stbuf);
 	return rc;
@@ -289,6 +289,7 @@ int gd_rm_hidden(const char * path)
 
 	}
 	gd_closedir(dirp);
+	return 0;
 }
 
 int gd_rmdir(const char * path)
@@ -303,6 +304,8 @@ int gd_rmdir(const char * path)
 	gd_unlock();
 
 	if (rc) {
+		if (rc == LIBSSH2_FX_FAILURE)
+			rc = LIBSSH2_FX_DIR_NOT_EMPTY;
 		gd_error(path);
 		int dirempty = gd_is_dir_empty(path);
 		if (!dirempty) {
@@ -401,15 +404,15 @@ int gd_truncate(const char *path, fuse_off_t size)
 	return 0;
 }
 
-int gd_ftruncate(int fd, fuse_off_t size)
+int gd_ftruncate(intptr_t fd, fuse_off_t size)
 {
-	gd_handle_t* sh = (gd_handle_t*)(intptr_t)fd;
+	gd_handle_t* sh = (gd_handle_t*)fd;
 	log_info("gd_ftruncate HANDLE: %zu:%zu, %s\n", (size_t)sh, (size_t)sh->handle, sh->path);
 	int rc = gd_truncate(sh->path, size);
 	return rc;
 }
 
-int gd_open(const char *path, int flags, unsigned int mode)
+intptr_t gd_open(const char *path, int flags, unsigned int mode)
 {
 	int rc;
 	LIBSSH2_SFTP_HANDLE* handle;
@@ -427,7 +430,7 @@ int gd_open(const char *path, int flags, unsigned int mode)
 		pflags = LIBSSH2_FXF_READ | LIBSSH2_FXF_WRITE;
 	}
 	else {
-		return 0;
+		return -EINVAL;;
 	}
 
 	if (flags & O_CREAT)
@@ -466,13 +469,13 @@ int gd_open(const char *path, int flags, unsigned int mode)
 		(size_t)sh, (size_t)handle, sh->path, sh->flags, sh->mode);
 
 	sh->handle = handle;
-	return (int)(intptr_t)sh;
+	return (intptr_t)sh;
 }
 
-int gd_read(int fd, void *buf, size_t size, fuse_off_t offset)
+int gd_read(intptr_t fd, void *buf, size_t size, fuse_off_t offset)
 {
 	int rc = 0;
-	gd_handle_t* sh = (gd_handle_t*)(intptr_t)fd;
+	gd_handle_t* sh = (gd_handle_t*)fd;
 	LIBSSH2_SFTP_HANDLE* handle = sh->handle;
 	size_t curpos;
 
@@ -510,9 +513,9 @@ int gd_read(int fd, void *buf, size_t size, fuse_off_t offset)
 	return total >= 0 ? (int)total : rc;
 }
 
-int gd_write(int fd, const void *buf, size_t size, fuse_off_t offset)
+int gd_write(intptr_t fd, const void *buf, size_t size, fuse_off_t offset)
 {
-	gd_handle_t* sh = (gd_handle_t*)(intptr_t)fd;
+	gd_handle_t* sh = (gd_handle_t*)fd;
 	LIBSSH2_SFTP_HANDLE* handle = sh->handle;
 	size_t curpos;
 	int rc;
@@ -581,29 +584,31 @@ int gd_statvfs(const char * path, struct fuse_statvfs *stbuf)
 	return rc;
 }
 
-int gd_close(int fd)
+int gd_close(intptr_t fd)
 {
-	gd_handle_t* sh = (gd_handle_t*)(intptr_t)fd;
+	gd_handle_t* sh = (gd_handle_t*)fd;
 	int rc;
 	LIBSSH2_SFTP_HANDLE* handle;
-	handle = sh->handle;
-	gd_lock();
-	rc = libssh2_sftp_close_handle(handle);
-	g_sftp_calls++;
-	gd_unlock();
-	if (rc) {
-		gd_error(sh->path);
-		rc = error();
+	if (sh) {
+		handle = sh->handle;
+		gd_lock();
+		rc = libssh2_sftp_close_handle(handle);
+		g_sftp_calls++;
+		if (rc) {
+			gd_error(sh->path);
+			rc = error();
+		}
+		log_debug("CLOSE HANDLE: %zu:%zu\n", (size_t)sh, (size_t)handle);
+		free(sh);
+		sh = NULL;
+		gd_unlock();
 	}
-	log_info("CLOSE HANDLE: %zu:%zu\n", (size_t)sh, (size_t)handle);
-	free(sh);
-	sh = NULL;
 	return 0;
 }
 
-int gd_fsync(int fd)
+int gd_fsync(intptr_t fd)
 {
-	gd_handle_t* sh = (gd_handle_t*)(intptr_t)fd;
+	gd_handle_t* sh = (gd_handle_t*)fd;
 	// flush file ?
 	return 0;
 }
@@ -714,19 +719,38 @@ struct gd_dirent_t * gd_readdir(gd_dir_t *dirp)
 	return &dirp->de;
 }
 
-int gd_closedir(gd_dir_t *dirp)
-{	
-	log_info("%s\n", path);
-	int fd = (int)(intptr_t)dirp->handle;
-	gd_close(fd);
+int gd_closedir(gd_dir_t* dirp)
+{
+	//if (dirp) {
+	//	long fdlong = (intptr_t)dirp->handle;
+	//	int fd = (int)(intptr_t)dirp->handle;
+	//	gd_close(fd);
+	//	free(dirp);
+	//	dirp = NULL;
+	//}
+	//return 0;
+	int rc = 0;
+	gd_handle_t* dirfh = dirp->handle;
+	LIBSSH2_SFTP_HANDLE* handle = dirfh->handle;
+	gd_lock();
+	rc = libssh2_sftp_close_handle(handle);
+	g_sftp_calls++;
+	if (rc) {
+		gd_error(dirfh->path);
+		rc = error();
+	}
+	log_debug("CLOSE HANDLE: %zu:%zu\n", (size_t)dirfh, (size_t)handle);
+	free(dirfh);
+	dirfh = NULL;
 	free(dirp);
 	dirp = NULL;
-	return 0;
+	gd_unlock();
+	return rc;
 }
 
-int gd_dirfd(gd_dir_t *dirp)
+intptr_t gd_dirfd(gd_dir_t *dirp)
 {
-	return (int)(intptr_t)dirp->handle;
+	return (intptr_t)dirp->handle;
 }
 
 int gd_check_hlink(const char *path)
@@ -767,7 +791,7 @@ int gd_check_hlink(const char *path)
 
 }
 
-int gd_utimensat(int dirfd, const char *path, const struct fuse_timespec times[2], int flag)
+int gd_utimensat(long dirfd, const char *path, const struct fuse_timespec times[2], int flag)
 {
 	/* ignore dirfd and assume that it is always AT_FDCWD */
 	/* ignore flag and assume that it is always AT_SYMLINK_NOFOLLOW */
@@ -812,6 +836,9 @@ void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs)
 	stbuf->st_mtim.tv_sec = attrs->mtime;
 	stbuf->st_ctim.tv_sec = attrs->mtime;
 	stbuf->st_nlink = 1;
+#if defined(FSP_FUSE_USE_STAT_EX)
+	stbuf->st_flags = MapFileAttributesToFlags(FindData.dwFileAttributes);
+#endif
 }
 
 
@@ -1029,6 +1056,10 @@ int map_error(int rc)
 		return EEXIST;
 	case LIBSSH2_FX_DIR_NOT_EMPTY:
 		return ENOTEMPTY;
+	case LIBSSH2_FX_EOF:
+		return ENOTEMPTY;
+	case LIBSSH2_FX_FAILURE:
+		return EPERM;
 	default:
 		return EIO;
 	}
