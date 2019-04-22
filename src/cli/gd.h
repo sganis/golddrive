@@ -7,7 +7,7 @@ int jsoneq(const char *json, jsmntok_t *tok, const char *s);
 int load_json(fs_config * fs);
 int map_ssh_error(gdssh_t* ssh, const char* path);
 int map_error(int rc);
-void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs);
+void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs, int hidden);
 gdssh_t *gd_init_ssh(const char *host, int port, const char *user, const char *pkey);
 int gd_finalize(void);
 int gd_stat(const char *path, struct fuse_stat *stbuf);

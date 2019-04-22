@@ -3,6 +3,40 @@
 #include "util.h"
 #include "gd.h"
 
+//#if defined(FSP_FUSE_USE_STAT_EX)
+//static inline uint32_t MapFileAttributesToFlags(UINT32 FileAttributes)
+//{
+//	uint32_t flags = 0;
+//
+//	if (FileAttributes & FILE_ATTRIBUTE_READONLY)
+//		flags |= FSP_FUSE_UF_READONLY;
+//	if (FileAttributes & FILE_ATTRIBUTE_HIDDEN)
+//		flags |= FSP_FUSE_UF_HIDDEN;
+//	if (FileAttributes & FILE_ATTRIBUTE_SYSTEM)
+//		flags |= FSP_FUSE_UF_SYSTEM;
+//	if (FileAttributes & FILE_ATTRIBUTE_ARCHIVE)
+//		flags |= FSP_FUSE_UF_ARCHIVE;
+//
+//	return flags;
+//}
+//
+//static inline UINT32 MapFlagsToFileAttributes(uint32_t flags)
+//{
+//	UINT32 FileAttributes = 0;
+//
+//	if (flags & FSP_FUSE_UF_READONLY)
+//		FileAttributes |= FILE_ATTRIBUTE_READONLY;
+//	if (flags & FSP_FUSE_UF_HIDDEN)
+//		FileAttributes |= FILE_ATTRIBUTE_HIDDEN;
+//	if (flags & FSP_FUSE_UF_SYSTEM)
+//		FileAttributes |= FILE_ATTRIBUTE_SYSTEM;
+//	if (flags & FSP_FUSE_UF_ARCHIVE)
+//		FileAttributes |= FILE_ATTRIBUTE_ARCHIVE;
+//
+//	return FileAttributes;
+//}
+//#endif
+
 gdssh_t * gd_init_ssh(const char* hostname, int port, const char* username, const char* pkey)
 {
 	int rc;
@@ -178,7 +212,7 @@ int gd_stat(const char * path, struct fuse_stat *stbuf)
 		gd_error(path);
 		return error();
 	}
-	copy_attributes(stbuf, &attrs);
+	copy_attributes(stbuf, &attrs, 0);
 	//print_permissions(path, &attrs);
 #if LOGLEVEL==DEBUG
 	//debug("end %d %s\n", rc, path);
@@ -674,6 +708,7 @@ struct gd_dirent_t * gd_readdir(gd_dir_t *dirp)
 	LIBSSH2_SFTP_HANDLE *handle = sh->handle;
 	LIBSSH2_SFTP_ATTRIBUTES attrs;	
 	char fname[FILENAME_MAX];
+	memset(&attrs, 0, sizeof attrs);
 
 	gd_lock();
 	rc = libssh2_sftp_readdir(handle, fname, FILENAME_MAX, &attrs);
@@ -709,13 +744,13 @@ struct gd_dirent_t * gd_readdir(gd_dir_t *dirp)
 		}
 	}
 
-	copy_attributes(&dirp->de.d_stat, &attrs);
 	strcpy_s(dirp->de.d_name, FILENAME_MAX, fname);
 	dirp->de.dir = (attrs.permissions &  LIBSSH2_SFTP_S_IFDIR) > 0;
-	dirp->de.dir = (attrs.permissions &  LIBSSH2_SFTP_S_IFDIR) > 0;
+	//dirp->de.dir = (attrs.permissions &  LIBSSH2_SFTP_S_IFDIR) > 0;
 	dirp->de.hidden = (strlen(fname) > 1					/* file name length 2 or more	*/
 						&& fname[0] == '.'					/* file name starts with .		*/
 						&& fname[1] != '.'); 				/* file name is not ..			*/
+	copy_attributes(&dirp->de.d_stat, &attrs, dirp->de.hidden);
 	return &dirp->de;
 }
 
@@ -824,7 +859,7 @@ int gd_utimensat(long dirfd, const char *path, const struct fuse_timespec times[
 	return 0;
 }
 
-void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs)
+void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs, int hidden)
 {
 	//memset(stbuf, 0, sizeof *stbuf);
 	stbuf->st_uid = attrs->uid;
@@ -837,7 +872,9 @@ void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs)
 	stbuf->st_ctim.tv_sec = attrs->mtime;
 	stbuf->st_nlink = 1;
 #if defined(FSP_FUSE_USE_STAT_EX)
-	stbuf->st_flags = MapFileAttributesToFlags(FindData.dwFileAttributes);
+	if (hidden) {
+		stbuf->st_flags |= FSP_FUSE_UF_HIDDEN;
+	}
 #endif
 }
 

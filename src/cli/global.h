@@ -1,10 +1,21 @@
 #pragma once
+
+// windows file attributes
+//#define FSP_FUSE_USE_STAT_EX 1
+#define FSP_FUSE_CAP_STAT_EX            (1 << 23)   /* file system supports fuse_stat_ex */
+/* from FreeBSD */
+#define FSP_FUSE_UF_HIDDEN              0x00008000
+#define FSP_FUSE_UF_READONLY            0x00001000
+#define FSP_FUSE_UF_SYSTEM              0x00000080
+#define FSP_FUSE_UF_ARCHIVE             0x00000800
+
 #include <libssh2.h>
 #include <libssh2_sftp.h>
 #include <winfsp/winfsp.h>
 #include <fuse.h>
 #include <stdio.h>
 #include <fcntl.h>
+
 
 #define BUFFER_SIZE 32767
 #define ERROR_LEN MAXERRORLENGTH

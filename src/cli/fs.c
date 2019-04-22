@@ -7,7 +7,21 @@
 
 void *f_init(struct fuse_conn_info *conn, struct fuse_config *conf)
 {
+	//conn->want |= (conn->capable & FUSE_CAP_READDIRPLUS);
+#if defined(_WIN64) || defined(_WIN32)
+#if defined(FUSE_CAP_READDIRPLUS)
 	conn->want |= (conn->capable & FUSE_CAP_READDIRPLUS);
+#endif
+
+#if defined(FSP_FUSE_USE_STAT_EX) && defined(FSP_FUSE_CAP_STAT_EX)
+	conn->want |= (conn->capable & FSP_FUSE_CAP_STAT_EX);
+#endif
+
+#if defined(FSP_FUSE_CAP_CASE_INSENSITIVE)
+	conn->want |= (conn->capable & FSP_FUSE_CAP_CASE_INSENSITIVE);
+#endif
+#endif
+
 	return fuse_get_context()->private_data;
 }
 
@@ -173,7 +187,6 @@ int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t of
 			//printf("skipping hidden file: %s\n", fname);
 			continue;
 		}
-
 		if (0 != filler(buf, de->d_name, &de->d_stat, 0, FUSE_FILL_DIR_PLUS))
 			return -ENOMEM;
 	}

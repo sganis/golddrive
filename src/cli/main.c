@@ -1,5 +1,3 @@
-#define FSP_FUSE_USE_STAT_EX
-
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
