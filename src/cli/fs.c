@@ -24,19 +24,31 @@ int f_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_file_info *
 		int fd = fi_fd(fi);
 		rc = -1 != gd_fstat(fd, stbuf) ? 0 : -errno;
 	}
+	if (rc) {
+		// debug
+		int err = -errno;
+	}
 	return rc;
 }
 
 int f_mkdir(const char * path, fuse_mode_t  mode)
 {
 	realpath(path);
-	return -1 != gd_mkdir(path, mode) ? 0 : -errno;
+	int rc = -1 != gd_mkdir(path, mode) ? 0 : -errno;
+	if (rc) {
+		int err = -errno;
+	}
+	return rc;
 }
 
 int f_unlink(const char *path)
 {
 	realpath(path);
-	return -1 != gd_unlink(path) ? 0 : -errno;
+	int rc = -1 != gd_unlink(path) ? 0 : -errno;
+	if (rc) {
+		int err = -errno;
+	}
+	return rc;
 }
 
 int f_rmdir(const char * path)
@@ -48,6 +60,9 @@ int f_rmdir(const char * path)
 	//	rc = gd_rm_hidden(path);
 	
 	int rc = -1 != gd_rmdir(path) ? 0 : -errno;
+	if (rc) {
+		int err = -errno;
+	}
 	//ShowLastError();
 	return rc;
 }
@@ -56,7 +71,11 @@ int f_rename(const char *oldpath, const char *newpath, unsigned int flags)
 {
 	realpath(newpath);
 	realpath(oldpath);
-	return -1 != gd_rename(oldpath, newpath) ? 0 : -errno;
+	int rc = -1 != gd_rename(oldpath, newpath) ? 0 : -errno;
+	if (rc) {
+		int err = -errno;
+	}
+	return rc;
 }
 
 int f_chmod(const char *path, fuse_mode_t mode, struct fuse_file_info *fi)
@@ -71,7 +90,7 @@ int f_chmod(const char *path, fuse_mode_t mode, struct fuse_file_info *fi)
 int f_chown(const char *path, fuse_uid_t uid, fuse_gid_t gid, struct fuse_file_info *fi)
 {
 	realpath(path);
-	return -1 != gd_lchown(path, uid, gid) ? 0 : -errno;
+	return -1 != gd_chown(path, uid, gid) ? 0 : -errno;
 }
 
 int f_truncate(const char *path, fuse_off_t size, struct fuse_file_info *fi)

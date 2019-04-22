@@ -1,8 +1,5 @@
 #pragma once
-//#include <libssh2.h>
 #include <libssh2_sftp.h>
-//#include <winfsp/winfsp.h>
-//#include <fuse.h>
 #include "jsmn.h"
 
 void gd_log(const char *fmt, ...);
@@ -22,7 +19,7 @@ int gd_rm_hidden(const char * path);
 int gd_rmdir(const char * path);
 int gd_rename(const char *from, const char *to);
 int gd_chmod(const char *path, fuse_mode_t mode);
-int gd_lchown(const char *path, fuse_uid_t uid, fuse_gid_t gid);
+int gd_chown(const char *path, fuse_uid_t uid, fuse_gid_t gid);
 int gd_truncate(const char *path, fuse_off_t size);
 int gd_ftruncate(int fd, fuse_off_t size);
 int gd_open(const char *path, int flags, unsigned int mode);

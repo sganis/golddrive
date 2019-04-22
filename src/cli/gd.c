@@ -368,7 +368,7 @@ int gd_chmod(const char *path, fuse_mode_t mode)
 	return 0;
 }
 
-int gd_lchown(const char *path, fuse_uid_t uid, fuse_gid_t gid)
+int gd_chown(const char *path, fuse_uid_t uid, fuse_gid_t gid)
 {
 	/* we do not support file security */
 	return 0;
@@ -1008,12 +1008,9 @@ int map_ssh_error(gdssh_t* ssh, const char* path)
 
 int map_error(int rc)
 {
-	if (rc < 0)
-		return EPIPE; // all ssh errors map to broken pipe for now.
-	if (rc == -48 || rc == 22)
+	if (rc <= -48 || rc >= 22)
 		return EINVAL;
-	if (rc == LIBSSH2_FX_FAILURE)
-		return EPERM;
+
 	switch (rc) {
 	case LIBSSH2_FX_PERMISSION_DENIED:
 	case LIBSSH2_FX_WRITE_PROTECT:
@@ -1026,21 +1023,14 @@ int map_error(int rc)
 	case LIBSSH2_FX_NO_MEDIA:
 		return ENOENT;
 	case LIBSSH2_FX_QUOTA_EXCEEDED:
+	case LIBSSH2_FX_NO_SPACE_ON_FILESYSTEM:
 		return ENOMEM;
-	case LIBSSH2_FX_INVALID_HANDLE:
-		return EBADF;
 	case LIBSSH2_FX_FILE_ALREADY_EXISTS:
 		return EEXIST;
-	case LIBSSH2_FX_LINK_LOOP:
-	case LIBSSH2_FX_BAD_MESSAGE:
-	case LIBSSH2_FX_EOF:
-		return ENOEXEC;
-	case LIBSSH2_FX_NO_SPACE_ON_FILESYSTEM:
-		return ENOSPC;
 	case LIBSSH2_FX_DIR_NOT_EMPTY:
 		return ENOTEMPTY;
 	default:
-		return EINVAL;
+		return EIO;
 	}
 }
 
