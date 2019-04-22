@@ -363,6 +363,9 @@ static int _gd_rename(const char *from, const char *to)
 		LIBSSH2_SFTP_RENAME_OVERWRITE
 	);
 	g_sftp_calls++;
+	if (rc) {
+		gd_error(from);
+	}
 	gd_unlock();
 	return rc;
 }
