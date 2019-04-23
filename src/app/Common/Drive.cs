@@ -95,7 +95,7 @@ namespace golddrive
         private string user;
         public string User
         {
-            get { return user == null ? Environment.UserName : user; }
+            get { return user == null ? Environment.UserName.ToLower() : user; }
             set { user = value; }
         }
 

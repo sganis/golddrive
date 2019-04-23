@@ -671,7 +671,7 @@ namespace golddrive
 
             if (!File.Exists(drive.AppKey))
             {
-                r.MountStatus = MountStatus.BAD_PASSWORD;
+                r.MountStatus = MountStatus.BAD_KEY;
                 r.Error = "No ssh key";
                 return r;
             }
@@ -691,7 +691,7 @@ namespace golddrive
                 r.Error = ex.Message;
                 if (ex is SshAuthenticationException)
                 {
-                    r.MountStatus = MountStatus.BAD_PASSWORD;
+                    r.MountStatus = MountStatus.BAD_KEY;
                 }
                 else if (ex is SocketException)
                 {
