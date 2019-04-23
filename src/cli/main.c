@@ -27,6 +27,7 @@ static struct fuse_operations fs_ops = {
 	.create = f_create,
 	.fsync = f_fsync,
 	.getattr = f_getattr,
+	.readlink = f_readlink,
 	.init = f_init,
 	.mkdir = f_mkdir,
 	.open = f_open,
@@ -224,19 +225,19 @@ static int parse_remote(fs_config* fs)
 	if(port)
 		fs->port = atoi(port);
 	
-	fs->root = strdup(p);
-
+	fs->root = strdup(p);	
+	fs->has_root = 0;
 	/* mount root by default, prepend a slash before path if needed in remote linux file system
-	 * not in windows
-	 */
-	char s[MAX_PATH];
+	 * not in windows */
 	if (*p != '/') {
+		char s[MAX_PATH];
 		strcpy(s, "/");
 		strcat(s, p);
 		free(fs->root);
 		fs->root = strdup(s);
-		//fs->realroot = fs->root;
+		fs->has_root = strlen(fs->root) > 1;
 	}
+
 	// fixme: support all letters, not only C:
 	//if (str_startswith(fs->root, "/C:/")) {
 	//	str_replace(fs->root, "/C:/", "/C/", s);
@@ -411,7 +412,7 @@ int main(int argc, char *argv[])
 	fuse_opt_insert_arg(&args, pos++, volname);
 	fuse_opt_insert_arg(&args, pos++, "-oFileSystemName=Golddrive");
 	fuse_opt_insert_arg(&args, pos++, "-oFileInfoTimeout=1000,DirInfoTimeout=1000,VolumeInfoTimeout=1000");
-	fuse_opt_insert_arg(&args, pos++, "-orellinks,uid=-1,gid=-1,create_umask=000");
+	fuse_opt_insert_arg(&args, pos++, "-orellinks,dothidden,uid=-1,gid=-1,create_umask=000");
 	
 	// config file arguments
 	if (g_fs.args && strcmp(g_fs.args, "") != 0) {

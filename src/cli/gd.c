@@ -204,7 +204,8 @@ int gd_stat(const char * path, struct fuse_stat *stbuf)
 	assert(g_ssh);
 	assert(g_ssh->sftp);
 	gd_lock();
-	rc = libssh2_sftp_stat_ex(g_ssh->sftp, path, (int)strlen(path),	LIBSSH2_SFTP_STAT, &attrs);
+	//rc = libssh2_sftp_stat_ex(g_ssh->sftp, path, (int)strlen(path), LIBSSH2_SFTP_STAT, &attrs);
+	rc = libssh2_sftp_stat_ex(g_ssh->sftp, path, (int)strlen(path), LIBSSH2_SFTP_LSTAT, &attrs);
 	g_sftp_calls++;
 	gd_unlock();
 	log_debug("rc=%d, %s\n", rc, path);
@@ -212,7 +213,7 @@ int gd_stat(const char * path, struct fuse_stat *stbuf)
 		gd_error(path);
 		return error();
 	}
-	copy_attributes(stbuf, &attrs, 0);
+	copy_attributes(stbuf, &attrs);
 	//print_permissions(path, &attrs);
 #if LOGLEVEL==DEBUG
 	//debug("end %d %s\n", rc, path);
@@ -235,6 +236,96 @@ int gd_fstat(intptr_t fd, struct fuse_stat *stbuf)
 	log_info("gd_fstat HANDLE: %zu:%zu, %s\n", (size_t)sh, (size_t)sh->handle, sh->path);
 	int rc = gd_stat(sh->path, stbuf);
 	return rc;
+}
+//static int count_components(const char* p)
+//{
+//	int ctr;
+//
+//	for (; *p == '/'; p++);
+//	for (ctr = 0; *p; ctr++) {
+//		for (; *p && *p != '/'; p++);
+//		for (; *p == '/'; p++);
+//	}
+//	return ctr;
+//}
+//
+//static void strip_common(const char** sp, const char** tp)
+//{
+//	const char* s = *sp;
+//	const char* t = *tp;
+//	do {
+//		for (; *s == '/'; s++);
+//		for (; *t == '/'; t++);
+//		*tp = t;
+//		*sp = s;
+//		for (; *s == *t && *s && *s != '/'; s++, t++);
+//	} while ((*s == *t && *s) || (!*s && *t == '/') || (*s == '/' && !*t));
+//}
+//static void transform_symlink(const char* path, char** linkp)
+//{
+//	const char* l = *linkp;
+//	const char* b = g_fs.root;
+//	char* newlink;
+//	char* s;
+//	int dotdots;
+//	int i;
+//
+//	if (l[0] != '/' || b[0] != '/')
+//		return;
+//
+//	strip_common(&l, &b);
+//	if (*b)
+//		return;
+//
+//	strip_common(&l, &path);
+//	dotdots = count_components(path);
+//	if (!dotdots)
+//		return;
+//	dotdots--;
+//
+//	newlink = malloc(dotdots * 3 + strlen(l) + 2);
+//	if (!newlink) {
+//		fprintf(stderr, "sshfs: memory allocation failed\n");
+//		abort();
+//	}
+//	for (s = newlink, i = 0; i < dotdots; i++, s += 3)
+//		strcpy(s, "../");
+//
+//	if (l[0])
+//		strcpy(s, l);
+//	else if (!dotdots)
+//		strcpy(s, ".");
+//	else
+//		s[0] = '\0';
+//
+//	free(*linkp);
+//	*linkp = newlink;
+//}
+int gd_readlink(const char* path, char* buf, size_t size)
+{
+	int rc;	
+	assert(size > 0);
+	gd_lock();
+	char *target = malloc(MAX_PATH);
+	// rc is number of bytes in target
+	rc = libssh2_sftp_symlink_ex(g_ssh->sftp, path, (int)strlen(path),
+		target, MAX_PATH, LIBSSH2_SFTP_READLINK);
+	g_sftp_calls++;
+	gd_unlock();
+	log_debug("rc=%d, %s\n", rc, path);
+	if (rc < 0) {
+		gd_error(path);
+		free(target);
+		return error();
+	}
+	assert(rc < size);
+
+	//transform_symlink(path, &target);
+
+	strncpy(buf, target, rc);
+	buf[rc] = '\0';
+	free(target);
+	return 0;
 }
 
 int gd_mkdir(const char *path, fuse_mode_t mode)
@@ -268,63 +359,11 @@ int gd_unlink(const char *path)
 	gd_unlock();
 	if (rc) {
 		gd_error(path);
-		int e = error();
-		return e;
+		return error();
 	}
 	return 0;
 }
 
-int gd_is_dir_empty(const char * path)
-{
-	gd_dir_t *dirp = gd_opendir(path);
-	if (!dirp)
-		return 1;
-	struct gd_dirent_t *de;
-
-	gd_rewinddir(dirp);
-	int count = 0;
-	for (;;)
-	{
-		errno = 0;
-		if (0 == (de = gd_readdir(dirp)))
-			break;
-		count++;
-		if (count > 2)
-			return 0;
-	}
-	gd_closedir(dirp);
-	return 1;
-}
-int gd_rm_hidden(const char * path)
-{
-	// rm all hidden files in directory
-	gd_dir_t *dirp = gd_opendir(path);
-	if (!dirp)
-		return 1;
-	struct gd_dirent_t *de;
-	
-	gd_rewinddir(dirp);
-
-	for (;;)
-	{
-		errno = 0;
-		if (0 == (de = gd_readdir(dirp)))
-			break;
-
-		/* delete hidden files and folders */
-		if (de->hidden) {
-			char fullpath[MAX_PATH];
-			path_concat(path, de->d_name, fullpath);	
-			if (de->dir)
-				gd_rmdir(fullpath);
-			else
-				gd_unlink(fullpath);
-		}
-
-	}
-	gd_closedir(dirp);
-	return 0;
-}
 
 int gd_rmdir(const char * path)
 {
@@ -338,19 +377,12 @@ int gd_rmdir(const char * path)
 	gd_unlock();
 
 	if (rc) {
-		if (rc == LIBSSH2_FX_FAILURE)
-			rc = LIBSSH2_FX_DIR_NOT_EMPTY;
+		//if (rc == LIBSSH2_FX_FAILURE)
+		//	rc = LIBSSH2_FX_DIR_NOT_EMPTY;
 		gd_error(path);
-		int dirempty = gd_is_dir_empty(path);
-		if (!dirempty) {
-			errno = EACCES;
-			return -1;
-		}
-		else {
-			return error();
-		}
+		rc = error();		
 	}
-	return 0;
+	return rc;
 }
 
 static int _gd_rename(const char *from, const char *to)
@@ -730,7 +762,7 @@ struct gd_dirent_t * gd_readdir(gd_dir_t *dirp)
 	}
 
 	// resolve symbolic links
-	if (attrs.permissions & LIBSSH2_SFTP_S_IFLNK) {
+	/*if (attrs.permissions & LIBSSH2_SFTP_S_IFLNK) {
 		char fullpath[MAX_PATH];
 		path_concat(dirp->path, fname, fullpath);		
 		memset(&attrs, 0, sizeof attrs);
@@ -745,15 +777,14 @@ struct gd_dirent_t * gd_readdir(gd_dir_t *dirp)
 			rc = error0();
 			return 0;
 		}
-	}
+	}*/
 
 	strcpy_s(dirp->de.d_name, FILENAME_MAX, fname);
 	dirp->de.dir = (attrs.permissions &  LIBSSH2_SFTP_S_IFDIR) > 0;
-	//dirp->de.dir = (attrs.permissions &  LIBSSH2_SFTP_S_IFDIR) > 0;
-	dirp->de.hidden = (strlen(fname) > 1					/* file name length 2 or more	*/
-						&& fname[0] == '.'					/* file name starts with .		*/
-						&& fname[1] != '.'); 				/* file name is not ..			*/
-	copy_attributes(&dirp->de.d_stat, &attrs, dirp->de.hidden);
+	//dirp->de.hidden = (strlen(fname) > 1					/* file name length 2 or more	*/
+	//					&& fname[0] == '.'					/* file name starts with .		*/
+	//					&& fname[1] != '.'); 				/* file name is not ..			*/
+	copy_attributes(&dirp->de.d_stat, &attrs);
 	return &dirp->de;
 }
 
@@ -862,7 +893,7 @@ int gd_utimensat(long dirfd, const char *path, const struct fuse_timespec times[
 	return 0;
 }
 
-void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs, int hidden)
+void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs)
 {
 	//memset(stbuf, 0, sizeof *stbuf);
 	stbuf->st_uid = attrs->uid;
@@ -874,11 +905,14 @@ void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs, in
 	stbuf->st_mtim.tv_sec = attrs->mtime;
 	stbuf->st_ctim.tv_sec = attrs->mtime;
 	stbuf->st_nlink = 1;
-#if defined(FSP_FUSE_USE_STAT_EX)
-	if (hidden) {
-		stbuf->st_flags |= FSP_FUSE_UF_HIDDEN;
-	}
-#endif
+	/*if (LIBSSH2_SFTP_S_ISLNK(attrs->permissions)) {
+		int a = attrs->permissions;
+	}*/
+//#if defined(FSP_FUSE_USE_STAT_EX)
+//	if (hidden) {
+//		stbuf->st_flags |= FSP_FUSE_UF_HIDDEN;
+//	}
+//#endif
 }
 
 
@@ -974,15 +1008,15 @@ int gd_threads(int n, int c)
 	return (n < 1 ? c : max(2, n)) + c + 2;
 }
 
-void get_filetype(unsigned long perm, char* filetype)
+void get_filetype(unsigned long mode, char* filetype)
 {
-	if (LIBSSH2_SFTP_S_ISLNK(perm))			strcpy_s(filetype, 4, "LNK");
-	else if (LIBSSH2_SFTP_S_ISREG(perm))	strcpy_s(filetype, 4, "REG");
-	else if (LIBSSH2_SFTP_S_ISDIR(perm))	strcpy_s(filetype, 4, "DIR");
-	else if (LIBSSH2_SFTP_S_ISCHR(perm))	strcpy_s(filetype, 4, "CHR");
-	else if (LIBSSH2_SFTP_S_ISBLK(perm))	strcpy_s(filetype, 4, "BLK");
-	else if (LIBSSH2_SFTP_S_ISFIFO(perm))	strcpy_s(filetype, 4, "FIF");
-	else if (LIBSSH2_SFTP_S_ISSOCK(perm))	strcpy_s(filetype, 4, "SOC");
+	if (LIBSSH2_SFTP_S_ISREG(mode))			strcpy_s(filetype, 4, "REG");
+	else if (LIBSSH2_SFTP_S_ISDIR(mode))	strcpy_s(filetype, 4, "DIR");
+	else if (LIBSSH2_SFTP_S_ISLNK(mode))	strcpy_s(filetype, 4, "LNK");
+	else if (LIBSSH2_SFTP_S_ISCHR(mode))	strcpy_s(filetype, 4, "CHR");
+	else if (LIBSSH2_SFTP_S_ISBLK(mode))	strcpy_s(filetype, 4, "BLK");
+	else if (LIBSSH2_SFTP_S_ISFIFO(mode))	strcpy_s(filetype, 4, "FIF");
+	else if (LIBSSH2_SFTP_S_ISSOCK(mode))	strcpy_s(filetype, 4, "SOC");
 	else									strcpy_s(filetype, 4, "NAN");
 }
 
@@ -1000,11 +1034,15 @@ void mode_human(unsigned long mode, char* human)
 	human[9] = '\0';
 }
 
+
+
 void print_permissions(const char* path, LIBSSH2_SFTP_ATTRIBUTES *attrs)
 {
 	char perm[10];
+	char ftype[4];
 	mode_human(attrs->permissions, perm);
-	printf("%s %d %d %s\n", perm, attrs->uid, attrs->gid, path);
+	get_filetype(attrs->permissions, ftype);
+	printf("%s %s %d %d %s\n", perm, ftype, attrs->uid, attrs->gid, path);
 }
 
 void print_stat(const char* path, LIBSSH2_SFTP_ATTRIBUTES *attrs)
@@ -1075,6 +1113,8 @@ int map_ssh_error(gdssh_t* ssh, const char* path)
 
 int map_error(int rc)
 {
+	if (rc == 0)
+		return 0;
 	if (rc <= -48 || rc >= 22)
 		return EINVAL;
 
@@ -1098,6 +1138,14 @@ int map_error(int rc)
 		return ENOTEMPTY;
 	case LIBSSH2_FX_EOF:
 		return ENOTEMPTY;
+	case LIBSSH2_FX_BAD_MESSAGE:
+		return EBADMSG;
+	case LIBSSH2_FX_NO_CONNECTION:
+		return ENOTCONN;
+	case LIBSSH2_FX_CONNECTION_LOST:
+		ECONNABORTED;
+	case LIBSSH2_FX_OP_UNSUPPORTED:
+		EOPNOTSUPP;
 	case LIBSSH2_FX_FAILURE:
 		return EPERM;
 	default:
@@ -1238,6 +1286,7 @@ int load_json(fs_config * fs)
 void gd_log(const char *fmt, ...)
 {
 	char message[1000];
+	//memset(message, 0, 1000);
 	va_list args;
 	va_start(args, fmt);
 	vsprintf(message, fmt, args);

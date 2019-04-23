@@ -75,7 +75,8 @@ typedef struct fs_config {
 	char *json;
 	char *args;
 	char *home;
-	char *root;
+	char* root;
+	int has_root;
 	//char *realroot;
 	char *mountpoint;
 	char letter;
@@ -185,11 +186,12 @@ static const char *sftp_errors[] = {
 #define error()						    ((errno = map_error(rc)) == 0 ? 0 : -1)
 #define error0()						((errno = map_error(rc)) == 0 ? 0 : 0)
 #define realpath(n)						\
-    char full ## n[PATH_MAX];			\
-    /* prepend root path */  			\
-	if (!concat_path(g_fs.root, n, full ## n)) \
-        return -ENAMETOOLONG;           \
-	n = full ## n;					    
+	if (g_fs.has_root) { 				\
+		char full ## n[PATH_MAX];		\
+		if (!concat_path(g_fs.root, n, full ## n)) \
+			return -ENAMETOOLONG;       \
+		n = full ## n;					\
+	}
 
 #define gd_error(path) {															\
     rc = map_ssh_error(g_ssh, path);												\

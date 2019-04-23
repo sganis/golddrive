@@ -2,20 +2,13 @@
 #include <libssh2_sftp.h>
 #include "jsmn.h"
 
-void gd_log(const char *fmt, ...);
-int jsoneq(const char *json, jsmntok_t *tok, const char *s);
-int load_json(fs_config * fs);
-int map_ssh_error(gdssh_t* ssh, const char* path);
-int map_error(int rc);
-void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs, int hidden);
 gdssh_t *gd_init_ssh(const char *host, int port, const char *user, const char *pkey);
 int gd_finalize(void);
 int gd_stat(const char *path, struct fuse_stat *stbuf);
 int gd_fstat(intptr_t fd, struct fuse_stat *stbuf);
+int gd_readlink(const char* path, char* buf, size_t size);
 int gd_mkdir(const char *path, fuse_mode_t mode);
 int gd_unlink(const char *path);
-int gd_is_dir_empty(const char * path);
-int gd_rm_hidden(const char * path);
 int gd_rmdir(const char * path);
 int gd_rename(const char *from, const char *to);
 int gd_chmod(const char *path, fuse_mode_t mode);
@@ -36,6 +29,12 @@ intptr_t gd_dirfd(gd_dir_t *dirp);
 int gd_check_hlink(const char *path);
 int gd_utimensat(long dirfd, const char *path, const struct fuse_timespec times[2], int flag);
 
+void gd_log(const char* fmt, ...);
+int jsoneq(const char* json, jsmntok_t* tok, const char* s);
+int load_json(fs_config* fs);
+int map_ssh_error(gdssh_t* ssh, const char* path);
+int map_error(int rc);
+void copy_attributes(struct fuse_stat* stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs);
 void mode_human(unsigned long mode, char* human);
 void print_permissions(const char* path, LIBSSH2_SFTP_ATTRIBUTES *attrs);
 void print_stat(const char* path, LIBSSH2_SFTP_ATTRIBUTES *attrs);

@@ -3,6 +3,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
 using System.IO;
 using System;
+using System.Linq;
+using System.Security.Cryptography;
 
 namespace golddrive.Tests
 {
@@ -19,7 +21,7 @@ namespace golddrive.Tests
             IsGoldDrive = true,
             Status = DriveStatus.DISCONNECTED,
         };
-    
+
         [TestInitialize]
         public void Init()
         {
@@ -44,8 +46,24 @@ namespace golddrive.Tests
             Assert.AreEqual(r.DriveStatus, DriveStatus.DISCONNECTED);
 
         }
-
-
+        public void RandomFile(string path, int gigabytes)
+        {
+            FileStream fs = new FileStream(path, FileMode.CreateNew);
+            fs.Seek(1024L * 1024 * 1024 * gigabytes, SeekOrigin.Begin);
+            fs.WriteByte(0);
+            fs.Close();
+        }
+        public string Md5(string path)
+        {
+            using (var md5 = MD5.Create())
+            {
+                using (var stream = File.OpenRead(path))
+                {
+                    var hash = md5.ComputeHash(stream);
+                    return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+                }
+            }
+        }
         [TestMethod]
         public void SetGetDrivelLabelTest()
         {
@@ -83,7 +101,7 @@ namespace golddrive.Tests
             Assert.AreEqual(d.Name, _drive.Name);
             Assert.AreEqual(d.MountPoint, _drive.MountPoint);
             File.Delete(src);
-            if(File.Exists(dst))
+            if (File.Exists(dst))
                 File.Move(dst, src);
         }
 
@@ -125,6 +143,73 @@ namespace golddrive.Tests
             Assert.AreEqual(_mountService.CheckDriveStatus(t).DriveStatus, DriveStatus.MOUNTPOINT_IN_USE);
             Unmount();
             _mountService.RunLocal("subst W: /d");
+        }
+
+        [TestMethod()]
+        public void MakeDirTest()
+        {
+            Mount();
+            var path = "X:\\tmp\\tempdir";
+            Directory.CreateDirectory(path);
+            Assert.IsTrue(Directory.Exists(path));
+            Directory.Delete(path);
+            Assert.IsFalse(Directory.Exists(path));
+            Unmount();
+        }
+        [TestMethod()]
+        public void MakeDirManyTest()
+        {
+            Mount();
+            foreach (int f in Enumerable.Range(1, 1000))
+            {
+                var path = $"X:\\tmp\\folder_{f}";
+                Directory.CreateDirectory(path);
+                Assert.IsTrue(Directory.Exists(path));
+            }
+            foreach (int f in Enumerable.Range(1, 1000))
+            {
+                var path = $"X:\\tmp\\folder_{f}";
+                Directory.Delete(path);
+                Assert.IsFalse(Directory.Exists(path));
+            }
+            Unmount();
+        }
+
+        [TestMethod()]
+        public void CreateFileTest()
+        {
+            Mount();
+            var path = "X:\\tmp\\file01.txt";
+            var myFile = File.Create(path);
+            myFile.Close();
+            Assert.IsTrue(File.Exists(path));
+            //System.Threading.Thread.Sleep(1000);
+            File.Delete(path);
+            Assert.IsFalse(File.Exists(path));
+            Unmount();
+        }
+        [TestMethod()]
+        public void CopyFileTest()
+        {
+            Mount();
+            var tempfile1 = Path.GetTempPath() + "file_" + Guid.NewGuid().ToString() + ".bin";
+            var tempfile2 = Path.GetTempPath() + "file_" + Guid.NewGuid().ToString() + ".bin";
+            RandomFile(tempfile1, 1);
+            var hash1 = Md5(tempfile1);
+            var path = "X:\\tmp\\file_random.bin";
+            Assert.IsFalse(File.Exists(path));
+            File.Copy(tempfile1, path);
+            Assert.IsTrue(File.Exists(path));
+            File.Copy(path, tempfile2);
+            var hash2 = Md5(tempfile2);
+            Assert.AreEqual(hash1, hash2);
+            File.Delete(path);
+            File.Delete(tempfile1);
+            File.Delete(tempfile2);
+            Assert.IsFalse(File.Exists(path));
+            Assert.IsFalse(File.Exists(tempfile1));
+            Assert.IsFalse(File.Exists(tempfile2));
+            Unmount();
         }
     }
 }

@@ -38,6 +38,16 @@ int f_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_file_info *
 	return rc;
 }
 
+int f_readlink(const char* path, char* buf, size_t size)
+{
+	realpath(path);
+	int rc = -1 != gd_readlink(path, buf, size) ? 0 : -errno;
+	if (rc) {
+		int err = -errno;
+	}
+	return rc;
+}
+
 int f_mkdir(const char * path, fuse_mode_t  mode)
 {
 	realpath(path);
@@ -144,8 +154,7 @@ int f_statfs(const char *path, struct fuse_statvfs *stbuf)
 int f_release(const char *path, struct fuse_file_info *fi)
 {
 	intptr_t fd = fi_fd(fi);
-	gd_close(fd);
-	return 0;
+	return gd_close(fd);
 }
 
 int f_fsync(const char *path, int datasync, struct fuse_file_info *fi)
@@ -176,10 +185,10 @@ int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t of
 			break;
 		
 		/* skip hidden files */
-		if (!g_fs.hidden && de->hidden) {
-			//printf("skipping hidden file: %s\n", fname);
-			continue;
-		}
+		//if (!g_fs.hidden && de->hidden) {
+		//	//printf("skipping hidden file: %s\n", fname);
+		//	continue;
+		//}
 		if (0 != filler(buf, de->d_name, &de->d_stat, 0, FUSE_FILL_DIR_PLUS))
 			return -ENOMEM;
 	}

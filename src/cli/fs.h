@@ -32,6 +32,7 @@
 // fuse3 fs operations
 void *f_init(struct fuse_conn_info *conn, struct fuse_config *conf);
 int f_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_file_info *fi);
+int f_readlink(const char* path, char* buf, size_t size);
 int f_statfs(const char *path, struct fuse_statvfs *st);
 int f_opendir(const char *path, struct fuse_file_info *fi);
 int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t off, struct fuse_file_info *fi, enum fuse_readdir_flags flags);
