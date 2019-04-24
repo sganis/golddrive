@@ -1,6 +1,6 @@
 version: 2.2.{build}
 image: 
-- Visual Studio 2019
+- Visual Studio 2017
 platform: x64
 configuration: Release
 environment:
@@ -11,17 +11,17 @@ environment:
   GOLDDRIVE_PASS:
     secure: 25BPcFmVEe3pnXeQiOkyzw==
 install:
-  - start /wait msiexec /i src\bundle\winfsp\winfsp-1.5.19090.msi /qn ADDLOCAL=ALL
+  - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.5B1/winfsp-1.5.19090.msi
+  - start /wait msiexec /i winfsp-1.5.19090.msi /qn ADDLOCAL=ALL
   - ps: Write-host "Rebooting..." 
   - ps: Restart-Computer -Force 
   - ps: Start-Sleep -s 1
-  # - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.4B3/%WINFSP%.msi
 build_script:
-  - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
-  - start /wait msiexec /i src\build\Release\golddrive-*.msi /qn
+  #- msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
+  #- start /wait msiexec /i src\build\Release\golddrive-*.msi /qn
   # - C:\Python37\python -m pip install paramiko pyyaml psutil
   # - echo "test host %GOLDDRIVE_HOST%"
-test:
+#test:
 #   - vstest.console /logger:Appveyor src\test\bin\Release\golddrive-test.dll  # categories:
-  categories:
-    - Appveyor
+#  categories:
+#    - Appveyor
