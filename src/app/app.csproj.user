@@ -4,6 +4,6 @@
     <ProjectView>ProjectFiles</ProjectView>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <StartArguments>z: \\golddrive\host</StartArguments>
+    <StartArguments>H: \\golddrive\box</StartArguments>
   </PropertyGroup>
 </Project>

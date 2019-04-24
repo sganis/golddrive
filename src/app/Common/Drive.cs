@@ -8,6 +8,7 @@ namespace golddrive
     public class Drive : Observable
     {
         public DriveStatus Status { get; set; }
+        
         public bool? IsGoldDrive { get; set; }
         //public string VolumeLabel { get; set; }
         public string Path { get; set; }
@@ -112,6 +113,10 @@ namespace golddrive
         public string AppKey
         {
             get { return $@"{UserProfile}\.ssh\id_rsa-{User}-golddrive"; }
+        }
+        public string UserKey
+        {
+            get { return $@"{UserProfile}\.ssh\id_rsa"; }
         }
         public string AppPubKey
         {

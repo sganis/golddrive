@@ -13,7 +13,6 @@ namespace golddrive
         #region Properties
 
         private MountService _mountService;
-
         private int _selecteTabIndex;
         public int SelectedTabIndex
         {
@@ -152,9 +151,11 @@ namespace golddrive
 
         #region Constructor
 
-        public MainWindowViewModel()
+        public MainWindowViewModel(ReturnBox rb)
         {
             _mountService = new MountService();
+            //SelectedDrive = drive;
+
             //Messenger.Default.Register<string>(this, OnShowView);
             CurrentPage = Page.Main;
             LoadDrivesAsync();
@@ -198,7 +199,7 @@ namespace golddrive
                 case MountStatus.OK:
                     CurrentPage = Page.Main;
                     Message = r.DriveStatus.ToString();
-                    UpdateObservableDrives(r.Object as Drive);
+                    UpdateObservableDrives(r.Drive);
                     NotifyPropertyChanged("HasDrives");
                     break;
                 default:
@@ -216,7 +217,8 @@ namespace golddrive
             {
                 Settings settings = _mountService.LoadSettings();
                 GlobalArgs = settings.Args;
-                SelectedDrive = settings.SelectedDrive;
+                if(_selectedDrive == null)
+                    SelectedDrive = settings.SelectedDrive;
                 _mountService.UpdateDrives(settings);
             });
 

@@ -34,6 +34,20 @@ namespace golddrive
                 return Drives.Where(x => x.Status != DriveStatus.FREE && x.IsGoldDrive==true).ToList();
             }
         }
+
+        public Drive GetDriveFromArgs(string args)
+        {
+            // args: Y: \\golddrive\user@host!port\path -uother...
+            Drive drive = new Drive();
+            Match m = Regex.Match(args, @"([g-z]): \\\\golddrive\\([^ ]+)", RegexOptions.IgnoreCase);
+            if(m.Success)
+            {
+                drive.Letter = m.Groups[1].Value;
+                drive.MountPoint = m.Groups[2].Value;
+            }
+            return drive;
+        }
+
         public List<Drive> FreeDrives
         {
             get
@@ -523,7 +537,7 @@ namespace golddrive
                 else
                     r.DriveStatus = DriveStatus.CONNECTED;
             }
-            r.Object = drive;
+            r.Drive = drive;
             return r;
         }
         public bool CheckIfDriveWorks(Drive drive)
@@ -600,7 +614,7 @@ namespace golddrive
 
         #region SSH Management
 
-        ReturnBox TestHost(Drive drive)
+        public ReturnBox TestHost(Drive drive)
         {
             ReturnBox r = new ReturnBox();
             try
@@ -661,7 +675,7 @@ namespace golddrive
             }
             return r;
         }
-        ReturnBox TestSsh(Drive drive)
+        public ReturnBox TestSsh(Drive drive, string key)
         {
             ReturnBox r = new ReturnBox();
 
@@ -669,7 +683,7 @@ namespace golddrive
             //if (r.MountStatus == MountStatus.BAD_HOST)
             //    return r;
 
-            if (!File.Exists(drive.AppKey))
+            if (!File.Exists(key))
             {
                 r.MountStatus = MountStatus.BAD_KEY;
                 r.Error = "No ssh key";
@@ -678,7 +692,7 @@ namespace golddrive
             try
             {
                 r.MountStatus = MountStatus.UNKNOWN;
-                var pk = new PrivateKeyFile(drive.AppKey);
+                var pk = new PrivateKeyFile(key);
                 var keyFiles = new[] { pk };
                 SshClient client = new SshClient(drive.Host, drive.Port, drive.User, keyFiles);
                 client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
@@ -727,7 +741,7 @@ namespace golddrive
             }
             return r;
         }
-        ReturnBox SetupSsh(Drive drive, string password)
+        public ReturnBox SetupSshWithPassword(Drive drive, string password)
         {
             ReturnBox r = new ReturnBox();
             try
@@ -762,12 +776,52 @@ namespace golddrive
                 return r;
             }
 
-            r = TestSsh(drive);
+            r = TestSsh(drive, drive.AppKey);
             if (r.MountStatus != MountStatus.OK)
                 return r;
 
             return r;
         }
+        public ReturnBox SetupSshWithUserKey(Drive drive, string userkey)
+        {
+            ReturnBox r = new ReturnBox();
+            try
+            {
+                string pubkey = "";
+                if (File.Exists(drive.AppKey) && File.Exists(drive.AppPubKey))
+                {
+                    pubkey = File.ReadAllText(drive.AppPubKey).Trim();
+                }
+                else
+                {
+                    pubkey = GenerateKeys(drive);
+                }
+                var pk = new PrivateKeyFile(userkey);
+                var keyFiles = new[] { pk };
+                SshClient client = new SshClient(drive.Host, drive.Port, drive.User, keyFiles);
+                client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
+                client.Connect();
+                string cmd = "";
+                //bool linux = false;
+                //if(linux)
+                cmd = $"cd; umask 077; mkdir -p .ssh; echo '{pubkey}' >> .ssh/authorized_keys";
+                //else
+                //    cmd = $"mkdir %USERPROFILE%\\.ssh 2>NUL || echo {pubkey.Trim()} >> %USERPROFILE%\\.ssh\\authorized_keys";
+                SshCommand command = client.CreateCommand(cmd);
+                command.CommandTimeout = TimeSpan.FromSeconds(10);
+                r.Output = command.Execute();
+                r.Error = command.Error;
+                r.ExitCode = command.ExitStatus;
+            }
+            catch (Exception ex)
+            {
+                r.Error = ex.Message;
+                return r;
+            }
+
+            return TestSsh(drive, drive.AppKey);
+        }
+
         string GenerateKeys(Drive drive)
         {
             string pubkey = "";
@@ -807,7 +861,7 @@ namespace golddrive
                 r.Error = r.DriveStatus.ToString();
                 return r;
             }
-            r = TestSsh(drive);
+            r = TestSsh(drive, drive.AppKey);
             if (r.MountStatus != MountStatus.OK)
                 return r;
 
@@ -819,7 +873,7 @@ namespace golddrive
             if (r.MountStatus != MountStatus.OK)
                 return r;
 
-            r = SetupSsh(drive, password);
+            r = SetupSshWithPassword(drive, password);
             if (r.MountStatus != MountStatus.OK)
                 return r;
 
@@ -880,13 +934,14 @@ namespace golddrive
             }
             return "n/a";
         }
-        private ReturnBox Mount(Drive drive)
+        public ReturnBox Mount(Drive drive)
         {
             ReturnBox r = RunLocal("net.exe", $"use { drive.Name } { drive.Remote } /persistent:yes");
             if (!r.Success)
             {
                 r.Error = r.Error;
                 r.MountStatus = MountStatus.UNKNOWN;
+                r.Drive = drive;
                 return r;
             }
             SetExplorerDriveLabel(drive);
@@ -897,7 +952,7 @@ namespace golddrive
             UpdateDrives(settings);
             r.MountStatus = MountStatus.OK;
             r.DriveStatus = DriveStatus.CONNECTED;
-            r.Object = drive;            
+            r.Drive = drive;            
             return r;
         }
 
@@ -907,6 +962,7 @@ namespace golddrive
             if (!r.Success)
             {
                 r.Error = r.Error;
+                r.Drive = drive;
                 return r;
             }
             // TODO: clenup drive name and registry
@@ -916,7 +972,7 @@ namespace golddrive
             UpdateDrives(settings);
             r.MountStatus = MountStatus.OK;
             r.DriveStatus = DriveStatus.DISCONNECTED;
-            r.Object = drive;
+            r.Drive = drive;
             return r;
 
         }
