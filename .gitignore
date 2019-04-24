@@ -10,8 +10,8 @@ obj/
 Release/
 Debug/
 packages/
-.VC.db
-.VC.opendb
-.log
-.filters
-.user
+*.VC.db
+*.VC.opendb
+*.log
+*.filters
+*.user
