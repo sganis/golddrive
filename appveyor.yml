@@ -16,14 +16,14 @@ install:
   - ps: Write-host "Rebooting..." 
   - ps: Restart-Computer -Force 
   - ps: Start-Sleep -s 1
-build_script:
+#build_script:
   # - msbuild src\cli\cli.vcxproj /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
   # - msbuild src\app\app.csproj /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
   # - msbuild src\test\test.csproj /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
   #- start /wait msiexec /i src\build\Release\golddrive-*.msi /qn
   # - C:\Python37\python -m pip install paramiko pyyaml psutil
   # - echo "test host %GOLDDRIVE_HOST%"
-test:
+#test:
   #- vstest.console /logger:Appveyor src\test\bin\Release\golddrive-test.dll  # categories:
   # assemblies:
   #   - src\test\bin\Release\golddrive-test.dll

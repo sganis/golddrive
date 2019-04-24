@@ -11,11 +11,9 @@
                 LicenseUrl=""
                 LogoSideFile="logoside.png"/>
         </BootstrapperApplicationRef>
-        <Variable Name="Feature" Value="ALL" />
+        <!--<Variable Name="Feature" Value="ALL" />-->
 		<Chain>
-            <MsiPackage SourceFile="winfsp\winfsp-1.5.19090.msi" >
-                <MsiProperty Name="ADDLOCAL" Value="[Feature]" />
-            </MsiPackage>
+            <MsiPackage SourceFile="winfsp\winfsp-1.5.19090.msi" />
             <MsiPackage SourceFile="$(var.msi.TargetPath)" />            
         </Chain>
 	</Bundle>

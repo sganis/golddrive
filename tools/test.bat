@@ -5,7 +5,4 @@
 ::set GOLDDRIVE_PORT=%my_port%
 ::vstest.console /logger:Appveyor src\test\bin\Debug\golddrive-test.dll
 
-vstest.console ^
-	%~dp0..\src\test\bin\Release\golddrive-test.dll ^
-	/EnableCodeCoverage ^
-	/Settings:%~dp0..\src\test\test.runsettings
+vstest.console %~dp0..\src\test\bin\Release\golddrive-test.dll /Settings:%~dp0..\src\test\test.runsettings
