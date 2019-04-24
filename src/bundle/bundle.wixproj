@@ -25,11 +25,11 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <DefineConstants>Debug;MyVersion=$(MyVersion)</DefineConstants>
-    <OutputPath>$(SolutionDir)build\$(Configuration)\</OutputPath>
+    <OutputPath>$(SolutionDir)..\build\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
-    <OutputPath>$(SolutionDir)build\$(Configuration)\</OutputPath>
+    <OutputPath>$(SolutionDir)..\build\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <DefineConstants>MyVersion=$(MyVersion)</DefineConstants>
   </PropertyGroup>
