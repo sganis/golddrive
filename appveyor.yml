@@ -3,13 +3,13 @@ image:
 - Visual Studio 2019 Preview
 platform: x64
 configuration: Release
-environment:
-  GOLDDRIVE_HOST:
-    secure: 7iZ2lKF24FhwxW8mL+OMc4xTfkBmY38eqxs91LpZL8Y=
-  GOLDDRIVE_PORT:
-    secure: HiCVHHHiwJUZo8jML2cStQ==
-  GOLDDRIVE_PASS:
-    secure: 25BPcFmVEe3pnXeQiOkyzw==
+# environment:
+#   GOLDDRIVE_HOST:
+#     secure: 7iZ2lKF24FhwxW8mL+OMc4xTfkBmY38eqxs91LpZL8Y=
+#   GOLDDRIVE_PORT:
+#     secure: HiCVHHHiwJUZo8jML2cStQ==
+#   GOLDDRIVE_PASS:
+#     secure: 25BPcFmVEe3pnXeQiOkyzw==
 install:
   - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.5B1/winfsp-1.5.19090.msi
   - start /wait msiexec /i winfsp-1.5.19090.msi /qn ADDLOCAL=ALL
