@@ -22,6 +22,8 @@ build_script:
   # - C:\Python37\python -m pip install paramiko pyyaml psutil
   # - echo "test host %GOLDDRIVE_HOST%"
 test:
-  - vstest.console /logger:Appveyor src\test\bin\Release\golddrive-test.dll  # categories:
+  #- vstest.console /logger:Appveyor src\test\bin\Release\golddrive-test.dll  # categories:
+  assemblies:
+    - src\test\bin\Release\golddrive-test.dll
   categories:
     - Appveyor
