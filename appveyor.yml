@@ -17,11 +17,11 @@ install:
   - ps: Restart-Computer -Force 
   - ps: Start-Sleep -s 1
 build_script:
-  #- msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
-  #- start /wait msiexec /i src\build\Release\golddrive-*.msi /qn
+  - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
+  - start /wait msiexec /i src\build\Release\golddrive-*.msi /qn
   # - C:\Python37\python -m pip install paramiko pyyaml psutil
   # - echo "test host %GOLDDRIVE_HOST%"
-#test:
-#   - vstest.console /logger:Appveyor src\test\bin\Release\golddrive-test.dll  # categories:
-#  categories:
-#    - Appveyor
+test:
+  - vstest.console /logger:Appveyor src\test\bin\Release\golddrive-test.dll  # categories:
+  categories:
+    - Appveyor
