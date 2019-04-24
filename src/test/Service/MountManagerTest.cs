@@ -197,6 +197,8 @@ namespace golddrive.Tests
             RandomFile(tempfile1, 1);
             var hash1 = Md5(tempfile1);
             var path = "X:\\tmp\\file_random.bin";
+            if (File.Exists(path))
+                File.Delete(path);
             Assert.IsFalse(File.Exists(path));
             File.Copy(tempfile1, path);
             Assert.IsTrue(File.Exists(path));
