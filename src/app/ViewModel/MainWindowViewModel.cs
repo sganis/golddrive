@@ -262,7 +262,7 @@ namespace golddrive
 
         private async void ConnectAsync(Drive drive)
         {
-            WorkStart("Connecting");
+            WorkStart("Connecting...");
             ReturnBox r = await Task.Run(() => _mountService.Connect(drive));
             WorkDone(r);
         }
@@ -421,9 +421,14 @@ namespace golddrive
         }
         private async void OnConnectPassword(object obj)
         {
+            Drive d = SelectedDrive;
+            if (!HasDrive)
+            {
+                d = SelectedFreeDrive;
+            }
             CurrentPage = Page.Main;
-            WorkStart("Connecting");
-            ReturnBox r = await Task.Run(() => _mountService.ConnectPassword(SelectedDrive, password));
+            WorkStart("Connecting...");
+            ReturnBox r = await Task.Run(() => _mountService.ConnectPassword(d, password));
             WorkDone(r);
         }
        

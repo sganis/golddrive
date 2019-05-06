@@ -939,7 +939,6 @@ namespace golddrive
             ReturnBox r = RunLocal("net.exe", $"use { drive.Name } { drive.Remote } /persistent:yes");
             if (!r.Success)
             {
-                r.Error = r.Error;
                 r.MountStatus = MountStatus.UNKNOWN;
                 r.Drive = drive;
                 return r;
