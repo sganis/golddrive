@@ -55,16 +55,17 @@ namespace golddrive
                 //Logger.Log($"Starting cli: {cmd} {args}");
                 //Process.Start(cmd, args);
                 //Process.Start("net.exe", "use " + args);
-                rb = ms.Mount(drive);
+                rb = ms.Connect(drive);
                 if (rb.MountStatus != MountStatus.OK)
                 {
+                    drive.Status = rb.DriveStatus;
                     ok = false;
                 }
             }
             
             if(!ok)
             {
-                new MainWindow(rb).ShowDialog();
+                new MainWindow(rb, drive).ShowDialog();
             }
 
             this.Shutdown();

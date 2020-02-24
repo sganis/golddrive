@@ -22,8 +22,19 @@ namespace golddrive
         }
         public void AddDrive(Drive drive)
         {
-            Drives[drive.Name] = drive;
+            if (Drives.ContainsKey(drive.Name))
+            {
+                var d = Drives[drive.Name];
+                d.MountPoint = drive.MountPoint;
+                d.Status = drive.Status;
+                
+            }
+            else
+            {
+                Drives[drive.Name] = drive;
+            }
         }
+
 
         [JsonIgnore]
         public Drive SelectedDrive { get; set; }

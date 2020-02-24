@@ -337,8 +337,8 @@ namespace golddrive
 
             foreach (char c in letters)
             {
-                if (c == 'W')
-                    c.ToString();
+                //if (c == 'W')
+                //    c.ToString();
                 bool used = false;
                 Drive d = new Drive { Letter = c.ToString() };
                 for (int i = 0; i < drives.Length; i++)
@@ -522,9 +522,11 @@ namespace golddrive
                 var free = FreeDrives.Find(x => x.Letter == drive.Letter) != null;
                 var isGold = GoldDrives.Find(x => x.Letter == drive.Letter) != null;
                 var disconnected = GoldDrives.Find(x => x.Letter == drive.Letter && x.Status == DriveStatus.DISCONNECTED) != null;
-                var pathUsed = GoldDrives.Find(x => x.Letter != drive.Letter && x.MountPoint == drive.MountPoint) != null;
+                var pathUsed = GoldDrives.Find(x => x.Letter != drive.Letter && x.MountPoint == drive.MountPoint 
+                                                && (x.Status != DriveStatus.DISCONNECTED 
+                                                    && x.Status != DriveStatus.FREE)) != null;
 
-                if (pathUsed && free)
+                if (pathUsed && free && !disconnected)
                     r.DriveStatus = DriveStatus.MOUNTPOINT_IN_USE;
                 else if (free)
                     r.DriveStatus = DriveStatus.DISCONNECTED;
@@ -854,6 +856,11 @@ namespace golddrive
                 r.MountStatus = MountStatus.BAD_WINFSP;
                 return r;
             }
+            if (!IsCliInstalled())
+            {
+                r.MountStatus = MountStatus.BAD_CLI;
+                return r;
+            }
             r = CheckDriveStatus(drive);
             if (r.DriveStatus != DriveStatus.DISCONNECTED)
             {
@@ -884,12 +891,17 @@ namespace golddrive
             //string winfsp = Environment.ExpandEnvironmentVariables(@"%ProgramFiles(x86)%\WinFsp\bin\winfsp-x64.dll");
             //return File.Exists(winfsp);
 
-
-            ServiceController sc = new ServiceController("WinFsp.launcher");
-            return sc.Status == ServiceControllerStatus.Running;
-
+            ServiceController[] services = ServiceController.GetServices();
+            var service = services.FirstOrDefault(s => s.ServiceName == "WinFsp.Launcher");
+            if (service != null) 
+                return service.Status == ServiceControllerStatus.Running;
+            return false;
         }
-
+        private bool IsCliInstalled()
+        {
+            var cli = $@"{ AppPath }\golddrive.exe";
+            return File.Exists(cli) && cli == GetGolddriveCliPath();
+        }
         private string GetGolddriveCliPath()
         {
             try

@@ -11,9 +11,9 @@ namespace golddrive.Tests
     [TestClass()]
     public class MountManagerTest
     {
-        MountService _mountService = new MountService();
-        static string _host = Environment.GetEnvironmentVariable("GOLDDRIVE_HOST");
-        Drive _drive = new Drive
+        private MountService _mountService = new MountService();
+        private static readonly string _host = Environment.GetEnvironmentVariable("GOLDDRIVE_HOST");
+        private Drive _drive = new Drive
         {
             Letter = "X",
             MountPoint = _host,
@@ -131,12 +131,13 @@ namespace golddrive.Tests
         public void CheckDriveStatusTest()
         {
             _mountService.RunLocal($"subst W: {_mountService.LocalAppData}");
-            Drive c = new Drive { Letter = "C", MountPoint = "vlcc31" };
-            Drive w = new Drive { Letter = "W", MountPoint = "vlcc31" };
-            Drive y = new Drive { Letter = "Y", MountPoint = "vlcc31" };
+            Drive c = new Drive { Letter = "C", MountPoint = "sshserver" };
+            Drive w = new Drive { Letter = "W", MountPoint = "sshserver" };
+            Drive y = new Drive { Letter = "Y", MountPoint = "sshserver" };
             Assert.AreEqual(_mountService.CheckDriveStatus(c).DriveStatus, DriveStatus.NOT_SUPPORTED);
             Assert.AreEqual(_mountService.CheckDriveStatus(w).DriveStatus, DriveStatus.IN_USE);
-            Assert.AreEqual(_mountService.CheckDriveStatus(_drive).DriveStatus, DriveStatus.DISCONNECTED);
+            var status = _mountService.CheckDriveStatus(_drive).DriveStatus;
+            Assert.IsTrue(status==DriveStatus.DISCONNECTED);
             Mount();
             Assert.AreEqual(_mountService.CheckDriveStatus(_drive).DriveStatus, DriveStatus.CONNECTED);
             Drive t = new Drive { Letter = "T", MountPoint = _host };
@@ -196,7 +197,7 @@ namespace golddrive.Tests
             var tempfile2 = Path.GetTempPath() + "file_" + Guid.NewGuid().ToString() + ".bin";
             RandomFile(tempfile1, 1);
             var hash1 = Md5(tempfile1);
-            var path = "X:\\tmp\\file_random.bin";
+            var path = "X:\\test\\file_random.bin";
             if (File.Exists(path))
                 File.Delete(path);
             Assert.IsFalse(File.Exists(path));
