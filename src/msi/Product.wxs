@@ -74,7 +74,7 @@
         
         <Icon Id="logo.ico" SourceFile="..\app\golddrive.ico" />
 
-        <DirectoryRef Id="INSTALLDIR" FileSource="..\app\bin\$(var.Configuration)">
+        <DirectoryRef Id="INSTALLDIR" FileSource="..\build\$(var.Configuration)">
             <Component Id="C.app.exe">
                 <File Name="golddrive-app.exe" KeyPath="yes">
                     <Shortcut Id="app_shortcut"

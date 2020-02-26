@@ -4,10 +4,10 @@ namespace golddrive
 {
     public partial class MainWindow 
     {
-        public MainWindow(ReturnBox rb)
+        public MainWindow(ReturnBox rb, Drive drive)
         {
             InitializeComponent();
-            DataContext = new MainWindowViewModel(rb);            
+            DataContext = new MainWindowViewModel(rb, drive);            
         }
     }
 }

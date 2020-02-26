@@ -18,7 +18,7 @@ ECHO.
 CHOICE /C 123 /M "Enter ssh server for testing: "
 :: Note - list ERRORLEVELS in decreasing order
 IF ERRORLEVEL 3 (
-	SET HOST=192.168.99.100
+	SET HOST=192.168.99.101
 	goto hostdone 
 )
 IF ERRORLEVEL 2 (
@@ -32,8 +32,8 @@ IF ERRORLEVEL 1 (
 
 :hostdone
 echo on
-set GOLDDRIVE_USER=support
-set GOLDDRIVE_PASS=support
+set GOLDDRIVE_USER=san
+set GOLDDRIVE_PASS=san
 set GOLDDRIVE_HOST=%HOST%
-set GOLDDRIVE_PORT=2222
+set GOLDDRIVE_PORT=22
 

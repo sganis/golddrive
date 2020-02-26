@@ -151,15 +151,16 @@ namespace golddrive
 
         #region Constructor
 
-        public MainWindowViewModel(ReturnBox rb)
+        public MainWindowViewModel(ReturnBox rb, Drive drive)
         {
             _mountService = new MountService();
-            //SelectedDrive = drive;
-
+            SelectedDrive = drive;
             //Messenger.Default.Register<string>(this, OnShowView);
             CurrentPage = Page.Main;
-            LoadDrivesAsync();
-            GetVersions();
+            LoadDrivesAsync(drive);
+            GetVersionsAsync();
+            if(rb != null)
+                Message = rb.Error;
         }
 
         #endregion
@@ -196,6 +197,9 @@ namespace golddrive
                 case MountStatus.BAD_WINFSP:
                     Message = "Winfsp is not installed\n";
                     break;
+                case MountStatus.BAD_CLI:
+                    Message = "Goldrive CLI is not installed\n";
+                    break;
                 case MountStatus.OK:
                     CurrentPage = Page.Main;
                     Message = r.DriveStatus.ToString();
@@ -210,12 +214,14 @@ namespace golddrive
 
         }
        
-        public async void LoadDrivesAsync()
+        public async void LoadDrivesAsync(Drive drive)
         {
             WorkStart("Exploring local drives...");
             await Task.Run(() =>
             {
                 Settings settings = _mountService.LoadSettings();
+                if (drive != null)
+                    settings.AddDrive(drive);
                 GlobalArgs = settings.Args;
                 if(_selectedDrive == null)
                     SelectedDrive = settings.SelectedDrive;
@@ -262,7 +268,7 @@ namespace golddrive
 
         private async void ConnectAsync(Drive drive)
         {
-            WorkStart("Connecting");
+            WorkStart("Connecting...");
             ReturnBox r = await Task.Run(() => _mountService.Connect(drive));
             WorkDone(r);
         }
@@ -277,7 +283,7 @@ namespace golddrive
             } 
         }
 
-        private async void GetVersions()
+        private async void GetVersionsAsync()
         {
             Version = await Task.Run(() => _mountService.GetVersions());            
         }
@@ -286,30 +292,7 @@ namespace golddrive
 
         #region Commands
 
-        //private ICommand _cmd;
-        //public ICommand Cmd
-        //{
-        //    get
-        //    {
-        //        if (_cmd == null)
-        //        {
-        //            _cmd = new RelayCommand(
-        //                // action
-        //                x =>
-        //                {
-
-        //                },
-        //                // can execute
-        //                x =>
-        //                {
-        //                    return true;
-        //                });
-        //        }
-        //        return _cmd;
-        //    }
-        //}
-
-
+        
 
 
         private ICommand _selectedDriveChangedCommand;
@@ -421,9 +404,14 @@ namespace golddrive
         }
         private async void OnConnectPassword(object obj)
         {
+            Drive d = SelectedDrive;
+            if (!HasDrive)
+            {
+                d = SelectedFreeDrive;
+            }
             CurrentPage = Page.Main;
-            WorkStart("Connecting");
-            ReturnBox r = await Task.Run(() => _mountService.ConnectPassword(SelectedDrive, password));
+            WorkStart("Connecting...");
+            ReturnBox r = await Task.Run(() => _mountService.ConnectPassword(d, password));
             WorkDone(r);
         }
        

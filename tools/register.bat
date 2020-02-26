@@ -9,8 +9,8 @@
 setlocal
 setlocal EnableDelayedExpansion
 
-set RegKey=HKLM\Software\WinFsp\Services\golddrive
-set exe=C:\Users\sant\Documents\golddrive\golddrive\bin\golddrive.exe
+set RegKey=HKLM\Software\WOW6432Node\WinFsp\Services\golddrive
+set exe=C:\Users\san\Desktop\golddrive\src\build\Debug\golddrive.exe
 set arg="%%2 %%1"
 set sec="D:P(A;;RPWPLC;;;WD)"
 
