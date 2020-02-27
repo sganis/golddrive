@@ -1,7 +1,8 @@
 #pragma once
 
 // windows file attributes
-//#define FSP_FUSE_USE_STAT_EX 1
+//#define FSP_FUSE_USE_STAT_EX
+
 #define FSP_FUSE_CAP_STAT_EX            (1 << 23)   /* file system supports fuse_stat_ex */
 /* from FreeBSD */
 #define FSP_FUSE_UF_HIDDEN              0x00008000

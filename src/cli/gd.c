@@ -365,7 +365,6 @@ int gd_unlink(const char *path)
 	return 0;
 }
 
-
 int gd_rmdir(const char * path)
 {
 	// rm path/* and rmdir path
@@ -644,13 +643,17 @@ int gd_statvfs(const char * path, struct fuse_statvfs *stbuf)
 	}
 	gd_unlock();
 	memset(stbuf, 0, sizeof *stbuf);
-	stbuf->f_bsize = stvfs.f_bsize;
-	stbuf->f_frsize = stvfs.f_frsize;
-	stbuf->f_blocks = stvfs.f_blocks;
-	stbuf->f_bfree = stvfs.f_bfree;
-	stbuf->f_bavail = stvfs.f_bavail;
-	stbuf->f_fsid = stvfs.f_fsid;
-	stbuf->f_namemax = stvfs.f_namemax;
+	stbuf->f_bsize = stvfs.f_bsize;			/* file system block size */
+	stbuf->f_frsize = stvfs.f_frsize;		/* fragment size */
+	stbuf->f_blocks = stvfs.f_blocks;		/* size of fs in f_frsize units */
+	stbuf->f_bfree = stvfs.f_bfree;			/* # free blocks */
+	stbuf->f_bavail = stvfs.f_bavail;		/* # free blocks for non-root */
+	stbuf->f_files = stvfs.f_files;			/* # inodes */
+	stbuf->f_ffree = stvfs.f_ffree;			/* # free inodes */
+	stbuf->f_favail = stvfs.f_favail;		/* # free inodes for non-root */
+	stbuf->f_fsid = stvfs.f_fsid;			/* file system ID */
+	stbuf->f_flag = stvfs.f_flag;			/* mount flags */
+	stbuf->f_namemax = stvfs.f_namemax;		/* maximum filename length */
 	return rc;
 }
 
@@ -909,11 +912,11 @@ void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs)
 	/*if (LIBSSH2_SFTP_S_ISLNK(attrs->permissions)) {
 		int a = attrs->permissions;
 	}*/
-//#if defined(FSP_FUSE_USE_STAT_EX)
+#if defined(FSP_FUSE_USE_STAT_EX)
 //	if (hidden) {
-//		stbuf->st_flags |= FSP_FUSE_UF_HIDDEN;
+		stbuf->st_flags |= FSP_FUSE_UF_HIDDEN;
 //	}
-//#endif
+#endif
 }
 
 
