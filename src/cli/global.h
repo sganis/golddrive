@@ -82,7 +82,6 @@ typedef struct fs_config {
 	char *mountpoint;
 	char letter;
 	int port;
-	int hidden;
 	unsigned local_uid;
 	unsigned remote_uid;
 } fs_config;

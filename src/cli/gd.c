@@ -434,17 +434,6 @@ int gd_rename(const char *from, const char *to)
 
 }
 
-int gd_chmod(const char *path, fuse_mode_t mode)
-{
-	/* we do not support file security */
-	return 0;
-}
-
-int gd_chown(const char *path, fuse_uid_t uid, fuse_gid_t gid)
-{
-	/* we do not support file security */
-	return 0;
-}
 
 int gd_truncate(const char *path, fuse_off_t size)
 {	
@@ -642,7 +631,7 @@ int gd_statvfs(const char * path, struct fuse_statvfs *stbuf)
 		rc = error();		
 	}
 	gd_unlock();
-	memset(stbuf, 0, sizeof *stbuf);
+	memset(stbuf, 0, sizeof(struct fuse_statvfs));
 	stbuf->f_bsize = stvfs.f_bsize;			/* file system block size */
 	stbuf->f_frsize = stvfs.f_frsize;		/* fragment size */
 	stbuf->f_blocks = stvfs.f_blocks;		/* size of fs in f_frsize units */
@@ -651,9 +640,24 @@ int gd_statvfs(const char * path, struct fuse_statvfs *stbuf)
 	stbuf->f_files = stvfs.f_files;			/* # inodes */
 	stbuf->f_ffree = stvfs.f_ffree;			/* # free inodes */
 	stbuf->f_favail = stvfs.f_favail;		/* # free inodes for non-root */
-	stbuf->f_fsid = stvfs.f_fsid;			/* file system ID */
-	stbuf->f_flag = stvfs.f_flag;			/* mount flags */
+	//stbuf->f_fsid = stvfs.f_fsid;			/* file system ID */
+	//stbuf->f_flag = stvfs.f_flag;			/* mount flags */
 	stbuf->f_namemax = stvfs.f_namemax;		/* maximum filename length */
+	
+
+	// mac
+	//stbuf->f_namemax = 255;
+	//stbuf->f_bsize = stvfs.f_bsize;
+	///*
+	// * df seems to use f_bsize instead of f_frsize, so make them
+	// * the same
+	// */
+	//stbuf->f_frsize = stbuf->f_bsize;
+	//stbuf->f_blocks = stbuf->f_bfree = stbuf->f_bavail =
+	//	1000ULL * 1024 * 1024 * 1024 / stbuf->f_frsize;
+	//stbuf->f_files = stbuf->f_ffree = 1000000000;
+	//return 0;
+	
 	return rc;
 }
 
@@ -676,13 +680,6 @@ int gd_close(intptr_t fd)
 		sh = NULL;
 		gd_unlock();
 	}
-	return 0;
-}
-
-int gd_fsync(intptr_t fd)
-{
-	gd_handle_t* sh = (gd_handle_t*)fd;
-	// flush file ?
 	return 0;
 }
 
@@ -785,9 +782,12 @@ struct gd_dirent_t * gd_readdir(gd_dir_t *dirp)
 
 	strcpy_s(dirp->de.d_name, FILENAME_MAX, fname);
 	dirp->de.dir = (attrs.permissions &  LIBSSH2_SFTP_S_IFDIR) > 0;
-	//dirp->de.hidden = (strlen(fname) > 1					/* file name length 2 or more	*/
-	//					&& fname[0] == '.'					/* file name starts with .		*/
-	//					&& fname[1] != '.'); 				/* file name is not ..			*/
+	dirp->de.hidden = (strlen(fname) > 1					/* file name length 2 or more	*/
+						&& fname[0] == '~'); 				/* file name starts with ~			*/
+	if (dirp->de.hidden)
+	{
+		printf("file is hidden\n");
+	}
 	copy_attributes(&dirp->de.d_stat, &attrs);
 	return &dirp->de;
 }
@@ -897,6 +897,46 @@ int gd_utimensat(long dirfd, const char *path, const struct fuse_timespec times[
 	return 0;
 }
 
+int gd_fsync(intptr_t fd)
+{
+	gd_handle_t* sh = (gd_handle_t*)fd;
+	// flush file ?
+	return 0;
+}
+
+int gd_chmod(const char* path, fuse_mode_t mode)
+{
+	/* we do not support file security */
+	return 0;
+}
+
+int gd_chown(const char* path, fuse_uid_t uid, fuse_gid_t gid)
+{
+	/* we do not support file security */
+	return 0;
+}
+
+int gd_setxattr(const char* path, const char* name, const char* value, size_t size, int flags)
+{
+	return 0;
+}
+
+int gd_getxattr(const char* path, const char* name, char* value, size_t size)
+{
+	return 0;
+}
+
+int gd_listxattr(const char* path, char* namebuf, size_t size)
+{
+	return 0;
+}
+
+int gd_removexattr(const char* path, const char* name)
+{
+	return 0;
+}
+
+
 void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs)
 {
 	//memset(stbuf, 0, sizeof *stbuf);
@@ -914,7 +954,7 @@ void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs)
 	}*/
 #if defined(FSP_FUSE_USE_STAT_EX)
 //	if (hidden) {
-		stbuf->st_flags |= FSP_FUSE_UF_HIDDEN;
+//		stbuf->st_flags |= FSP_FUSE_UF_READONLY;
 //	}
 #endif
 }

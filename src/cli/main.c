@@ -5,15 +5,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
-
-#include "global.h"
-
 #include <fuse.h>
 #include <fuse_opt.h>
 #include "util.h"
 #include "fs.h"
 #include "gd.h"
+
 #include <Shlwapi.h> /* PathRemoveFileSpecA */
 #pragma comment(lib, "shlwapi.lib")
 
@@ -27,8 +24,6 @@ char*		g_logfile;
 
 /* supported fs operations */
 static struct fuse_operations fs_ops = {
-	.chmod = f_chmod,
-	.chown = f_chown,
 	.create = f_create,
 	.fsync = f_fsync,
 	.getattr = f_getattr,
@@ -48,6 +43,15 @@ static struct fuse_operations fs_ops = {
 	.unlink = f_unlink,
 	.utimens = f_utimens,
 	.write = f_write,
+	.chmod = f_chmod,
+	.chown = f_chown,
+	.setxattr = f_setxattr,
+	.getxattr = f_getxattr,
+	.listxattr = f_listxattr,
+	.removexattr = f_removexattr,
+#if defined(FSP_FUSE_USE_STAT_EX)
+	//.chflags = f_chflags,
+#endif
 };
 
 enum {
@@ -70,8 +74,7 @@ static struct fuse_opt fs_opts[] = {
 	fs_OPT("pkey=%s",           pkey, 0),
 	fs_OPT("-k %s",             pkey, 0),
 	fs_OPT("-k=%s",             pkey, 0),
-	fs_OPT("hidden",		    hidden, 1),
-
+	
 	FUSE_OPT_KEY("--version",      KEY_VERSION),
 	FUSE_OPT_KEY("--help",         KEY_HELP),
 	FUSE_OPT_END
@@ -109,7 +112,6 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 			"    -u USER, -o user=USER      user to connect to ssh server, default: current user\n"
 			"    -k PKEY, -o pkey=PKEY      private key, default: %%USERPROFILE%%\\.ssh\\id_rsa-user-golddrive\n"
 			"    -p PORT, -o port=PORT      server port, default: 22\n"
-			"    -o hidden                  show hidden files\n"
 			"\n"
 			"WinFsp-FUSE options:\n"
 			"    -s                         disable multi-threaded operation\n"
@@ -131,9 +133,11 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 		GetModuleFileNameA(NULL, exepath, MAX_PATH);
 		char* version = calloc(100, sizeof(char));
 		get_file_version(exepath, version);
-		fprintf(stderr, "Golddrive v%s\nBuild date: %s\n", version, __DATE__);
+		fprintf(stderr, "Golddrive version %s\nBuild date: %s\n", version, __DATE__);
+		fprintf(stderr, "FUSE version %s\n", fuse_pkgversion());
 		free(version);
-		fuse_opt_add_arg(outargs, "--version");
+		//fuse_opt_add_arg(outargs, "--version");
+		
 		fuse_main(outargs->argc, outargs->argv, &fs_ops, NULL);
 		exit(0);
 	}
@@ -363,7 +367,6 @@ int main(int argc, char *argv[])
 	gd_log("port    = %d\n", g_fs.port);
 	gd_log("root    = %s\n", g_fs.root);
 	gd_log("pkey    = %s\n", g_fs.pkey);
-	gd_log("hidden  = %d\n", g_fs.hidden);
 	//gd_log("intptr_t= %ld\n", sizeof(intptr_t));
 	//gd_log("long    = %ld\n", sizeof(long));
 

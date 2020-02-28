@@ -7,11 +7,10 @@
 
 void *f_init(struct fuse_conn_info *conn, struct fuse_config *conf)
 {
-	//conn->want |= (conn->capable & FUSE_CAP_READDIRPLUS);
 #if defined(FUSE_CAP_READDIRPLUS)
 	conn->want |= (conn->capable & FUSE_CAP_READDIRPLUS);
 #endif
-
+	//conn->want |= (conn->capable & FSP_FUSE_CAP_STAT_EX);
 #if defined(FSP_FUSE_USE_STAT_EX) && defined(FSP_FUSE_CAP_STAT_EX)
 	conn->want |= (conn->capable & FSP_FUSE_CAP_STAT_EX);
 #endif
@@ -195,106 +194,6 @@ int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t of
 
 	return -errno;
 }
-//int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t off,
-//	struct fuse_file_info *fi, enum fuse_readdir_flags flags)
-//{
-//	log_info("%s\n", path);
-//	int rc = 0;
-//	gd_dir_t *dirp = fi_dirp(fi);
-//	gd_handle_t *sh = dirp->handle;
-//	LIBSSH2_SFTP_HANDLE* handle = sh->handle;
-//	LIBSSH2_SFTP_ATTRIBUTES attrs;
-//	char fname[FILENAME_MAX];
-//	//char longentry[512];
-//	//struct dirent *de;
-//	//struct fuse_stat *stbuf;
-//
-//	gd_lock();
-//	libssh2_sftp_rewind(handle);
-//	g_sftp_calls++;
-//
-//	for (;;) {
-//		//de = san_readdir_entry(dirp);
-//
-//		rc = libssh2_sftp_readdir(handle, fname, FILENAME_MAX, &attrs);
-//		g_sftp_calls++;
-//		//int a = strcmp(path, "/");
-//		//int b = strlen(fname);
-//		//int c = fname[1] == ':';
-//
-//		//if (a == 0 &&  b == 2 && c)
-//		//{
-//		//	// it is a drive
-//		//	fname[1] = '\0';
-//		//}
-//
-//
-//		/* skip hidden files */
-//		if (rc > 1							/* file name length 2 or more	*/
-//			&& !g_fs.hidden				/* user parameter not set		*/
-//			&& strncmp(fname, ".", 1) == 0  /* file name starts with .		*/
-//			&& strncmp(fname, "..", 2)) {	/* file name is not ..			*/
-//			//printf("skipping hidden file: %s\n", fname);
-//			continue;
-//		}
-//
-//		if (rc < 0) {
-//			gd_error(sh->path);
-//			break; // or continue?
-//		}
-//		if (rc == 0) {
-//			// no more files
-//			rc = 0;
-//			break;
-//		}
-//
-//		//if (longentry[0] != '\0') {
-//		//	printf("%s\n", longentry);
-//		//}
-//		// resolve symbolic links
-//		if (attrs.permissions & LIBSSH2_SFTP_S_IFLNK) {
-//			char fullpath[MAX_PATH];
-//			strcpy_s(fullpath, MAX_PATH, dirp->path);
-//			int pathlen = (int)strlen(dirp->path);
-//			if (!(pathlen > 0 && dirp->path[pathlen - 1] == '/'))
-//				strcat_s(fullpath, 2, "/");
-//			strcat_s(fullpath, FILENAME_MAX, fname);
-//			memset(&attrs, 0, sizeof attrs);
-//			rc = libssh2_sftp_stat_ex(g_ssh->sftp, fullpath,
-//				(int)strlen(fullpath), LIBSSH2_SFTP_STAT, &attrs);
-//			g_sftp_calls++;
-//
-//			if (rc) {
-//				gd_error(fullpath);
-//			}
-//		}
-//
-//		//stbuf = &dirp->de.d_stat;
-//		copy_attributes(&dirp->de.d_stat, &attrs);
-//		strcpy_s(dirp->de.d_name, FILENAME_MAX, fname);
-//
-//#if STATS
-//		// stats	
-//		//debug("sftp calls cached/total: %zd/%zd (%.1f%% cached)\n",
-//		//		g_sftp_cached_calls, g_sftp_calls, 
-//		//		(g_sftp_cached_calls*100/(double)g_sftp_calls));
-//#endif
-//
-//		//de = &dirp->de;
-//
-//		//if (!de) {
-//		//	break;
-//		//}
-//		if (0 != filler(buf, dirp->de.d_name, &dirp->de.d_stat, 0, FUSE_FILL_DIR_PLUS)) {
-//			rc = -ENOMEM;
-//			break;
-//		}
-//	}
-//	gd_unlock();
-//	return rc;
-//
-//}
-//
 
 int f_releasedir(const char *path, struct fuse_file_info *fi)
 {
@@ -319,3 +218,28 @@ int f_utimens(const char *path, const struct fuse_timespec tv[2], struct fuse_fi
 }
 
 
+int f_setxattr(const char* path, const char* name, const char* value, size_t size, int flags)
+{
+	realpath(path);
+	return -1 != gd_setxattr(path, name, value, size, flags) ? 0 : -errno;
+}
+
+int f_getxattr(const char* path, const char* name, char* value, size_t size)
+{
+	realpath(path);
+	int nb;
+	return -1 != (nb = gd_getxattr(path, name, value, size)) ? nb : -errno;
+}
+
+int f_listxattr(const char* path, char* namebuf, size_t size)
+{
+	realpath(path);
+	int nb;
+	return -1 != (nb = gd_listxattr(path, namebuf, size)) ? nb : -errno;
+}
+
+int f_removexattr(const char* path, const char* name)
+{
+	realpath(path);
+	return -1 != gd_removexattr(path, name) ? 0 : -errno;
+}
