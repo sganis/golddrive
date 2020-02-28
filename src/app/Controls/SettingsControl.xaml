@@ -24,6 +24,7 @@
                     CommandParameter="{x:Static local:Page.Main}"
                     Style="{StaticResource MaterialDesignFloatingActionMiniLightButton}"
                     ToolTip="Go Back"
+                    Margin="20 0 0 0"
                     Width="30"
                     Height="30">
                     <materialDesign:PackIcon
@@ -83,7 +84,7 @@
             Controls:ControlsHelper.HeaderFontSize="12"
             Background="Transparent"
             SelectedIndex="{Binding SelectedTabIndex}"
-            Margin="10"
+            Margin="20"
             Padding="20 30" >
             <TabItem>
                 <TabItem.Header>

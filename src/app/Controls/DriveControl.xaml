@@ -71,13 +71,23 @@
             Grid.Row="1"
             Opacity="0.05" />
         <Button
+            Style="{StaticResource MaterialDesignFloatingActionButton}"
+            materialDesign:ButtonProgressAssist.IsIndicatorVisible="{Binding IsWorking}"
+            materialDesign:ButtonProgressAssist.Value="-1"
+            materialDesign:ButtonProgressAssist.IsIndeterminate="True"
+            materialDesign:ButtonProgressAssist.IndicatorForeground="#e65100"
+            materialDesign:ButtonProgressAssist.IndicatorBackground="#ffcc80"
+            
             Command="{Binding ConnectCommand}"
             Content="{Binding ConnectButtonText}"
             IsEnabled="{Binding IsWorking, Converter={local:NegateBoolConverter}}"
             FontSize="20"
-            Width="200"
-            Height="70"
+            Width="150"
+            Height="150"
             Margin="50,0"
             Grid.Row="2" />
+
+        
+
     </Grid>
 </UserControl>

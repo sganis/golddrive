@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:bal="http://schemas.microsoft.com/wix/BalExtension">
-	<Bundle Name="Golddrive Bundle" Version="$(var.MyVersion)" Manufacturer="Golddrive Inc."
+	<Bundle Name="Golddrive Bundle $(var.MyVersion)" 
+            Version="$(var.MyVersion)" Manufacturer="Golddrive Inc."
             UpgradeCode="6004d72e-b0b7-46f3-a1fb-954b18a476c2">
         <BootstrapperApplicationRef Id="WixStandardBootstrapperApplication.HyperlinkSidebarLicense">
             <bal:WixStandardBootstrapperApplication
@@ -11,9 +12,10 @@
                 LicenseUrl=""
                 LogoSideFile="logoside.png"/>
         </BootstrapperApplicationRef>
-        <!--<Variable Name="Feature" Value="ALL" />-->
-		<Chain>
-            <MsiPackage SourceFile="winfsp\winfsp-1.6.20027.msi" />
+        <Chain>
+            <MsiPackage SourceFile="winfsp\winfsp-1.6.20027.msi" Visible="yes">
+                <MsiProperty Name="ADDLOCAL" Value="ALL"/>
+            </MsiPackage>
             <MsiPackage SourceFile="$(var.msi.TargetPath)" />            
         </Chain>
 	</Bundle>

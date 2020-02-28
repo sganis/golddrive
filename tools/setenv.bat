@@ -3,18 +3,20 @@
 :: 08/05/2018, sganis
 
 @echo off
-
-call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
-
 set DIR=%~dp0
 set DIR=%DIR:~0,-1%
 doskey ll=dir
 
+SET "PATH=C:\Windows\System32;C:\Windows;C:\Windows\System32\wbem;%PATH%"
+SET "PATH=C:\Program Files (x86)\WinFsp\bin;%PATH%"
+SET "PATH=C:\Python37;C:\Python37\Scripts;%PATH%"
+SET "PATH=C:\Program Files (x86)\WinFsp\bin;%PATH%"
+SET "PATH=C:\Program Files\Git\bin;%PATH%"
+SET "PATH=C:\Program Files\Git\usr\bin;%PATH%"
+SET "PATH=C:\Program Files (x86)\WiX Toolset v3.11\bin;%PATH%"
 
-
-set PATH=C:\Python37;C:\Python37\Scripts;%PATH%
-set PATH=C:\Program Files (x86)\WinFsp\bin;%PATH%
-
+echo Setting development environment...
+call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
 
 
 ::set GOLDDRIVE=%DIR%\..

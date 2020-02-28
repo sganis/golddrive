@@ -36,7 +36,6 @@
                 Content="Ok"
                 Command="{Binding ShowPageCommand}"
                 CommandParameter="{x:Static local:Page.Main}"
-                Style="{StaticResource MaterialDesignFlatButton}"
                 Margin="0 10"
                 Width="80"
                 HorizontalAlignment="Center" />
