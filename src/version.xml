@@ -33,7 +33,7 @@
 
         <!-- <MyVersion>$(MyCanonicalVersion).$(MyBuildNumber)</MyVersion> -->
         <!-- Harcoded git tag until I find a different way -->
-        <MyVersion>2.3.1</MyVersion>
+        <MyVersion>2.4.0</MyVersion>
 
 
         <!-- <MyProductVersion>$(MyCanonicalVersion)</MyProductVersion> -->

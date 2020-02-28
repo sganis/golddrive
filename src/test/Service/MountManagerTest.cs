@@ -5,6 +5,7 @@ using System.IO;
 using System;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 
 namespace golddrive.Tests
 {
@@ -161,43 +162,49 @@ namespace golddrive.Tests
         public void MakeDirManyTest()
         {
             Mount();
-            foreach (int f in Enumerable.Range(1, 1000))
+            Parallel.ForEach(Enumerable.Range(1, 1000), f =>
             {
-                var path = $"X:\\tmp\\folder_{f}";
-                Directory.CreateDirectory(path);
-                Assert.IsTrue(Directory.Exists(path));
-            }
-            foreach (int f in Enumerable.Range(1, 1000))
+                CreateDir(f);
+            });
+            Parallel.ForEach(Enumerable.Range(1, 1000), f =>
             {
-                var path = $"X:\\tmp\\folder_{f}";
-                Directory.Delete(path);
-                Assert.IsFalse(Directory.Exists(path));
-            }
+                DeleteDir(f);
+            });
             Unmount();
         }
 
         [TestMethod()]
-        public void CreateFileTest()
+        public void CreateDeleteFileTest()
         {
             Mount();
-            var path = "X:\\tmp\\file01.txt";
-            var myFile = File.Create(path);
-            myFile.Close();
-            Assert.IsTrue(File.Exists(path));
-            //System.Threading.Thread.Sleep(1000);
-            File.Delete(path);
-            Assert.IsFalse(File.Exists(path));
+            CreateFile(1);
+            DeleteFile(1);
             Unmount();
         }
         [TestMethod()]
-        public void CopyFileTest()
+        public void CreateManyFileTest()
+        {
+            Mount();
+
+            Parallel.ForEach(Enumerable.Range(1, 1000), f =>
+            {
+                CreateFile(f);
+            });
+            Parallel.ForEach(Enumerable.Range(1, 1000), f =>
+            {
+                DeleteFile(f);
+            });
+            Unmount();
+        }
+        [TestMethod()]
+        public void Copy1GBFileTest()
         {
             Mount();
             var tempfile1 = Path.GetTempPath() + "file_" + Guid.NewGuid().ToString() + ".bin";
             var tempfile2 = Path.GetTempPath() + "file_" + Guid.NewGuid().ToString() + ".bin";
             RandomFile(tempfile1, 1);
             var hash1 = Md5(tempfile1);
-            var path = "X:\\test\\file_random.bin";
+            var path = "X:\\tmp\\file_random.bin";
             if (File.Exists(path))
                 File.Delete(path);
             Assert.IsFalse(File.Exists(path));
@@ -212,6 +219,64 @@ namespace golddrive.Tests
             Assert.IsFalse(File.Exists(path));
             Assert.IsFalse(File.Exists(tempfile1));
             Assert.IsFalse(File.Exists(tempfile2));
+            Unmount();
+        }
+        void CreateFile(int id)
+        {
+            var path = $"X:\\tmp\\file_{id}.txt";
+            if (File.Exists(path))
+                DeleteFile(id);
+            var myFile = File.Create(path);
+            myFile.Close();
+            Assert.IsTrue(File.Exists(path));
+        }
+        void DeleteFile(int id)
+        {
+            var path = $"X:\\tmp\\file_{id}.txt";
+            File.Delete(path);
+            Assert.IsTrue(!File.Exists(path));
+            
+        }
+        void CreateDir(int id)
+        {
+            var path = $"X:\\tmp\\folder_{id}";
+            if (Directory.Exists(path))
+                DeleteDir(id);
+            Directory.CreateDirectory(path);
+            Assert.IsTrue(Directory.Exists(path));
+        }
+        void DeleteDir(int id)
+        {
+            var path = $"X:\\tmp\\folder_{id}";
+            Directory.Delete(path);
+            Assert.IsTrue(!Directory.Exists(path));
+        }
+        [TestMethod()]
+        public void RenameFileTest()
+        {
+            Mount();
+            CreateFile(1);
+            var f1 = $"X:\\tmp\\file_1.txt";
+            var f2 = $"X:\\tmp\\file_2.txt";
+            File.Move(f1, f2);
+            Assert.IsTrue(!File.Exists(f1));
+            Assert.IsTrue(File.Exists(f2));
+            DeleteFile(2);
+            Assert.IsTrue(!File.Exists(f2));
+            Unmount();
+        }
+        [TestMethod()]
+        public void RenameDirTest()
+        {
+            Mount();
+            CreateDir(1);
+            var f1 = $"X:\\tmp\\folder_1";
+            var f2 = $"X:\\tmp\\folder_2";
+            Directory.Move(f1, f2);
+            Assert.IsTrue(!Directory.Exists(f1));
+            Assert.IsTrue(Directory.Exists(f2));
+            DeleteDir(2);
+            Assert.IsTrue(!Directory.Exists(f2));
             Unmount();
         }
     }

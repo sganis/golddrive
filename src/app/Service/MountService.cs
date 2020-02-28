@@ -899,8 +899,7 @@ namespace golddrive
         }
         private bool IsCliInstalled()
         {
-            var cli = $@"{ AppPath }\golddrive.exe";
-            return File.Exists(cli) && cli == GetGolddriveCliPath();
+            return File.Exists( GetGolddriveCliPath() );
         }
         private string GetGolddriveCliPath()
         {
