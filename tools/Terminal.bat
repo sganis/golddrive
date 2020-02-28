@@ -1,4 +1,4 @@
-:: SSHFS
+:: Golddrive
 :: Set development environment
 :: 08/05/2018, sganis
 
