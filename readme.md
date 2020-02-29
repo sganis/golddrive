@@ -9,7 +9,9 @@ Installation
 ------------
 
 Install the latest release of WinFsp from https://github.com/billziss-gh/winfsp/releases.
+
 Download the msi installer from https://github.com/sganis/golddrive/releases.
+
 The installation requires adminstatator priviledges.
 
 
