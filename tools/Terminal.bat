@@ -6,7 +6,6 @@
 SET DIR=%~dp0
 SET DIR=%DIR:~0,-1%
 
-CD /D %USERPROFILE%\Documents\golddrive
 CALL %DIR%\setenv.bat
-call %COMSPEC% 
+call %COMSPEC% /k CD /D %DIR%\..
 start "" /b %DIR%\..\src\golddrive.sln 
