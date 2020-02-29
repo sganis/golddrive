@@ -37,7 +37,7 @@ namespace golddrive
 
         public Drive GetDriveFromArgs(string args)
         {
-            // args: Y: \\golddrive\user@host!port\path -uother...
+            // args: Y: \\golddrive\user@host!port -uother...
             Drive drive = new Drive();
             Match m = Regex.Match(args, @"([g-z]): \\\\golddrive\\([^ ]+)", RegexOptions.IgnoreCase);
             if(m.Success)

@@ -133,7 +133,7 @@
                             Style="{StaticResource Title}" />
                         <TextBox
                             Text="{Binding SelectedFreeDrive.MountPoint}"
-                            materialDesign:HintAssist.Hint="Hostname or user@host!port\path"
+                            materialDesign:HintAssist.Hint="Host or user@host!22"
                             materialDesign:HintAssist.HintOpacity=".25"
                             FontSize="20"
                             Margin="0 0 0 30" />
@@ -174,7 +174,7 @@
                             Style="{StaticResource Title}" />
                         <TextBox
                             Text="{Binding SelectedDrive.MountPoint}"
-                            materialDesign:HintAssist.Hint="host or user@host!port\path"
+                            materialDesign:HintAssist.Hint="Host or user@host!22"
                             materialDesign:HintAssist.HintOpacity=".25"
                             FontSize="20"
                             Margin="0 0 0 30" />
