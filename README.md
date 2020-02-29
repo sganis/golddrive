@@ -28,7 +28,7 @@ TODO
 Build
 -----
 
-See development document.
+See development.md document.
 
 
 
