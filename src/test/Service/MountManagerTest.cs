@@ -221,6 +221,21 @@ namespace golddrive.Tests
             Assert.IsFalse(File.Exists(tempfile2));
             Unmount();
         }
+        bool IsFileLocked(string path)
+        {
+            try
+            {
+                using (File.Open(path, FileMode.Open))
+                {
+                    return false;
+                }
+            }
+            catch
+            {
+                Console.WriteLine("File locked: " + path);
+                return true;
+            }
+        }
         void CreateFile(int id)
         {
             var path = $"X:\\tmp\\file_{id}.txt";
@@ -233,7 +248,8 @@ namespace golddrive.Tests
         void DeleteFile(int id)
         {
             var path = $"X:\\tmp\\file_{id}.txt";
-            File.Delete(path);
+            if(File.Exists(path))
+                File.Delete(path);
             Assert.IsTrue(!File.Exists(path));
             
         }
@@ -248,7 +264,8 @@ namespace golddrive.Tests
         void DeleteDir(int id)
         {
             var path = $"X:\\tmp\\folder_{id}";
-            Directory.Delete(path);
+            if(Directory.Exists(path))
+                Directory.Delete(path);
             Assert.IsTrue(!Directory.Exists(path));
         }
         [TestMethod()]
@@ -256,6 +273,7 @@ namespace golddrive.Tests
         {
             Mount();
             CreateFile(1);
+            DeleteFile(2);
             var f1 = $"X:\\tmp\\file_1.txt";
             var f2 = $"X:\\tmp\\file_2.txt";
             File.Move(f1, f2);
