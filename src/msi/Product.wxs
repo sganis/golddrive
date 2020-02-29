@@ -73,7 +73,8 @@
         </DirectoryRef>
         
         <Icon Id="logo.ico" SourceFile="..\app\golddrive.ico" />
-
+        <Property Id="ARPPRODUCTICON" Value="logo.ico" />
+        
         <DirectoryRef Id="INSTALLDIR" FileSource="..\build\$(var.Configuration)">
             <Component Id="C.app.exe">
                 <File Name="golddrive-app.exe" KeyPath="yes">
