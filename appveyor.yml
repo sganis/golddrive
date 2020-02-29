@@ -1,4 +1,4 @@
-version: 2.2.{build}
+version: 2.4.{build}
 image: 
 - Visual Studio 2019 Preview
 platform: x64
@@ -11,8 +11,8 @@ configuration: Release
 #   GOLDDRIVE_PASS:
 #     secure: 25BPcFmVEe3pnXeQiOkyzw==
 install:
-  - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.5B1/winfsp-1.5.19090.msi
-  - start /wait msiexec /i winfsp-1.5.19090.msi /qn ADDLOCAL=ALL
+  - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/winfsp-1.6.20027.msi
+  - start /wait msiexec /i winfsp-1.6.20027 /qn ADDLOCAL=ALL
   - ps: Write-host "Rebooting..." 
   - ps: Restart-Computer -Force 
   - ps: Start-Sleep -s 1

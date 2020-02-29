@@ -13,12 +13,30 @@
     d:DesignWidth="300">
     
     <StackPanel>
-        <DockPanel>            
+        <DockPanel>
             <StackPanel
-                Orientation="Horizontal" 
-                Margin="0 0 0 20"
+                Margin="20 10 0 0"
+                Orientation="Horizontal"
                 DockPanel.Dock="Left">
                 <Button
+                    Content="{Binding SettingsOkButtonText}"
+                    Command="{Binding SettingsOkCommand}"
+                    Width="80" />
+                <Button
+                    Content="Cancel"
+                    Visibility="{Binding IsDriveNew, Converter={local:BoolToVis}}"
+                    Command="{Binding SettingsCancelCommand}"
+                    Style="{StaticResource MaterialDesignFlatButton}"
+                    Width="80"
+                    Margin="5 0" />
+                
+            </StackPanel>
+            <StackPanel
+                Orientation="Horizontal" 
+                Margin="0 10 20 0"
+                HorizontalAlignment="Right"
+                DockPanel.Dock="Right">
+                <!--<Button
                     IsEnabled="{Binding IsDriveNew , Converter={local:NegateBoolConverter }}"
                     Command="{Binding ShowPageCommand}"
                     CommandParameter="{x:Static local:Page.Main}"
@@ -31,14 +49,13 @@
                         Kind="ArrowLeft"
                         Width="20"
                         Height="20" />
-                </Button>
+                </Button>-->
                 <Button
                     IsEnabled="{Binding IsDriveNew , Converter={local:NegateBoolConverter }}"
                     Visibility="{Binding IsDrivesTabSelected, Converter={local:BoolToVis}}"
                     Command="{Binding SettingsNewCommand}"
                     Style="{StaticResource MaterialDesignFloatingActionMiniLightButton}"
                     ToolTip="Add new drive"
-                    Margin="20 0 0 0"
                     Width="30"
                     Height="30">
                     <materialDesign:PackIcon
@@ -52,7 +69,7 @@
                     Command="{Binding SettingsDeleteCommand}"
                     Style="{StaticResource MaterialDesignFloatingActionMiniLightButton}"
                     ToolTip="Delete current drive"
-                    Margin="10 0 0 0"
+                    Margin="10 0 20 0"
                     Width="30"
                     Height="30">
                     <materialDesign:PackIcon
@@ -61,23 +78,7 @@
                         Height="20" />
                 </Button>
             </StackPanel>
-            <StackPanel
-                Margin="0 0 0 20"
-                Orientation="Horizontal"
-                HorizontalAlignment="Right"
-                DockPanel.Dock="Right">
-                <Button
-                    Content="Cancel"
-                    Visibility="{Binding IsDriveNew, Converter={local:BoolToVis}}"
-                    Command="{Binding SettingsCancelCommand}"
-                    Style="{StaticResource MaterialDesignFlatButton}"
-                    Width="80"
-                    Margin="5 0" />
-                <Button
-                    Content="Save"
-                    Command="{Binding SettingsOkCommand}"
-                    Width="80"/>
-            </StackPanel>
+            
         </DockPanel>
         <TabControl 
             Controls:TabControlHelper.Underlined="TabPanel"
@@ -86,27 +87,7 @@
             SelectedIndex="{Binding SelectedTabIndex}"
             Margin="20"
             Padding="20 30" >
-            <TabItem>
-                <TabItem.Header>
-                    <TextBlock
-                        Text="General" FontSize="14" />
-                </TabItem.Header>
-                
-                <StackPanel>
-                    <TextBlock
-                        Text="Arguments for all drives" 
-                        Style="{StaticResource Title}" />
-                    <TextBox
-                        Text="{Binding GlobalArgs}"
-                        TextWrapping="Wrap"
-                        Height="100"
-                        VerticalScrollBarVisibility="Auto"
-                        VerticalContentAlignment="Top"
-                        materialDesign:HintAssist.Hint="-oarg1,arg2,..."
-                        materialDesign:HintAssist.HintOpacity=".25"
-                        FontSize="20" Margin="0 0 0 10" />
-                </StackPanel>
-            </TabItem>
+            
             <TabItem>
                 <TabItem.Header>
                     <TextBlock
@@ -199,6 +180,29 @@
                     </StackPanel>
                 </StackPanel>
 
+            </TabItem>
+            <TabItem>
+                <TabItem.Header>
+                    <TextBlock
+                        Text="General"
+                        FontSize="14" />
+                </TabItem.Header>
+
+                <StackPanel>
+                    <TextBlock
+                        Text="Arguments for all drives"
+                        Style="{StaticResource Title}" />
+                    <TextBox
+                        Text="{Binding GlobalArgs}"
+                        TextWrapping="Wrap"
+                        Height="100"
+                        VerticalScrollBarVisibility="Auto"
+                        VerticalContentAlignment="Top"
+                        materialDesign:HintAssist.Hint="-oarg1,arg2,..."
+                        materialDesign:HintAssist.HintOpacity=".25"
+                        FontSize="20"
+                        Margin="0 0 0 10" />
+                </StackPanel>
             </TabItem>
         </TabControl>
         

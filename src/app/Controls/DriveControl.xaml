@@ -72,15 +72,15 @@
             Opacity="0.05" />
         <Button
             Style="{StaticResource MaterialDesignFloatingActionButton}"
+            Background="{Binding ConnectButtonColor}"
             materialDesign:ButtonProgressAssist.IsIndicatorVisible="{Binding IsWorking}"
             materialDesign:ButtonProgressAssist.Value="-1"
             materialDesign:ButtonProgressAssist.IsIndeterminate="True"
             materialDesign:ButtonProgressAssist.IndicatorForeground="#e65100"
-            materialDesign:ButtonProgressAssist.IndicatorBackground="#ffcc80"
-            
+            materialDesign:ButtonProgressAssist.IndicatorBackground="#ffcc80"     
             Command="{Binding ConnectCommand}"
             Content="{Binding ConnectButtonText}"
-            IsEnabled="{Binding IsWorking, Converter={local:NegateBoolConverter}}"
+            IsEnabled="{Binding ConnectButtonIsEnabled}"
             FontSize="20"
             Width="150"
             Height="150"

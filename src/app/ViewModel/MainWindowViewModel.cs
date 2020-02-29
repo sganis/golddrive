@@ -24,7 +24,7 @@ namespace golddrive
                 NotifyPropertyChanged("IsDrivesTabSelected");
             }
         }
-        public bool IsDrivesTabSelected => SelectedTabIndex == 1;
+        public bool IsDrivesTabSelected => SelectedTabIndex == 0;
 
         private string _version;
 
@@ -38,7 +38,11 @@ namespace golddrive
         public bool IsDriveNew
         {
             get { return _isDriveNew; }
-            set { _isDriveNew = value; NotifyPropertyChanged(); }
+            set {
+                _isDriveNew = value; 
+                NotifyPropertyChanged();
+                NotifyPropertyChanged("SettingsOkButtonText");
+            }
         }
 
         private Page _currentPage;
@@ -89,6 +93,7 @@ namespace golddrive
             set { driveStatus = value;
                 NotifyPropertyChanged();
                 NotifyPropertyChanged("ConnectButtonText");
+                NotifyPropertyChanged("ConnectButtonColor");
             }
         }
 
@@ -99,6 +104,8 @@ namespace golddrive
             set { _mountStatus = value;
                 NotifyPropertyChanged();
                 NotifyPropertyChanged("MessageColor");
+                NotifyPropertyChanged("ConnectButtonIsEnabled");
+
             }
         }
 
@@ -114,6 +121,9 @@ namespace golddrive
         }
 
         public string ConnectButtonText => DriveStatus == DriveStatus.CONNECTED ? "Disconnect" : "Connect";
+        public string ConnectButtonColor => DriveStatus == DriveStatus.CONNECTED ? "#689F38" : "#607d8b";
+        public bool ConnectButtonIsEnabled => MountStatus == MountStatus.OK;
+        public bool IsSettingsChanged { get; set; }
 
         private string message;
         public string Message
@@ -125,8 +135,8 @@ namespace golddrive
         {
             get
             {
-                return Brushes.Black;
-                //return MountStatus == MountStatus.OK ?  Brushes.Black: Brushes.Red;
+                //return Brushes.Black;
+                return MountStatus == MountStatus.OK ?  Brushes.Black: Brushes.Red;
             }
         }
         private string password;
@@ -145,7 +155,8 @@ namespace golddrive
 
         public bool IsDriveSelected { get { return SelectedDrive != null; } }
 
-        
+        public string SettingsOkButtonText { get { return IsDriveNew ? "Save": "Back"; } }
+
 
         #endregion
 
@@ -182,23 +193,21 @@ namespace golddrive
             }
             DriveStatus = r.DriveStatus;
             MountStatus = r.MountStatus;
+            Message = r.Error;
+
             switch (r.MountStatus)
             {
+                case MountStatus.BAD_CLI:
+                case MountStatus.BAD_WINFSP:
                 case MountStatus.BAD_DRIVE:
+                    CurrentPage = Page.Main;
+                    break;
                 case MountStatus.BAD_HOST:
                     CurrentPage = Page.Host;
-                    Message = r.Error;
                     break;
                 case MountStatus.BAD_PASSWORD:
                 case MountStatus.BAD_KEY:
                     CurrentPage = Page.Password;
-                    Message = r.Error;
-                    break;
-                case MountStatus.BAD_WINFSP:
-                    Message = "Winfsp is not installed\n";
-                    break;
-                case MountStatus.BAD_CLI:
-                    Message = "Goldrive CLI is not installed\n";
                     break;
                 case MountStatus.OK:
                     CurrentPage = Page.Main;
@@ -207,7 +216,6 @@ namespace golddrive
                     NotifyPropertyChanged("HasDrives");
                     break;
                 default:
-                    //Message = DriveStatus.UNKNOWN.ToString();
                     break;
             }
             IsWorking = false;
@@ -431,8 +439,15 @@ namespace golddrive
         {
             get
             {
-                return _settingsOkCommand ??
-                    (_settingsOkCommand = new RelayCommand(OnSettingsSave));
+                return _settingsOkCommand ?? (_settingsOkCommand = new RelayCommand(
+                   // action
+                   x => {
+                       OnSettingsSave(x);
+                   },
+                   // can execute
+                   x => {
+                       return true; // IsSettingsChanged;
+                   }));
             }
         }
         

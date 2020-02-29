@@ -10,10 +10,13 @@ namespace golddrive
         public DriveStatus Status { get; set; }
         
         public bool? IsGoldDrive { get; set; }
-        //public string VolumeLabel { get; set; }
+
         public string Path { get; set; }
+        
         public string Host { get; set; }
+        
         public string Letter { get; set; }
+        
         public string Name { get { return $"{ Letter }:"; } }
 
         private string _args;
@@ -22,7 +25,10 @@ namespace golddrive
         public string Args
         {
             get { return string.IsNullOrEmpty(_args) ? null : _args; }
-            set { _args = value; }
+            set { 
+                _args = value;
+                NotifyPropertyChanged();
+            }
         }
 
         private List<string> _hosts;
@@ -146,6 +152,7 @@ namespace golddrive
                 //return $"{ Letter }: {s}";
             }
         }
+
         public override string ToString()
         {
             return $"{ Name } {MountPoint}"; ;

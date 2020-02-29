@@ -522,22 +522,40 @@ namespace golddrive
                 var free = FreeDrives.Find(x => x.Letter == drive.Letter) != null;
                 var isGold = GoldDrives.Find(x => x.Letter == drive.Letter) != null;
                 var disconnected = GoldDrives.Find(x => x.Letter == drive.Letter && x.Status == DriveStatus.DISCONNECTED) != null;
-                var pathUsed = GoldDrives.Find(x => x.Letter != drive.Letter && x.MountPoint == drive.MountPoint 
-                                                && (x.Status != DriveStatus.DISCONNECTED 
+                var pathUsed = GoldDrives.Find(x => x.Letter != drive.Letter && x.MountPoint == drive.MountPoint
+                                                && (x.Status != DriveStatus.DISCONNECTED
                                                     && x.Status != DriveStatus.FREE)) != null;
 
-                if (pathUsed && free && !disconnected)
+                if (pathUsed)
+                {
+                    r.MountStatus = MountStatus.BAD_DRIVE;
                     r.DriveStatus = DriveStatus.MOUNTPOINT_IN_USE;
+                    r.Error = "Mount point in use";
+                }
                 else if (free)
+                {
                     r.DriveStatus = DriveStatus.DISCONNECTED;
+                }
                 else if (disconnected)
+                {
                     r.DriveStatus = DriveStatus.DISCONNECTED;
+                }
                 else if (!isGold)
+                {
+                    r.MountStatus = MountStatus.BAD_DRIVE;
                     r.DriveStatus = DriveStatus.IN_USE;
+                    r.Error = "Drive in use";
+                }
                 else if (!CheckIfDriveWorks(drive))
+                {
+                    r.MountStatus = MountStatus.BAD_DRIVE;
                     r.DriveStatus = DriveStatus.BROKEN;
+                    r.Error = "Check if /tmp in remote host is writable";
+                }
                 else
+                {
                     r.DriveStatus = DriveStatus.CONNECTED;
+                }
             }
             r.Drive = drive;
             return r;
@@ -854,18 +872,19 @@ namespace golddrive
             if (!IsWinfspInstalled())
             {
                 r.MountStatus = MountStatus.BAD_WINFSP;
+                r.Error = "Winfsp is not installed\n";
                 return r;
             }
             if (!IsCliInstalled())
             {
                 r.MountStatus = MountStatus.BAD_CLI;
+                r.Error = "Goldrive CLI is not installed\n";
                 return r;
             }
             r = CheckDriveStatus(drive);
             if (r.DriveStatus != DriveStatus.DISCONNECTED)
             {
                 r.MountStatus = MountStatus.BAD_DRIVE;
-                r.Error = r.DriveStatus.ToString();
                 return r;
             }
             r = TestSsh(drive, drive.AppKey);
