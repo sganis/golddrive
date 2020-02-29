@@ -1,6 +1,6 @@
 version: 2.4.{build}
 image: 
-- Visual Studio 2019 Preview
+- Visual Studio 2019
 platform: x64
 configuration: Release
 # environment:
@@ -16,18 +16,8 @@ install:
   # - ps: Write-host "Rebooting..." 
   # - ps: Restart-Computer -Force 
   - ps: Start-Sleep -s 1
+
 build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
-  # - msbuild src\cli\cli.vcxproj /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
-  # - msbuild src\app\app.csproj /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
-  # - msbuild src\test\test.csproj /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
-  # - msbuild src\test\test.csproj /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
   - start /wait msiexec /i src\build\Release\golddrive-*.msi /qn
-  # - C:\Python37\python -m pip install paramiko pyyaml psutil
-  # - echo "test host %GOLDDRIVE_HOST%"
-#test:
-  #- vstest.console /logger:Appveyor src\test\bin\Release\golddrive-test.dll  # categories:
-  # assemblies:
-  #   - src\test\bin\Release\golddrive-test.dll
-  # categories:
-  #   - Appveyor
+
