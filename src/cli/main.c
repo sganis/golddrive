@@ -403,18 +403,18 @@ int main(int argc, char *argv[])
 	//printf("Threads = %d\n", gd_threads(5, get_number_of_processors()));
 
 	// default arguments
-	char volprefix[256], volname[256]; //, prefix[256];
-	//strcpy(prefix, g_fs.remote);
-	//if (str_contains(g_fs.remote, ":"))
-	//	str_replace(g_fs.remote, ":", "", prefix);
+	char volprefix[256], volname[256], prefix[256];
+	strcpy(prefix, g_fs.remote);
+	if (str_contains(g_fs.remote, ":"))
+		str_replace(g_fs.remote, ":", "", prefix);
 
-	//if(prefix)
-	//	sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=%s", prefix);
-	//else
-	//	sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=/golddrive/%c", g_fs.letter);
+	if(prefix)
+		sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=%s", prefix);
+	else
+		sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=/golddrive/%c", g_fs.letter);
 	//sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=/golddrive/%s@%s!%d->%c",
 	//	g_fs.user, g_fs.host, g_fs.port, g_fs.letter);
-	sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=/golddrive/%c", g_fs.letter);
+	//sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=/golddrive/%c", g_fs.letter);
 	sprintf_s(volname, sizeof(volname), "-ovolname=%s", g_fs.mountpoint);
 	gd_log("Prefix  = %s\n", volprefix);
 
