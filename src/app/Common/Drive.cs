@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace golddrive
 {
@@ -11,8 +12,10 @@ namespace golddrive
         
         public bool? IsGoldDrive { get; set; }
 
-        public string Path { get; set; }
+        public string ServerOS { get; set; }
         
+        public string Path { get; set; }
+
         public string Host { get; set; }
         
         public string Letter { get; set; }
@@ -112,9 +115,16 @@ namespace golddrive
             get { return port == 0 ? 22 : port; }
             set { port = value; }
         }
+
         public string UserProfile
         {
-            get { return Environment.ExpandEnvironmentVariables("%USERPROFILE%"); }
+            get 
+            { 
+                var prof = Environment.ExpandEnvironmentVariables("%USERPROFILE%");
+                //if(!prof.Contains(User))
+                //    prof = Regex.Replace(prof, @"(?i)([a-z]:\\Users\\)([a-z0-9_\.]+)", $@"$1{User}");
+                return prof;
+            }
         }
         public string AppKey
         {

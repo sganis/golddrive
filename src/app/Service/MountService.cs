@@ -779,16 +779,25 @@ namespace golddrive
                 client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
                 client.Connect();
                 string cmd = "";
-                //bool linux = false;
-                //if(linux)
+                bool linux = !client.ConnectionInfo.ServerVersion.ToLower().Contains("windows");
+                if (linux)
+                {
                     cmd = $"exec sh -c \"cd; umask 077; mkdir -p .ssh; echo '{pubkey}' >> .ssh/authorized_keys\"";
-                //else
-                //    cmd = $"mkdir %USERPROFILE%\\.ssh 2>NUL || echo {pubkey.Trim()} >> %USERPROFILE%\\.ssh\\authorized_keys";
+                }
+                else
+                {
+                    //cmd = "if not exists .ssh mkdir .ssh && ";
+                    cmd =  $"echo {pubkey.Trim()} >> .ssh\\authorized_keys && ";
+                    cmd += $"icacls .ssh\\authorized_keys /inheritance:r && ";
+                    cmd += $"icacls .ssh\\authorized_keys /grant {drive.User}:f &&";
+                    cmd += $"icacls .ssh\\authorized_keys /grant SYSTEM:f";
+                }
                 SshCommand command = client.CreateCommand(cmd);
                 command.CommandTimeout = TimeSpan.FromSeconds(5);
                 r.Output = command.Execute();
                 r.Error = command.Error;
                 r.ExitCode = command.ExitStatus;
+
             }
             catch (Exception ex)
             {
@@ -916,10 +925,12 @@ namespace golddrive
                 return service.Status == ServiceControllerStatus.Running;
             return false;
         }
+        
         private bool IsCliInstalled()
         {
             return File.Exists( GetGolddriveCliPath() );
         }
+        
         private string GetGolddriveCliPath()
         {
             try
@@ -964,6 +975,7 @@ namespace golddrive
             }
             return "n/a";
         }
+        
         public ReturnBox Mount(Drive drive)
         {
             ReturnBox r = RunLocal("net.exe", $"use { drive.Name } { drive.Remote } /persistent:yes");
@@ -1013,9 +1025,6 @@ namespace golddrive
             return rb;
 
         }
-
-
-
 
         #endregion
 
