@@ -30,8 +30,10 @@ install:
   - ps: wsl sudo apt-get install -y openssh-server nmap
   - ps: wsl sudo service ssh --full-restart
   - ps: nmap localhost
-  - ps: ssh %USERNAME%@localhost
-  
+  - ps: wsl sudo adduser --disabled-password --gecos "" support
+  - ps: wsl sudo usermod --password support support
+  - ps: wsl --user support ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa 2>/dev/null <<< y >/dev/null 
+
 build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
   - start /wait msiexec /i src\build\Release\golddrive-*.msi /qn
