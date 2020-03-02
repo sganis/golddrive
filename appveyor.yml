@@ -16,6 +16,12 @@ install:
   # - ps: Write-host "Rebooting..." 
   # - ps: Restart-Computer -Force 
   - ps: Start-Sleep -s 1
+  # Install the OpenSSH
+  - ps: Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
+  - ps: Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+  - ps: Start-Service sshd
+  - ps: Get-NetFirewallRule -Name *ssh*
+  - ps: New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
 
 build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
