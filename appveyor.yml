@@ -15,8 +15,9 @@ install:
   - start /wait msiexec /i winfsp-1.6.20027.msi /qn ADDLOCAL=ALL
   # - ps: Write-host "Rebooting..." 
   # - ps: Restart-Computer -Force 
-  - ps: Start-Sleep -s 1
+  # - ps: Start-Sleep -s 1
   # Install the OpenSSH
+  - ps: Get-WindowsCapability -Online | ? Name -like 'OpenSSH*'
   - ps: Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
   - ps: Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
   - ps: Start-Service sshd
