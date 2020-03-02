@@ -17,14 +17,18 @@ install:
   # - ps: Restart-Computer -Force 
   # - ps: Start-Sleep -s 1
   # Install the OpenSSH
-  - ps: Get-WindowsCapability -Online | ? Name -like 'OpenSSH*'
-  - ps: Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
-  - ps: Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
-  - ps: Get-WindowsCapability -Online | ? Name -like 'OpenSSH*'
-  - ps: Set-Service -Name sshd -StartupType 'Automatic'
-  - ps: Start-Service sshd
-  - ps: Get-NetFirewallRule -Name *ssh*
-  - ps: New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
+  # - ps: Get-WindowsCapability -Online | ? Name -like 'OpenSSH*'
+  # - ps: Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
+  # - ps: Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+  # - ps: Get-WindowsCapability -Online | ? Name -like 'OpenSSH*'
+  # - ps: Set-Service -Name sshd -StartupType 'Automatic'
+  # - ps: Start-Service sshd
+  # - ps: Get-NetFirewallRule -Name *ssh*
+  # - ps: New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
+  - ps: wsl apt-get update
+  - ps: wsl apt-get remove --purge openssh-server # First remove sshd with --purge option.
+  - ps: wsl apt-get install openssh-server
+  - ps: wsl service ssh --full-restart
 
 build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
