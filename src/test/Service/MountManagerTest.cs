@@ -14,10 +14,12 @@ namespace golddrive.Tests
     {
         private MountService _mountService = new MountService();
         private static readonly string _host = Environment.GetEnvironmentVariable("GOLDDRIVE_HOST");
+        private static readonly string _user = Environment.GetEnvironmentVariable("GOLDDRIVE_USER");
         private Drive _drive = new Drive
         {
             Letter = "X",
-            MountPoint = _host,
+            MountPoint = $"{_user}@{_host}",
+            User = _user,
             Label = "Golddrive",
             IsGoldDrive = true,
             Status = DriveStatus.DISCONNECTED,
@@ -131,6 +133,7 @@ namespace golddrive.Tests
         [TestMethod()]
         public void CheckDriveStatusTest()
         {
+            //Unmount();
             _mountService.RunLocal($"subst W: {_mountService.LocalAppData}");
             Drive c = new Drive { Letter = "C", MountPoint = "sshserver" };
             Drive w = new Drive { Letter = "W", MountPoint = "sshserver" };
@@ -141,7 +144,7 @@ namespace golddrive.Tests
             Assert.IsTrue(status==DriveStatus.DISCONNECTED);
             Mount();
             Assert.AreEqual(_mountService.CheckDriveStatus(_drive).DriveStatus, DriveStatus.CONNECTED);
-            Drive t = new Drive { Letter = "T", MountPoint = _host };
+            Drive t = new Drive { Letter = "T", MountPoint = $"{_user}@{_host}" };
             Assert.AreEqual(_mountService.CheckDriveStatus(t).DriveStatus, DriveStatus.MOUNTPOINT_IN_USE);
             Unmount();
             _mountService.RunLocal("subst W: /d");

@@ -21,4 +21,13 @@ build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
   - start /wait msiexec /i src\build\Release\golddrive-*.msi /qn
 
-test: off
+# test: off
+test:
+  # only assemblies to test
+  assemblies:
+    only:
+      - golddrive-test.dll
+  # only categories to test
+  categories:
+    only:
+      - Appveyor
