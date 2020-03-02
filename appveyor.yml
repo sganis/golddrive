@@ -29,10 +29,10 @@ install:
   - wsl sudo apt-get remove -y --purge openssh-server
   - wsl sudo apt-get install -y openssh-server nmap
   - wsl sudo service ssh --full-restart
-  - wsl nmap localhost 2>/dev/null
+  - wsl nmap localhost 2^>/dev/null
   - wsl sudo adduser --disabled-password --gecos "" support
   - wsl sudo usermod --password support support
-  - wsl --user support ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa 2>/dev/null <<< y >/dev/null 
+  - wsl --user support ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa 2^>/dev/null ^<^<^< y ^>/dev/null 
 
 build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
