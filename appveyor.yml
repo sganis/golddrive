@@ -26,10 +26,10 @@ install:
   # - ps: Get-NetFirewallRule -Name *ssh*
   # - ps: New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
   - ps: wsl --list
-  - ps: wsl apt-get update
-  - ps: wsl apt-get remove --purge openssh-server # First remove sshd with --purge option.
-  - ps: wsl apt-get install openssh-server
-  - ps: wsl service ssh --full-restart
+  - ps: wsl sudo apt-get update
+  - ps: wsl sudo apt-get remove --purge openssh-server # First remove sshd with --purge option.
+  - ps: wsl sudo apt-get install openssh-server
+  - ps: wsl sudo service ssh --full-restart
 
 build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
