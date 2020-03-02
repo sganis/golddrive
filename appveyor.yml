@@ -29,7 +29,7 @@ install:
   - ps: wsl sudo apt-get remove -y --purge openssh-server
   - ps: wsl sudo apt-get install -y openssh-server nmap
   - ps: wsl sudo service ssh --full-restart
-  - ps: nmap localhost
+  - ps: wsl nmap localhost
   - ps: wsl sudo adduser --disabled-password --gecos "" support
   - ps: wsl sudo usermod --password support support
   - ps: wsl --user support ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa 2>/dev/null <<< y >/dev/null 
