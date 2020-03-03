@@ -46,13 +46,14 @@ IF ERRORLEVEL 1 (
 )
 
 :hostdone
-set "user=sant"
-set /p user="Enter user [%user%]: "
-set /p pass="Enter pass: "
+set "USER=support"
+set "PASS=support"
+set /p user="Enter user [%USER%]: "
+set /p pass="Enter pass [%PASS%]: "
 
 echo on
-set GOLDDRIVE_USER=%user%
-set GOLDDRIVE_PASS=%pass%
+set GOLDDRIVE_USER=%USER%
+set GOLDDRIVE_PASS=%PASS%
 set GOLDDRIVE_HOST=%HOST%
 set GOLDDRIVE_PORT=22
 

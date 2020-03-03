@@ -29,20 +29,14 @@ $ubuntuExe = "C:\WSL\Ubuntu1804\ubuntu1804.exe"
 . $ubuntuExe install --root
 . $ubuntuExe run sudo adduser support --gecos `"First,Last,RoomNumber,WorkPhone,HomePhone`" --disabled-password
 . $ubuntuExe run sudo "echo 'support:support' | sudo chpasswd"
-#. $ubuntuExe run sudo usermod -aG sudo appveyor
-#. $ubuntuExe run sudo "echo -e `"`"appveyor\tALL=(ALL)\tNOPASSWD: ALL`"`" > /etc/sudoers.d/appveyor"
-#. $ubuntuExe run sudo chmod 0755 /etc/sudoers.d/appveyor
-#. $ubuntuExe config --default-user appveyor
 
 Write-host "Updating..."
-. $ubuntuExe run sudo apt-get update -qq
+. $ubuntuExe run sudo apt-get update -qq 
 
 Write-host "Checing user..."
 . $ubuntuExe run whoami
 
 Write-host "Installing ssh..."
-. $ubuntuExe run sudo apt-get remove -y -qq --purge openssh-server
-. $ubuntuExe run sudo apt-get install -y -qq openssh-server #nmap
+. $ubuntuExe run sudo apt-get remove -y -qq --purge openssh-server >/dev/null
+. $ubuntuExe run sudo apt-get install -y -qq openssh-server >/dev/null
 . $ubuntuExe run sudo service ssh --full-restart
-#. $ubuntuExe run nmap localhost 2^>/dev/null
-#. $ubuntuExe run --user support ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa 2^>/dev/null

@@ -36,14 +36,16 @@ install:
   - echo Setup wsl...
   - ps: tools\setup_wsl.ps1
   - echo Installing python dependencies...
-  - C:\Python38\python -m pip install paramiko pyyaml psutil
+  - C:\Python38\python -m pip install paramiko pyyaml psutil >/dev/null
   - echo Setup ssh...
   - C:\Python38\python tools\golddrive-v1.0\app\setupssh.py support@localhost:22
 
 build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
   - start /wait msiexec /i src\build\Release\golddrive-*.msi /qn
-
+  - net use
+  - net use X: \\golddrive\support@localhost
+  - net use X: /d
 # test: off
 test:
   # only assemblies to test
