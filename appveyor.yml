@@ -34,7 +34,7 @@ install:
   # - wsl sudo usermod --password support support
   # - wsl --user support ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa 2^>/dev/null
   - ps: tools\setup_wsl.ps1
-  
+  - C:\Python37\python -m pip install paramiko pyyaml psutil
 build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
   - start /wait msiexec /i src\build\Release\golddrive-*.msi /qn

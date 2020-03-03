@@ -40,3 +40,9 @@ Write-host "Updating..."
 Write-host "Checing user..."
 . $ubuntuExe run whoami
 
+Write-host "Installing ssh..."
+. $ubuntuExe run sudo apt-get remove -y --purge openssh-server
+. $ubuntuExe run sudo apt-get install -y openssh-server nmap
+. $ubuntuExe run sudo service ssh --full-restart
+. $ubuntuExe run nmap localhost 2^>/dev/null
+#. $ubuntuExe run --user support ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa 2^>/dev/null
