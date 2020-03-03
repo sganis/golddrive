@@ -150,7 +150,7 @@ def set_key_permissions(user, pkey):
 	
 	# Set Ownership to Owner and SYSTEM account
 	# subprocess.run(fr'icacls {ssh_folder} /c /t /grant %username%:F')
-	util.run(fr'icacls {pkey} /c /t /grant { os.environ['USERNAME'] }:F', capture=True)
+	util.run(fr'icacls {pkey} /c /t /grant { os.environ["USERNAME"] }:F', capture=True)
 	util.run(fr'icacls {pkey} /c /t /grant SYSTEM:F', capture=True)
 	
 	# Remove All Users, except for Owner 
