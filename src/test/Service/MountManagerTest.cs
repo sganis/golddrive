@@ -67,7 +67,7 @@ namespace golddrive.Tests
                 }
             }
         }
-        [TestMethod]
+        [TestMethod, TestCategory("Appveyor")]
         public void SetGetDrivelLabelTest()
         {
             string current_label = _drive.Label;
@@ -109,14 +109,14 @@ namespace golddrive.Tests
         }
 
 
-        [TestMethod()]
+        [TestMethod(), TestCategory("Appveyor")]
         public void MountUnmountTest()
         {
             Mount();
             Unmount();
 
         }
-        [TestMethod()]
+        [TestMethod(), TestCategory("Appveyor")]
         public void FreeUsedDrivesTest()
         {
             Mount();
@@ -130,7 +130,7 @@ namespace golddrive.Tests
             Assert.AreNotEqual(free_drives.Find(x => x.Name == "X:"), null);
             Assert.AreEqual(used_drives.Find(x => x.Name == "X:"), null);
         }
-        [TestMethod()]
+        [TestMethod(), TestCategory("Appveyor")]
         public void CheckDriveStatusTest()
         {
             //Unmount();
@@ -150,7 +150,7 @@ namespace golddrive.Tests
             _mountService.RunLocal("subst W: /d");
         }
 
-        [TestMethod()]
+        [TestMethod(), TestCategory("Appveyor")]
         public void MakeDirTest()
         {
             Mount();
@@ -161,22 +161,22 @@ namespace golddrive.Tests
             Assert.IsFalse(Directory.Exists(path));
             Unmount();
         }
-        [TestMethod()]
+        [TestMethod(), TestCategory("Appveyor")]
         public void MakeDirManyTest()
         {
             Mount();
-            Parallel.ForEach(Enumerable.Range(1, 1000), f =>
+            Parallel.ForEach(Enumerable.Range(1, 100), f =>
             {
                 CreateDir(f);
             });
-            Parallel.ForEach(Enumerable.Range(1, 1000), f =>
+            Parallel.ForEach(Enumerable.Range(1, 100), f =>
             {
                 DeleteDir(f);
             });
             Unmount();
         }
 
-        [TestMethod()]
+        [TestMethod(), TestCategory("Appveyor")]
         public void CreateDeleteFileTest()
         {
             Mount();
@@ -184,22 +184,22 @@ namespace golddrive.Tests
             DeleteFile(1);
             Unmount();
         }
-        [TestMethod()]
+        [TestMethod(), TestCategory("Appveyor")]
         public void CreateManyFileTest()
         {
             Mount();
 
-            Parallel.ForEach(Enumerable.Range(1, 1000), f =>
+            Parallel.ForEach(Enumerable.Range(1, 100), f =>
             {
                 CreateFile(f);
             });
-            Parallel.ForEach(Enumerable.Range(1, 1000), f =>
+            Parallel.ForEach(Enumerable.Range(1, 100), f =>
             {
                 DeleteFile(f);
             });
             Unmount();
         }
-        [TestMethod()]
+        [TestMethod(), TestCategory("Appveyor")]
         public void Copy1GBFileTest()
         {
             Mount();
@@ -271,7 +271,7 @@ namespace golddrive.Tests
                 Directory.Delete(path);
             Assert.IsTrue(!Directory.Exists(path));
         }
-        [TestMethod()]
+        [TestMethod(), TestCategory("Appveyor")]
         public void RenameFileTest()
         {
             Mount();
@@ -286,7 +286,7 @@ namespace golddrive.Tests
             Assert.IsTrue(!File.Exists(f2));
             Unmount();
         }
-        [TestMethod()]
+        [TestMethod(), TestCategory("Appveyor")]
         public void RenameDirTest()
         {
             Mount();
