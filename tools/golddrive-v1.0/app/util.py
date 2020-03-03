@@ -73,7 +73,7 @@ def load_config(path):
 def add_drive_config(**p):
 	'''Add drive to config.json
 	'''
-	logger.info('Adding drive to config file...')
+	logger.debug('Adding drive to config file...')
 	drive = p['drive']
 	user, host = p['userhost'].split('@')
 	port = p['port']
@@ -143,7 +143,7 @@ def run(cmd, capture=False, detach=False, shell=True, timeout=30):
 	header = 'CMD'
 	if shell:
 		header += ' (SHELL)'
-	logger.info(f'{header}: {cmd}')
+	logger.debug(f'{header}: {cmd}')
 
 	r = subprocess.CompletedProcess(cmd, 0)
 	r.stdout = ''
@@ -158,7 +158,7 @@ def run(cmd, capture=False, detach=False, shell=True, timeout=30):
 			# 		creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP)
 			p = subprocess.Popen(shlex.split(cmd), close_fds=True,
 					creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP)
-			logger.info(f'Detached process {p.pid} started.')
+			logger.debug(f'Detached process {p.pid} started.')
 		else:
 			r = subprocess.run(cmd, capture_output=capture, shell=shell, 
 					timeout=timeout, text=True)
@@ -173,7 +173,7 @@ def run(cmd, capture=False, detach=False, shell=True, timeout=30):
 		else:
 			logger.error(r)		
 	# else:
-	# 	logger.info(r)
+	# 	logger.debug(r)
 	if capture:
 		r.stdout = r.stdout.strip()
 		r.stderr = r.stderr.strip()
@@ -236,9 +236,9 @@ def set_path(path=None):
 		# fr'C:\Windows\System32\Wbem',		
 	]
 	os.environ['PATH'] = ';'.join(path)
-	logger.info('PATH:')
+	logger.debug('PATH:')
 	for p in os.environ['PATH'].split(';'):
-		logger.info(p)
+		logger.debug(p)
 	# print('sys.path:')
 	# for p in sys.path:
 	# 	print(p)
@@ -247,12 +247,12 @@ def taskkill(plist, timeout=5):
 	def on_terminate(p):
 		if p.returncode != 0:
 			if p.returncode == 15:
-				logger.info(f"Process {p.pid} terminated")
+				logger.debug(f"Process {p.pid} terminated")
 			else:
 				logger.error(f"Process {p.pid} terminated with exit code {p.returncode}")
 
 	for p in plist:
-		logger.info(f'Terminating process {p.pid}...')
+		logger.debug(f'Terminating process {p.pid}...')
 		p.terminate()
 	gone, alive = psutil.wait_procs(plist, timeout=timeout, callback=on_terminate)
 	if alive:
@@ -276,7 +276,7 @@ def restart_explorer():
 	# util.run(fr'start /b c:\windows\explorer.exe', capture=True)
 
 def kill_drive(drive):
-	logger.info(f'Killing drive {drive} process...')
+	logger.debug(f'Killing drive {drive} process...')
 	plist = []
 	drive = drive.lower()
 	for p in psutil.process_iter(attrs=['cmdline']):
