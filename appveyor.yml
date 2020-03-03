@@ -31,4 +31,4 @@ test:
   # only categories to test
   categories:
     only:
-      - Appveyor1
+      - Appveyor

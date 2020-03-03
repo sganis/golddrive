@@ -132,7 +132,7 @@ namespace golddrive.Tests
             Assert.AreNotEqual(free_drives.Find(x => x.Name == "X:"), null);
             Assert.AreEqual(used_drives.Find(x => x.Name == "X:"), null);
         }
-        [TestMethod(), TestCategory("Appveyor1")]
+        [TestMethod(), TestCategory("Appveyor")]
         public void CheckDriveStatusTest()
         {
             //Unmount();
