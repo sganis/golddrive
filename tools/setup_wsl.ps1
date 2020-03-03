@@ -37,6 +37,6 @@ Write-host "Checing user..."
 . $ubuntuExe run whoami
 
 Write-host "Installing ssh..."
-. $ubuntuExe run sudo apt-get remove -y -qq --purge openssh-server >/dev/null
-. $ubuntuExe run sudo apt-get install -y -qq openssh-server >/dev/null
+. $ubuntuExe run sudo apt-get remove -y -qq --purge openssh-server ^>/dev/null
+. $ubuntuExe run sudo apt-get install -y -qq openssh-server ^>/dev/null
 . $ubuntuExe run sudo service ssh --full-restart
