@@ -33,8 +33,11 @@ install:
   # - wsl sudo adduser --disabled-password --gecos "" support
   # - wsl sudo usermod --password support support
   # - wsl --user support ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa 2^>/dev/null
+  - echo Setup wsl...
   - ps: tools\setup_wsl.ps1
+  - echo Installing python dependencies...
   - C:\Python38\python -m pip install paramiko pyyaml psutil
+  - echo Setup ssh...
   - C:\Python38\python tools\golddrive-v1.0\app\setupssh.py support@localhost:22
 
 build_script:
