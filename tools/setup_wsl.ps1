@@ -30,11 +30,11 @@ $ubuntuExe = "C:\WSL\Ubuntu1804\ubuntu1804.exe"
 . $ubuntuExe run sudo adduser support --gecos `"First,Last,RoomNumber,WorkPhone,HomePhone`" --disabled-password
 . $ubuntuExe run sudo "echo 'support:support' | sudo chpasswd"
 
-Write-host "Updating..."
-. $ubuntuExe run sudo apt-get update -qq 
+#Write-host "Updating..."
+#. $ubuntuExe run sudo apt-get update -qq 
 
-Write-host "Checing user..."
-. $ubuntuExe run whoami
+#Write-host "Checing user..."
+#. $ubuntuExe run whoami
 
 Write-host "Installing ssh..."
 . $ubuntuExe run sudo apt-get remove -y -qq --purge openssh-server `>`/dev/null
