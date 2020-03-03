@@ -26,14 +26,15 @@ install:
   # - ps: Get-NetFirewallRule -Name *ssh*
   # - ps: New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
   # - ps: wsl sudo apt-get update
-  - wsl sudo apt-get remove -y --purge openssh-server
-  - wsl sudo apt-get install -y openssh-server nmap
-  - wsl sudo service ssh --full-restart
-  - wsl nmap localhost 2^>/dev/null
-  - wsl sudo adduser --disabled-password --gecos "" support
-  - wsl sudo usermod --password support support
-  - wsl --user support ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa 2^>/dev/null
-
+  # - wsl sudo apt-get remove -y --purge openssh-server
+  # - wsl sudo apt-get install -y openssh-server nmap
+  # - wsl sudo service ssh --full-restart
+  # - wsl nmap localhost 2^>/dev/null
+  # - wsl sudo adduser --disabled-password --gecos "" support
+  # - wsl sudo usermod --password support support
+  # - wsl --user support ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa 2^>/dev/null
+  - ps: tools\setup_wsl.ps1
+  
 build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
   - start /wait msiexec /i src\build\Release\golddrive-*.msi /qn
