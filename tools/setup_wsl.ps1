@@ -27,16 +27,16 @@ Remove-Item "$env:TEMP\wsl-ubuntu-1804.zip"
 
 $ubuntuExe = "C:\WSL\Ubuntu1804\ubuntu1804.exe"
 . $ubuntuExe install --root
-#. $ubuntuExe run sudo adduser appveyor --gecos `"First,Last,RoomNumber,WorkPhone,HomePhone`" --disabled-password
-. $ubuntuExe run sudo "echo 'appveyor:Password12!' | sudo chpasswd"
-. $ubuntuExe run sudo usermod -aG sudo appveyor
+. $ubuntuExe run sudo adduser support --gecos `"First,Last,RoomNumber,WorkPhone,HomePhone`" --disabled-password
+. $ubuntuExe run sudo "echo 'support:support' | sudo chpasswd"
+#. $ubuntuExe run sudo usermod -aG sudo appveyor
 #. $ubuntuExe run sudo "echo -e `"`"appveyor\tALL=(ALL)\tNOPASSWD: ALL`"`" > /etc/sudoers.d/appveyor"
 #. $ubuntuExe run sudo chmod 0755 /etc/sudoers.d/appveyor
-. $ubuntuExe config --default-user appveyor
+#. $ubuntuExe config --default-user appveyor
 
 Write-host "Updating..."
 . $ubuntuExe run sudo apt-get update
 
+Write-host "Checing user..."
+. $ubuntuExe run whoami
 
-# wslconfig /setdefault ubuntu-18.04
-# wsl lsb_release -a
