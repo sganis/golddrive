@@ -40,6 +40,8 @@ namespace golddrive.Tests
         public void Mount()
         {
             var r = _mountService.Connect(_drive);
+            if (r.DriveStatus != DriveStatus.CONNECTED)
+                Console.WriteLine($"ERROR: {r.Error}");
             Assert.AreEqual(r.DriveStatus, DriveStatus.CONNECTED);
 
         }
@@ -130,7 +132,7 @@ namespace golddrive.Tests
             Assert.AreNotEqual(free_drives.Find(x => x.Name == "X:"), null);
             Assert.AreEqual(used_drives.Find(x => x.Name == "X:"), null);
         }
-        [TestMethod(), TestCategory("Appveyor")]
+        [TestMethod(), TestCategory("Appveyor1")]
         public void CheckDriveStatusTest()
         {
             //Unmount();
