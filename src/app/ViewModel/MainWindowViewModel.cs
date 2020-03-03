@@ -13,18 +13,18 @@ namespace golddrive
         #region Properties
 
         private MountService _mountService;
-        private int _selecteTabIndex;
-        public int SelectedTabIndex
-        {
-            get { return _selecteTabIndex; }
-            set
-            {
-                _selecteTabIndex = value;
-                NotifyPropertyChanged();
-                NotifyPropertyChanged("IsDrivesTabSelected");
-            }
-        }
-        public bool IsDrivesTabSelected => SelectedTabIndex == 0;
+        //private int _selecteTabIndex;
+        //public int SelectedTabIndex
+        //{
+        //    get { return _selecteTabIndex; }
+        //    set
+        //    {
+        //        _selecteTabIndex = value;
+        //        NotifyPropertyChanged();
+        //        NotifyPropertyChanged("IsDrivesTabSelected");
+        //    }
+        //}
+        //public bool IsDrivesTabSelected => SelectedTabIndex == 0;
 
         private string _version;
 
@@ -52,13 +52,13 @@ namespace golddrive
             set { _currentPage = value; NotifyPropertyChanged(); }
         }
 
-        private string _globalArgs;
+        //private string _globalArgs;
 
-        public string GlobalArgs
-        {
-            get { return _globalArgs; }
-            set { _globalArgs = value; NotifyPropertyChanged(); }
-        }
+        //public string GlobalArgs
+        //{
+        //    get { return _globalArgs; }
+        //    set { _globalArgs = value; NotifyPropertyChanged(); }
+        //}
         public ObservableCollection<Drive> GoldDrives { get; set; } = new ObservableCollection<Drive>();
         public ObservableCollection<Drive> FreeDrives { get; set; } = new ObservableCollection<Drive>();
 
@@ -230,7 +230,7 @@ namespace golddrive
                 Settings settings = _mountService.LoadSettings();
                 if (drive != null)
                     settings.AddDrive(drive);
-                GlobalArgs = settings.Args;
+                //GlobalArgs = settings.Args;
                 if(_selectedDrive == null)
                     SelectedDrive = settings.SelectedDrive;
                 _mountService.UpdateDrives(settings);
@@ -458,7 +458,7 @@ namespace golddrive
                 Drive d = SelectedFreeDrive;
                 await Task.Run(() => {
                     Settings settings = _mountService.LoadSettings();
-                    settings.Args = GlobalArgs;
+                    //settings.Args = GlobalArgs;
                     settings.AddDrive(d);
                     _mountService.SaveSettings(settings);
                     _mountService.UpdateDrives(settings);
@@ -472,7 +472,7 @@ namespace golddrive
                 Drive d = SelectedDrive;
                 await Task.Run(() => {
                     Settings settings = _mountService.LoadSettings();
-                    settings.Args = GlobalArgs;
+                    //settings.Args = GlobalArgs;
                     settings.AddDrives(GoldDrives.ToList());
                     _mountService.SaveSettings(settings);
                     _mountService.UpdateDrives(settings);
@@ -536,7 +536,7 @@ namespace golddrive
                 if (d.Status == DriveStatus.CONNECTED)
                     _mountService.Unmount(d);
                 Settings settings = _mountService.LoadSettings();
-                settings.Args = GlobalArgs;
+                //settings.Args = GlobalArgs;
                 settings.AddDrives(GoldDrives.ToList());
                 _mountService.SaveSettings(settings);
                 _mountService.UpdateDrives(settings);
@@ -558,7 +558,7 @@ namespace golddrive
             {
                 Settings settings = new Settings
                 {
-                    Args = GlobalArgs,
+                    //Args = GlobalArgs,
                     Selected = Selected,
                 };
                 settings.AddDrives(GoldDrives.ToList());

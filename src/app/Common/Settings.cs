@@ -10,7 +10,7 @@ namespace golddrive
     [JsonObject(MemberSerialization.OptOut)]
     public class Settings
     {
-        public string Args { get; set; }
+        //public string Args { get; set; }
         public string Selected { get; set; }
         public Dictionary<string,Drive> Drives { get; set; }
 
@@ -56,8 +56,8 @@ namespace golddrive
             {
                 string args = "";
                 var json = JsonConvert.DeserializeObject<Dictionary<string, object>>(File.ReadAllText(Filename));
-                if (json.ContainsKey("Args"))
-                    Args = json["Args"].ToString();
+                //if (json.ContainsKey("Args"))
+                //    Args = json["Args"].ToString();
                 if (json.ContainsKey("Selected"))
                     Selected = json["Selected"].ToString();
                 if (!json.ContainsKey("Drives"))

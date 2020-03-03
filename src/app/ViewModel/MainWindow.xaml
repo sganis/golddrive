@@ -136,13 +136,13 @@
                 <local:AboutControl />
             </StackPanel>
         </Grid>
-        <ProgressBar
+        <!--ProgressBar
             Grid.Row="2"
             Width="200"
             Visibility="{Binding IsWorking, 
                          Converter={StaticResource BooleanToVisibilityConverter}}"
             VerticalAlignment="Top"
-            IsIndeterminate="True" />
+            IsIndeterminate="True" /-->
 
     </Grid>
 </Controls:MetroWindow>
