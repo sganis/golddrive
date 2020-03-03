@@ -942,7 +942,7 @@ namespace golddrive
             }
             catch (Exception ex)
             {
-
+                Console.WriteLine($"ERROR: cannot get registry path: {ex}");
             }
             return "";
         }

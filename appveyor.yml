@@ -19,7 +19,10 @@ install:
 
 build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
-  - start /wait msiexec /i src\build\Release\golddrive-*.msi /qn
+  - start /wait msiexec /i src\build\Release\golddrive-2.4.0.msi /qn
+  - dir "C:\Program Files"
+  - dir "C:\Program Files\Golddrive"
+  - dir "C:\Program Files (x86)\WinFsp"
   - net use
   - net use X: \\golddrive\support@localhost
   - net use X: /d
