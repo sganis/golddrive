@@ -16,7 +16,7 @@ def testhost(userhost, port=22):
 	Test if host respond to port
 	Return: True or False
 	'''
-	logger.info(f'Testing port {port} at {userhost}...')
+	logger.debug(f'Testing port {port} at {userhost}...')
 	user, host = userhost.split('@')
 	client = paramiko.SSHClient()
 	client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -40,7 +40,7 @@ def testlogin(userhost, password, port=22):
 	'''
 	Test ssh password authentication
 	'''
-	logger.info(f'Logging in with password for {userhost}...')
+	logger.debug(f'Logging in with password for {userhost}...')
 	rb = util.ReturnBox()
 	if not password:
 		rb.returncode =util.ReturnCode.BAD_LOGIN
@@ -72,7 +72,7 @@ def testssh(userhost, seckey, port=22):
 	'''
 	Test ssh key authentication
 	'''
-	logger.info(f'Testing ssh keys for {userhost} using key {seckey}...')
+	logger.debug(f'Testing ssh keys for {userhost} using key {seckey}...')
 	
 	rb = testhost(userhost, port)
 	if rb.returncode == util.ReturnCode.BAD_HOST:
@@ -111,7 +111,7 @@ def testssh(userhost, seckey, port=22):
 	return rb
 
 def generate_keys(seckey, userhost):
-	logger.info('Generating new ssh keys...')
+	logger.debug('Generating new ssh keys...')
 	rb = util.ReturnBox()
 	sk = paramiko.RSAKey.generate(2048)
 	try:
@@ -142,7 +142,7 @@ def has_app_keys(user):
 
 def set_key_permissions(user, pkey):
 	
-	logger.info('setting ssh key permissions...')
+	logger.debug('setting ssh key permissions...')
 	ssh_folder = os.path.dirname(pkey)
 	# Remove Inheritance ::
 	# subprocess.run(fr'icacls {ssh_folder} /c /t /inheritance:d')
@@ -164,7 +164,7 @@ def main(userhost, password, port=22):
 	'''
 	Setup ssh keys, return ReturnBox
 	'''
-	logger.info(f'Setting up ssh keys for {userhost}...')
+	logger.debug(f'Setting up ssh keys for {userhost}...')
 	rb = util.ReturnBox()
 
 	# app key
@@ -174,7 +174,7 @@ def main(userhost, password, port=22):
 	# Check if keys need to be generated
 	pubkey = ''
 	if has_app_keys(user):
-		logger.info('Private key already exists.')
+		logger.debug('Private key already exists.')
 		sk = paramiko.RSAKey.from_private_key_file(seckey)
 		pubkey = f'ssh-rsa {sk.get_base64()} {userhost}'
 	else:
@@ -191,7 +191,7 @@ def main(userhost, password, port=22):
 
 	rb.error = ''
 	try:
-		logger.info('Connecting using password...')
+		logger.debug('Connecting using password...')
 		client.connect(hostname=host, username=user,
 						password=password, port=port, timeout=10,
 						look_for_keys=False)     
@@ -212,19 +212,19 @@ def main(userhost, password, port=22):
 
 	set_key_permissions(user, seckey)
 
-	logger.info(f'Publising public key...')
+	logger.debug(f'Publising public key...')
 		
 	# Copy to the target machines.
 	# cmd = f"exec bash -c \"cd; umask 077; mkdir -p .ssh && echo '{pubkey}' >> .ssh/authorized_keys || exit 1\" || exit 1"
 	cmd = f"exec sh -c \"cd; umask 077; mkdir -p .ssh; echo '{pubkey}' >> .ssh/authorized_keys\""
-	logger.info(cmd)
+	logger.debug(cmd)
 	ok = False
 	
 	try:
 		stdin, stdout, stderr = client.exec_command(cmd, timeout=10)
 		rc = stdout.channel.recv_exit_status()   
 		if rc == 0:
-			logger.info('Key transfer successful')
+			logger.debug('Key transfer successful')
 			rb.returncode = util.ReturnCode.OK
 		else:
 			logger.error(f'Error transfering public key: exit {rc}, error: {stderr}')
