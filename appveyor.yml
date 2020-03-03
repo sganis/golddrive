@@ -3,36 +3,13 @@ image:
 - Visual Studio 2019
 platform: x64
 configuration: Release
-# environment:
-#   GOLDDRIVE_HOST:
-#     secure: 7iZ2lKF24FhwxW8mL+OMc4xTfkBmY38eqxs91LpZL8Y=
-#   GOLDDRIVE_PORT:
-#     secure: HiCVHHHiwJUZo8jML2cStQ==
-#   GOLDDRIVE_PASS:
-#     secure: 25BPcFmVEe3pnXeQiOkyzw==
+
 install:
   - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/winfsp-1.6.20027.msi
   - start /wait msiexec /i winfsp-1.6.20027.msi /qn ADDLOCAL=ALL
   # - ps: Write-host "Rebooting..." 
   # - ps: Restart-Computer -Force 
   # - ps: Start-Sleep -s 1
-  # Install the OpenSSH
-  # - ps: Get-WindowsCapability -Online | ? Name -like 'OpenSSH*'
-  # - ps: Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
-  # - ps: Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
-  # - ps: Get-WindowsCapability -Online | ? Name -like 'OpenSSH*'
-  # - ps: Set-Service -Name sshd -StartupType 'Automatic'
-  # - ps: Start-Service sshd
-  # - ps: Get-NetFirewallRule -Name *ssh*
-  # - ps: New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
-  # - ps: wsl sudo apt-get update
-  # - wsl sudo apt-get remove -y --purge openssh-server
-  # - wsl sudo apt-get install -y openssh-server nmap
-  # - wsl sudo service ssh --full-restart
-  # - wsl nmap localhost 2^>/dev/null
-  # - wsl sudo adduser --disabled-password --gecos "" support
-  # - wsl sudo usermod --password support support
-  # - wsl --user support ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa 2^>/dev/null
   - echo Setup wsl...
   - ps: tools\setup_wsl.ps1
   - echo Installing python dependencies...
@@ -46,12 +23,8 @@ build_script:
   - net use
   - net use X: \\golddrive\support@localhost
   - net use X: /d
-# test: off
+
 test:
-  # only assemblies to test
-  assemblies:
-    only:
-      - golddrive-test.dll
   # only categories to test
   categories:
     only:
