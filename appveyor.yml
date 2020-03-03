@@ -20,9 +20,6 @@ install:
 build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
   - start /wait msiexec /i src\build\Release\golddrive-2.4.0.msi /qn
-  - net use X: \\golddrive\support@localhost
-  - net use
-  - net use X: /d
 
 test:
   # only categories to test
