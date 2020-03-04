@@ -967,7 +967,7 @@ namespace golddrive
                     FileVersionInfo info = FileVersionInfo.GetVersionInfo(winfsp_dll);
                     winfsp = $"{info.FileMajorPart}.{info.FileMinorPart}.{info.FileBuildPart}";
                 }
-                return $"App version {app}\nCLI version {cli}\nWinFsp version {winfsp}";
+                return $"App version {app}\n{cli}\nWinFsp version {winfsp}";
             }
             catch (Exception ex)
             {
