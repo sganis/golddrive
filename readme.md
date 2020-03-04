@@ -8,10 +8,7 @@ Map Windows drives to remote filesystems using SSH.
 Installation
 ------------
 
-Install the latest release of WinFsp from https://github.com/billziss-gh/winfsp/releases.
-
-Download the latest released msi installer from https://github.com/sganis/golddrive/releases.
-The latest development version is available at https://ci.appveyor.com/project/sganis/golddrive/build/artifacts. 
+Install the latest release of WinFsp from https://github.com/billziss-gh/winfsp/releases. Then, download and install the latest released msi installer from https://github.com/sganis/golddrive/releases. The latest development version is available at https://ci.appveyor.com/project/sganis/golddrive/build/artifacts. 
 The installation requires adminstatator priviledges.
 
 
