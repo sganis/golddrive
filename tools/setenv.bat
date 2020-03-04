@@ -1,6 +1,6 @@
 :: Golddrive
+:: 08/05/2018, San
 :: Set development environment
-:: 08/05/2018, sganis
 
 @echo off
 set DIR=%~dp0

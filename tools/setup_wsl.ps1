@@ -1,5 +1,16 @@
-# to run scripts in powershell:
+# Golddrive
+# 04/03/2020, San
+# Install WSL with ubuntu1804, ssh server and support user
+# For testing purposes
+# It works for new development machines and also in Appveyor
+#
+# Run scripts in powershell:
 # set-executionpolicy remotesigned
+#
+# Uninstall:
+# wslconfig /u Ubuntu-18.04
+# rd /s /q C:\WSL
+
 Write-host "Checking if WSL feature is installed..."
 $installed = (Get-WindowsOptionalFeature -FeatureName Microsoft-Windows-Subsystem-Linux -Online).State -eq 'Enabled'
 if ($installed) {
@@ -36,6 +47,3 @@ Write-host "Installing ssh..."
 . $exe run sudo service ssh --full-restart
 
 
-# to uninstall
-# wslconfig /u Ubuntu-18.04
-# rd /s /q C:\WSL
