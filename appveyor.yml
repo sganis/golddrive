@@ -3,27 +3,22 @@ image:
   - Visual Studio 2019
 platform: x64
 configuration: Release
-
 install:
-  # donwload winfsp
+  # donwload winfsp and install it
   - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/winfsp-1.6.20027.msi
-  # install it
   - start /wait msiexec /i winfsp-1.6.20027.msi /qn ADDLOCAL=ALL
   # setup linux ssh server in wsl
   - ps: tools\setup_wsl.ps1
   # setup client ssh keys
   - C:\Python38\python -m pip install paramiko pyyaml psutil >NUL
   - C:\Python38\python tools\golddrive-v1.0\app\setupssh.py support@localhost
-
 build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
   - start /wait msiexec /i src\build\Release\golddrive-2.4.1.msi /qn
-
 test:
   categories:
     only:
       - Appveyor
-
 artifacts:
   - path: src\build\Release\golddrive-2.*.msi
     name: Golddrive
