@@ -13,8 +13,8 @@
                 LogoSideFile="logoside.png"/>
         </BootstrapperApplicationRef>
         <Chain>
-            <MsiPackage SourceFile="winfsp\winfsp-1.6.20027.msi" Visible="yes">
-                <MsiProperty Name="ADDLOCAL" Value="ALL"/>
+            <MsiPackage SourceFile="winfsp\winfsp-1.6.20027.msi" Visible="no">
+              <!--MsiProperty Name="ADDLOCAL" Value="ALL"/-->
             </MsiPackage>
             <MsiPackage SourceFile="$(var.msi.TargetPath)" />            
         </Chain>
