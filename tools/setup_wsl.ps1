@@ -1,3 +1,5 @@
+# to run scripts in powershell:
+# set-executionpolicy remotesigned
 Write-host "Checking if WSL feature is installed..."
 $i = 0
 $installed = $false
@@ -21,20 +23,20 @@ if (-not $installed) {
 
 Write-host "Installing Ubuntu 18.04 for WSL"
 
-(New-Object Net.WebClient).DownloadFile('https://aka.ms/wsl-ubuntu-1804', "$env:TEMP\wsl-ubuntu-1804.zip")
-Expand-Archive -Path "$env:TEMP\wsl-ubuntu-1804.zip" -DestinationPath "C:\WSL\Ubuntu1804" -Force
-Remove-Item "$env:TEMP\wsl-ubuntu-1804.zip"
+# (New-Object Net.WebClient).DownloadFile('https://aka.ms/wsl-ubuntu-1804', "$env:TEMP\wsl-ubuntu-1804.zip")
+# Expand-Archive -Path "$env:TEMP\wsl-ubuntu-1804.zip" -DestinationPath "C:\WSL\Ubuntu1804" -Force
+# Remove-Item "$env:TEMP\wsl-ubuntu-1804.zip"
 
 $ubuntuExe = "C:\WSL\Ubuntu1804\ubuntu1804.exe"
 . $ubuntuExe install --root
 . $ubuntuExe run sudo adduser support --gecos `"First,Last,RoomNumber,WorkPhone,HomePhone`" --disabled-password
 . $ubuntuExe run sudo "echo 'support:support' | sudo chpasswd"
 
-#Write-host "Updating..."
-#. $ubuntuExe run sudo apt-get update -qq 
+Write-host "Updating..."
+. $ubuntuExe run sudo apt-get update
 
-#Write-host "Checing user..."
-#. $ubuntuExe run whoami
+Write-host "Checing user..."
+. $ubuntuExe run whoami
 
 Write-host "Installing ssh..."
 . $ubuntuExe run sudo apt-get remove -y -qq --purge openssh-server `>`/dev/null
