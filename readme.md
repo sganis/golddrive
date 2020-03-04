@@ -32,7 +32,7 @@ A successful login to the remote hostname without password should be the result.
 Build
 -----
 
-See development.md document.
+See [development](https://github.com/sganis/golddrive/blob/master/development.md) document.
 
 
 
