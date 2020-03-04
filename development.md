@@ -18,88 +18,43 @@
     * Commercial, 10x slower, 3 MB/s.
     * Electron app, 50 USD.
     * Drive mounted as exfs with 10 TB free
-    * stable, 10x slower, no cmd line, cloud options.
+    * Stable, no cmd line, cloud options.
     * Apparently deletes files without permissions.
 
   - Montain Duck
-    * Commercial, unstable, 2x slower
+    * Commercial, 2x slower
     * Mono/.Net app
     * Drive mounted as ntfs without permissions
     * Cannot mount root folder
-    * Error messages on intensive i/o, need to reconnect manually
+    * Unstable, error messages on intensive i/o, need to reconnect manually
 
   - SFTPNetDrive:
-    * Commercial, unstable, slow, free for personal use. 
+    * Commercial, slow, free for personal use. 
     * C++ app.
-    * Drive is disconnected on intensive i/o.
+    * Unstable, drive is disconnected on intensive i/o.
     * Nsoftware, ipworks ssh .net company.
 
   - NetDrive
     * Commercial
     * Qt app
     * Requires cloud account
+    
+  - SSHFS-Win
+    * Open Source, Windows build of sshfs from libfuse
+    * Cygwin app
+    * Fast and stable
+    * Problem with antivirus when copying large files
 
 ## Ciphers
 
 - check server cipher support: `nmap --script ssh2-enum-algos -sV -p <port> <host>`
 - client: `ssh -Q cipher`
 
-## Build libssh2 with visual studio
-- Requirements:
-  * Cmake for windows
-  * Visual studio and SDK 8.1
-- git clone https://github.com/libssh2/libssh2.git
-- cd libssh2
-- mkdir build
-- cd build
-- cmake .. -G"Visual Studio 14 2015 Win64"
-- cmake --build . --config Release (or open project with visual studio)
-
-## Build libssh2 with openssl
-- Download openssl binaries: http://p-nand-q.com/programming/windows/openssl-1.1.0c-64bit-release-dll-vs2015.7z
-```
-call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
-set Win64OPENSSL_ROOT_DIR=c:\openssl
-set Win64OPENSSL_INCLUDE_DIR=%Win64OPENSSL_ROOT_DIR%\include
-set Win64OPENSSL_LIBRARIES=%Win64OPENSSL_ROOT_DIR%\lib
-cmake .. -G"Visual Studio 14 2015 Win64" -D"BUILD_SHARED_LIBS=1" -D"CMAKE_BUILD_TYPE=Release" -D"CRYPTO_BACKEND=OpenSSL" -D"OPENSSL_USE_STATIC_LIBS=TRUE" -D"OPENSSL_MSVC_STATIC_RT=TRUE"
-```
-
-## WinFsp command line options
-```
-usage: golddrive drive [options]
-
-    -o opt,[opt...]        mount options
-    -h   --help            print help
-    -V   --version         print version
-
-FUSE options:
-    -d   -o debug          enable debug output (implies -f)
-    -f                     foreground operation
-    -s                     disable multi-threaded operation
-
-WinFsp-FUSE options:
-    -o umask=MASK              set file permissions (octal)
-    -o create_umask=MASK       set newly created file permissions (octal)
-    -o uid=N                   set file owner (-1 for mounting user id)
-    -o gid=N                   set file group (-1 for mounting group id)
-    -o rellinks                interpret absolute symlinks as volume relative
-    -o volname=NAME            set volume label
-    -o VolumePrefix=UNC        set UNC prefix (/Server/Share)
-    -o FileSystemName=NAME     set file system name
-    -o DebugLog=FILE           debug log file (requires -d)
-    -o FileInfoTimeout=N       metadata timeout (millis, -1 for data caching)
-    -o DirInfoTimeout=N        directory info timeout (millis)
-    -o VolumeInfoTimeout=N     volume info timeout (millis)
-    -o KeepFileCache           do not discard cache when files are closed
-    -o ThreadCount             number of file system dispatcher threads
-```
-
 ## Extending Windows Explorer
 
 https://docs.microsoft.com/en-us/windows/desktop/shell/propsheet-handlers
 
-## uid mapping
+## Uid mapping
 
 ```
 uid     sid                mapped uid
