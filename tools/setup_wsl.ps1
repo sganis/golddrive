@@ -1,44 +1,41 @@
 # to run scripts in powershell:
 # set-executionpolicy remotesigned
 Write-host "Checking if WSL feature is installed..."
-$i = 0
-$installed = $false
-while ($i -lt 30) {
-  $i +=1  
-  $installed = (Get-WindowsOptionalFeature -FeatureName Microsoft-Windows-Subsystem-Linux -Online).State -eq 'Enabled'
-  if ($installed) {
+$installed = (Get-WindowsOptionalFeature -FeatureName Microsoft-Windows-Subsystem-Linux -Online).State -eq 'Enabled'
+if ($installed) {
     Write-host "WSL feature is installed"
-    break
-  }
-  Write-host "Retrying in 10 seconds..."
-  sleep 10;
-}
-
-if (-not $installed) {
+} else {   
     Write-error "WSL feature is not installed"
 }
 
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+$exe = "C:\WSL\Ubuntu1804\ubuntu1804.exe"
 
+if (!(Test-Path $exe)) {
+    Write-host "Installing Ubuntu 18.04 for WSL"
+    Write-host "Downloading..."
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    (New-Object Net.WebClient).DownloadFile('https://aka.ms/wsl-ubuntu-1804', "$env:TEMP\wsl-ubuntu-1804.zip")
+    Write-host "Installing..."
+    Expand-Archive -Path "$env:TEMP\wsl-ubuntu-1804.zip" -DestinationPath "C:\WSL\Ubuntu1804" -Force
+    Remove-Item "$env:TEMP\wsl-ubuntu-1804.zip"
+    . $exe install --root
+}
 
-Write-host "Installing Ubuntu 18.04 for WSL"
+. $exe run sudo adduser support --gecos `"First,Last,RoomNumber,WorkPhone,HomePhone`" --disabled-password
+. $exe run sudo "echo 'support:support' | sudo chpasswd"
 
-# (New-Object Net.WebClient).DownloadFile('https://aka.ms/wsl-ubuntu-1804', "$env:TEMP\wsl-ubuntu-1804.zip")
-# Expand-Archive -Path "$env:TEMP\wsl-ubuntu-1804.zip" -DestinationPath "C:\WSL\Ubuntu1804" -Force
-# Remove-Item "$env:TEMP\wsl-ubuntu-1804.zip"
-
-$ubuntuExe = "C:\WSL\Ubuntu1804\ubuntu1804.exe"
-. $ubuntuExe install --root
-. $ubuntuExe run sudo adduser support --gecos `"First,Last,RoomNumber,WorkPhone,HomePhone`" --disabled-password
-. $ubuntuExe run sudo "echo 'support:support' | sudo chpasswd"
-
-Write-host "Updating..."
-. $ubuntuExe run sudo apt-get update
+# Write-host "Updating..."
+# . $exe run sudo apt-get update
 
 Write-host "Checing user..."
-. $ubuntuExe run whoami
+. $exe run whoami
 
 Write-host "Installing ssh..."
-. $ubuntuExe run sudo apt-get remove -y -qq --purge openssh-server `>`/dev/null
-. $ubuntuExe run sudo apt-get install -y -qq openssh-server `>`/dev/null
-. $ubuntuExe run sudo service ssh --full-restart
+. $exe run sudo apt-get remove -y -qq --purge openssh-server `>`/dev/null
+. $exe run sudo apt-get install -y -qq openssh-server `>`/dev/null
+. $exe run sudo service ssh --full-restart
+
+
+# to uninstall
+# wslconfig /u Ubuntu-18.04
+# rd /s /q C:\WSL

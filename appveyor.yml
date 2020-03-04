@@ -4,14 +4,10 @@ image:
 platform: x64
 configuration: Release
 install:
-  - ps: Write-host "Installing WinFsp..."
   - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/winfsp-1.6.20027.msi
   - start /wait msiexec /i winfsp-1.6.20027.msi /qn ADDLOCAL=ALL
-  - ps: Write-host "Setup wsl..."
   - ps: tools\setup_wsl.ps1
-  - ps: Write-host "Installing python dependencies..."
   - C:\Python38\python -m pip install paramiko pyyaml psutil >NUL
-  - ps: Write-host "Setup ssh..."
   - C:\Python38\python tools\golddrive-v1.0\app\setupssh.py support@localhost:22
 build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
