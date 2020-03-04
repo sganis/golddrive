@@ -52,7 +52,7 @@ namespace golddrive
     }
     public class NegateBoolConverter : BaseConverter, IValueConverter    
     {
-        public NegateBoolConverter() { }
+        //public NegateBoolConverter() { }
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             bool original = (bool)value;
