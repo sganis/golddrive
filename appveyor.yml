@@ -10,7 +10,7 @@ install:
   # setup linux ssh server in wsl
   - ps: tools\setup_wsl.ps1
   # setup client ssh keys
-  - C:\Python38\python -m pip install paramiko pyyaml psutil >NUL
+  - C:\Python38\python -m pip install --upgrade pip paramiko pyyaml psutil >NUL
   - C:\Python38\python tools\golddrive-v1.0\app\setupssh.py support@localhost
 build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:quiet

@@ -37,9 +37,8 @@ if (!(Test-Path $exe)) {
 
 # Write-host "Updating..."
 # . $exe run sudo apt-get update
-
-Write-host "Checing user..."
-. $exe run whoami
+# Write-host "Checing user..."
+# . $exe run whoami
 
 Write-host "Installing ssh..."
 . $exe run sudo apt-get remove -y -qq --purge openssh-server `>`/dev/null
