@@ -15,7 +15,7 @@ install:
   - C:\Python38\python tools\golddrive-v1.0\app\setupssh.py support@localhost:22
 build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:minimal
-  - start /wait msiexec /i src\build\Release\golddrive-2.4.0.msi /qn
+  - start /wait msiexec /i src\build\Release\golddrive-2.4.1.msi /qn
 test:
   categories:
     only:
