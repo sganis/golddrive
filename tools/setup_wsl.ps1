@@ -16,7 +16,8 @@ $installed = (Get-WindowsOptionalFeature -FeatureName Microsoft-Windows-Subsyste
 if ($installed) {
     Write-host "WSL feature is installed"
 } else {   
-    Write-error "WSL feature is not installed"
+    Write-error "WSL feature is not installed, installing..."
+    Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
 }
 
 $exe = "C:\WSL\Ubuntu1804\ubuntu1804.exe"
