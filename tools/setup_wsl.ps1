@@ -38,8 +38,6 @@ if (!(Test-Path $exe)) {
 . $exe run sudo usermod -aG sudo support
 . $exe run sudo "echo -e `"`"support\tALL=(ALL)\tNOPASSWD: ALL`"`" > /etc/sudoers.d/support 2>/dev/null"
 . $exe run chmod 0755 /etc/sudoers.d/support
-. $exe run ls -l /etc
-. $exe run ls -l /etc/sudoeds.d
 
 # Write-host "Updating..."
 # . $exe run sudo apt-get update
