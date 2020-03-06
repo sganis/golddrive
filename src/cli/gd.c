@@ -115,6 +115,28 @@ gdssh_t * gd_init_ssh(const char* hostname, int port, const char* username, cons
 		return 0;
 	}
 
+	/* At this point we havn't yet authenticated.  The first thing to do
+	 * is check the hostkey's fingerprint against our known hosts Your app
+	 * may have it hard coded, may go to a file, may present it to the
+	 * user, that's your call
+	 */
+	//char* fingerprint = libssh2_hostkey_hash(ssh, LIBSSH2_HOSTKEY_HASH_SHA1);
+	//gd_log("Fingerprint: ");
+	//for (int i = 0; i < 20; i++) {
+	//	gd_log("%02X ", (unsigned char)fingerprint[i]);
+	//}
+	//gd_log("\n");
+
+	///* check what authentication methods are available */
+	//char* userauthlist = libssh2_userauth_list(ssh, username, strlen(username));
+	//gd_log("Authentication methods: %s\n", userauthlist);
+
+	//if (strstr(userauthlist, "publickey") == NULL) {
+	//	gd_log("Publick key authentication not available in server.\n");
+	//	return 0;
+	//}
+
+
 	// authenticate
 	rc = libssh2_userauth_publickey_fromfile(ssh, username, NULL, pkey, NULL);
 	//while ((rc = libssh2_userauth_publickey_fromfile(

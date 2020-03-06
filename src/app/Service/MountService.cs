@@ -230,7 +230,7 @@ namespace golddrive
             return RunLocal("cmd.exe", "/C " + cmd);
         }
 
-        public ReturnBox RunLocal(string cmd, string args)
+        public ReturnBox RunLocal(string cmd, string args, int timeout_secs = 30)
         {
             Logger.Log($"Running local command: {cmd} {args}");
             ReturnBox r = new ReturnBox();
@@ -247,7 +247,7 @@ namespace golddrive
             };
             process.StartInfo = startInfo;
             process.Start();
-            process.WaitForExit();
+            process.WaitForExit(timeout_secs * 1000);
             r.Output = process.StandardOutput.ReadToEnd();
             r.Error = process.StandardError.ReadToEnd();
             r.ExitCode = process.ExitCode;
@@ -859,9 +859,19 @@ namespace golddrive
                 string dotssh = $@"{drive.UserProfile}\.ssh";
                 if (!Directory.Exists(dotssh))
                     Directory.CreateDirectory(dotssh);
-                ReturnBox r = RunLocal($@"""{AppPath}\ssh-keygen.exe""", $@"-m PEM -t rsa -N """" -f ""{drive.AppKey}""");
+                if(!File.Exists(drive.AppKey))
+                {
+                    ReturnBox r = RunLocal($@"""{AppPath}\ssh-keygen.exe""", $@"-m PEM -t rsa -N """" -f ""{drive.AppKey}""");                    
+                }
                 if (File.Exists(drive.AppPubKey))
-                    pubkey = File.ReadAllText(drive.AppPubKey).Trim();
+                {
+                    pubkey = File.ReadAllText(drive.AppPubKey).Trim();                
+                }
+                else
+                {
+                    ReturnBox r = RunLocal($@"""{AppPath}\ssh-keygen.exe""", $@"-y -f ""{drive.AppKey}""");
+                    pubkey = r.Output;
+                }
             }
             catch (Exception ex)
             {
