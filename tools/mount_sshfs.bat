@@ -22,7 +22,11 @@ set DIR=%DIR:~0,-1%
 
 
 set USERHOST=%USER%@%HOST%
-set PATH=%DIR%\sshfs\bin;%PATH%
+set SSH=%DIR%\..\..\sshfs-win\.build\x64\root\bin
+set BUILD=%DIR%\..\..\sshfs-win\.build\x64\src\sshfs\build
+set PATH=%BUILD%;%SSH%;%PATH%
+where ssh
+where sshfs
 
 sshfs.exe %USERHOST%:/ %DRIVE%  ^
    -o port=%PORT% ^

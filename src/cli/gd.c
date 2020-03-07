@@ -254,11 +254,30 @@ int gd_stat(const char * path, struct fuse_stat *stbuf)
 
 int gd_fstat(intptr_t fd, struct fuse_stat *stbuf)
 {
+	//gd_handle_t* sh = (gd_handle_t*)fd;
+	//log_info("gd_fstat HANDLE: %zu:%zu, %s\n", (size_t)sh, (size_t)sh->handle, sh->path);
+	//int rc = gd_stat(sh->path, stbuf);
+	//return rc;
+
 	gd_handle_t* sh = (gd_handle_t*)fd;
-	log_info("gd_fstat HANDLE: %zu:%zu, %s\n", (size_t)sh, (size_t)sh->handle, sh->path);
-	int rc = gd_stat(sh->path, stbuf);
-	return rc;
+	LIBSSH2_SFTP_HANDLE* handle = sh->handle;
+	int rc = 0;
+	LIBSSH2_SFTP_ATTRIBUTES attrs;
+	memset(stbuf, 0, sizeof * stbuf);
+	assert(handle);
+	gd_lock();
+	rc = libssh2_sftp_fstat_ex(handle, &attrs, 0);
+	g_sftp_calls++;
+	gd_unlock();
+	log_debug("rc=%d, %s\n", rc, sh->path);
+	if (rc) {
+		gd_error(sh->path);
+		return error();
+	}
+	copy_attributes(stbuf, &attrs);
+	return 0;
 }
+
 //static int count_components(const char* p)
 //{
 //	int ctr;
@@ -494,6 +513,8 @@ int gd_ftruncate(intptr_t fd, fuse_off_t size)
 
 intptr_t gd_open(const char *path, int flags, unsigned int mode)
 {
+	printf("gd_open: %s, mode=%d, flags=%d\n", path, mode, flags);
+
 	int rc;
 	LIBSSH2_SFTP_HANDLE* handle;
 	gd_handle_t *sh = malloc(sizeof(gd_handle_t));
@@ -612,16 +633,20 @@ int gd_write(intptr_t fd, const void *buf, size_t size, fuse_off_t offset)
 	ssize_t total = 0;
 	size_t chunk = size;
 	const char* pos = buf;
-
+	
 	//gd_lock();
 	while (chunk) {
 		byteswritten = libssh2_sftp_write(handle, pos, chunk);
 		g_sftp_calls++;
-		if (byteswritten <= 0) {
+		if (byteswritten <= 0 || byteswritten != chunk) {
 			if (byteswritten < 0) {
 				gd_error("ERROR: Unable to write chuck of data\n");
 				rc = error();
 				total = -1;
+			}
+			else if (byteswritten != chunk) {
+				gd_error("ERROR: Unable to write chuck of data\n");
+				rc = error();
 			}
 			break;
 		}
@@ -961,10 +986,14 @@ int gd_removexattr(const char* path, const char* name)
 
 void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs)
 {
+
+	uint32_t mode = S_IFREG | 0777;
+
 	//memset(stbuf, 0, sizeof *stbuf);
 	stbuf->st_uid = attrs->uid;
 	stbuf->st_gid = attrs->gid;
 	stbuf->st_mode = attrs->permissions;
+	//stbuf->st_mode = attrs->permissions | S_IFREG;
 	stbuf->st_size = attrs->filesize;
 	stbuf->st_birthtim.tv_sec = attrs->mtime;
 	stbuf->st_atim.tv_sec = attrs->atime;

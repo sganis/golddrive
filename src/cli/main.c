@@ -422,8 +422,8 @@ int main(int argc, char *argv[])
 	fuse_opt_insert_arg(&args, pos++, volprefix);
 	fuse_opt_insert_arg(&args, pos++, volname);
 	fuse_opt_insert_arg(&args, pos++, "-oFileSystemName=Golddrive");
-	fuse_opt_insert_arg(&args, pos++, "-oFileInfoTimeout=1000,DirInfoTimeout=1000,VolumeInfoTimeout=1000");
-	fuse_opt_insert_arg(&args, pos++, "-orellinks,dothidden,uid=-1,gid=-1,create_umask=000");
+	//fuse_opt_insert_arg(&args, pos++, "-oFileInfoTimeout=1000,DirInfoTimeout=1000,VolumeInfoTimeout=1000");
+	fuse_opt_insert_arg(&args, pos++, "-orellinks,dothidden,uid=-1,gid=-1,umask=000,create_umask=000");
 	
 	// config file arguments
 	if (g_fs.args && strcmp(g_fs.args, "") != 0) {

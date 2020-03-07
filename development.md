@@ -12,6 +12,21 @@
   It is missing this Windows Update: Availability of SHA-2 Code Signing Support (KB3033929):
   https://technet.microsoft.com/en-us/library/security/3033929.aspx
 
+
+## Development environment
+
+### Cygwin for sshfs-win
+
+Steps here: https://github.com/billziss-gh/sshfs-win/issues/41
+
+### Visual Studio
+
+There are scripts in the tools directory to build dependencies:
+
+- Build OpenSSL
+- Build libssh2
+- Build OpenSSH
+
 ## Alternatives and Benchmarks
 
   - ExpandDrive

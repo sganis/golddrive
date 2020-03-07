@@ -34,6 +34,9 @@ int f_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_file_info *
 		// debug
 		int err = -errno;
 	}
+
+	printf("f_getattr: %s, rc=%d\n", path, rc);
+
 	return rc;
 }
 
@@ -125,6 +128,8 @@ int f_truncate(const char *path, fuse_off_t size, struct fuse_file_info *fi)
 
 int f_open(const char *path, struct fuse_file_info *fi)
 {
+	printf("f_open: %s, flags=%d\n", path, fi->flags);
+
 	realpath(path);
 	intptr_t fd;
 	return -1 != (fd = gd_open(path, fi->flags, 0)) ? (fi_setfd(fi, fd), 0) : -errno;
@@ -135,13 +140,20 @@ int f_read(const char *path, char *buf, size_t size, fuse_off_t off, struct fuse
 	intptr_t fd = fi_fd(fi);
 	int nb;
 	return -1 != (nb = gd_read(fd, buf, size, off)) ? nb : -errno;
+
+	
 }
 
 int f_write(const char *path, const char *buf, size_t size, fuse_off_t off,	struct fuse_file_info *fi)
 {
+	int rc = 0;
 	intptr_t fd = fi_fd(fi);
 	int nb;
-	return -1 != (nb = gd_write(fd, buf, size, off)) ? nb : -errno;
+	rc = -1 != (nb = gd_write(fd, buf, size, off)) ? nb : -errno;
+	
+	printf("f_write: %s, flags=%d, size=%ld, rc=%d\n", path, fi->flags, size, rc);
+
+	return rc;
 }
 
 int f_statfs(const char *path, struct fuse_statvfs *stbuf)
@@ -203,10 +215,13 @@ int f_releasedir(const char *path, struct fuse_file_info *fi)
 
 int f_create(const char *path, fuse_mode_t mode, struct fuse_file_info *fi)
 {
+	printf("f_create: %s, mode=%d, flags=%d\n", path, mode, fi->flags);
+
 	realpath(path);
 	intptr_t fd;
 	// remove execution bit in files
-	fuse_mode_t mod = mode & 0666; // int 438 
+	// fuse_mode_t mod = mode & 0666; // int 438 
+	fuse_mode_t mod = mode;
 	int rc = -1 != (fd = gd_open(path, fi->flags, mod)) ? (fi_setfd(fi, fd), 0) : -errno;
 	return rc;
 }
