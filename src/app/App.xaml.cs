@@ -33,20 +33,20 @@ namespace golddrive
                 drive = ms.GetDriveFromArgs(args);
 
                 // check ssh auth
-                rb = ms.TestSsh(drive, drive.AppKey);
+                rb = ms.TestSsh(drive);
                 if (rb.MountStatus == MountStatus.OK)
                 {
                     ok = true;
                 }
-                else
-                {
-                    rb = ms.TestSsh(drive, drive.UserKey);
-                    if (rb.MountStatus == MountStatus.OK)
-                    {
-                        rb = ms.SetupSshWithUserKey(drive, drive.UserKey);
-                        ok = rb.MountStatus == MountStatus.OK;
-                    }
-                }
+                //else
+                //{
+                //    rb = ms.TestSsh(drive, drive.UserKey);
+                //    if (rb.MountStatus == MountStatus.OK)
+                //    {
+                //        rb = ms.SetupSshWithUserKey(drive, drive.UserKey);
+                //        ok = rb.MountStatus == MountStatus.OK;
+                //    }
+                //}
             }
 
             if (ok)

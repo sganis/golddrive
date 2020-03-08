@@ -576,7 +576,9 @@ intptr_t gd_open(const char *path, int flags, unsigned int mode)
 	//error("%s, pflags: %d\n", path, pflags);
 	sh->flags = pflags;
 	strcpy_s(sh->path, MAX_PATH, path);
-	sh->mode = mode;
+
+	// sh->mode = 0777 | ((LIBSSH2_SFTP_S_ISDIR(mode)) ? S_IFDIR : 0);
+	sh->mode = mode & 0777;
 	sh->dir = 0;
 
 	if (sh->flags == LIBSSH2_FXF_WRITE || sh->flags == (LIBSSH2_FXF_READ | LIBSSH2_FXF_WRITE)) {
@@ -654,25 +656,43 @@ int gd_write(intptr_t fd, const void *buf, size_t size, fuse_off_t offset)
 	curpos = libssh2_sftp_tell64(handle);
 	if (offset != curpos)
 		libssh2_sftp_seek64(handle, offset);
-	//gd_unlock();
+	
+	
 	//printf("thread buffer size    offset         bytes read     bytes written  total bytes\n");
 	ssize_t byteswritten = 0;
 	ssize_t total = 0;
 	size_t chunk = size;
 	const char* pos = buf;
 	
-	//gd_lock();
+	// debugging write
+	//do {
+	//	/* write data in a loop until we block */
+	//	gd_lock();
+	//	rc = libssh2_sftp_write(handle, pos, chunk);
+	//	gd_unlock();
+	//	if (rc < 0)
+	//		break;
+	//	pos += rc;
+	//	chunk -= rc;
+	//} while (chunk);
+
+	////gd_unlock();
+	//return rc;
+	// end debugging
+
 	while (chunk) {
 		byteswritten = libssh2_sftp_write(handle, pos, chunk);
 		g_sftp_calls++;
 		if (byteswritten <= 0 || byteswritten != chunk) {
+			//gd_error("ERROR: Unable to read chuck of file\n");
+
 			if (byteswritten < 0) {
 				gd_error("ERROR: Unable to write chuck of data\n");
 				rc = error();
 				total = -1;
 			}
 			else if (byteswritten != chunk) {
-				gd_error("ERROR: Unable to write chuck of data\n");
+				gd_error("ERROR: Unable to write complete chuck of data\n");
 				rc = error();
 			}
 			break;

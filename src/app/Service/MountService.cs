@@ -695,7 +695,7 @@ namespace golddrive
             }
             return r;
         }
-        public ReturnBox TestSsh(Drive drive, string key)
+        public ReturnBox TestSsh(Drive drive)
         {
             ReturnBox r = new ReturnBox();
 
@@ -703,7 +703,7 @@ namespace golddrive
             //if (r.MountStatus == MountStatus.BAD_HOST)
             //    return r;
 
-            if (!File.Exists(key))
+            if (!File.Exists(drive.AppKey))
             {
                 r.MountStatus = MountStatus.BAD_KEY;
                 r.Error = "No ssh key";
@@ -712,7 +712,7 @@ namespace golddrive
             try
             {
                 r.MountStatus = MountStatus.UNKNOWN;
-                var pk = new PrivateKeyFile(key);
+                var pk = new PrivateKeyFile(drive.AppKey);
                 var keyFiles = new[] { pk };
                 SshClient client = new SshClient(drive.Host, drive.Port, drive.User, keyFiles);
                 client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
@@ -761,7 +761,7 @@ namespace golddrive
             }
             return r;
         }
-        public ReturnBox SetupSshWithPassword(Drive drive, string password)
+        public ReturnBox SetupSsh(Drive drive, string password)
         {
             ReturnBox r = new ReturnBox();
             try
@@ -805,51 +805,51 @@ namespace golddrive
                 return r;
             }
 
-            r = TestSsh(drive, drive.AppKey);
+            r = TestSsh(drive);
             if (r.MountStatus != MountStatus.OK)
                 return r;
 
             return r;
         }
-        public ReturnBox SetupSshWithUserKey(Drive drive, string userkey)
-        {
-            ReturnBox r = new ReturnBox();
-            try
-            {
-                string pubkey = "";
-                if (File.Exists(drive.AppKey) && File.Exists(drive.AppPubKey))
-                {
-                    pubkey = File.ReadAllText(drive.AppPubKey).Trim();
-                }
-                else
-                {
-                    pubkey = GenerateKeys(drive);
-                }
-                var pk = new PrivateKeyFile(userkey);
-                var keyFiles = new[] { pk };
-                SshClient client = new SshClient(drive.Host, drive.Port, drive.User, keyFiles);
-                client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
-                client.Connect();
-                string cmd = "";
-                //bool linux = false;
-                //if(linux)
-                cmd = $"cd; umask 077; mkdir -p .ssh; echo '{pubkey}' >> .ssh/authorized_keys";
-                //else
-                //    cmd = $"mkdir %USERPROFILE%\\.ssh 2>NUL || echo {pubkey.Trim()} >> %USERPROFILE%\\.ssh\\authorized_keys";
-                SshCommand command = client.CreateCommand(cmd);
-                command.CommandTimeout = TimeSpan.FromSeconds(10);
-                r.Output = command.Execute();
-                r.Error = command.Error;
-                r.ExitCode = command.ExitStatus;
-            }
-            catch (Exception ex)
-            {
-                r.Error = ex.Message;
-                return r;
-            }
+        //public ReturnBox SetupSshWithUserKey(Drive drive, string userkey)
+        //{
+        //    ReturnBox r = new ReturnBox();
+        //    try
+        //    {
+        //        string pubkey = "";
+        //        if (File.Exists(drive.AppKey) && File.Exists(drive.AppPubKey))
+        //        {
+        //            pubkey = File.ReadAllText(drive.AppPubKey).Trim();
+        //        }
+        //        else
+        //        {
+        //            pubkey = GenerateKeys(drive);
+        //        }
+        //        var pk = new PrivateKeyFile(userkey);
+        //        var keyFiles = new[] { pk };
+        //        SshClient client = new SshClient(drive.Host, drive.Port, drive.User, keyFiles);
+        //        client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
+        //        client.Connect();
+        //        string cmd = "";
+        //        //bool linux = false;
+        //        //if(linux)
+        //        cmd = $"cd; umask 077; mkdir -p .ssh; echo '{pubkey}' >> .ssh/authorized_keys";
+        //        //else
+        //        //    cmd = $"mkdir %USERPROFILE%\\.ssh 2>NUL || echo {pubkey.Trim()} >> %USERPROFILE%\\.ssh\\authorized_keys";
+        //        SshCommand command = client.CreateCommand(cmd);
+        //        command.CommandTimeout = TimeSpan.FromSeconds(10);
+        //        r.Output = command.Execute();
+        //        r.Error = command.Error;
+        //        r.ExitCode = command.ExitStatus;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        r.Error = ex.Message;
+        //        return r;
+        //    }
 
-            return TestSsh(drive, drive.AppKey);
-        }
+        //    return TestSsh(drive);
+        //}
 
         string GenerateKeys(Drive drive)
         {
@@ -906,7 +906,7 @@ namespace golddrive
                 r.MountStatus = MountStatus.BAD_DRIVE;
                 return r;
             }
-            r = TestSsh(drive, drive.AppKey);
+            r = TestSsh(drive);
             if (r.MountStatus != MountStatus.OK)
                 return r;
 
@@ -918,7 +918,7 @@ namespace golddrive
             if (r.MountStatus != MountStatus.OK)
                 return r;
 
-            r = SetupSshWithPassword(drive, password);
+            r = SetupSsh(drive, password);
             if (r.MountStatus != MountStatus.OK)
                 return r;
 

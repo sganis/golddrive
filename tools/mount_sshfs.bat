@@ -22,16 +22,21 @@ set DIR=%DIR:~0,-1%
 
 
 set USERHOST=%USER%@%HOST%
-set SSH=%DIR%\..\..\sshfs-win\.build\x64\root\bin
-set BUILD=%DIR%\..\..\sshfs-win\.build\x64\src\sshfs\build
-set PATH=%BUILD%;%SSH%;%PATH%
+
+rem set SSH=%DIR%\..\..\sshfs-win\.build\x64\root\bin
+rem set BUILD=%DIR%\..\..\sshfs-win\.build\x64\src\sshfs\build
+rem set PATH=%BUILD%;%SSH%;%PATH%
+
+set "SSH=C:\Program Files\SSHFS-Win\bin"
+set PATH=%SSH%;%PATH%
+
 where ssh
 where sshfs
 
-sshfs.exe %USERHOST%:/ %DRIVE%  ^
+sshfs.exe %USERHOST%:../.. %DRIVE%  ^
    -o port=%PORT% ^
-   -o IdentityFile=%USERPROFILE:\=/%/.ssh/id_rsa-%USER%-golddrive ^
-   -o VolumePrefix=/sshfs.r/%USERHOST% ^
+   -o IdentityFile=%USERPROFILE:\=/%/.ssh/id_rsa ^
+   -o VolumePrefix=/sshfs.k/%USERHOST%/../.. ^
    -o uid=-1,gid=-1,create_umask=000,mask=000 ^
    -o PasswordAuthentication=no ^
    -o StrictHostKeyChecking=no ^

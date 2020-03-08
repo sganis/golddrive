@@ -342,7 +342,8 @@ int main(int argc, char *argv[])
 	if (!g_fs.pkey) {
 		char* profile = getenv("USERPROFILE");
 		g_fs.pkey = malloc(MAX_PATH);
-		sprintf_s(g_fs.pkey, MAX_PATH, "%s\\.ssh\\id_rsa-%s-golddrive", profile, g_fs.user);
+		//sprintf_s(g_fs.pkey, MAX_PATH, "%s\\.ssh\\id_rsa-%s-golddrive", profile, g_fs.user);
+		sprintf_s(g_fs.pkey, MAX_PATH, "%s\\.ssh\\id_rsa", profile);
 	}
 	if (!file_exists(g_fs.pkey)) {
 		fprintf(stderr, "error: cannot read private key: %s\n", g_fs.pkey);
@@ -424,7 +425,8 @@ int main(int argc, char *argv[])
 	fuse_opt_insert_arg(&args, pos++, "-oFileSystemName=Golddrive");
 	//fuse_opt_insert_arg(&args, pos++, "-oFileInfoTimeout=1000,DirInfoTimeout=1000,VolumeInfoTimeout=1000");
 	fuse_opt_insert_arg(&args, pos++, "-orellinks,dothidden,uid=-1,gid=-1,umask=000,create_umask=000");
-	
+	//fuse_opt_insert_arg(&args, pos++, "-orellinks,uid=-1,gid=-1,umask=000,create_umask=000");
+
 	// config file arguments
 	if (g_fs.args && strcmp(g_fs.args, "") != 0) {
 		fuse_opt_insert_arg(&args, pos++, g_fs.args);

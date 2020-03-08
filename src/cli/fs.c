@@ -151,7 +151,8 @@ int f_write(const char *path, const char *buf, size_t size, fuse_off_t off,	stru
 	int nb;
 	rc = -1 != (nb = gd_write(fd, buf, size, off)) ? nb : -errno;
 	
-	// printf("f_write: %s, flags=%d, size=%lld, rc=%d\n", path, fi->flags, size, rc);
+	if(size != nb)
+		printf("f_write error: %s, flags=%d, size=%lld, rc=%d\n", path, fi->flags, size, rc);
 
 	return rc;
 }
