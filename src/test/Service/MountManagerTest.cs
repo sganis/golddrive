@@ -15,6 +15,7 @@ namespace golddrive.Tests
         private MountService _mountService = new MountService();
         private static readonly string _host = Environment.GetEnvironmentVariable("GOLDDRIVE_HOST");
         private static readonly string _user = Environment.GetEnvironmentVariable("GOLDDRIVE_USER");
+        private static readonly string _pass = Environment.GetEnvironmentVariable("GOLDDRIVE_PASS");
         private Drive _drive = new Drive
         {
             Letter = "X",
@@ -226,21 +227,63 @@ namespace golddrive.Tests
             Assert.IsFalse(File.Exists(tempfile2));
             Unmount();
         }
-        bool IsFileLocked(string path)
+
+        [TestMethod(), TestCategory("Appveyor")]
+        public void TestSshTest()
         {
-            try
-            {
-                using (File.Open(path, FileMode.Open))
-                {
-                    return false;
-                }
-            }
-            catch
-            {
-                Console.WriteLine("File locked: " + path);
-                return true;
-            }
+            var r = _mountService.TestSsh(_drive);
+            Assert.IsTrue(r.Success);
         }
+        [TestMethod(), TestCategory("Appveyor")]
+        public void SetupSshTest()
+        {
+            var now = DateTime.Now.Ticks.ToString();
+            var backup_sec = $"{_drive.AppKey}.{now}.bak";
+            var backup_pub = $"{_drive.AppPubKey}.{now}.bak";
+            File.Move(_drive.AppKey, backup_sec);
+            bool has_pub = File.Exists(_drive.AppPubKey);
+            if (has_pub)
+                File.Move(_drive.AppPubKey, backup_pub);
+            var r = _mountService.TestSsh(_drive);
+            Assert.IsFalse(r.Success);
+            r = _mountService.SetupSsh(_drive, _pass);
+            Assert.IsTrue(r.MountStatus == MountStatus.OK);
+            File.Delete(_drive.AppKey);
+            File.Delete(_drive.AppPubKey);
+            File.Move(backup_sec, _drive.AppKey);
+            if (has_pub)
+                File.Move(backup_pub, _drive.AppPubKey);
+        }
+
+        [TestMethod(), TestCategory("Appveyor")]
+        public void TestHostTest()
+        {
+            Drive nohost = new Drive { Host = "nohost", Port = 22 };
+            Drive noport = new Drive { Host = "localhost", Port = 222 };
+            var r = _mountService.TestHost(nohost);
+            Assert.IsTrue(r.MountStatus == MountStatus.BAD_HOST);
+            r = _mountService.TestHost(noport);
+            Assert.IsTrue(r.MountStatus == MountStatus.BAD_HOST);
+            r = _mountService.TestHost(_drive);
+            Assert.IsTrue(r.MountStatus == MountStatus.OK);
+        }
+
+
+        //bool IsFileLocked(string path)
+        //{
+        //    try
+        //    {
+        //        using (File.Open(path, FileMode.Open))
+        //        {
+        //            return false;
+        //        }
+        //    }
+        //    catch
+        //    {
+        //        Console.WriteLine("File locked: " + path);
+        //        return true;
+        //    }
+        //}
         void CreateFile(int id)
         {
             var path = $"X:\\tmp\\file_{id}.txt";

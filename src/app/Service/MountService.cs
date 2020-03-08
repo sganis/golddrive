@@ -199,30 +199,30 @@ namespace golddrive
 
         #region Core Methods
 
-        public bool Connect(string host, int port, string user, string pkey)
-        {
-            try
-            {
-                var pk = new PrivateKeyFile(pkey);
-                var keyFiles = new[] { pk };
-                Ssh = new SshClient(host, port, user, keyFiles);
-                Ssh.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
-                Ssh.Connect();
-                Sftp = new SftpClient(host, port, user, keyFiles);
-                Sftp.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
-                Sftp.Connect();
-            }
-            catch (Renci.SshNet.Common.SshAuthenticationException ex)
-            {
-                // bad key
-                Error = ex.Message;
-            }
-            catch (Exception ex)
-            {
-                Error = ex.Message;
-            }
-            return Connected;
-        }
+        //public bool Connect(string host, int port, string user, string pkey)
+        //{
+        //    try
+        //    {
+        //        var pk = new PrivateKeyFile(pkey);
+        //        var keyFiles = new[] { pk };
+        //        Ssh = new SshClient(host, port, user, keyFiles);
+        //        Ssh.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
+        //        Ssh.Connect();
+        //        //Sftp = new SftpClient(host, port, user, keyFiles);
+        //        //Sftp.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
+        //        //Sftp.Connect();
+        //    }
+        //    catch (Renci.SshNet.Common.SshAuthenticationException ex)
+        //    {
+        //        // bad key
+        //        Error = ex.Message;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Error = ex.Message;
+        //    }
+        //    return Connected;
+        //}
 
         public ReturnBox RunLocal(string cmd)
         {
@@ -277,49 +277,49 @@ namespace golddrive
             return r;
         }
 
-        public ReturnBox DownloadFile(string src, string dst)
-        {
-            ReturnBox r = new ReturnBox();
-            if (Connected)
-            {
-                try
-                {
-                    using (Stream fs = File.Create(dst))
-                    {
-                        Sftp.DownloadFile(src, fs);
-                    }
-                    r.Success = true;
-                }
-                catch (Exception ex)
-                {
-                    r.Error = ex.Message;
-                }
-            }
-            return r;
-        }
+        //public ReturnBox DownloadFile(string src, string dst)
+        //{
+        //    ReturnBox r = new ReturnBox();
+        //    if (Connected)
+        //    {
+        //        try
+        //        {
+        //            using (Stream fs = File.Create(dst))
+        //            {
+        //                Sftp.DownloadFile(src, fs);
+        //            }
+        //            r.Success = true;
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            r.Error = ex.Message;
+        //        }
+        //    }
+        //    return r;
+        //}
 
-        public ReturnBox UploadFile(string src, string dir, string filename)
-        {
-            ReturnBox r = new ReturnBox();
-            if (Connected)
-            {
-                try
-                {
-                    using (var fs = new FileStream(src, FileMode.Open))
-                    {
-                        Sftp.BufferSize = 4 * 1024; // bypass Payload error large files
-                        Sftp.ChangeDirectory(dir);
-                        Sftp.UploadFile(fs, filename, true);
-                    }
-                    r.Success = true;
-                }
-                catch (Exception ex)
-                {
-                    r.Error = ex.Message;
-                }
-            }
-            return r;
-        }
+        //public ReturnBox UploadFile(string src, string dir, string filename)
+        //{
+        //    ReturnBox r = new ReturnBox();
+        //    if (Connected)
+        //    {
+        //        try
+        //        {
+        //            using (var fs = new FileStream(src, FileMode.Open))
+        //            {
+        //                Sftp.BufferSize = 4 * 1024; // bypass Payload error large files
+        //                Sftp.ChangeDirectory(dir);
+        //                Sftp.UploadFile(fs, filename, true);
+        //            }
+        //            r.Success = true;
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            r.Error = ex.Message;
+        //        }
+        //    }
+        //    return r;
+        //}
 
         #endregion
 
@@ -639,6 +639,7 @@ namespace golddrive
             ReturnBox r = new ReturnBox();
             try
             {
+                
                 using (var client = new TcpClient())
                 {
                     var result = client.BeginConnect(drive.Host, drive.Port, null, null);
@@ -646,6 +647,14 @@ namespace golddrive
                     if (!success)
                     {
                         r.MountStatus = MountStatus.BAD_HOST;
+                    }
+                    else
+                    {
+                        if(client.Connected)
+                        {
+                            r.MountStatus = MountStatus.OK;
+                            r.Success = true;
+                        }
                     }
                     client.EndConnect(result);
                 }
@@ -655,7 +664,7 @@ namespace golddrive
                 r.MountStatus = MountStatus.BAD_HOST;
                 r.Error = ex.Message;
             }
-            r.MountStatus = MountStatus.OK;
+            
             return r;
         }
         ReturnBox TestPassword(Drive drive, string password)
@@ -712,6 +721,7 @@ namespace golddrive
             try
             {
                 r.MountStatus = MountStatus.UNKNOWN;
+
                 var pk = new PrivateKeyFile(drive.AppKey);
                 var keyFiles = new[] { pk };
                 SshClient client = new SshClient(drive.Host, drive.Port, drive.User, keyFiles);
@@ -719,6 +729,7 @@ namespace golddrive
                 client.Connect();
                 client.Disconnect();
                 r.MountStatus = MountStatus.OK;
+                r.Success = true;
             }
             catch (Exception ex)
             {
@@ -751,6 +762,24 @@ namespace golddrive
                     {
                         r.Error = "Host does not respond";
                         r.MountStatus = MountStatus.BAD_HOST;
+                    }
+                    else if (ex.Message.Contains("OPENSSH"))
+                    {
+                        // openssh keys not supported by ssh.net yet
+                        string cmd = $"ssh.exe -i \"{drive.AppKey}\" -p {drive.Port} -oPasswordAuthentication=no -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oBatchMode=yes { drive.User}@{drive.Host} \"echo ok\"";
+                        var r1 = RunLocal(cmd);
+                        var ok = r1.Output.Trim() == "ok";
+                        if (ok)
+                        {
+                            r.MountStatus = MountStatus.OK;
+                            r.Error = "";
+                            r.Success = true;
+                        }
+                        else
+                        {
+                            r.MountStatus = MountStatus.BAD_KEY;
+                            r.Error = r1.Error;
+                        }
                     }
                     else
                     {
