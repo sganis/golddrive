@@ -9,7 +9,7 @@
 #
 # Uninstall:
 # wslconfig /u Ubuntu-18.04
-# rd /s /q C:\WSL
+# rd /s /q C:\WSL\Ubuntu1804
 
 Write-host "Checking if WSL feature is installed..."
 $installed = (Get-WindowsOptionalFeature -FeatureName Microsoft-Windows-Subsystem-Linux -Online).State -eq 'Enabled'

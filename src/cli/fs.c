@@ -35,7 +35,7 @@ int f_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_file_info *
 		int err = -errno;
 	}
 
-	printf("f_getattr: %s, rc=%d\n", path, rc);
+	// printf("f_getattr: %s, rc=%d\n", path, rc);
 
 	return rc;
 }
@@ -128,7 +128,7 @@ int f_truncate(const char *path, fuse_off_t size, struct fuse_file_info *fi)
 
 int f_open(const char *path, struct fuse_file_info *fi)
 {
-	printf("f_open: %s, flags=%d\n", path, fi->flags);
+	// printf("f_open: %s, flags=%d\n", path, fi->flags);
 
 	realpath(path);
 	intptr_t fd;
@@ -151,7 +151,7 @@ int f_write(const char *path, const char *buf, size_t size, fuse_off_t off,	stru
 	int nb;
 	rc = -1 != (nb = gd_write(fd, buf, size, off)) ? nb : -errno;
 	
-	printf("f_write: %s, flags=%d, size=%ld, rc=%d\n", path, fi->flags, size, rc);
+	// printf("f_write: %s, flags=%d, size=%lld, rc=%d\n", path, fi->flags, size, rc);
 
 	return rc;
 }

@@ -513,7 +513,7 @@ int gd_ftruncate(intptr_t fd, fuse_off_t size)
 
 intptr_t gd_open(const char *path, int flags, unsigned int mode)
 {
-	printf("gd_open: %s, mode=%d, flags=%d\n", path, mode, flags);
+	// printf("gd_open: %s, mode=%d, flags=%d\n", path, mode, flags);
 
 	int rc;
 	LIBSSH2_SFTP_HANDLE* handle;
@@ -828,13 +828,13 @@ struct gd_dirent_t * gd_readdir(gd_dir_t *dirp)
 	}*/
 
 	strcpy_s(dirp->de.d_name, FILENAME_MAX, fname);
-	dirp->de.dir = (attrs.permissions &  LIBSSH2_SFTP_S_IFDIR) > 0;
-	dirp->de.hidden = (strlen(fname) > 1					/* file name length 2 or more	*/
-						&& fname[0] == '~'); 				/* file name starts with ~			*/
-	if (dirp->de.hidden)
-	{
-		printf("file is hidden\n");
-	}
+	dirp->de.dir = LIBSSH2_SFTP_S_ISDIR(attrs.permissions);
+	//dirp->de.hidden = (strlen(fname) > 1					/* file name length 2 or more	*/
+	//					&& fname[0] == '~'); 				/* file name starts with ~			*/
+	//if (dirp->de.hidden)
+	//{
+	//	printf("file is hidden\n");
+	//}
 	copy_attributes(&dirp->de.d_stat, &attrs);
 	return &dirp->de;
 }
@@ -987,13 +987,13 @@ int gd_removexattr(const char* path, const char* name)
 void copy_attributes(struct fuse_stat *stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs)
 {
 
-	uint32_t mode = S_IFREG | 0777;
-
+	
+	//int isdir = LIBSSH2_SFTP_S_ISDIR(attrs->permissions);
 	//memset(stbuf, 0, sizeof *stbuf);
 	stbuf->st_uid = attrs->uid;
 	stbuf->st_gid = attrs->gid;
-	stbuf->st_mode = attrs->permissions;
-	//stbuf->st_mode = attrs->permissions | S_IFREG;
+	//stbuf->st_mode = attrs->permissions;
+	stbuf->st_mode = 0777 | ((LIBSSH2_SFTP_S_ISDIR(attrs->permissions)) ? S_IFDIR : 0);
 	stbuf->st_size = attrs->filesize;
 	stbuf->st_birthtim.tv_sec = attrs->mtime;
 	stbuf->st_atim.tv_sec = attrs->atime;

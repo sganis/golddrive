@@ -9,7 +9,7 @@ install:
   - start /wait msiexec /i winfsp-1.6.20027.msi /qn ADDLOCAL=ALL
   # setup linux ssh server in wsl
   - wslconfig /u Ubuntu-18.04
-  - rd /s /q C:\WSL
+  - rd /s /q C:\WSL\Ubuntu1804
   - ps: tools\setup_wsl.ps1
   # setup client ssh keys
   - C:\Python38\python -m pip install --disable-pip-version-check paramiko pyyaml psutil >NUL
