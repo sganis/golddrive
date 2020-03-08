@@ -505,10 +505,37 @@ int gd_truncate(const char *path, fuse_off_t size)
 
 int gd_ftruncate(intptr_t fd, fuse_off_t size)
 {
+	//gd_handle_t* sh = (gd_handle_t*)fd;
+	//log_info("gd_ftruncate HANDLE: %zu:%zu, %s\n", (size_t)sh, (size_t)sh->handle, sh->path);
+	//int rc = gd_truncate(sh->path, size);
+	//return rc;
+
 	gd_handle_t* sh = (gd_handle_t*)fd;
-	log_info("gd_ftruncate HANDLE: %zu:%zu, %s\n", (size_t)sh, (size_t)sh->handle, sh->path);
-	int rc = gd_truncate(sh->path, size);
-	return rc;
+	LIBSSH2_SFTP_HANDLE* handle = sh->handle;
+	int rc = 0;
+	LIBSSH2_SFTP_ATTRIBUTES attrs;
+	assert(handle);
+	gd_lock();
+	rc = libssh2_sftp_fstat_ex(handle, &attrs, 0);
+	g_sftp_calls++;
+	gd_unlock();
+	log_debug("rc=%d, %s\n", rc, sh->path);
+	if (rc) {
+		gd_error(sh->path);
+		return error();
+	}
+
+	gd_lock();
+	attrs.filesize = size;
+	rc = libssh2_sftp_fstat_ex(handle, &attrs, LIBSSH2_SFTP_SETSTAT);
+	g_sftp_calls++;
+	gd_unlock();
+	if (rc) {
+		gd_error(sh->path);
+		int e = error();
+		return e;
+	}
+	return 0;
 }
 
 intptr_t gd_open(const char *path, int flags, unsigned int mode)

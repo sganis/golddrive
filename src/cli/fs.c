@@ -215,7 +215,7 @@ int f_releasedir(const char *path, struct fuse_file_info *fi)
 
 int f_create(const char *path, fuse_mode_t mode, struct fuse_file_info *fi)
 {
-	printf("f_create: %s, mode=%d, flags=%d\n", path, mode, fi->flags);
+	// printf("f_create: %s, mode=%d, flags=%d\n", path, mode, fi->flags);
 
 	realpath(path);
 	intptr_t fd;
