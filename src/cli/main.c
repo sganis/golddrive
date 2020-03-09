@@ -408,14 +408,7 @@ int main(int argc, char *argv[])
 	strcpy(prefix, g_fs.remote);
 	if (str_contains(g_fs.remote, ":"))
 		str_replace(g_fs.remote, ":", "", prefix);
-
-	if(prefix)
-		sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=%s", prefix);
-	else
-		sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=/golddrive/%c", g_fs.letter);
-	//sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=/golddrive/%s@%s!%d->%c",
-	//	g_fs.user, g_fs.host, g_fs.port, g_fs.letter);
-	//sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=/golddrive/%c", g_fs.letter);
+	sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=%s", prefix);
 	sprintf_s(volname, sizeof(volname), "-ovolname=%s", g_fs.mountpoint);
 	gd_log("Prefix  = %s\n", volprefix);
 

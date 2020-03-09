@@ -30,12 +30,12 @@ int f_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_file_info *
 		intptr_t fd = fi_fd(fi);
 		rc = -1 != gd_fstat(fd, stbuf) ? 0 : -errno;
 	}
-	if (rc) {
-		// debug
-		int err = -errno;
-	}
+	//if (rc) {
+	//	// debug
+	//	int err = -errno;
+	//}
 
-	// printf("f_getattr: %s, rc=%d\n", path, rc);
+	printf("f_getattr: %s, rc=%d\n", path, rc);
 
 	return rc;
 }
@@ -44,9 +44,9 @@ int f_readlink(const char* path, char* buf, size_t size)
 {
 	realpath(path);
 	int rc = -1 != gd_readlink(path, buf, size) ? 0 : -errno;
-	if (rc) {
+	/*if (rc) {
 		int err = -errno;
-	}
+	}*/
 	return rc;
 }
 
@@ -54,9 +54,9 @@ int f_mkdir(const char * path, fuse_mode_t  mode)
 {
 	realpath(path);
 	int rc = -1 != gd_mkdir(path, mode) ? 0 : -errno;
-	if (rc) {
+	/*if (rc) {
 		int err = -errno;
-	}
+	}*/
 	return rc;
 }
 
@@ -64,9 +64,9 @@ int f_unlink(const char *path)
 {
 	realpath(path);
 	int rc = -1 != gd_unlink(path) ? 0 : -errno;
-	if (rc) {
+	/*if (rc) {
 		int err = -errno;
-	}
+	}*/
 	return rc;
 }
 
@@ -79,9 +79,9 @@ int f_rmdir(const char * path)
 	//	rc = gd_rm_hidden(path);
 	
 	int rc = -1 != gd_rmdir(path) ? 0 : -errno;
-	if (rc) {
+	/*if (rc) {
 		int err = -errno;
-	}
+	}*/
 	//ShowLastError();
 	return rc;
 }
@@ -91,9 +91,9 @@ int f_rename(const char *oldpath, const char *newpath, unsigned int flags)
 	realpath(newpath);
 	realpath(oldpath);
 	int rc = -1 != gd_rename(oldpath, newpath) ? 0 : -errno;
-	if (rc) {
+	/*if (rc) {
 		int err = -errno;
-	}
+	}*/
 	return rc;
 }
 

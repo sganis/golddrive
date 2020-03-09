@@ -255,11 +255,13 @@ int gd_stat(const char * path, struct fuse_stat *stbuf)
 int gd_fstat(intptr_t fd, struct fuse_stat *stbuf)
 {
 	//gd_handle_t* sh = (gd_handle_t*)fd;
-	//log_info("gd_fstat HANDLE: %zu:%zu, %s\n", (size_t)sh, (size_t)sh->handle, sh->path);
 	//int rc = gd_stat(sh->path, stbuf);
 	//return rc;
 
 	gd_handle_t* sh = (gd_handle_t*)fd;
+	//log_error("gd_fstat HANDLE: %zu:%zu, %s\n", (size_t)sh, (size_t)sh->handle, sh->path);
+
+
 	LIBSSH2_SFTP_HANDLE* handle = sh->handle;
 	int rc = 0;
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
@@ -275,6 +277,7 @@ int gd_fstat(intptr_t fd, struct fuse_stat *stbuf)
 		return error();
 	}
 	copy_attributes(stbuf, &attrs);
+	//print_permissions(sh->path, &attrs);
 	return 0;
 }
 
@@ -578,7 +581,8 @@ intptr_t gd_open(const char *path, int flags, unsigned int mode)
 	strcpy_s(sh->path, MAX_PATH, path);
 
 	// sh->mode = 0777 | ((LIBSSH2_SFTP_S_ISDIR(mode)) ? S_IFDIR : 0);
-	sh->mode = mode & 0777;
+	//sh->mode = mode & 0777;
+	sh->mode = mode;
 	sh->dir = 0;
 
 	if (sh->flags == LIBSSH2_FXF_WRITE || sh->flags == (LIBSSH2_FXF_READ | LIBSSH2_FXF_WRITE)) {
@@ -664,6 +668,18 @@ int gd_write(intptr_t fd, const void *buf, size_t size, fuse_off_t offset)
 	size_t chunk = size;
 	const char* pos = buf;
 	
+	//do {
+	//	/* write data in a loop until we block */
+	//	rc = libssh2_sftp_write(handle, pos, chunk);
+	//	if (rc < 0) {
+	//		gd_error("ERROR: Unable to write chuck of data\n");
+	//		rc = error();
+	//		break;
+	//	}
+	//	pos += rc;
+	//	chunk -= rc;
+	//	total += rc;
+	//} while (chunk);
 
 	while (chunk) {
 		byteswritten = libssh2_sftp_write(handle, pos, chunk);
@@ -681,8 +697,8 @@ int gd_write(intptr_t fd, const void *buf, size_t size, fuse_off_t offset)
 		chunk -= byteswritten;
 		//printf("%-7ld%-15d%-15ld%-15d%-15d%-15ld\n",thread,
 		//	size, offset, bytesread, bytesread, total);
-
 	}
+
 	gd_unlock();
 
 	log_debug("FINISH WRITING HANDLE %zu, bytes: %zu\n", (size_t)handle, total);
