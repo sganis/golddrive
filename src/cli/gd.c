@@ -664,36 +664,15 @@ int gd_write(intptr_t fd, const void *buf, size_t size, fuse_off_t offset)
 	size_t chunk = size;
 	const char* pos = buf;
 	
-	// debugging write
-	//do {
-	//	/* write data in a loop until we block */
-	//	gd_lock();
-	//	rc = libssh2_sftp_write(handle, pos, chunk);
-	//	gd_unlock();
-	//	if (rc < 0)
-	//		break;
-	//	pos += rc;
-	//	chunk -= rc;
-	//} while (chunk);
-
-	////gd_unlock();
-	//return rc;
-	// end debugging
 
 	while (chunk) {
 		byteswritten = libssh2_sftp_write(handle, pos, chunk);
 		g_sftp_calls++;
-		if (byteswritten <= 0 || byteswritten != chunk) {
-			//gd_error("ERROR: Unable to read chuck of file\n");
-
+		if (byteswritten <= 0) {
 			if (byteswritten < 0) {
 				gd_error("ERROR: Unable to write chuck of data\n");
 				rc = error();
 				total = -1;
-			}
-			else if (byteswritten != chunk) {
-				gd_error("ERROR: Unable to write complete chuck of data\n");
-				rc = error();
 			}
 			break;
 		}
