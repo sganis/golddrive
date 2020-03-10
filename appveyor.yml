@@ -22,10 +22,11 @@ test:
     only:
       - Appveyor
 after_test:
-  - ps: net use Z: \\golddrive\support@localhost
-  - ps: Z:
-  - ps: cd Z:\tmp
-  - tools\testfs.bat
+  - ps: |
+      net use Z: \\golddrive\support@localhost
+      Z:
+      cd Z:\tmp
+      tools\testfs.bat
 
 artifacts:
   - path: src\build\Release\golddrive-2.*.msi
