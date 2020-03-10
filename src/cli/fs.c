@@ -35,7 +35,7 @@ int f_getattr(const char *path, struct fuse_stat *stbuf, struct fuse_file_info *
 	//	int err = -errno;
 	//}
 
-	printf("f_getattr: %s, rc=%d\n", path, rc);
+	//printf("f_getattr: %s, rc=%d\n", path, rc);
 
 	return rc;
 }
@@ -132,7 +132,11 @@ int f_open(const char *path, struct fuse_file_info *fi)
 
 	realpath(path);
 	intptr_t fd;
-	return -1 != (fd = gd_open(path, fi->flags, 0)) ? (fi_setfd(fi, fd), 0) : -errno;
+	int rc = -1 != (fd = gd_open(path, fi->flags, 0)) ? (fi_setfd(fi, fd), 0) : -errno;
+	if (rc != 0) {
+		printf("error: f_open: %s, flags=%d\n", path, fi->flags);
+	}
+	return rc;
 }
 
 int f_read(const char *path, char *buf, size_t size, fuse_off_t off, struct fuse_file_info *fi)
