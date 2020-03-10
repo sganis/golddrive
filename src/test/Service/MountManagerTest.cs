@@ -216,6 +216,8 @@ namespace golddrive.Tests
             Assert.IsFalse(File.Exists(path));
             File.Copy(tempfile1, path);
             Assert.IsTrue(File.Exists(path));
+            if(File.Exists(tempfile2))
+                File.Delete(tempfile2);
             File.Copy(path, tempfile2);
             var hash2 = Md5(tempfile2);
             Assert.AreEqual(hash1, hash2);

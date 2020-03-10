@@ -675,20 +675,25 @@ int gd_read(intptr_t fd, void *buf, size_t size, fuse_off_t offset)
 	size_t chunk = size;
 	char *pos = buf;
 
-	do {
-		rc = (int)libssh2_sftp_read(handle, pos, chunk);
+	do {		
+		while ((rc = (int)libssh2_sftp_read(handle, pos, chunk)) ==
+			LIBSSH2_ERROR_EAGAIN)
+			waitsocket(g_ssh);
 		g_sftp_calls++;
-		if (rc != LIBSSH2_ERROR_EAGAIN) {
-			gd_error("ERROR: Unable to read chuck of file\n");
-			rc = error();
-			total = -1;
-			break;
+		if (rc > 0) {
+			pos += rc;
+			total += rc;
+			chunk -= rc;
 		}
-		pos += rc;
-		total += rc;
-		chunk -= rc;
-	} while (rc > 0);
-
+		else {
+			break;
+		}		
+	} while (chunk);
+	if (rc < 0) {
+		gd_error("ERROR: Unable to read chuck of file\n");
+		rc = error();
+		total = -1;
+	}
 	//while (chunk) {
 	//	bytesread = libssh2_sftp_read(handle, pos, chunk);
 	//	g_sftp_calls++;
@@ -751,19 +756,22 @@ int gd_write(intptr_t fd, const void *buf, size_t size, fuse_off_t offset)
 			LIBSSH2_ERROR_EAGAIN)
 			waitsocket(g_ssh);
 		g_sftp_calls++;		
-		if (rc < 0) {
-			gd_error("ERROR: Unable to write chuck of data\n");
-			rc = error();
-			total = -1;
+		if (rc > 0) {
+			pos += rc;
+			total += rc;
+			chunk -= rc;
+		}
+		else {
 			break;
 		}
-		pos += rc;
-		total += rc;
-		chunk -= rc;
 		//printf("%-7ld%-15d%-15ld%-15d%-15d%-15ld\n",thread,
 		//	size, offset, bytesread, bytesread, total);
 	} while (chunk);
-
+	if (rc < 0) {
+		gd_error("ERROR: Unable to write chuck of data\n");
+		rc = error();
+		total = -1;
+	}
 	//while (chunk) {
 	//	byteswritten = libssh2_sftp_write(handle, pos, chunk);
 	//	g_sftp_calls++;
