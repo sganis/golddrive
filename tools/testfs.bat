@@ -27,11 +27,12 @@ set DIR=%DIR:~0,-1%
 :: 	-reparse* -stream*
 :: if !ERRORLEVEL! neq 0 goto fail
 
-%DIR%\fsbench-x64.exe -rdwr_cc_* -mmap_* 
+%DIR%\fsx.exe -N 5000 test xxxxxx
+del test test.*
 if !ERRORLEVEL! neq 0 goto fail
 
-:: %DIR%\fsx.exe -N 5000 test xxxxxx
-:: del test test.*
+%DIR%\fsbench-x64.exe -rdwr_cc_* -mmap_* 
+if !ERRORLEVEL! neq 0 goto fail
 
 echo PASSED
 exit /b 0
