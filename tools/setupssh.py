@@ -365,8 +365,8 @@ if __name__ == '__main__':
 	if ':' in userhost:
 		userhost, port = userhost.split(':')                             
 	
-	# logging.basicConfig(level=logging.INFO)
-	logging.basicConfig(level=logging.DEBUG)
+	logging.basicConfig(level=logging.INFO)
+	# logging.basicConfig(level=logging.DEBUG)
 
 	if has_app_keys() and testssh(userhost, port).returncode == ReturnCode.OK:
 		logger.info('SSH authentication is OK, no need to setup.')
