@@ -30,8 +30,9 @@ set DIR=%DIR:~0,-1%
 %DIR%\fsbench-x64.exe -rdwr_cc_* -mmap_* 
 if !ERRORLEVEL! neq 0 goto fail
 
-%DIR%\fsx.exe -N 5000 test xxxxxx
-del test test.*
+:: %DIR%\fsx.exe -N 5000 test xxxxxx
+:: del test test.*
+
 echo PASSED
 exit /b 0
 
