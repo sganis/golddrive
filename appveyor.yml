@@ -26,7 +26,7 @@ after_test:
       net use Z: \\golddrive\support@localhost
       Z:
       cd Z:\tmp
-  - %APPVEYOR_BUILD_FOLDER%\tools\testfs.bat
+  - cmd: %APPVEYOR_BUILD_FOLDER%\tools\testfs.bat
 
 artifacts:
   - path: src\build\Release\golddrive-2.*.msi
