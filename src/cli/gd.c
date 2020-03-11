@@ -585,7 +585,7 @@ intptr_t gd_open(const char *path, int flags, unsigned int mode)
 	sh->dir = 0;
 
 	if (sh->flags == LIBSSH2_FXF_WRITE || sh->flags == (LIBSSH2_FXF_READ | LIBSSH2_FXF_WRITE)) {
-		//gd_check_hlink(path);
+		gd_check_hlink(path);
 	}
 	gd_lock();
 	//handle = libssh2_sftp_open_ex(g_ssh->sftp, sh->path, (int)strlen(sh->path),
@@ -1164,18 +1164,26 @@ int run_command(const char *cmd, char *out, char *err)
 	size_t offset = 0;
 	char *errmsg;
 	gd_lock();
-	channel = libssh2_channel_open_session(g_ssh->ssh);
+	//channel = libssh2_channel_open_session(g_ssh->ssh);
+	do {
+		channel = libssh2_channel_open_session(g_ssh->ssh);
+		if (!channel && libssh2_session_last_errno(g_ssh->ssh) !=
+			LIBSSH2_ERROR_EAGAIN)
+			break;
+	} while (!channel);
+
 	gd_unlock();
 	if (!channel) {
 		rc = libssh2_session_last_error(g_ssh->ssh, &errmsg, NULL, 0);
 		log_debug("ERROR: unable to init ssh chanel, rc=%d, %s\n", rc, errmsg);
 		return 1;
 	}
-
+	gd_lock();
 	libssh2_channel_set_blocking(channel, 0);
 	while ((rc = libssh2_channel_exec(channel, cmd)) == LIBSSH2_ERROR_EAGAIN)
 		waitsocket(g_ssh);
 	//rc = libssh2_channel_exec(channel, cmd);
+	gd_unlock();
 
 	if (rc != 0) {
 		rc = libssh2_session_last_error(g_ssh->ssh, &errmsg, NULL, 0);
@@ -1184,13 +1192,14 @@ int run_command(const char *cmd, char *out, char *err)
 	}
 
 	/* read stdout */
+	gd_lock();
 	out[0] = '\0';
 	for (;;) {
 		do {
 			char buffer[0x4000];
-			gd_lock();
+			
 			bytesread = libssh2_channel_read(channel, buffer, sizeof(buffer));
-			gd_unlock();
+			
 			if (bytesread > 0) {
 				//strncat(out, buffer, bytesread);
 				memcpy(out + offset, buffer, bytesread);
@@ -1203,16 +1212,18 @@ int run_command(const char *cmd, char *out, char *err)
 		else
 			break;
 	}
-
+	gd_unlock();
 	/* read stderr */
+
+	gd_lock();
 	err[0] = '\0';
 	offset = 0;
 	for (;;) {
 		do {
 			char buffer[0x4000];
-			gd_lock();
+			
 			bytesread = libssh2_channel_read_stderr(channel, buffer, sizeof(buffer));
-			gd_unlock();
+			
 			if (bytesread > 0) {
 				//strncat(err, buffer, bytesread);
 				memcpy(out + offset, buffer, bytesread);
@@ -1228,6 +1239,8 @@ int run_command(const char *cmd, char *out, char *err)
 	/* get exit code */
 	while ((rc = libssh2_channel_close(channel)) == LIBSSH2_ERROR_EAGAIN)
 		waitsocket(g_ssh);
+	gd_unlock();
+
 	//rc = libssh2_channel_close(channel);
 	if (rc == 0)
 		rc = libssh2_channel_get_exit_status(channel);
@@ -1235,8 +1248,10 @@ int run_command(const char *cmd, char *out, char *err)
 		rc = 127;
 
 finish:
+	gd_lock();
 	//libssh2_channel_set_blocking(channel, 1);
 	libssh2_channel_free(channel);
+	gd_unlock();
 	return (int)rc;
 }
 
