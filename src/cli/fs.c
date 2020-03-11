@@ -92,8 +92,7 @@ int f_truncate(const char* path, fuse_off_t size, struct fuse_file_info* fi)
 	else
 	{
 		intptr_t fd = fi_fd(fi);
-		gd_handle_t* sh = (gd_handle_t*)fd;
-		return -1 != gd_truncate(sh->path, size) ? 0 : -errno;
+		return -1 != gd_ftruncate(fd, size) ? 0 : -errno;
 	}
 }
 
@@ -104,9 +103,9 @@ int f_open(const char *path, struct fuse_file_info *fi)
 	realpath(path);
 	intptr_t fd;
 	int rc = -1 != (fd = gd_open(path, fi->flags, 0)) ? (fi_setfd(fi, fd), 0) : -errno;
-	if (rc != 0) {
+	/*if (rc != 0) {
 		printf("error: f_open: %s, flags=%d\n", path, fi->flags);
-	}
+	}*/
 	return rc;
 }
 
@@ -126,8 +125,8 @@ int f_write(const char *path, const char *buf, size_t size, fuse_off_t off,	stru
 	int nb;
 	rc = -1 != (nb = gd_write(fd, buf, size, off)) ? nb : -errno;
 	
-	if(size != nb)
-		printf("f_write error: %s, flags=%d, size=%lld, rc=%d\n", path, fi->flags, size, rc);
+	//if(size != nb)
+	//	printf("f_write error: %s, flags=%d, size=%lld, rc=%d\n", path, fi->flags, size, rc);
 
 	return rc;
 }
@@ -228,9 +227,10 @@ int f_fsync(const char* path, int datasync, struct fuse_file_info* fi)
 	return -1 != gd_fsync(fd) ? 0 : -errno;
 }
 
-int f_flush(const char* path, struct fuse3_file_info* fi)
+int f_flush(const char* path, struct fuse_file_info* fi)
 {
-	return 0;
+	intptr_t fd = fi_fd(fi);
+	return -1 != gd_flush(fd) ? 0 : -errno;
 }
 
 int f_chmod(const char* path, fuse_mode_t mode, struct fuse_file_info* fi)

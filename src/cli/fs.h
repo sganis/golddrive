@@ -26,7 +26,7 @@ int f_open(const char *path, struct fuse_file_info *fi);
 int f_utimens(const char *path, const struct fuse_timespec tv[2], struct fuse_file_info *fi);
 int f_truncate(const char *path, fuse_off_t size, struct fuse_file_info *fi);
 int f_fsync(const char *path, int datasync, struct fuse_file_info *fi);
-int f_flush(const char* path, struct fuse3_file_info* fi);
+int f_flush(const char* path, struct fuse_file_info* fi);
 int f_chmod(const char *path, fuse_mode_t mode, struct fuse_file_info *fi);
 int f_chown(const char *path, fuse_uid_t uid, fuse_gid_t gid, struct fuse_file_info *fi);
 int f_mknod(const char* path, fuse_mode_t mode, fuse_dev_t dev);

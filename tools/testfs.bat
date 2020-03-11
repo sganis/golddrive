@@ -27,7 +27,8 @@ set DIR=%DIR:~0,-1%
 :: 	-reparse* -stream*
 :: if !ERRORLEVEL! neq 0 goto fail
 
-%DIR%\fsx.exe -N 5000 test xxxxxx
+echo > test
+%DIR%\fsx.exe -N 5000 -L test xxxxxx
 del test test.*
 if !ERRORLEVEL! neq 0 goto fail
 
