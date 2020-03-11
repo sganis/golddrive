@@ -68,8 +68,6 @@ extern char*		g_logfile;
 typedef struct fs_config {
 	char *remote;
 	char *host;
-	//char **hostlist;
-	//int hostcount;
 	char *locuser;
 	char *user;
 	char *pkey;
@@ -79,7 +77,7 @@ typedef struct fs_config {
 	char *home;
 	char* root;
 	int has_root;
-	//char *realroot;
+	int block;
 	char *mountpoint;
 	char letter;
 	int port;
