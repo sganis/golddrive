@@ -77,7 +77,7 @@ typedef struct fs_config {
 	char *home;
 	char* root;
 	int has_root;
-	int block;
+	int noblock;
 	char *mountpoint;
 	char letter;
 	int port;
@@ -167,6 +167,7 @@ static const char *sftp_errors[] = {
 	"SFTP_UNKNOWN"
 };
 
+#define GD_EOF 1
 
 /* macros */
 #define fi_dirbit                       (0x8000000000000000ULL)
@@ -193,7 +194,7 @@ static const char *sftp_errors[] = {
 	}
 
 #define gd_error(path) {															\
-    rc = map_ssh_error(g_ssh, path);												\
+    rc = get_ssh_error(g_ssh, path);												\
 	/* skip errors 2, 3, 4 */ \
 	if (1 < rc && rc > 4) { \
 		const char* msg = rc < 0 ? ssh_errors[-rc] : sftp_errors[rc];				\

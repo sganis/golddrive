@@ -44,7 +44,7 @@ static struct fuse_operations fs_ops = {
 	.utimens = f_utimens,
 	.open = f_open,
 	.flush = f_flush,
-	//.fsync = f_fsync,
+	.fsync = f_fsync,
 	.release = f_release,
 	.read = f_read,
 	.write = f_write,
@@ -79,8 +79,8 @@ static struct fuse_opt fs_opts[] = {
 	fs_OPT("pkey=%s",           pkey, 0),
 	fs_OPT("-k %s",             pkey, 0),
 	fs_OPT("-k=%s",             pkey, 0),
-	fs_OPT("block",             block, 1),
-	fs_OPT("noblock",           block, 0),
+	fs_OPT("noblock",           noblock, 1),
+	fs_OPT("nonoblock",         noblock, 0),
 
 	FUSE_OPT_KEY("--version",      KEY_VERSION),
 	FUSE_OPT_KEY("--help",         KEY_HELP),
@@ -119,7 +119,7 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 			"    -u USER, -o user=USER      user to connect to ssh server, default: current user\n"
 			"    -k PKEY, -o pkey=PKEY      private key, default: %%USERPROFILE%%\\.ssh\\id_rsa-user-golddrive\n"
 			"    -p PORT, -o port=PORT      server port, default: 22\n"
-			"    -o block                   ssh blocking mode, default: false\n"
+			"    -o noblock                 ssh non-blocking mode, default: blocking\n"
 			"\n"
 			"WinFsp-FUSE options:\n"
 			"    -s                         disable multi-threaded operation\n"
@@ -376,7 +376,7 @@ int main(int argc, char *argv[])
 	gd_log("port    = %d\n", g_fs.port);
 	gd_log("root    = %s\n", g_fs.root);
 	gd_log("pkey    = %s\n", g_fs.pkey);
-	gd_log("block   = %d\n", g_fs.block);
+	gd_log("noblock = %d\n", g_fs.noblock);
 	//gd_log("intptr_t= %ld\n", sizeof(intptr_t));
 	//gd_log("long    = %ld\n", sizeof(long));
 

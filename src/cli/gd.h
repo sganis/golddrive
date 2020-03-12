@@ -39,7 +39,7 @@ int gd_removexattr(const char* path, const char* name);
 void gd_log(const char* fmt, ...);
 int jsoneq(const char* json, jsmntok_t* tok, const char* s);
 int load_json(fs_config* fs);
-int map_ssh_error(gdssh_t* ssh, const char* path);
+int get_ssh_error(gdssh_t* ssh, const char* path);
 int map_error(int rc);
 void copy_attributes(struct fuse_stat* stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs);
 void mode_human(unsigned long mode, char* human);

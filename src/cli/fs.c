@@ -113,8 +113,9 @@ int f_read(const char *path, char *buf, size_t size, fuse_off_t off, struct fuse
 {
 	intptr_t fd = fi_fd(fi);
 	int nb;
-	return -1 != (nb = gd_read(fd, buf, size, off)) ? nb : -errno;
-
+	int rc = -1 != (nb = gd_read(fd, buf, size, off)) ? nb : -errno;
+	
+	return rc;
 	
 }
 

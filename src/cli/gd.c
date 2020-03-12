@@ -99,7 +99,7 @@ gdssh_t * gd_init_ssh(const char* hostname, int port, const char* username, cons
 	}
 
 	/* non-blocking */
-	libssh2_session_set_blocking(ssh, g_fs.block);
+	libssh2_session_set_blocking(ssh, g_fs.noblock);
 	/* blocking */
 	//libssh2_session_set_blocking(ssh, 1);
 
@@ -192,6 +192,7 @@ int gd_finalize(void)
 	closesocket(g_ssh->socket);
 	free(g_ssh);
 
+	printf("ssh operations: %lld\n", g_sftp_calls);
 
 	return 0;
 }
@@ -316,17 +317,11 @@ int gd_unlink(const char *path)
 	log_info("%s\n", path);
 
 	gd_lock();
-	if (g_fs.block) {
-		rc = libssh2_sftp_unlink_ex(g_ssh->sftp, path, (int)strlen(path));
-		g_sftp_calls++;
-	}
-	else {
-		while ((rc = libssh2_sftp_unlink_ex(g_ssh->sftp, path, (int)strlen(path))) ==
+	while ((rc = libssh2_sftp_unlink_ex(g_ssh->sftp, path, (int)strlen(path))) ==
 			LIBSSH2_ERROR_EAGAIN) {
 			waitsocket(g_ssh);
 			g_sftp_calls++;
 		}
-	}
 	gd_unlock();
 
 	if (rc) {
@@ -469,7 +464,7 @@ intptr_t gd_open(const char* path, int flags, unsigned int mode)
 	int rc;
 	LIBSSH2_SFTP_HANDLE* handle = 0;
 	gd_handle_t* sh = malloc(sizeof(gd_handle_t));
-	log_info("%s, flags=%d, mode=%u\n", path, flags, mode);
+	
 
 	unsigned int pflags;
 	if ((flags & O_ACCMODE) == O_RDONLY) {
@@ -496,6 +491,8 @@ intptr_t gd_open(const char* path, int flags, unsigned int mode)
 
 	if (flags & O_APPEND)
 		pflags |= LIBSSH2_FXF_APPEND;
+
+	log_info("%s, mode=%u, flags=%d\n", path, mode, pflags);
 
 	//error("%s, pflags: %d\n", path, pflags);
 	sh->flags = pflags;
@@ -548,11 +545,11 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 		libssh2_sftp_seek64(handle, offset);
 	gd_unlock();
 
-	ssize_t total = 0;
+	int total = 0;
 	size_t chunk = size;
 	char* pos = buf;
 
-	do {
+	for(;;) {
 		gd_lock();
 		while ((rc = (int)libssh2_sftp_read(handle, pos, chunk)) ==
 			LIBSSH2_ERROR_EAGAIN) {
@@ -569,21 +566,28 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 		else {
 			break;
 		}
-	} while (chunk);
+	} 
 
 	if (rc < 0) {
 		gd_error("ERROR: Unable to read chuck of file\n");
+		if (rc == LIBSSH2_FX_INVALID_HANDLE)
+		{
+
+		}
 		rc = error();
 		total = -1;
 	}
 	if (rc == 0 && size != total)
 	{
-		log_warn("WARNING !!!!!!!!!!! need=%lld, actual=%lld, probably EOF\n",
-			size, total);
+		//log_warn("**************** WARNING ****************  need=%lld, actual=%lld, probably EOF\n",
+		//	size, total);
+		//rc = -1;
+		errno = 1; // EOF
+		total = -1;
 	}
 	log_debug("FINISH READING HANDLE %zu, bytes: %zu\n", (size_t)handle, total);
 
-	return total >= 0 ? (int)total : rc;
+	return total;// >= 0 ? (int)total : rc;
 }
 
 int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
@@ -605,7 +609,9 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	size_t chunk = size;
 	const char* pos = buf;
 
-	do {
+
+
+	for(;;) {
 		gd_lock();
 		while ((rc = (int)libssh2_sftp_write(handle, pos, chunk)) ==
 			LIBSSH2_ERROR_EAGAIN) {
@@ -622,19 +628,22 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 		else {
 			break;
 		}
-	} while (chunk);
-
-	if (rc == 0 && size != total)
-	{
-		log_warn("WARNING !!!!!!!!!!! need=%lld, actual=%d, probably EOF\n", size, total);
-
-	}
+	} 
 
 	if (rc < 0) {
 		gd_error("ERROR: Unable to write chuck of data\n");
 		rc = error();
 		total = -1;
 	}
+
+	if (rc == 0 && size != total)
+	{
+		//log_warn("**************** WARNING **************** need=%lld, actual=%d, probably EOF\n", size, total);
+		errno = 1; // EOF
+		total = -1;
+	}
+
+	
 	log_debug("FINISH WRITING %zu, bytes: %zu\n", (size_t)handle, total);
 	return total;// >= 0 ? (int)total : rc;
 }
@@ -696,6 +705,12 @@ int gd_close(intptr_t fd)
 	LIBSSH2_SFTP_HANDLE* handle;
 	handle = sh->handle;
 	assert(handle);
+
+	rc = gd_flush(fd);
+	if (rc < 0)
+	{
+		gd_error(sh->path);
+	}
 
 	gd_lock();
 	while ((rc = libssh2_sftp_close_handle(handle)) ==
@@ -1223,7 +1238,7 @@ int waitsocket(gdssh_t* ssh)
 	return rc;
 }
 
-int map_ssh_error(gdssh_t* ssh, const char* path)
+int get_ssh_error(gdssh_t* ssh, const char* path)
 {
 	int rc = libssh2_session_last_errno(ssh->ssh);
 	if (rc > 0 || rc < -47)
@@ -1240,45 +1255,48 @@ int map_ssh_error(gdssh_t* ssh, const char* path)
 
 int map_error(int rc)
 {
-	if (rc == 0)
-		return 0;
-	if (rc <= -48 || rc >= 22)
-		return EINVAL;
+	return rc;
 
-	switch (rc) {
-	case LIBSSH2_FX_PERMISSION_DENIED:
-	case LIBSSH2_FX_WRITE_PROTECT:
-	case LIBSSH2_FX_LOCK_CONFLICT:
-		return EACCES;
-	case LIBSSH2_FX_NO_SUCH_FILE:
-	case LIBSSH2_FX_NO_SUCH_PATH:
-	case LIBSSH2_FX_INVALID_FILENAME:
-	case LIBSSH2_FX_NOT_A_DIRECTORY:
-	case LIBSSH2_FX_NO_MEDIA:
-		return ENOENT;
-	case LIBSSH2_FX_QUOTA_EXCEEDED:
-	case LIBSSH2_FX_NO_SPACE_ON_FILESYSTEM:
-		return ENOMEM;
-	case LIBSSH2_FX_FILE_ALREADY_EXISTS:
-		return EEXIST;
-	case LIBSSH2_FX_DIR_NOT_EMPTY:
-		return ENOTEMPTY;
-	case LIBSSH2_FX_EOF:
-		return ENOTEMPTY;
-	case LIBSSH2_FX_BAD_MESSAGE:
-		return EBADMSG;
-	case LIBSSH2_FX_NO_CONNECTION:
-		return ENOTCONN;
-	case LIBSSH2_FX_CONNECTION_LOST:
-		ECONNABORTED;
-	case LIBSSH2_FX_OP_UNSUPPORTED:
-		EOPNOTSUPP;
-	case LIBSSH2_FX_FAILURE:
-		return EPERM;
-	default:
-		//printf("ssh error?: rc=%d\n", rc);
-		return EIO;
-	}
+	//if (rc == 0)
+	//	return 0;
+	//if (rc <= -48 || rc >= 22)
+	//	return EINVAL;
+
+	//switch (rc) {
+	//case LIBSSH2_FX_PERMISSION_DENIED:
+	//case LIBSSH2_FX_WRITE_PROTECT:
+	//case LIBSSH2_FX_LOCK_CONFLICT:
+	//	return EACCES;
+	//case LIBSSH2_FX_NO_SUCH_FILE:
+	//case LIBSSH2_FX_NO_SUCH_PATH:
+	//case LIBSSH2_FX_INVALID_FILENAME:
+	//case LIBSSH2_FX_NOT_A_DIRECTORY:
+	//case LIBSSH2_FX_NO_MEDIA:
+	//	return ENOENT;
+	//case LIBSSH2_FX_QUOTA_EXCEEDED:
+	//case LIBSSH2_FX_NO_SPACE_ON_FILESYSTEM:
+	//	return ENOMEM;
+	//case LIBSSH2_FX_FILE_ALREADY_EXISTS:
+	//	return EEXIST;
+	//case LIBSSH2_FX_DIR_NOT_EMPTY:
+	//	return ENOTEMPTY;
+	//case LIBSSH2_FX_BAD_MESSAGE:
+	//	return EBADMSG;
+	//case LIBSSH2_FX_NO_CONNECTION:
+	//	return ENOTCONN;
+	//case LIBSSH2_FX_CONNECTION_LOST:
+	//	return ECONNABORTED;
+	//case LIBSSH2_FX_OP_UNSUPPORTED:
+	//	return EOPNOTSUPP;
+	//case LIBSSH2_FX_FAILURE:
+	//case LIBSSH2_FX_EOF:
+	//	return EPERM;
+	//case LIBSSH2_FX_INVALID_HANDLE:
+	//	return EBADF;
+	//default:
+	//	//printf("ssh error?: rc=%d\n", rc);
+	//	return EIO;
+	//}
 }
 
 int jsoneq(const char *json, jsmntok_t *tok, const char *s)
