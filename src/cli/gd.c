@@ -422,13 +422,12 @@ int gd_truncate(const char* path, fuse_off_t size)
 		waitsocket(g_ssh);
 		g_sftp_calls++;
 	}
-	gd_unlock();
-
 	if (rc) {
 		gd_error(path);
 		rc = error();
 	}
-
+	gd_unlock();
+	
 	return rc;
 }
 
@@ -449,13 +448,13 @@ int gd_ftruncate(intptr_t fd, fuse_off_t size)
 		waitsocket(g_ssh);
 		g_sftp_calls++;
 	}
-	gd_unlock();
-
-	if (rc) {
+	if (rc < 0) {
 		gd_error(sh->path);
 		rc = error();
 	}
+	gd_unlock();
 
+	//return gd_fsync(fd);
 	return rc;
 }
 
@@ -515,12 +514,13 @@ intptr_t gd_open(const char* path, int flags, unsigned int mode)
 			LIBSSH2_ERROR_EAGAIN)
 			break;
 	} while (!handle);
-	gd_unlock();
-
+	
 	if (!handle) {
 		gd_error(sh->path);
+		gd_unlock();
 		return error();
 	}
+	gd_unlock();
 
 	log_info("OPEN HANDLE : %zu:%zu: %s, flags=%d, mode=%d\n",
 		(size_t)sh, (size_t)handle, sh->path, sh->flags, sh->mode);
@@ -543,20 +543,20 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	curpos = libssh2_sftp_tell64(handle);
 	if (offset != curpos)
 		libssh2_sftp_seek64(handle, offset);
-	gd_unlock();
+	//gd_unlock();
 
 	int total = 0;
 	size_t chunk = size;
 	char* pos = buf;
 
 	for(;;) {
-		gd_lock();
+		//gd_lock();
 		while ((rc = (int)libssh2_sftp_read(handle, pos, chunk)) ==
 			LIBSSH2_ERROR_EAGAIN) {
 			waitsocket(g_ssh);
 			g_sftp_calls++;
 		}
-		gd_unlock();
+		//gd_unlock();
 
 		if (rc > 0) {
 			pos += rc;
@@ -569,21 +569,21 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	} 
 
 	if (rc < 0) {
-		gd_error("ERROR: Unable to read chuck of file\n");
-		if (rc == LIBSSH2_FX_INVALID_HANDLE)
-		{
-
-		}
+		gd_error("ERROR: Unable to read chuck of file\n");		
 		rc = error();
-		total = -1;
+		if(rc)
+			total = -1;
 	}
-	if (rc == 0 && size != total)
+	gd_unlock();
+
+
+	if (rc == 0 && total > -1 && size != total)
 	{
 		//log_warn("**************** WARNING ****************  need=%lld, actual=%lld, probably EOF\n",
 		//	size, total);
 		//rc = -1;
-		errno = 1; // EOF
-		total = -1;
+		//errno = 0; // EOF
+		//total = -1;
 	}
 	log_debug("FINISH READING HANDLE %zu, bytes: %zu\n", (size_t)handle, total);
 
@@ -603,7 +603,7 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	curpos = libssh2_sftp_tell64(handle);
 	if (offset != curpos)
 		libssh2_sftp_seek64(handle, offset);
-	gd_unlock();
+	//gd_unlock();
 
 	int total = 0;
 	size_t chunk = size;
@@ -612,13 +612,13 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 
 
 	for(;;) {
-		gd_lock();
+		//gd_lock();
 		while ((rc = (int)libssh2_sftp_write(handle, pos, chunk)) ==
 			LIBSSH2_ERROR_EAGAIN) {
 			waitsocket(g_ssh);
 			g_sftp_calls++;
 		}
-		gd_unlock();
+		//gd_unlock();
 
 		if (rc > 0) {
 			pos += rc;
@@ -633,14 +633,16 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	if (rc < 0) {
 		gd_error("ERROR: Unable to write chuck of data\n");
 		rc = error();
-		total = -1;
+		if (rc)
+			total = -1;
 	}
+	gd_unlock();
 
-	if (rc == 0 && size != total)
+	if (rc == 0 && total > -1 && size != total)
 	{
-		//log_warn("**************** WARNING **************** need=%lld, actual=%d, probably EOF\n", size, total);
-		errno = 1; // EOF
-		total = -1;
+		log_warn("**************** WARNING **************** need=%lld, actual=%d, probably EOF\n", size, total);
+		//errno = EIO; // EOF
+		//total = -1;
 	}
 
 	
@@ -660,13 +662,12 @@ int gd_statvfs(const char* path, struct fuse_statvfs* stbuf)
 		waitsocket(g_ssh);
 		g_sftp_calls++;
 	}
-	gd_unlock();
-
-
 	if (rc < 0) {
 		gd_error(path);
 		rc = error();
 	}
+	gd_unlock();
+
 
 	memset(stbuf, 0, sizeof(struct fuse_statvfs));
 	stbuf->f_bsize = stvfs.f_bsize;			/* file system block size */
@@ -718,13 +719,12 @@ int gd_close(intptr_t fd)
 		waitsocket(g_ssh);
 		g_sftp_calls++;
 	}
-	gd_unlock();
-
 	if (rc < 0) {
 		gd_error(sh->path);
 		rc = error();
 	}
-
+	gd_unlock();
+	
 	log_info("CLOSE HANDLE: %zu:%zu\n", (size_t)sh, (size_t)handle);
 	free(sh);
 	sh = NULL;
@@ -749,13 +749,14 @@ gd_dir_t* gd_opendir(const char* path)
 			LIBSSH2_ERROR_EAGAIN)
 			break;
 	} while (!handle);
-	gd_unlock();
-
 	if (!handle) {
 		gd_error(path);
+		gd_unlock();
 		rc = error();
 		return 0;
 	}
+	gd_unlock();
+
 
 	size_t pathlen = strlen(path);
 	if (0 < pathlen && '/' == path[pathlen - 1])
@@ -805,14 +806,13 @@ struct gd_dirent_t* gd_readdir(gd_dir_t* dirp)
 		waitsocket(g_ssh);
 		g_sftp_calls++;
 	}
-	gd_unlock();
-
-
 	if (rc < 0) {
 		gd_error(dirp->path);
+		gd_unlock();
 		rc = error0();
 		return 0;
 	}
+	gd_unlock();
 	if (rc == 0) {
 		// no more files
 		return 0;
@@ -837,12 +837,11 @@ int gd_closedir(gd_dir_t* dirp)
 		waitsocket(g_ssh);
 		g_sftp_calls++;
 	}
-	gd_unlock();
-
 	if (rc < 0) {
 		gd_error(dirfh->path);
 		rc = error();
 	}
+	gd_unlock();
 
 	log_info("CLOSE HANDLE: %zu:%zu\n", (size_t)dirfh, (size_t)handle);
 	free(dirfh);
@@ -934,13 +933,11 @@ int gd_utimens(const char* path, const struct fuse_timespec tv[2], struct fuse_f
 		waitsocket(g_ssh);
 		g_sftp_calls++;
 	}
-	gd_unlock();
-
 	if (rc < 0) {
 		gd_error(path);
 		rc = error();
 	}
-
+	gd_unlock();
 	return rc;
 }
 
@@ -968,11 +965,13 @@ int gd_fsync(intptr_t fd)
 		waitsocket(g_ssh);
 		g_sftp_calls++;
 	}
-	gd_unlock();
+	
 	if (rc < 0) {
 		gd_error(sh->path);
 		rc = error();
 	}
+	gd_unlock();
+
 	return rc;
 }
 
@@ -1255,49 +1254,61 @@ int get_ssh_error(gdssh_t* ssh, const char* path)
 
 int map_error(int rc)
 {
-	return rc;
-
-	//if (rc == 0)
-	//	return 0;
-	//if (rc <= -48 || rc >= 22)
-	//	return EINVAL;
-
-	//switch (rc) {
-	//case LIBSSH2_FX_PERMISSION_DENIED:
-	//case LIBSSH2_FX_WRITE_PROTECT:
-	//case LIBSSH2_FX_LOCK_CONFLICT:
-	//	return EACCES;
-	//case LIBSSH2_FX_NO_SUCH_FILE:
-	//case LIBSSH2_FX_NO_SUCH_PATH:
-	//case LIBSSH2_FX_INVALID_FILENAME:
-	//case LIBSSH2_FX_NOT_A_DIRECTORY:
-	//case LIBSSH2_FX_NO_MEDIA:
-	//	return ENOENT;
-	//case LIBSSH2_FX_QUOTA_EXCEEDED:
-	//case LIBSSH2_FX_NO_SPACE_ON_FILESYSTEM:
-	//	return ENOMEM;
-	//case LIBSSH2_FX_FILE_ALREADY_EXISTS:
-	//	return EEXIST;
-	//case LIBSSH2_FX_DIR_NOT_EMPTY:
-	//	return ENOTEMPTY;
-	//case LIBSSH2_FX_BAD_MESSAGE:
-	//	return EBADMSG;
-	//case LIBSSH2_FX_NO_CONNECTION:
-	//	return ENOTCONN;
-	//case LIBSSH2_FX_CONNECTION_LOST:
-	//	return ECONNABORTED;
-	//case LIBSSH2_FX_OP_UNSUPPORTED:
-	//	return EOPNOTSUPP;
-	//case LIBSSH2_FX_FAILURE:
-	//case LIBSSH2_FX_EOF:
-	//	return EPERM;
-	//case LIBSSH2_FX_INVALID_HANDLE:
-	//	return EBADF;
-	//default:
-	//	//printf("ssh error?: rc=%d\n", rc);
-	//	return EIO;
-	//}
+	switch (rc) {
+	case LIBSSH2_FX_OK:                return 0;
+	case LIBSSH2_FX_NO_SUCH_FILE:      return ENOENT;
+	case LIBSSH2_FX_PERMISSION_DENIED: return EACCES;
+	case LIBSSH2_FX_FAILURE:           return EPERM;
+	case LIBSSH2_FX_BAD_MESSAGE:       return EBADMSG;
+	case LIBSSH2_FX_NO_CONNECTION:     return ENOTCONN;
+	case LIBSSH2_FX_CONNECTION_LOST:   return ECONNABORTED;
+	case LIBSSH2_FX_OP_UNSUPPORTED:    return EOPNOTSUPP;
+	default:                           return EIO;
+	}
 }
+
+//	if (rc == LIBSSH2_FX_OK || rc == LIBSSH2_FX_EOF)
+//		return rc;
+//
+//	if (rc < 0 || rc >= 22)
+//		return EINVAL;
+//
+//	switch (rc) {
+//	case LIBSSH2_FX_PERMISSION_DENIED:
+//	case LIBSSH2_FX_WRITE_PROTECT:
+//	case LIBSSH2_FX_LOCK_CONFLICT:
+//	case LIBSSH2_FX_LINK_LOOP:
+//		return EACCES;
+//	case LIBSSH2_FX_NO_SUCH_FILE:
+//	case LIBSSH2_FX_NO_SUCH_PATH:
+//	case LIBSSH2_FX_INVALID_FILENAME:
+//	case LIBSSH2_FX_NOT_A_DIRECTORY:
+//	case LIBSSH2_FX_UNKNOWN_PRINCIPAL:
+//	case LIBSSH2_FX_NO_MEDIA:
+//		return ENOENT;
+//	case LIBSSH2_FX_QUOTA_EXCEEDED:
+//	case LIBSSH2_FX_NO_SPACE_ON_FILESYSTEM:
+//		return ENOMEM;
+//	case LIBSSH2_FX_FILE_ALREADY_EXISTS:
+//		return EEXIST;
+//	case LIBSSH2_FX_DIR_NOT_EMPTY:
+//		return ENOTEMPTY;
+//	case LIBSSH2_FX_BAD_MESSAGE:
+//		return EBADMSG;
+//	case LIBSSH2_FX_NO_CONNECTION:
+//	case LIBSSH2_FX_CONNECTION_LOST:
+//		return ENOTCONN;
+//	case LIBSSH2_FX_OP_UNSUPPORTED:
+//		return EOPNOTSUPP;
+//	case LIBSSH2_FX_FAILURE:
+//		return EIO;
+//	case LIBSSH2_FX_INVALID_HANDLE:
+//		return EBADF;
+//	default:
+//		//printf("ssh error?: rc=%d\n", rc);
+//		return EINVAL;
+//	}
+//}
 
 int jsoneq(const char *json, jsmntok_t *tok, const char *s)
 {
