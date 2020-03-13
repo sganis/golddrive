@@ -4,16 +4,13 @@ image:
 platform: x64
 configuration: Release
 install:
-  # donwload winfsp and install it
   - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/winfsp-1.6.20027.msi
   - start /wait msiexec /i winfsp-1.6.20027.msi /qn ADDLOCAL=ALL
-  # setup linux ssh server in wsl
   - wslconfig /u Ubuntu-18.04
   - rd /s /q C:\WSL\Ubuntu1804
   - ps: tools\setup_wsl.ps1
-  # setup client ssh keys
   - C:\Python38\python -m pip install --disable-pip-version-check paramiko pyyaml psutil >NUL
-  - C:\Python38\python tools\setupssh.py support@localhost
+  - C:\Python38\python tools\setupssh.py support@localhost support
 build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:quiet
   - start /wait msiexec /i src\build\Release\golddrive-2.5.0.msi /qn
@@ -27,7 +24,6 @@ after_test:
       Z:
       cd Z:\tmp
       C:\projects\golddrive\tools\testfs.bat
-
 artifacts:
   - path: src\build\Release\golddrive-2.*.msi
     name: Golddrive

@@ -151,30 +151,29 @@ def testssh(userhost, port=22):
 		rb.error = "No key"
 		return rb
 
-	cmd = f'''ssh.exe
-		-i "{seckey}"
-		-p {port} 
-		-o PasswordAuthentication=no
-		-o StrictHostKeyChecking=no 
-		-o UserKnownHostsFile=/dev/null
-		-o BatchMode=yes 
-		{userhost} "echo ok"'''
-	r = run(cmd, capture=True, timeout=10)
+	logger.debug(f'Logging in with keys for {userhost}...')
+	rb = ReturnBox()
+	user, host = userhost.split('@')
+	client = paramiko.SSHClient()
+	client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 	
-	if r.stdout == 'ok':
-		# success
+	try:
+		client.connect(hostname=host, username=user, 
+				port=port, timeout=10, 
+				look_for_keys=True)
 		rb.returncode = ReturnCode.OK
-	elif 'Permission denied' in r.stderr:
-		# wrong user or key issue
+	except (paramiko.ssh_exception.AuthenticationException,
+		paramiko.ssh_exception.BadAuthenticationType,
+		paramiko.ssh_exception.PasswordRequiredException) as ex:
 		rb.returncode = ReturnCode.BAD_LOGIN
-		rb.error = 'Access denied'
-	else:
-		# wrong port: connection refused 
-		# unknown host: connection timeout
-		logger.error(r.stderr)
+		rb.error = str(ex)
+	except Exception as ex:
 		rb.returncode = ReturnCode.BAD_HOST
-		rb.error = r.stderr
+		rb.error = str(ex)
+	finally:
+		client.close()
 	return rb
+
 
 def generate_keys(userhost):
 	logger.debug('Generating new ssh keys...')
@@ -215,8 +214,9 @@ def has_app_keys():
 	output = ''
 	if os.path.exists(seckey):
 		try:
-			output = run(fr'ssh-keygen -y -f {seckey}', capture=True).stdout
 			if os.path.exists(pubkey):
+				sk = paramiko.RSAKey.from_private_key_file(seckey)
+				output = f'ssh-rsa {sk.get_base64()}'
 				with open(pubkey) as r:
 					output2 = r.read()
 				if output.split()[1] != output2.split()[1]:
@@ -355,11 +355,11 @@ if __name__ == '__main__':
 	import os
 	import getpass
 
-	assert (len(sys.argv) > 1 and '@' in sys.argv[1]) # usage: prog user@host
+	assert (len(sys.argv) > 2 and '@' in sys.argv[1]) # usage: prog user@host pass
 	
-	os.environ['PATH'] = f'{DIR}\\openssh;' + os.environ['PATH']
+	os.environ['PATH'] = f'{DIR};' + os.environ['PATH']
 	userhost = sys.argv[1]
-	password = os.environ['GOLDDRIVE_PASS']
+	password = sys.argv[2]
 	port=22
 
 	if ':' in userhost:
