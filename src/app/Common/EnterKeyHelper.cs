@@ -33,8 +33,8 @@ namespace golddrive
             {
                 if (args.Key == Key.Enter)
                 {
-                // make sure the textbox binding updates its source first
-                BindingExpression b = control.GetBindingExpression(TextBox.TextProperty);
+                    // make sure the textbox binding updates its source first
+                    BindingExpression b = control.GetBindingExpression(TextBox.TextProperty);
                     if (b != null)
                     {
                         b.UpdateSource();

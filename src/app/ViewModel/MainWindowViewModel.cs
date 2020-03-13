@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -33,13 +31,14 @@ namespace golddrive
             get { return _version; }
             set { _version = value; NotifyPropertyChanged(); }
         }
-        
+
         private bool _isDriveNew;
         public bool IsDriveNew
         {
             get { return _isDriveNew; }
-            set {
-                _isDriveNew = value; 
+            set
+            {
+                _isDriveNew = value;
                 NotifyPropertyChanged();
                 NotifyPropertyChanged("SettingsOkButtonText");
             }
@@ -85,12 +84,14 @@ namespace golddrive
         }
         public bool HasDrive { get { return SelectedDrive != null; } }
         public bool HasDrives { get { return GoldDrives != null && GoldDrives.Count > 0; } }
-        
+
         private DriveStatus driveStatus;
         public DriveStatus DriveStatus
         {
             get { return driveStatus; }
-            set { driveStatus = value;
+            set
+            {
+                driveStatus = value;
                 NotifyPropertyChanged();
                 NotifyPropertyChanged("ConnectButtonText");
                 NotifyPropertyChanged("ConnectButtonColor");
@@ -101,7 +102,9 @@ namespace golddrive
         public MountStatus MountStatus
         {
             get { return _mountStatus; }
-            set { _mountStatus = value;
+            set
+            {
+                _mountStatus = value;
                 NotifyPropertyChanged();
                 NotifyPropertyChanged("MessageColor");
                 NotifyPropertyChanged("ConnectButtonIsEnabled");
@@ -136,7 +139,7 @@ namespace golddrive
             get
             {
                 //return Brushes.Black;
-                return MountStatus == MountStatus.OK ?  Brushes.Black: Brushes.Red;
+                return MountStatus == MountStatus.OK ? Brushes.Black : Brushes.Red;
             }
         }
         private string password;
@@ -155,7 +158,7 @@ namespace golddrive
 
         public bool IsDriveSelected { get { return SelectedDrive != null; } }
 
-        public string SettingsOkButtonText { get { return IsDriveNew ? "Save": "Back"; } }
+        public string SettingsOkButtonText { get { return IsDriveNew ? "Save" : "Back"; } }
 
 
         #endregion
@@ -170,7 +173,7 @@ namespace golddrive
             CurrentPage = Page.Main;
             LoadDrivesAsync(drive);
             GetVersionsAsync();
-            if(rb != null)
+            if (rb != null)
                 Message = rb.Error;
         }
 
@@ -183,7 +186,7 @@ namespace golddrive
             Message = message;
             IsWorking = true;
         }
-        private void WorkDone(ReturnBox r=null)
+        private void WorkDone(ReturnBox r = null)
         {
             IsWorking = false;
             if (r == null)
@@ -221,7 +224,7 @@ namespace golddrive
             IsWorking = false;
 
         }
-       
+
         public async void LoadDrivesAsync(Drive drive)
         {
             WorkStart("Exploring local drives...");
@@ -231,7 +234,7 @@ namespace golddrive
                 if (drive != null)
                     settings.AddDrive(drive);
                 //GlobalArgs = settings.Args;
-                if(_selectedDrive == null)
+                if (_selectedDrive == null)
                     SelectedDrive = settings.SelectedDrive;
                 _mountService.UpdateDrives(settings);
             });
@@ -247,7 +250,7 @@ namespace golddrive
             {
                 CheckDriveStatusAsync();
             }
-            
+
         }
 
         private void UpdateObservableDrives(Drive selected)
@@ -288,19 +291,19 @@ namespace golddrive
                 WorkStart("Checking status...");
                 ReturnBox r = await Task.Run(() => _mountService.CheckDriveStatus(SelectedDrive));
                 WorkDone(r);
-            } 
+            }
         }
 
         private async void GetVersionsAsync()
         {
-            Version = await Task.Run(() => _mountService.GetVersions());            
+            Version = await Task.Run(() => _mountService.GetVersions());
         }
 
         #endregion
 
         #region Commands
 
-        
+
 
 
         private ICommand _selectedDriveChangedCommand;
@@ -310,7 +313,8 @@ namespace golddrive
             {
                 return _selectedDriveChangedCommand ?? (_selectedDriveChangedCommand = new RelayCommand(
                    // action
-                   x => {
+                   x =>
+                   {
                        if (CurrentPage != Page.Main)
                            return;
                        if (OldSelectedDrive == null)
@@ -328,7 +332,7 @@ namespace golddrive
         {
             get
             {
-                return _connectCommand ?? 
+                return _connectCommand ??
                     (_connectCommand = new RelayCommand(OnConnect));
             }
         }
@@ -339,7 +343,7 @@ namespace golddrive
                 if (SelectedDrive != null)
                 {
                     var drive = FreeDrives.ToList().Find(x => x.Name == SelectedDrive.Name);
-                    if(drive == null)
+                    if (drive == null)
                         FreeDrives.Add(SelectedDrive);
                     SelectedFreeDrive = SelectedDrive;
                 }
@@ -395,7 +399,8 @@ namespace golddrive
             {
                 return _showPageCommand ??
                     (_showPageCommand = new RelayCommand(
-                        x => {
+                        x =>
+                        {
                             CurrentPage = (Page)x;
                         }
                         ));
@@ -422,7 +427,7 @@ namespace golddrive
             ReturnBox r = await Task.Run(() => _mountService.ConnectPassword(d, password));
             WorkDone(r);
         }
-       
+
         private ICommand _showPasswordCommand;
         public ICommand ShowLoginCommand
         {
@@ -433,7 +438,7 @@ namespace golddrive
                         x => { CurrentPage = Page.Password; }));
             }
         }
- 
+
         private ICommand _settingsOkCommand;
         public ICommand SettingsOkCommand
         {
@@ -441,22 +446,25 @@ namespace golddrive
             {
                 return _settingsOkCommand ?? (_settingsOkCommand = new RelayCommand(
                    // action
-                   x => {
+                   x =>
+                   {
                        OnSettingsSave(x);
                    },
                    // can execute
-                   x => {
+                   x =>
+                   {
                        return true; // IsSettingsChanged;
                    }));
             }
         }
-        
+
         private async void OnSettingsSave(object obj)
-        {            
+        {
             if (IsDriveNew)
             {
                 Drive d = SelectedFreeDrive;
-                await Task.Run(() => {
+                await Task.Run(() =>
+                {
                     Settings settings = _mountService.LoadSettings();
                     //settings.Args = GlobalArgs;
                     settings.AddDrive(d);
@@ -470,14 +478,15 @@ namespace golddrive
             {
                 CurrentPage = Page.Main;
                 Drive d = SelectedDrive;
-                await Task.Run(() => {
+                await Task.Run(() =>
+                {
                     Settings settings = _mountService.LoadSettings();
                     //settings.Args = GlobalArgs;
                     settings.AddDrives(GoldDrives.ToList());
                     _mountService.SaveSettings(settings);
                     _mountService.UpdateDrives(settings);
                 });
-                UpdateObservableDrives(d);                
+                UpdateObservableDrives(d);
                 CheckDriveStatusAsync();
             }
         }
@@ -517,11 +526,13 @@ namespace golddrive
             {
                 return _settingsDeleteCommand ?? (_settingsDeleteCommand = new RelayCommand(
                    // action
-                   x => {
+                   x =>
+                   {
                        OnSettingsDelete(x);
                    },
                    // can execute
-                   x => {
+                   x =>
+                   {
                        return GoldDrives != null && GoldDrives.Count > 0;
                    }));
             }
@@ -532,7 +543,8 @@ namespace golddrive
             Drive d = SelectedDrive;
             if (GoldDrives.Contains(d))
                 GoldDrives.Remove(d);
-            await Task.Run(() => {
+            await Task.Run(() =>
+            {
                 if (d.Status == DriveStatus.CONNECTED)
                     _mountService.Unmount(d);
                 Settings settings = _mountService.LoadSettings();
@@ -575,7 +587,7 @@ namespace golddrive
                     (_githubCommand = new RelayCommand(
                         url => System.Diagnostics.Process.Start(url.ToString())));
             }
-        }      
+        }
 
         private ICommand _runTerminalCommand;
         public ICommand RunTerminalCommand

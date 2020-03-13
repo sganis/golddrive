@@ -1,7 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 
 namespace golddrive
 {
@@ -9,17 +8,17 @@ namespace golddrive
     public class Drive : Observable
     {
         public DriveStatus Status { get; set; }
-        
+
         public bool? IsGoldDrive { get; set; }
 
         public string ServerOS { get; set; }
-        
+
         public string Path { get; set; }
 
         public string Host { get; set; }
-        
+
         public string Letter { get; set; }
-        
+
         public string Name { get { return $"{ Letter }:"; } }
 
         private string _args;
@@ -28,7 +27,8 @@ namespace golddrive
         public string Args
         {
             get { return string.IsNullOrEmpty(_args) ? null : _args; }
-            set { 
+            set
+            {
                 _args = value;
                 NotifyPropertyChanged();
             }
@@ -72,7 +72,7 @@ namespace golddrive
                 Host = _mountpoint;
                 if (string.IsNullOrEmpty(_mountpoint))
                     return;
-                
+
                 string s = _mountpoint;
                 if (s.Contains("\\"))
                 {
@@ -97,7 +97,7 @@ namespace golddrive
                     NotifyPropertyChanged("User");
                 }
                 NotifyPropertyChanged();
-                NotifyPropertyChanged("Host");            
+                NotifyPropertyChanged("Host");
             }
 
         }
@@ -118,8 +118,8 @@ namespace golddrive
 
         public string UserProfile
         {
-            get 
-            { 
+            get
+            {
                 var prof = Environment.ExpandEnvironmentVariables("%USERPROFILE%");
                 //if(!prof.Contains(User))
                 //    prof = Regex.Replace(prof, @"(?i)([a-z]:\\Users\\)([a-z0-9_\.]+)", $@"$1{User}");
@@ -143,7 +143,7 @@ namespace golddrive
         public string RegistryMountPoint2
         {
             get { return Remote?.Replace("\\", "#"); }
-        }        
+        }
         public string Remote
         {
             get { return $@"\\golddrive\{MountPoint}"; }

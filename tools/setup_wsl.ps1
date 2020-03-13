@@ -1,5 +1,5 @@
 # Golddrive
-# 04/03/2020, San
+# 04/03/2020, sganis
 # Install WSL with ubuntu1804, ssh server and support user
 # For testing purposes
 # It works for new development machines and also in Appveyor

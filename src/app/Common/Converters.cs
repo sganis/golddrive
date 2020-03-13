@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Globalization;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Markup;
 
@@ -24,7 +23,7 @@ namespace golddrive
         }
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if(!Negate)
+            if (!Negate)
                 return (bool)value ? Visibility.Visible : Visibility.Collapsed;
             else
                 return !(bool)value ? Visibility.Visible : Visibility.Collapsed;
@@ -35,13 +34,13 @@ namespace golddrive
             throw new NotSupportedException();
         }
     }
-    
+
     public class PageToVis : BaseConverter, IValueConverter
     {
         public object Convert(object value, Type targetType,
             object parameter, CultureInfo culture)
         {
-            return value.ToString()==parameter.ToString() ? Visibility.Visible : Visibility.Collapsed;
+            return value.ToString() == parameter.ToString() ? Visibility.Visible : Visibility.Collapsed;
         }
 
         public object ConvertBack(object value, Type targetType,
@@ -50,7 +49,7 @@ namespace golddrive
             throw new NotSupportedException();
         }
     }
-    public class NegateBoolConverter : BaseConverter, IValueConverter    
+    public class NegateBoolConverter : BaseConverter, IValueConverter
     {
         //public NegateBoolConverter() { }
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

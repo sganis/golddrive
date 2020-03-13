@@ -1,7 +1,7 @@
 ﻿#pragma warning disable CS0168
 using Newtonsoft.Json;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -12,13 +12,13 @@ namespace golddrive
     {
         //public string Args { get; set; }
         public string Selected { get; set; }
-        public Dictionary<string,Drive> Drives { get; set; }
+        public Dictionary<string, Drive> Drives { get; set; }
 
         public void AddDrives(List<Drive> drives)
         {
             Drives.Clear();
             foreach (var d in drives)
-                Drives[d.Name] = d;            
+                Drives[d.Name] = d;
         }
         public void AddDrive(Drive drive)
         {
@@ -27,7 +27,7 @@ namespace golddrive
                 var d = Drives[drive.Name];
                 d.MountPoint = drive.MountPoint;
                 d.Status = drive.Status;
-                
+
             }
             else
             {
@@ -83,7 +83,7 @@ namespace golddrive
                         d.Hosts = JsonConvert.DeserializeObject<List<string>>(data["Hosts"].ToString());
                     Drives[d.Name] = d;
                 }
-                var selected = Drives.Values.ToList().Find(x=>x.Name == Selected);
+                var selected = Drives.Values.ToList().Find(x => x.Name == Selected);
                 if (selected != null)
                 {
                     SelectedDrive = selected;

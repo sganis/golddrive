@@ -1,19 +1,17 @@
 ﻿#pragma warning disable CS0168
+using Microsoft.Win32;
+using Newtonsoft.Json;
+using Renci.SshNet;
+using Renci.SshNet.Common;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Text.RegularExpressions;
-using System.Collections.Generic;
-using Renci.SshNet;
 using System.Linq;
-using Microsoft.Win32;
-using System.Reflection;
 using System.Net.Sockets;
-using Renci.SshNet.Common;
-using System.Runtime.Serialization;
-using System.Xml;
+using System.Reflection;
 using System.ServiceProcess;
-using Newtonsoft.Json;
+using System.Text.RegularExpressions;
 
 namespace golddrive
 {
@@ -31,7 +29,7 @@ namespace golddrive
         {
             get
             {
-                return Drives.Where(x => x.Status != DriveStatus.FREE && x.IsGoldDrive==true).ToList();
+                return Drives.Where(x => x.Status != DriveStatus.FREE && x.IsGoldDrive == true).ToList();
             }
         }
 
@@ -40,7 +38,7 @@ namespace golddrive
             // args: Y: \\golddrive\user@host!port -uother...
             Drive drive = new Drive();
             Match m = Regex.Match(args, @"([g-z]): \\\\golddrive\\([^ ]+)", RegexOptions.IgnoreCase);
-            if(m.Success)
+            if (m.Success)
             {
                 drive.Letter = m.Groups[1].Value;
                 drive.MountPoint = m.Groups[2].Value;
@@ -93,7 +91,7 @@ namespace golddrive
         }
 
         #region Serialization
-        
+
 
         public Settings LoadSettings()
         {
@@ -110,9 +108,9 @@ namespace golddrive
                 using (var file = File.CreateText(settings.Filename))
                 {
                     var json = JsonConvert.SerializeObject(
-                        settings, 
+                        settings,
                         Newtonsoft.Json.Formatting.Indented,
-                        new JsonSerializerSettings { NullValueHandling=NullValueHandling.Ignore});
+                        new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
                     file.Write(json);
                 }
             }
@@ -376,7 +374,7 @@ namespace golddrive
 
                     }
                 }
-                
+
 
                 if (!used)
                 {
@@ -444,7 +442,7 @@ namespace golddrive
         //{
         //    //List<Drive> usedDrives = GetUsedDrives().Where(x => x.IsGoldDrive == true).ToList();
         //    //Settings settings = LoadSettings();
-            
+
         //    //List<Drive> drives = settings.Drives.Values.ToList();
         //    foreach (Drive u in GoldDrives)
         //    {
@@ -629,7 +627,7 @@ namespace golddrive
             }
         }
 
-        
+
         #endregion
 
         #region SSH Management
@@ -639,7 +637,7 @@ namespace golddrive
             ReturnBox r = new ReturnBox();
             try
             {
-                
+
                 using (var client = new TcpClient())
                 {
                     var result = client.BeginConnect(drive.Host, drive.Port, null, null);
@@ -650,7 +648,7 @@ namespace golddrive
                     }
                     else
                     {
-                        if(client.Connected)
+                        if (client.Connected)
                         {
                             r.MountStatus = MountStatus.OK;
                             r.Success = true;
@@ -664,7 +662,7 @@ namespace golddrive
                 r.MountStatus = MountStatus.BAD_HOST;
                 r.Error = ex.Message;
             }
-            
+
             return r;
         }
         ReturnBox TestPassword(Drive drive, string password)
@@ -680,7 +678,7 @@ namespace golddrive
             try
             {
                 SshClient client = new SshClient(drive.Host, drive.Port, drive.User, password);
-                client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
+                client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(15);
                 client.Connect();
                 client.Disconnect();
                 r.MountStatus = MountStatus.OK;
@@ -725,7 +723,7 @@ namespace golddrive
                 var pk = new PrivateKeyFile(drive.AppKey);
                 var keyFiles = new[] { pk };
                 SshClient client = new SshClient(drive.Host, drive.Port, drive.User, keyFiles);
-                client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
+                client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(15);
                 client.Connect();
                 client.Disconnect();
                 r.MountStatus = MountStatus.OK;
@@ -746,7 +744,7 @@ namespace golddrive
                     {
                         r.MountStatus = MountStatus.BAD_HOST;
                     }
-                    
+
                 }
                 else if (ex is SshConnectionException)
                 {
@@ -816,7 +814,7 @@ namespace golddrive
                 else
                 {
                     //cmd = "if not exists .ssh mkdir .ssh && ";
-                    cmd =  $"echo {pubkey.Trim()} >> .ssh\\authorized_keys && ";
+                    cmd = $"echo {pubkey.Trim()} >> .ssh\\authorized_keys && ";
                     cmd += $"icacls .ssh\\authorized_keys /inheritance:r && ";
                     cmd += $"icacls .ssh\\authorized_keys /grant {drive.User}:f &&";
                     cmd += $"icacls .ssh\\authorized_keys /grant SYSTEM:f";
@@ -888,13 +886,13 @@ namespace golddrive
                 string dotssh = $@"{drive.UserProfile}\.ssh";
                 if (!Directory.Exists(dotssh))
                     Directory.CreateDirectory(dotssh);
-                if(!File.Exists(drive.AppKey))
+                if (!File.Exists(drive.AppKey))
                 {
-                    ReturnBox r = RunLocal($@"""{AppPath}\ssh-keygen.exe""", $@"-m PEM -t rsa -N """" -f ""{drive.AppKey}""");                    
+                    ReturnBox r = RunLocal($@"""{AppPath}\ssh-keygen.exe""", $@"-m PEM -t rsa -N """" -f ""{drive.AppKey}""");
                 }
                 if (File.Exists(drive.AppPubKey))
                 {
-                    pubkey = File.ReadAllText(drive.AppPubKey).Trim();                
+                    pubkey = File.ReadAllText(drive.AppPubKey).Trim();
                 }
                 else
                 {
@@ -960,16 +958,16 @@ namespace golddrive
 
             ServiceController[] services = ServiceController.GetServices();
             var service = services.FirstOrDefault(s => s.ServiceName == "WinFsp.Launcher");
-            if (service != null) 
+            if (service != null)
                 return service.Status == ServiceControllerStatus.Running;
             return false;
         }
-        
+
         private bool IsCliInstalled()
         {
-            return File.Exists( GetGolddriveCliPath() );
+            return File.Exists(GetGolddriveCliPath());
         }
-        
+
         private string GetGolddriveCliPath()
         {
             try
@@ -1010,11 +1008,11 @@ namespace golddrive
             }
             catch (Exception ex)
             {
-                
+
             }
             return "n/a";
         }
-        
+
         public ReturnBox Mount(Drive drive)
         {
             ReturnBox r = RunLocal("net.exe", $"use { drive.Name } { drive.Remote } /persistent:yes");
@@ -1032,7 +1030,7 @@ namespace golddrive
             UpdateDrives(settings);
             r.MountStatus = MountStatus.OK;
             r.DriveStatus = DriveStatus.CONNECTED;
-            r.Drive = drive;            
+            r.Drive = drive;
             return r;
         }
 

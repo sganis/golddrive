@@ -1,8 +1,8 @@
 ﻿
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
@@ -144,7 +144,7 @@ namespace golddrive.Tests
             Assert.AreEqual(_mountService.CheckDriveStatus(c).DriveStatus, DriveStatus.NOT_SUPPORTED);
             Assert.AreEqual(_mountService.CheckDriveStatus(w).DriveStatus, DriveStatus.IN_USE);
             var status = _mountService.CheckDriveStatus(_drive).DriveStatus;
-            Assert.IsTrue(status==DriveStatus.DISCONNECTED);
+            Assert.IsTrue(status == DriveStatus.DISCONNECTED);
             Mount();
             Assert.AreEqual(_mountService.CheckDriveStatus(_drive).DriveStatus, DriveStatus.CONNECTED);
             Drive t = new Drive { Letter = "T", MountPoint = $"{_user}@{_host}" };
@@ -216,7 +216,7 @@ namespace golddrive.Tests
             Assert.IsFalse(File.Exists(path));
             File.Copy(tempfile1, path);
             Assert.IsTrue(File.Exists(path));
-            if(File.Exists(tempfile2))
+            if (File.Exists(tempfile2))
                 File.Delete(tempfile2);
             File.Copy(path, tempfile2);
             var hash2 = Md5(tempfile2);
@@ -298,10 +298,10 @@ namespace golddrive.Tests
         void DeleteFile(int id)
         {
             var path = $"X:\\tmp\\file_{id}.txt";
-            if(File.Exists(path))
+            if (File.Exists(path))
                 File.Delete(path);
             Assert.IsTrue(!File.Exists(path));
-            
+
         }
         void CreateDir(int id)
         {
@@ -314,7 +314,7 @@ namespace golddrive.Tests
         void DeleteDir(int id)
         {
             var path = $"X:\\tmp\\folder_{id}";
-            if(Directory.Exists(path))
+            if (Directory.Exists(path))
                 Directory.Delete(path);
             Assert.IsTrue(!Directory.Exists(path));
         }
