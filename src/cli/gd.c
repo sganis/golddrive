@@ -502,9 +502,12 @@ intptr_t gd_open(const char* path, int flags, unsigned int mode)
 	sh->mode = mode;
 	sh->dir = 0;
 
+	
+	// check if file has hard links
 	if (sh->flags == LIBSSH2_FXF_WRITE || sh->flags == (LIBSSH2_FXF_READ | LIBSSH2_FXF_WRITE)) {
-		//gd_check_hlink(path);
+		gd_check_hlink(path);
 	}
+
 	gd_lock();
 	do {
 		handle = libssh2_sftp_open_ex(g_ssh->sftp, sh->path, (int)strlen(sh->path),
