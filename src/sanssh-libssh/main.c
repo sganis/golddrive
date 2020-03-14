@@ -188,6 +188,17 @@ int show_remote_processes(ssh_session session)
 	return SSH_OK;
 }
 
+sftp_attributes san_stat(ssh_session session, sftp_session sftp, char * path)
+{
+	sftp_attributes attrs = sftp_lstat(sftp, path);
+	if (!attrs) {
+		fprintf(stderr, "Can't rename file: %s\n",
+			ssh_get_error(session));
+		return SSH_ERROR;
+	}
+	return attrs;
+}
+
 int san_readdir(ssh_session session, sftp_session sftp)
 {
 	sftp_dir dir;
@@ -473,9 +484,9 @@ int main(int argc, char *argv[])
 
 	printf("username   : %s\n", username);
 	printf("private key: %s\n", pkeypath);
+	printf("connecting...\n");
 
-	ssh_session ssh;
-	ssh = ssh_new();
+	ssh_session ssh = ssh_new();
 	if (ssh == NULL)
 		exit(-1);
 
@@ -483,8 +494,8 @@ int main(int argc, char *argv[])
 	ssh_options_set(ssh, SSH_OPTIONS_USER, username);
 	ssh_options_set(ssh, SSH_OPTIONS_PORT, &port);
 	ssh_options_set(ssh, SSH_OPTIONS_COMPRESSION, "no");
-	//ssh_options_set(ssh, SSH_OPTIONS_STRICTHOSTKEYCHECK, 0);
-	//ssh_options_set(ssh, SSH_OPTIONS_KNOWNHOSTS, "/dev/null");
+	ssh_options_set(ssh, SSH_OPTIONS_STRICTHOSTKEYCHECK, 0);
+	ssh_options_set(ssh, SSH_OPTIONS_KNOWNHOSTS, "/dev/null");
 
 
 	WSADATA wsadata;
@@ -532,10 +543,14 @@ int main(int argc, char *argv[])
 	}
 	rc = sftp_init(sftp);
 	if (rc != SSH_OK) {
-		fprintf(stderr, "Error initializing SFTP session: %s.\n", sftp_get_error(sftp));
+		fprintf(stderr, "Error initializing SFTP session: %d.\n", sftp_get_error(sftp));
 		sftp_free(sftp);
 		return rc;
 	}
+
+	printf("testing...\n");
+
+	sftp_attributes attrs = san_stat(ssh, sftp, "/tmp/test.link");
 
 	// mkdir
 	//san_mkdir(ssh, sftp);
@@ -560,8 +575,11 @@ int main(int argc, char *argv[])
 	//show_remote_processes(ssh);
 
 shutdown:
+	printf("shuting down...\n");
+
 	ssh_disconnect(ssh);
 	ssh_free(ssh);
-	//WSACleanup();
+	WSACleanup();
+	
 	return 0;
 }

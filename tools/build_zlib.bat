@@ -1,8 +1,10 @@
 :: Download http://zlib.net/zlib1211.zip
-mkdir zlib_build && cd zlib_build
+mkdir build && cd build
+
+set "MSVC=Visual Studio 16 2019"
 
 ECHO "Building with platform %MSVC%"
-cmake ..\zlib-1.2.11                             ^
+cmake ..                                         ^
     -G"%MSVC%"                                   ^
     -DCMAKE_INSTALL_PREFIX="C:\zlib"             ^
     -DCMAKE_BUILD_TYPE=Release                   ^

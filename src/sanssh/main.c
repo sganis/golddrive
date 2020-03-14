@@ -10,11 +10,16 @@
  */
 #include <stdio.h>
 #include <assert.h>
+
+#define USE_LIBSSH
+
 #include "sanssh.h"
 
 
 int main(int argc, char *argv[])
 {
+	int start = time(NULL);
+
 	char *hostname = "";
 	int port = 22;
 	char *username = "";
@@ -26,7 +31,7 @@ int main(int argc, char *argv[])
 	char *errmsg;
 
 	if (argc == 2 && strcmp(argv[1],"-V") == 0) {
-		printf("sanssh 1.0.0\n");
+		printf("sanssh 1.0\n");
 		return 0;
 	}
 	
@@ -42,14 +47,11 @@ int main(int argc, char *argv[])
 	localfile = argv[5];
 
 	// get public key
-	if (argc > 6) {
-		strcpy_s(pkey, MAX_PATH, argv[6]);
-	} else {
-		char profile[BUFFER_SIZE];
-		ExpandEnvironmentStringsA("%USERPROFILE%", profile, BUFFER_SIZE);
-		strcpy_s(pkey, MAX_PATH, profile);
-		strcat_s(pkey, MAX_PATH, "\\.ssh\\id_rsa");
-	}
+	char profile[BUFFER_SIZE];
+	ExpandEnvironmentStringsA("%USERPROFILE%", profile, BUFFER_SIZE);
+	strcpy_s(pkey, MAX_PATH, profile);
+	strcat_s(pkey, MAX_PATH, "\\.ssh\\id_rsa");
+	
 	if (!file_exists(pkey)) {
 		printf("error: cannot read private key: %s\n", pkey);
 		exit(1);
@@ -60,39 +62,40 @@ int main(int argc, char *argv[])
 	printf("private key: %s\n", pkey);
 	
 	char error[ERROR_LEN];
+	printf("connecting...\n");
 	SANSSH* sanssh = san_init(hostname, port, username, pkey, error);
 	if (!sanssh) {
 		fprintf(stderr, "Error initializing sanssh2: %s\n", error);
 		return 1;
 	}
-	// read in blocking mode
-	san_read(sanssh, remotefile, localfile);
-	
-	// read in non-blocking mode
-	//san_read_async(sanssh, remotefile, localfile);
+	printf("starting test...\n");
 
 	
-	//const char* path = "/tmp/sftp_folder";
+	const char* path = "/tmp/sftp_folder";
 
 	/* mkdir */
-	//san_mkdir(sftp, "/tmp/sftp_folder");
+	san_mkdir(sanssh, "/tmp/sftp_folder");
 
-	/* rmdir */
-	//san_rmdir(sftp, "/tmp/sftp_folder");
 
-	//LIBSSH2_SFTP_ATTRIBUTES attrs;
+	
 	/* stat */
-	//san_stat(sftp, path, &attrs);
-	//print_stat(path, &attrs);
+	SANSSH_ATTRIBUTES attrs;
+	san_stat(sanssh, path, &attrs);
+	print_stat(path, &attrs);
+
 
 	/* lstat */
 	//san_lstat(sftp_channel, path, &attrs);
 	//print_stat(path, &attrs);
 
 	/* statfvs */
-	//LIBSSH2_SFTP_STATVFS st;
-	//san_statvfs(sftp, path, &st);
-	//print_statvfs(path, &st);
+	SANSSH_STATVFS st;
+	san_statvfs(sanssh, path, &st);
+	print_statvfs(path, &st);
+
+	/* rmdir */
+	san_rmdir(sanssh, "/tmp/sftp_folder");
+
 
 	//char target[MAX_PATH];
 	//san_realpath(sftp, path, target);
@@ -100,7 +103,19 @@ int main(int argc, char *argv[])
 	//printf("realpath: %s\n", target);
 
 	/* readdir */
-	//san_readdir(sftp, "/tmp");
+	san_readdir(sanssh, "/tmp");
+
+
+
+	// read in blocking mode
+	san_write(sanssh, remotefile, localfile);
+
+
+	// read in blocking mode
+	san_read(sanssh, remotefile, localfile);
+
+	// read in non-blocking mode
+	san_read_async(sanssh, remotefile, localfile);
 
 
 	/* run command */
@@ -112,12 +127,12 @@ int main(int argc, char *argv[])
 	//printf("err: %s\n", eer);
 	//printf("rc : %d\n", rc);
 	//
-	//int start = time(NULL);
-
+	
 	//for(int i=0; i<100; i++)
 	//	run_command(sock, session, cmd, out, eer);
 	//
-	//printf("duration: %d secs.\n", time(NULL) - start);
+	
+	printf("duration: %d secs.\n", time(NULL) - start);
 
 	/* close */
 	san_finalize(sanssh);

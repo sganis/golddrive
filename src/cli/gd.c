@@ -742,6 +742,7 @@ gd_dir_t* gd_opendir(const char* path)
 	LIBSSH2_SFTP_HANDLE* handle;
 	gd_dir_t* dirp;
 	gd_handle_t* sh = malloc(sizeof(gd_handle_t));
+	assert(sh);
 	unsigned int mode = 0;
 	log_debug("OPEN gd_handle_t: %zu, %s\n", (size_t)sh, path);
 
