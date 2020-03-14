@@ -1,7 +1,5 @@
 #pragma once
-#include <libssh2_sftp.h>
-#include <winfsp/winfsp.h>
-#include <fuse.h>
+#include "config.h"
 #include "jsmn.h"
 
 gdssh_t *gd_init_ssh(const char *host, int port, const char *user, const char *pkey);

@@ -1,10 +1,6 @@
 #pragma once
-#include <libssh2.h>
-#include <libssh2_sftp.h>
-#include <winfsp/winfsp.h>
-#include <fuse.h>
-#include <fcntl.h>
-#include "global.h"
+#include "config.h"
+
 
 // fuse3 fs operations
 void *f_init(struct fuse_conn_info *conn, struct fuse_config *conf);

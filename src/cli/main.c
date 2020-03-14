@@ -1,16 +1,7 @@
-#include <errno.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <direct.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-#include <fuse.h>
-#include <fuse_opt.h>
 #include "util.h"
 #include "fs.h"
 #include "gd.h"
-
+#include <direct.h>
 #include <Shlwapi.h> /* PathRemoveFileSpecA */
 #pragma comment(lib, "shlwapi.lib")
 
@@ -50,10 +41,10 @@ static struct fuse_operations fs_ops = {
 	.write = f_write,
 	.statfs = f_statfs,
 	.create = f_create,
-	.setxattr = f_setxattr,
-	.getxattr = f_getxattr,
-	.listxattr = f_listxattr,
-	.removexattr = f_removexattr,
+	//.setxattr = f_setxattr,
+	//.getxattr = f_getxattr,
+	//.listxattr = f_listxattr,
+	//.removexattr = f_removexattr,
 #if defined(FSP_FUSE_USE_STAT_EX)
 	//.chflags = f_chflags,
 #endif
