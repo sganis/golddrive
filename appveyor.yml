@@ -23,6 +23,7 @@ after_test:
       net use Z: \\golddrive\support@localhost
       Z:
       cd Z:\tmp
+      dir
       C:\projects\golddrive\tools\testfs.bat
 artifacts:
   - path: src\build\Release\golddrive-2.*.msi

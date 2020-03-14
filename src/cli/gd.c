@@ -1257,17 +1257,48 @@ int get_ssh_error(gdssh_t* ssh, const char* path)
 
 int map_error(int rc)
 {
+	if (rc == LIBSSH2_FX_OK || rc == LIBSSH2_FX_EOF)
+		return rc;
+
+	if (rc < 0 || rc >= 22)
+		return EIO;
+
 	switch (rc) {
-	case LIBSSH2_FX_OK:                return 0;
-	case LIBSSH2_FX_NO_SUCH_FILE:      return ENOENT;
-	case LIBSSH2_FX_PERMISSION_DENIED: return EACCES;
-	case LIBSSH2_FX_FAILURE:           return EPERM;
-	case LIBSSH2_FX_BAD_MESSAGE:       return EBADMSG;
-	case LIBSSH2_FX_NO_CONNECTION:     return ENOTCONN;
-	case LIBSSH2_FX_CONNECTION_LOST:   return ECONNABORTED;
-	case LIBSSH2_FX_OP_UNSUPPORTED:    return EOPNOTSUPP;
-	default:                           return EIO;
+	case LIBSSH2_FX_NO_SUCH_FILE:
+	case LIBSSH2_FX_NO_SUCH_PATH:
+	case LIBSSH2_FX_INVALID_FILENAME:
+	case LIBSSH2_FX_NOT_A_DIRECTORY:
+	case LIBSSH2_FX_UNKNOWN_PRINCIPAL:
+	case LIBSSH2_FX_NO_MEDIA:
+		return ENOENT;
+	case LIBSSH2_FX_PERMISSION_DENIED:
+	case LIBSSH2_FX_WRITE_PROTECT:
+	case LIBSSH2_FX_LOCK_CONFLICT:
+	case LIBSSH2_FX_LINK_LOOP:
+		return EACCES;
+	case LIBSSH2_FX_QUOTA_EXCEEDED:
+	case LIBSSH2_FX_NO_SPACE_ON_FILESYSTEM:
+		return ENOMEM;
+	case LIBSSH2_FX_FAILURE:
+		return EPERM;
+	case LIBSSH2_FX_FILE_ALREADY_EXISTS:
+		return EEXIST;
+	case LIBSSH2_FX_DIR_NOT_EMPTY:
+		return ENOTEMPTY;
+	case LIBSSH2_FX_BAD_MESSAGE:
+		return EBADMSG;
+	case LIBSSH2_FX_NO_CONNECTION:
+		return ENOTCONN;
+	case LIBSSH2_FX_CONNECTION_LOST:
+		return ECONNABORTED;
+	case LIBSSH2_FX_OP_UNSUPPORTED:
+		return EOPNOTSUPP;
+	case LIBSSH2_FX_INVALID_HANDLE:
+		return EBADF;
+	default:
+		return EIO;
 	}
+
 }
 
 //	if (rc == LIBSSH2_FX_OK || rc == LIBSSH2_FX_EOF)
