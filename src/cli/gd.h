@@ -39,11 +39,15 @@ int jsoneq(const char* json, jsmntok_t* tok, const char* s);
 int load_json(fs_config* fs);
 int get_ssh_error(gdssh_t* ssh, const char* path);
 int map_error(int rc);
+#ifdef USE_LIBSSH
+
+#else
 void copy_attributes(struct fuse_stat* stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs);
+void print_permissions(const char* path, LIBSSH2_SFTP_ATTRIBUTES* attrs);
+void print_stat(const char* path, LIBSSH2_SFTP_ATTRIBUTES* attrs);
+void print_statvfs(const char* path, LIBSSH2_SFTP_STATVFS* st);
+#endif
 void mode_human(unsigned long mode, char* human);
-void print_permissions(const char* path, LIBSSH2_SFTP_ATTRIBUTES *attrs);
-void print_stat(const char* path, LIBSSH2_SFTP_ATTRIBUTES *attrs);
-void print_statvfs(const char* path, LIBSSH2_SFTP_STATVFS *st);
 void get_filetype(unsigned long perm, char* filetype);
 int run_command(const char *cmd, char *out, char *err);
 int waitsocket(gdssh_t* sanssh);
