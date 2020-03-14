@@ -38,7 +38,7 @@ extern char*		g_logfile;
 #define WARN		1
 #define INFO		2
 #define DEBUG		3
-#define LOGLEVEL	ERROR
+#define LOGLEVEL	INFO
 
 #define log_message(level, format, ...) {								\
 	int thread = GetCurrentThreadId();									\
@@ -244,5 +244,15 @@ enum _FILE_TYPE {
 extern gdssh_t *g_ssh;
 extern SRWLOCK g_ssh_lock;
 
-inline void gd_lock() { AcquireSRWLockExclusive(&g_ssh_lock); }
-inline void gd_unlock() { ReleaseSRWLockExclusive(&g_ssh_lock); }
+inline void gd_lock() 
+{ 
+	//printf("locking...");
+	AcquireSRWLockExclusive(&g_ssh_lock); 
+	//printf("locking done\n");
+}
+inline void gd_unlock() 
+{
+	//printf("unlocking...");
+	ReleaseSRWLockExclusive(&g_ssh_lock); 
+	//printf("unlocking done\n");
+}

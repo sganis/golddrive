@@ -98,10 +98,9 @@ gdssh_t * gd_init_ssh(const char* hostname, int port, const char* username, cons
 		return 0;
 	}
 
-	/* non-blocking */
-	libssh2_session_set_blocking(ssh, g_fs.noblock);
-	/* blocking */
-	//libssh2_session_set_blocking(ssh, 1);
+	/* blocking: 1 block, 0 non-blocking, g_fs.noblock ? 0 : 1 */
+	libssh2_session_set_blocking(ssh, g_fs.noblock ^ 1);
+
 
 	/* ... start it up. This will trade welcome banners, exchange keys,
 	* and setup crypto, compression, and MAC layers	*/
@@ -612,7 +611,9 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	size_t chunk = size;
 	const char* pos = buf;
 
-
+	// 0 if non-bloking, 1 if blocking
+	//int block = libssh2_session_get_blocking(g_ssh->ssh);
+	//assert(block == (g_fs.noblock ^ 1) );
 
 	for(;;) {
 		//gd_lock();
