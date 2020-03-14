@@ -276,7 +276,7 @@ int gd_readlink(const char* path, char* buf, size_t size)
 	log_debug("rc=%d, %s\n", rc, path);
 	if (rc < 0) {
 		free(target);
-		if (strcmp(path, g_fs.root) != 0)
+		//if (strcmp(path, g_fs.root) != 0)
 			gd_error(path);
 		return error();
 	}
