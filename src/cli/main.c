@@ -17,20 +17,14 @@ char*		g_logfile;
 static struct fuse_operations fs_ops = {
 	.init = f_init,
 	.getattr = f_getattr,
-	//.access = f_access,
 	.opendir = f_opendir,
 	.readdir = f_readdir,
 	.releasedir = f_releasedir,
 	.readlink = f_readlink,
-	.mknod = f_mknod,
 	.mkdir = f_mkdir,
-	//.symlink = f_symlink,
 	.unlink = f_unlink,
 	.rmdir = f_rmdir,
 	.rename = f_rename,
-	//.link = f_link,
-	.chmod = f_chmod,
-	.chown = f_chown,
 	.truncate = f_truncate,
 	.utimens = f_utimens,
 	.open = f_open,
@@ -41,6 +35,12 @@ static struct fuse_operations fs_ops = {
 	.write = f_write,
 	.statfs = f_statfs,
 	.create = f_create,
+	//.mknod = f_mknod,
+	//.access = f_access,
+	//.symlink = f_symlink,
+	//.link = f_link,
+	//.chmod = f_chmod,
+	//.chown = f_chown,
 	//.setxattr = f_setxattr,
 	//.getxattr = f_getxattr,
 	//.listxattr = f_listxattr,
@@ -383,7 +383,7 @@ int main(int argc, char *argv[])
 		return 1;
 
 	// get uid
-	char cmd[100], out[100], err[100];
+	char cmd[1000], out[1000], err[1000];
 	
 	snprintf(cmd,sizeof(cmd), "id -u %s\n", g_fs.user);
 	rc = run_command(cmd, out, err);

@@ -229,7 +229,7 @@
   <PropertyGroup>
     <PostBuildEvent>xcopy /y $(ProjectDir)golddrive.ico $(ProjectDir)$(OutDir)
 xcopy /y $(ProjectDir)..\..\tools\openssh\* $(ProjectDir)$(OutDir)
-copy /y $(ProjectDir)..\..\src\lib\libssh\lib\ssh.dll $(ProjectDir)$(OutDir)
+copy /y $(ProjectDir)..\lib\libssh\lib\ssh.dll $(ProjectDir)$(OutDir)
 </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

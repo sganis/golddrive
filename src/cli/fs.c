@@ -171,11 +171,6 @@ int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t of
 		if (0 == (de = gd_readdir(dirp)))
 			break;
 		
-		/* skip hidden files */
-		//if (!g_fs.hidden && de->hidden) {
-		//	//printf("skipping hidden file: %s\n", fname);
-		//	continue;
-		//}
 		if (0 != filler(buf, de->d_name, &de->d_stat, 0, FUSE_FILL_DIR_PLUS))
 			return -ENOMEM;
 	}
@@ -234,47 +229,47 @@ int f_flush(const char* path, struct fuse_file_info* fi)
 	return -1 != gd_flush(fd) ? 0 : -errno;
 }
 
-int f_chmod(const char* path, fuse_mode_t mode, struct fuse_file_info* fi)
-{
-	realpath(path);
-	//char cmd[1000], out[1000], err[1000];
-	//sprintf_s(cmd, sizeof cmd, "chmod 777 \"%s\"\n", path);
-	//run_command(cmd, out, err);
-	return -1 != gd_chmod(path, mode) ? 0 : -errno;
-}
-
-int f_chown(const char* path, fuse_uid_t uid, fuse_gid_t gid, struct fuse_file_info* fi)
-{
-	realpath(path);
-	return -1 != gd_chown(path, uid, gid) ? 0 : -errno;
-}
-int f_mknod(const char* path, fuse_mode_t mode, fuse_dev_t dev)
-{
-	return 0;
-}
-
-int f_setxattr(const char* path, const char* name, const char* value, size_t size, int flags)
-{
-	realpath(path);
-	return -1 != gd_setxattr(path, name, value, size, flags) ? 0 : -errno;
-}
-
-int f_getxattr(const char* path, const char* name, char* value, size_t size)
-{
-	realpath(path);
-	int nb;
-	return -1 != (nb = gd_getxattr(path, name, value, size)) ? nb : -errno;
-}
-
-int f_listxattr(const char* path, char* namebuf, size_t size)
-{
-	realpath(path);
-	int nb;
-	return -1 != (nb = gd_listxattr(path, namebuf, size)) ? nb : -errno;
-}
-
-int f_removexattr(const char* path, const char* name)
-{
-	realpath(path);
-	return -1 != gd_removexattr(path, name) ? 0 : -errno;
-}
+//int f_chmod(const char* path, fuse_mode_t mode, struct fuse_file_info* fi)
+//{
+//	realpath(path);
+//	//char cmd[1000], out[1000], err[1000];
+//	//sprintf_s(cmd, sizeof cmd, "chmod 777 \"%s\"\n", path);
+//	//run_command(cmd, out, err);
+//	return -1 != gd_chmod(path, mode) ? 0 : -errno;
+//}
+//
+//int f_chown(const char* path, fuse_uid_t uid, fuse_gid_t gid, struct fuse_file_info* fi)
+//{
+//	realpath(path);
+//	return -1 != gd_chown(path, uid, gid) ? 0 : -errno;
+//}
+//int f_mknod(const char* path, fuse_mode_t mode, fuse_dev_t dev)
+//{
+//	return 0;
+//}
+//
+//int f_setxattr(const char* path, const char* name, const char* value, size_t size, int flags)
+//{
+//	realpath(path);
+//	return -1 != gd_setxattr(path, name, value, size, flags) ? 0 : -errno;
+//}
+//
+//int f_getxattr(const char* path, const char* name, char* value, size_t size)
+//{
+//	realpath(path);
+//	int nb;
+//	return -1 != (nb = gd_getxattr(path, name, value, size)) ? nb : -errno;
+//}
+//
+//int f_listxattr(const char* path, char* namebuf, size_t size)
+//{
+//	realpath(path);
+//	int nb;
+//	return -1 != (nb = gd_listxattr(path, namebuf, size)) ? nb : -errno;
+//}
+//
+//int f_removexattr(const char* path, const char* name)
+//{
+//	realpath(path);
+//	return -1 != gd_removexattr(path, name) ? 0 : -errno;
+//}

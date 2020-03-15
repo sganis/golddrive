@@ -3,12 +3,11 @@
 // windows file attributes
 //#define FSP_FUSE_USE_STAT_EX
 
+#define USE_LIBSSH
+
 
 #include <stdio.h>
 #include <fcntl.h>
-
-//#define USE_LIBSSH
-
 #ifdef USE_LIBSSH
 #include <libssh/libssh.h>
 #include <libssh/sftp.h>
@@ -202,8 +201,19 @@ static const char *sftp_errors[] = {
 		n = full ## n;					\
 	}
 
+#ifdef USE_LIBSSH
 #define gd_error(path) {															\
-    rc = get_ssh_error(g_ssh, path);												\
+    rc = get_ssh_error(g_ssh);												\
+	/* skip errors 2, 3, 4 */ \
+	if (2 < rc && rc > 4) { \
+		const char* msg = sftp_errors[rc];				\
+		gd_log("%zd: %d :ERROR: %s: %d: [rc=%d: %s], path: %s\n",					\
+			time_mu(), GetCurrentThreadId(), __func__, __LINE__, rc, msg, path);	\
+	} \
+}
+#else
+#define gd_error(path) {															\
+    rc = get_ssh_error(g_ssh);												\
 	/* skip errors 2, 3, 4 */ \
 	if (1 < rc && rc > 4) { \
 		const char* msg = rc < 0 ? ssh_errors[-rc] : sftp_errors[rc];				\
@@ -211,7 +221,7 @@ static const char *sftp_errors[] = {
 			time_mu(), GetCurrentThreadId(), __func__, __LINE__, rc, msg, path);	\
 	} \
 }
-
+#endif
 /* count the number of threads in this app */
 /* n is the -o ThreadCount=n arg, c is number of cores*/
 int gd_threads(int n, int c);
@@ -231,9 +241,11 @@ typedef struct gdssh_t {
 
 typedef struct gdhandle_t {
 #ifdef USE_LIBSSH
-	sftp_file* handle;				/* key, remote file handler				*/
+	sftp_file file_handle;				/* key, remote file handler				*/
+	sftp_dir dir_handle;				/* key, remote dir handler				*/
 #else
-	LIBSSH2_SFTP_HANDLE *handle;	/* key, remote file handler				*/
+	LIBSSH2_SFTP_HANDLE* file_handle;	/* key, remote file handler				*/
+	LIBSSH2_SFTP_HANDLE* dir_handle;	/* key, remote file handler				*/
 #endif
 	int dir;						/* is directory							*/
 	int flags;						/* open flags							*/
@@ -274,3 +286,22 @@ inline void gd_unlock()
 	ReleaseSRWLockExclusive(&g_ssh_lock); 
 	//printf("unlocking done\n");
 }
+
+/* file flags */
+#define GD_FXF_READ 0x01
+#define GD_FXF_WRITE 0x02
+#define GD_FXF_APPEND 0x04
+#define GD_FXF_CREAT 0x08
+#define GD_FXF_TRUNC 0x10
+#define GD_FXF_EXCL 0x20
+#define GD_FXF_TEXT 0x40
+
+/* file type flags */
+#define GD_S_IFMT   00170000
+#define GD_S_IFSOCK 0140000
+#define GD_S_IFLNK  0120000
+#define GD_S_IFREG  0100000
+#define GD_S_IFBLK  0060000
+#define GD_S_IFDIR  0040000
+#define GD_S_IFCHR  0020000
+#define GD_S_IFIFO  0010000
