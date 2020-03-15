@@ -26,8 +26,6 @@
 #define FSP_FUSE_UF_SYSTEM              0x00000080
 #define FSP_FUSE_UF_ARCHIVE             0x00000800
 
-//#define BUFFER_SIZE						65535
-#define BUFFER_SIZE						131070
 #define ERROR_LEN MAXERRORLENGTH
 #define O_ACCMODE						0x0003
 #define PATH_MAX                        1024
@@ -90,6 +88,7 @@ typedef struct fs_config {
 	char *mountpoint;
 	char letter;
 	int port;
+	unsigned buffer;
 	unsigned local_uid;
 	unsigned remote_uid;
 } fs_config;

@@ -11,7 +11,7 @@ set DIR=%DIR:~0,-1%
 echo current dir:
 cd
 
-echo > test
+%DIR%\fsx.exe -N 5000 test xxxxxx
 %DIR%\fsx.exe -N 5000 -L test xxxxxx
 del test test.*
 if !ERRORLEVEL! neq 0 goto fail

@@ -808,7 +808,7 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	//gd_unlock();
 	
 	do {
-		bsize = chunk < BUFFER_SIZE ? chunk : BUFFER_SIZE;
+		bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
 		rc = (int)sftp_read(handle, pos, bsize);
 		if (rc > 0) {
 			pos += rc;
@@ -899,7 +899,7 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	//gd_unlock();
 	
 	do {
-		bsize = chunk < BUFFER_SIZE ? chunk : BUFFER_SIZE;
+		bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
 		rc = (int)sftp_write(handle, pos, bsize);
 		if (rc != bsize) {
 			int eof = sftp_get_error(g_ssh->sftp) == SSH_FX_EOF;

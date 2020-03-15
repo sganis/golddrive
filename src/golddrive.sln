@@ -13,8 +13,6 @@ Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "msi", "msi\msi.wixproj", "{
 EndProject
 Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "bundle", "bundle\bundle.wixproj", "{6004D72E-B0B7-46F3-A1FB-954B18A476C2}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sanssh-libssh", "sanssh-libssh\sanssh-libssh.vcxproj", "{A372215A-26C4-4725-B758-010711DAAD23}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -143,28 +141,6 @@ Global
 		{6004D72E-B0B7-46F3-A1FB-954B18A476C2}.RelWithDebInfo|x64.Build.0 = Release|x86
 		{6004D72E-B0B7-46F3-A1FB-954B18A476C2}.RelWithDebInfo|x86.ActiveCfg = Release|x86
 		{6004D72E-B0B7-46F3-A1FB-954B18A476C2}.RelWithDebInfo|x86.Build.0 = Release|x86
-		{A372215A-26C4-4725-B758-010711DAAD23}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{A372215A-26C4-4725-B758-010711DAAD23}.Debug|x64.ActiveCfg = Debug|x64
-		{A372215A-26C4-4725-B758-010711DAAD23}.Debug|x64.Build.0 = Debug|x64
-		{A372215A-26C4-4725-B758-010711DAAD23}.Debug|x86.ActiveCfg = Debug|Win32
-		{A372215A-26C4-4725-B758-010711DAAD23}.Debug|x86.Build.0 = Debug|Win32
-		{A372215A-26C4-4725-B758-010711DAAD23}.MinSizeRel|Any CPU.ActiveCfg = Release|x64
-		{A372215A-26C4-4725-B758-010711DAAD23}.MinSizeRel|Any CPU.Build.0 = Release|x64
-		{A372215A-26C4-4725-B758-010711DAAD23}.MinSizeRel|x64.ActiveCfg = Release|x64
-		{A372215A-26C4-4725-B758-010711DAAD23}.MinSizeRel|x64.Build.0 = Release|x64
-		{A372215A-26C4-4725-B758-010711DAAD23}.MinSizeRel|x86.ActiveCfg = Release|Win32
-		{A372215A-26C4-4725-B758-010711DAAD23}.MinSizeRel|x86.Build.0 = Release|Win32
-		{A372215A-26C4-4725-B758-010711DAAD23}.Release|Any CPU.ActiveCfg = Release|Win32
-		{A372215A-26C4-4725-B758-010711DAAD23}.Release|x64.ActiveCfg = Release|x64
-		{A372215A-26C4-4725-B758-010711DAAD23}.Release|x64.Build.0 = Release|x64
-		{A372215A-26C4-4725-B758-010711DAAD23}.Release|x86.ActiveCfg = Release|Win32
-		{A372215A-26C4-4725-B758-010711DAAD23}.Release|x86.Build.0 = Release|Win32
-		{A372215A-26C4-4725-B758-010711DAAD23}.RelWithDebInfo|Any CPU.ActiveCfg = Release|x64
-		{A372215A-26C4-4725-B758-010711DAAD23}.RelWithDebInfo|Any CPU.Build.0 = Release|x64
-		{A372215A-26C4-4725-B758-010711DAAD23}.RelWithDebInfo|x64.ActiveCfg = Release|x64
-		{A372215A-26C4-4725-B758-010711DAAD23}.RelWithDebInfo|x64.Build.0 = Release|x64
-		{A372215A-26C4-4725-B758-010711DAAD23}.RelWithDebInfo|x86.ActiveCfg = Release|Win32
-		{A372215A-26C4-4725-B758-010711DAAD23}.RelWithDebInfo|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

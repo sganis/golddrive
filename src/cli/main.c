@@ -72,6 +72,7 @@ static struct fuse_opt fs_opts[] = {
 	fs_OPT("-k=%s",             pkey, 0),
 	fs_OPT("noblock",           noblock, 1),
 	fs_OPT("nonoblock",         noblock, 0),
+	fs_OPT("buffer=%u",         buffer, 0),
 
 	FUSE_OPT_KEY("--version",      KEY_VERSION),
 	FUSE_OPT_KEY("--help",         KEY_HELP),
@@ -110,7 +111,7 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 			"    -u USER, -o user=USER      user to connect to ssh server, default: current user\n"
 			"    -k PKEY, -o pkey=PKEY      private key, default: %%USERPROFILE%%\\.ssh\\id_rsa-user-golddrive\n"
 			"    -p PORT, -o port=PORT      server port, default: 22\n"
-			"    -o noblock                 ssh non-blocking mode, default: blocking\n"
+			"    -o buffer                  read/write block size in bytes, default: 65535\n"
 			"\n"
 			"WinFsp-FUSE options:\n"
 			"    -s                         disable multi-threaded operation\n"
@@ -307,6 +308,11 @@ int main(int argc, char *argv[])
 	int rc;
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 	memset(&g_fs, 0, sizeof(g_fs));
+	
+	// defaults
+	g_fs.port = 22;
+	g_fs.buffer = 65535;
+
 
 	rc = fuse_opt_parse(&args, &g_fs, fs_opts, fs_opt_proc);
 	if (rc) {
@@ -348,9 +354,10 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "error: cannot read private key: %s\n", g_fs.pkey);
 		return 1;
 	}
-	if (!g_fs.port) {
-		g_fs.port = 22;
-	}
+	//if (!g_fs.port) {
+	//	g_fs.port = 22;
+	//}
+	
 
 	//if (!g_fs.host && g_fs.hostcount > 0) {
 	//	// pick random host
@@ -367,7 +374,7 @@ int main(int argc, char *argv[])
 	gd_log("port    = %d\n", g_fs.port);
 	gd_log("root    = %s\n", g_fs.root);
 	gd_log("pkey    = %s\n", g_fs.pkey);
-	gd_log("noblock = %d\n", g_fs.noblock);
+	gd_log("buffer  = %u\n", g_fs.buffer);
 	//gd_log("intptr_t= %ld\n", sizeof(intptr_t));
 	//gd_log("long    = %ld\n", sizeof(long));
 
