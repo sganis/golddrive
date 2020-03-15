@@ -110,15 +110,23 @@
                 <File Name="NLog.dll" KeyPath="yes" />
             </Component>
             <Component Id="C.NLog.config"><File Name="NLog.config" KeyPath="yes" /></Component>            
-            <Component Id="C.Renci.SshNet.dll"><File Name="Renci.SshNet.dll" KeyPath="yes" /></Component>            
-            <Component Id="C.System.Windows.Interactivity.dll"><File Name="System.Windows.Interactivity.dll" KeyPath="yes" /></Component>            
+            <Component Id="C.Renci.SshNet.dll"><File Name="Renci.SshNet.dll" KeyPath="yes" /></Component>
+          <Component Id="C.System.Windows.Interactivity.dll">
+            <File Name="System.Windows.Interactivity.dll" KeyPath="yes" />
+          </Component>
+          <Component Id="C.ssh.dll">
+            <File Name="ssh.dll" KeyPath="yes" />
+          </Component>
         </DirectoryRef>
 
         <DirectoryRef Id="INSTALLDIR" FileSource="..\..\tools\openssh">
             <Component Id="C.ssh.exe"><File Name="ssh.exe" KeyPath="yes" /></Component>
             <Component Id="C.ssh_keygen.exe"><File Name="ssh-keygen.exe" KeyPath="yes" /></Component>
             <Component Id="C.sftp.exe"><File Name="sftp.exe" KeyPath="yes" /></Component>
-            <Component Id="C.libcrypto.dll"><File Name="libcrypto.dll" KeyPath="yes" /></Component>
+          <Component Id="C.libcrypto.dll">
+            <File Name="libcrypto.dll" KeyPath="yes" />
+          </Component>
+          
         </DirectoryRef>
       
          <DirectoryRef Id="INSTALLDIR" FileSource="C:\Windows\System32">
@@ -143,7 +151,7 @@
             <ComponentRef Id="C.NLog.dll" />
             <ComponentRef Id="C.NLog.config" />
             <ComponentRef Id="C.Renci.SshNet.dll" />
-            <ComponentRef Id="C.System.Windows.Interactivity.dll" />
+          <ComponentRef Id="C.System.Windows.Interactivity.dll" />
         </ComponentGroup>
         
        <ComponentGroup Id="C.ssh">
@@ -151,7 +159,8 @@
             <ComponentRef Id="C.sftp.exe" />
             <ComponentRef Id="C.ssh_keygen.exe" />
             <ComponentRef Id="C.libcrypto.dll" />
-        </ComponentGroup>
+            <ComponentRef Id="C.ssh.dll" />
+       </ComponentGroup>
 
         <!--<Feature
             Id="F.Main"
