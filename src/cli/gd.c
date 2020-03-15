@@ -309,9 +309,9 @@ int gd_stat(const char * path, struct fuse_stat *stbuf)
 	gd_lock();
 	attrs = sftp_stat(g_ssh->sftp, path);
 	if (!attrs) {
-		fprintf(stderr, "stat failed (%s)\n", ssh_get_error(g_ssh->ssh));
-		int ssherr = ssh_get_error_code(g_ssh->ssh);
-		int err = sftp_get_error(g_ssh->sftp);
+		//fprintf(stderr, "stat failed (%s)\n", ssh_get_error(g_ssh->ssh));
+		//int ssherr = ssh_get_error_code(g_ssh->ssh);
+		//int err = sftp_get_error(g_ssh->sftp);
 
 		gd_error(path);
 		rc = error();

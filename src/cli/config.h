@@ -175,8 +175,6 @@ static const char *sftp_errors[] = {
 	"SFTP_UNKNOWN"
 };
 
-#define GD_EOF 1
-
 /* macros */
 #define fi_dirbit                       (0x8000000000000000ULL)
 #define fi_fh(fi, MASK)                 ((fi)->fh & (MASK))

@@ -22,15 +22,10 @@ after_test:
   - ps: |
       net use Z: \\golddrive\support@localhost
       Z:
-      cd Z:\home
-      dir
-      cd Z:\home\support
-      dir
+      cd Z:\tmp
+      cd
       echo hello > test.txt
       dir
-      cd Z:\tmp
-      dir
-      cd
       C:\projects\golddrive\tools\testfs.bat
 artifacts:
   - path: src\build\Release\golddrive-2.*.msi
