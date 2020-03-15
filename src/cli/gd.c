@@ -805,8 +805,37 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	curpos = sftp_tell64(handle);
 	if (offset != curpos)
 		sftp_seek64(handle, offset);
-	//gd_unlock();
 	
+	// async
+	//sftp_file_set_nonblocking(handle);
+	//int async = sftp_async_read_begin(handle, chunk);
+	//Sleep(10000);
+	//if (async >= 0) {
+	//	bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
+	//	rc = sftp_async_read(handle, pos, bsize, async);
+	//}
+	//else {
+	//	rc = -1;
+	//}
+
+	//while (rc > 0 || rc == SSH_AGAIN) {
+	//	if (rc > 0) {
+	//		async = sftp_async_read_begin(handle, bsize);
+	//	}
+	//	else {
+	//		//counter++;
+	//	}
+	//	Sleep(10000);
+
+	//	if (async >= 0) {
+	//		rc = sftp_async_read(handle, pos, bsize, async);
+	//	}
+	//	else {
+	//		rc = -1;
+	//	}
+	//}
+
+	// sync
 	do {
 		bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
 		rc = (int)sftp_read(handle, pos, bsize);
@@ -826,6 +855,9 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 		if (rc)
 			total = -1;
 	}
+
+
+
 	gd_unlock();
 #else
 	LIBSSH2_SFTP_HANDLE* handle = sh->file_handle;
@@ -889,6 +921,10 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	const char* pos = buf;
 	size_t curpos;
 	size_t bsize;
+
+
+	//log_error("WRITING HANDLE: %zu size: %zu\n", (size_t)sh, size);
+
 
 #ifdef USE_LIBSSH
 	sftp_file handle = sh->file_handle;
