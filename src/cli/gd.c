@@ -302,12 +302,17 @@ int gd_stat(const char * path, struct fuse_stat *stbuf)
 
 #ifdef USE_LIBSSH
 
+
+
+
 	sftp_attributes attrs;
 	gd_lock();
 	attrs = sftp_stat(g_ssh->sftp, path);
 	if (!attrs) {
 		fprintf(stderr, "stat failed (%s)\n", ssh_get_error(g_ssh->ssh));
+		int ssherr = ssh_get_error_code(g_ssh->ssh);
 		int err = sftp_get_error(g_ssh->sftp);
+
 		gd_error(path);
 		rc = error();
 	} else {	
@@ -708,6 +713,8 @@ intptr_t gd_open(const char* path, int flags, unsigned int mode)
 		//	gd_check_hlink(path);
 	}
 
+	assert(pflags == flags);
+
 	sftp_file handle = 0;
 	gd_lock();
 	handle = sftp_open(g_ssh->sftp, sh->path, flags, sh->mode);
@@ -790,6 +797,7 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	size_t chunk = size;
 	char* pos = buf;
 	size_t curpos;
+	size_t bsize;
 
 #ifdef USE_LIBSSH
 	sftp_file handle = sh->file_handle;
@@ -798,8 +806,10 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	if (offset != curpos)
 		sftp_seek64(handle, offset);
 	//gd_unlock();
-	for (;;) {
-		rc = (int)sftp_read(handle, pos, chunk);
+	
+	do {
+		bsize = chunk < BUFFER_SIZE ? chunk : BUFFER_SIZE;
+		rc = (int)sftp_read(handle, pos, bsize);
 		if (rc > 0) {
 			pos += rc;
 			total += rc;
@@ -808,7 +818,8 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 		else {
 			break;
 		}
-	}
+	} while (chunk);
+
 	if (rc < 0) {
 		gd_error("ERROR: Unable to read chuck of file\n");
 		rc = error();
@@ -827,17 +838,15 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	curpos = libssh2_sftp_tell64(handle);
 	if (offset != curpos)
 		libssh2_sftp_seek64(handle, offset);
-	//gd_unlock();
 
-	for(;;) {
-		//gd_lock();
-		while ((rc = (int)libssh2_sftp_read(handle, pos, chunk)) ==
+	do {
+		bsize = chunk < BUFFER_SIZE ? chunk : BUFFER_SIZE;
+		while ((rc = (int)libssh2_sftp_read(handle, pos, bsize)) ==
 			LIBSSH2_ERROR_EAGAIN) {
 			waitsocket(g_ssh);
 			g_sftp_calls++;
 		}
-		//gd_unlock();
-
+		
 		if (rc > 0) {
 			pos += rc;
 			total += rc;
@@ -846,7 +855,7 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 		else {
 			break;
 		}
-	} 
+	} while (chunk);
 
 	if (rc < 0) {
 		gd_error("ERROR: Unable to read chuck of file\n");		
@@ -879,6 +888,7 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	size_t chunk = size;
 	const char* pos = buf;
 	size_t curpos;
+	size_t bsize;
 
 #ifdef USE_LIBSSH
 	sftp_file handle = sh->file_handle;
@@ -887,8 +897,19 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	if (offset != curpos)
 		sftp_seek64(handle, offset);
 	//gd_unlock();
-	for (;;) {
-		rc = (int)sftp_write(handle, pos, chunk);
+	
+	do {
+		bsize = chunk < BUFFER_SIZE ? chunk : BUFFER_SIZE;
+		rc = (int)sftp_write(handle, pos, bsize);
+		if (rc != bsize) {
+			int eof = sftp_get_error(g_ssh->sftp) == SSH_FX_EOF;
+			if (eof) {
+				fprintf(stderr, "eof\n");
+				gd_unlock();
+				return total;
+			}
+			fprintf(stderr, "Error writing %d bytes:: %s\n", rc, ssh_get_error(g_ssh->ssh));
+		}
 		if (rc > 0) {
 			pos += rc;
 			total += rc;
@@ -897,7 +918,8 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 		else {
 			break;
 		}
-	}
+	} while (chunk > 0);
+	
 	if (rc < 0) {
 		gd_error("ERROR: Unable to write chuck of data\n");
 		rc = error();
@@ -922,10 +944,11 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	//int block = libssh2_session_get_blocking(g_ssh->ssh);
 	//assert(block == (g_fs.noblock ^ 1) );
 
-	for(;;) {
+	do {
 		//gd_lock();
 		int spin = 0;
-		while ((rc = (int)libssh2_sftp_write(handle, pos, chunk)) ==
+		bsize = chunk < BUFFER_SIZE ? chunk : BUFFER_SIZE;
+		while ((rc = (int)libssh2_sftp_write(handle, pos, bsize)) ==
 			LIBSSH2_ERROR_EAGAIN) {
 			waitsocket(g_ssh);
 			g_sftp_calls++;
@@ -939,8 +962,7 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 				break;
 			}
 		}
-		//gd_unlock();
-
+		
 		if (rc > 0) {
 			pos += rc;
 			total += rc;
@@ -949,7 +971,7 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 		else {
 			break;
 		}
-	} 
+	} while (chunk);
 
 	if (rc < 0) {
 		gd_error("ERROR: Unable to write chuck of data\n");
@@ -1419,6 +1441,7 @@ int gd_fsync(intptr_t fd)
 
 int run_command(const char* cmd, char* out, char* err)
 {
+
 	int rc = 0;
 	size_t offset = 0;
 	char buffer[0x4000];
