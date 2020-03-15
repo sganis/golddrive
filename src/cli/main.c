@@ -111,7 +111,7 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 			"    -u USER, -o user=USER      user to connect to ssh server, default: current user\n"
 			"    -k PKEY, -o pkey=PKEY      private key, default: %%USERPROFILE%%\\.ssh\\id_rsa-user-golddrive\n"
 			"    -p PORT, -o port=PORT      server port, default: 22\n"
-			"    -o buffer                  read/write block size in bytes, default: 65535\n"
+			"    -o buffer                  read/write block size in bytes, default: 131072\n"
 			"\n"
 			"WinFsp-FUSE options:\n"
 			"    -s                         disable multi-threaded operation\n"
@@ -311,7 +311,7 @@ int main(int argc, char *argv[])
 	
 	// defaults
 	g_fs.port = 22;
-	g_fs.buffer = 65535;
+	g_fs.buffer = 131072; // 128k
 
 
 	rc = fuse_opt_parse(&args, &g_fs, fs_opts, fs_opt_proc);
