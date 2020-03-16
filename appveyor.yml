@@ -21,7 +21,7 @@ test:
 after_test:
   - ps: |
       net use Z: \\golddrive\support@localhost
-  - ps: Measure-Command { .\tools\fstools\fsx.exe -N 10000 test xxxxxx }
+  - ps: Measure-Command { .\tools\fstools\fsx.exe -N 10000 test xxxxxx } | Select-Object -Property TotalSeconds
   - ps: |
       Z:
       cd Z:\tmp
