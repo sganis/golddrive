@@ -19,7 +19,8 @@ test:
     only:
       - Appveyor
 after_test:
-  - net use Z: \\golddrive\support@localhost
+  - ps: |
+      net use Z: \\golddrive\support@localhost
   - ps: Measure-Command { .\tools\fstools\fsx.exe -N 10000 test xxxxxx }
   - ps: |
       Z:
