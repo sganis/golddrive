@@ -70,8 +70,8 @@ static struct fuse_opt fs_opts[] = {
 	fs_OPT("pkey=%s",           pkey, 0),
 	fs_OPT("-k %s",             pkey, 0),
 	fs_OPT("-k=%s",             pkey, 0),
-	fs_OPT("noblock",           noblock, 1),
-	fs_OPT("nonoblock",         noblock, 0),
+	fs_OPT("hlink",             hlink, 1),
+	fs_OPT("nohlink",           hlink, 0),
 	fs_OPT("buffer=%u",         buffer, 0),
 
 	FUSE_OPT_KEY("--version",      KEY_VERSION),
@@ -109,9 +109,10 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 			"    -o opt,[opt...]            mount options, -o=opt or -oopt is also valid\n"						
 			"    -h HOST, -o host=HOST      ssh server name or IP\n"
 			"    -u USER, -o user=USER      user to connect to ssh server, default: current user\n"
-			"    -k PKEY, -o pkey=PKEY      private key, default: %%USERPROFILE%%\\.ssh\\id_rsa-user-golddrive\n"
+			"    -k PKEY, -o pkey=PKEY      private key, default: %%USERPROFILE%%\\.ssh\\id_rsa\n"
 			"    -p PORT, -o port=PORT      server port, default: 22\n"
-			"    -o buffer                  read/write block size in bytes, default: 65535\n"
+			"    -o hlink                   create new file before saving for hard links\n"
+			"    -o buffer=BYTES            read/write block size in bytes, default: 65535\n"
 			"\n"
 			"WinFsp-FUSE options:\n"
 			"    -s                         disable multi-threaded operation\n"
@@ -134,6 +135,7 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 		char* version = calloc(100, sizeof(char));
 		get_file_version(exepath, version);
 		fprintf(stderr, "Golddrive version %s\nBuild date: %s\n", version, __DATE__);
+		fprintf(stderr, "Libssh version %s\n", ssh_version(0));
 		fprintf(stderr, "FUSE version %s\n", fuse_pkgversion());
 		free(version);
 		//fuse_opt_add_arg(outargs, "--version");
@@ -311,6 +313,7 @@ int main(int argc, char *argv[])
 	
 	// defaults
 	g_fs.port = 22;
+	//g_fs.hlink = 0;
 	g_fs.buffer = 65535; // 64k
 
 
@@ -375,6 +378,7 @@ int main(int argc, char *argv[])
 	gd_log("root    = %s\n", g_fs.root);
 	gd_log("pkey    = %s\n", g_fs.pkey);
 	gd_log("buffer  = %u\n", g_fs.buffer);
+	gd_log("hlink   = %u\n", g_fs.hlink);
 	//gd_log("intptr_t= %ld\n", sizeof(intptr_t));
 	//gd_log("long    = %ld\n", sizeof(long));
 

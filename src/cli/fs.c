@@ -165,10 +165,10 @@ int f_readdir(const char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t of
 
 	gd_rewinddir(dirp);
 
-	for (;;)
-	{
+	for (;;) {
 		errno = 0;
-		if (0 == (de = gd_readdir(dirp)))
+		de = gd_readdir(dirp);
+		if (de == 0)
 			break;
 		
 		if (0 != filler(buf, de->d_name, &de->d_stat, 0, FUSE_FILL_DIR_PLUS))

@@ -302,14 +302,12 @@ int gd_stat(const char * path, struct fuse_stat *stbuf)
 
 #ifdef USE_LIBSSH
 
-
-
-
 	sftp_attributes attrs;
 	gd_lock();
 	attrs = sftp_stat(g_ssh->sftp, path);
+	g_sftp_calls++;
 	if (!attrs) {
-		//fprintf(stderr, "stat failed (%s)\n", ssh_get_error(g_ssh->ssh));
+		fprintf(stderr, "stat failed (%s)\n", ssh_get_error(g_ssh->ssh));
 		//int ssherr = ssh_get_error_code(g_ssh->ssh);
 		//int err = sftp_get_error(g_ssh->sftp);
 
@@ -400,6 +398,7 @@ int gd_readlink(const char* path, char* buf, size_t size)
 #ifdef USE_LIBSSH
 	gd_lock();
 	char* target = sftp_readlink(g_ssh->sftp, path);
+	g_sftp_calls++;
 	if (!target) {
 		gd_error(path);
 		gd_unlock();
@@ -446,6 +445,7 @@ int gd_mkdir(const char* path, fuse_mode_t mode)
 #ifdef USE_LIBSSH
 	gd_lock();
 	rc = sftp_mkdir(g_ssh->sftp, path, mode);
+	g_sftp_calls++;
 	if (rc) {
 		//int err = sftp_get_error(g_ssh->sftp);
 		gd_error(path);
@@ -477,6 +477,7 @@ int gd_unlink(const char *path)
 #ifdef USE_LIBSSH
 	gd_lock();
 	rc = sftp_unlink(g_ssh->sftp, path);
+	g_sftp_calls++;
 	if (rc) {
 		//int err = sftp_get_error(g_ssh->sftp);
 		gd_error(path);
@@ -508,6 +509,7 @@ int gd_rmdir(const char* path)
 #ifdef USE_LIBSSH
 	gd_lock();
 	rc = sftp_rmdir(g_ssh->sftp, path);
+	g_sftp_calls++;
 	if (rc) {
 		//int err = sftp_get_error(g_ssh->sftp);
 		gd_error(path);
@@ -562,6 +564,7 @@ int gd_rename(const char *from, const char *to)
 #ifdef USE_LIBSSH
 	gd_lock();
 	rc = sftp_rename(g_ssh->sftp, from, to);
+	g_sftp_calls++;
 	if (rc) {
 		//int err = sftp_get_error(g_ssh->sftp);
 		gd_error(from);
@@ -608,6 +611,7 @@ int gd_truncate(const char* path, fuse_off_t size)
 	attrs.size = size;
 	gd_lock();
 	rc = sftp_setstat(g_ssh->sftp, path, &attrs);
+	g_sftp_calls++;
 	if (rc < 0) {
 		gd_error(path);
 		rc = error();
@@ -654,10 +658,7 @@ int gd_ftruncate(intptr_t fd, fuse_off_t size)
 		waitsocket(g_ssh);
 		g_sftp_calls++;
 	}
-	if (rc < 0) {
-		gd_error(sh->path);
-		rc = error();
-	}
+	
 	gd_unlock();
 #endif
 	//return gd_fsync(fd);
@@ -705,19 +706,24 @@ intptr_t gd_open(const char* path, int flags, unsigned int mode)
 	if (flags & O_APPEND)
 		pflags |= O_APPEND;
 
-
+	//printf("%d flags=%u %s\n", GetCurrentThreadId(), flags, path);
 	// check if file has hard links
-	if ((flags & O_ACCMODE) == O_RDONLY || (flags & O_ACCMODE) == O_RDWR) {
-		//struct fuse_stat stbuf;
-		//if(!gd_stat(path, &stbuf))
-		//	gd_check_hlink(path);
+	if (g_fs.hlink) {
+		if ((flags & O_ACCMODE) == O_WRONLY || (flags & O_ACCMODE) == O_RDWR) {
+			struct fuse_stat stbuf;
+			if (!gd_stat(path, &stbuf)) {
+				gd_check_hlink(path);
+			}
+		}
 	}
 
+	
 	assert(pflags == flags);
 
 	sftp_file handle = 0;
 	gd_lock();
 	handle = sftp_open(g_ssh->sftp, sh->path, flags, sh->mode);
+	g_sftp_calls++;
 	if (!handle) {
 		gd_error(sh->path);
 		gd_unlock();
@@ -803,8 +809,11 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	sftp_file handle = sh->file_handle;
 	gd_lock();
 	curpos = sftp_tell64(handle);
-	if (offset != curpos)
+	g_sftp_calls++;
+	if (offset != curpos) {
 		sftp_seek64(handle, offset);
+		g_sftp_calls++;
+	}
 	
 	// async
 	//sftp_file_set_nonblocking(handle);
@@ -839,6 +848,7 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	do {
 		bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
 		rc = (int)sftp_read(handle, pos, bsize);
+		g_sftp_calls++;
 		if (rc > 0) {
 			pos += rc;
 			total += rc;
@@ -930,19 +940,23 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	sftp_file handle = sh->file_handle;
 	gd_lock();
 	curpos = sftp_tell64(handle);
-	if (offset != curpos)
+	g_sftp_calls++;
+	if (offset != curpos) {
 		sftp_seek64(handle, offset);
+		g_sftp_calls++;
+	}
 	//gd_unlock();
 	
 	do {
 		bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
 		rc = (int)sftp_write(handle, pos, bsize);
+		g_sftp_calls++;
+
 		if (rc != bsize) {
 			int eof = sftp_get_error(g_ssh->sftp) == SSH_FX_EOF;
 			if (eof) {
 				fprintf(stderr, "eof\n");
-				gd_unlock();
-				return total;
+				break;
 			}
 			fprintf(stderr, "Error writing %d bytes:: %s\n", rc, ssh_get_error(g_ssh->ssh));
 		}
@@ -1038,6 +1052,8 @@ int gd_statvfs(const char* path, struct fuse_statvfs* stbuf)
 	sftp_statvfs_t stvfs;
 	gd_lock();
 	stvfs = sftp_statvfs(g_ssh->sftp, path);
+	g_sftp_calls++;
+
 	if (!stvfs) {
 		gd_error(path);
 		rc = error();
@@ -1110,6 +1126,8 @@ int gd_close(intptr_t fd)
 	sftp_file handle = sh->file_handle;
 	gd_lock();
 	rc = sftp_close(handle);
+	g_sftp_calls++;
+
 	if (rc) {
 		gd_error(sh->path);
 		rc = error();
@@ -1160,6 +1178,8 @@ gd_dir_t* gd_opendir(const char* path)
 	sftp_dir handle;
 	gd_lock();
 	handle = sftp_opendir(g_ssh->sftp, path);
+	g_sftp_calls++;
+
 	if (!handle) {
 		gd_error(path);
 		gd_unlock();
@@ -1213,7 +1233,10 @@ void gd_rewinddir(gd_dir_t* dirp)
 {
 	gd_handle_t* sh = dirp->handle;
 #ifdef USE_LIBSSH
-
+	//gd_lock();
+	//sftp_seek64(sh->dir_handle, 0);
+	//g_sftp_calls++;
+	//gd_unlock();
 #else
 	LIBSSH2_SFTP_HANDLE* handle = sh->dir_handle;
 	gd_lock();
@@ -1233,6 +1256,8 @@ struct gd_dirent_t* gd_readdir(gd_dir_t* dirp)
 	sftp_attributes attrs;
 	gd_lock();
 	attrs = sftp_readdir(g_ssh->sftp, dir);
+	g_sftp_calls++;
+
 	gd_unlock();
 	if (!attrs) {
 		if (!sftp_dir_eof(dir)) {
@@ -1242,6 +1267,24 @@ struct gd_dirent_t* gd_readdir(gd_dir_t* dirp)
 		// no more files
 		return 0;
 	}
+
+	// check orphan symbolic links
+	//if ((GD_S_IFMT & attrs->permissions) == GD_S_IFLNK) {
+	//	char fullpath[MAX_PATH];
+	//	path_concat(dirp->path, attrs->name, fullpath);
+	//	//memset(attrs, 0, sizeof * attrs);
+	//	gd_lock();
+	//	//rc = libssh2_sftp_stat_ex(g_ssh->sftp, fullpath,
+	//	//	(int)strlen(fullpath), LIBSSH2_SFTP_STAT, &attrs);
+	//	g_sftp_calls++;
+	//	gd_unlock();
+	//	/*if (rc) {
+	//		gd_error(fullpath);
+	//		rc = error0();
+	//		return 0;
+	//	}*/
+	//}
+
 	strcpy_s(dirp->de.d_name, FILENAME_MAX, attrs->name);
 	dirp->de.dir = (GD_S_IFMT & attrs->permissions) == GD_S_IFDIR;
 	copy_attributes(&dirp->de.d_stat, attrs);
@@ -1287,6 +1330,7 @@ int gd_closedir(gd_dir_t* dirp)
 	sftp_dir dir = dirfh->dir_handle;
 	gd_lock();
 	rc = sftp_closedir(dir);
+	g_sftp_calls++;
 	if (rc < 0) {
 		gd_error(dirfh->path);
 		rc = error();
@@ -1325,9 +1369,12 @@ int gd_check_hlink(const char* path)
 	// check for hard link
 	int rc = 0;
 	char cmd[MAX_PATH + 10] = { 0 }, out[100] = { 0 }, err[100] = { 0 };
-	sprintf_s(cmd, sizeof cmd, "stat -c%%h \"%s\"\n", path);
-	run_command(cmd, out, err);
-	int hlinks = atoi(out);
+	sprintf_s(cmd, sizeof cmd, "/usr/bin/stat -c%%h \"%s\"\n", path);
+	rc = run_command(cmd, out, err);
+	int hlinks = 0;
+	if (!rc) {
+		hlinks = atoi(out);
+	}
 	if (hlinks > 1) {
 		//error("opening for writing hard linked file: %s\n"
 		//	"number of links: %d\n", path, hlinks);
@@ -1336,10 +1383,33 @@ int gd_check_hlink(const char* path)
 		char backup[PATH_MAX];
 		sprintf_s(backup, sizeof backup, "%s.%zd.hlink", path, time_mu());
 		rc = gd_rename(path, backup);
-#ifdef USE_LIBSSH
 
+		if (rc) {
+			gd_error(path);
+			rc = error();
+		} else {
+#ifdef USE_LIBSSH
+			gd_lock();
+			sftp_file handle;
+			// fixme: AND mode with -o create_umask arg
+			unsigned int mode = 432; // oct 660
+			unsigned flags = O_RDONLY | O_RDWR
+				| O_CREAT | O_EXCL; // int 1282
+
+			handle = sftp_open(g_ssh->sftp, path, flags, mode);
+			g_sftp_calls++;
+			if (!handle) {
+				gd_error(path);				
+			}
+			else {
+				rc = sftp_close(handle);
+				g_sftp_calls++;
+				if (rc) {
+					gd_error(path);
+				}
+			}
+			gd_unlock();
 #else
-		if (!rc) {
 			gd_lock();
 			LIBSSH2_SFTP_HANDLE* handle;
 			// fixme: AND mode with -o create_umask arg
@@ -1362,12 +1432,8 @@ int gd_check_hlink(const char* path)
 				g_sftp_calls++;
 			}
 			gd_unlock();
-		}
-		else {
-			gd_error(path);
-			rc = error();
-		}
 #endif
+		}
 	}
 	return rc;
 }
@@ -1401,6 +1467,8 @@ int gd_utimens(const char* path, const struct fuse_timespec tv[2], struct fuse_f
 	attrs.mtime = (unsigned long)LastWriteTime;
 	gd_lock();
 	rc = sftp_setstat(g_ssh->sftp, path, &attrs);
+	g_sftp_calls++;
+
 	if (rc < 0) {
 		gd_error(path);
 		rc = error();
@@ -1442,17 +1510,18 @@ int gd_fsync(intptr_t fd)
 	int rc = 0;
 	gd_handle_t* sh = (gd_handle_t*)fd;
 #ifdef USE_LIBSSH
-	int supported = sftp_extension_supported(g_ssh->sftp, "fsync@openssh.com", "1");
-	if (supported) {
+	//int supported = sftp_extension_supported(g_ssh->sftp, "fsync@openssh.com", "1");
+	//if (supported) {
 		sftp_file handle = sh->file_handle;
 		gd_lock();
 		rc = sftp_fsync(handle);
+		g_sftp_calls++;
 		if (rc < 0) {
 			gd_error(sh->path);
 			rc = error();
 		}
 		gd_unlock();
-	}
+	//}
 #else
 	LIBSSH2_SFTP_HANDLE* handle = sh->file_handle;
 	assert(handle);
@@ -1543,11 +1612,24 @@ int run_command(const char* cmd, char* out, char* err)
 		}
 	}
 
-	
 	ssh_channel_send_eof(channel);
-	ssh_channel_close(channel);
-	ssh_channel_free(channel);
+	
+	// get command exit code
+	// https://www.libssh.org/archive/libssh/2011-08/0000017.html
+	//1. call ssh_channel_close() before you call
+	//	ssh_channel_get_exit_status()
+	//2. put ssh_channel_get_exit_status() in a loop and wait for the
+	//	result to be not - 1. I am waiting 20 times 50ms.
 
+	ssh_channel_close(channel);
+	rc = -1;
+	int i = 1;
+	while (rc == -1 && i < 20) {
+		rc = ssh_channel_get_exit_status(channel);
+		i++;
+		Sleep(50);
+	}
+	ssh_channel_free(channel);
 
 #else
 	LIBSSH2_CHANNEL* channel;
@@ -1646,6 +1728,8 @@ finish:
 	gd_unlock();
 
 #endif
+
+	log_error("command executed: %s\n", cmd);
 	return (int)rc;
 }
 
@@ -2065,7 +2149,6 @@ int load_json(fs_config * fs)
 	//printf("Path: %s\n", json->path);
 	return 0;
 }
-
 
 void gd_log(const char *fmt, ...)
 {
