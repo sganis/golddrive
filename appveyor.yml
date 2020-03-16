@@ -1,4 +1,4 @@
-version: 2.5.0.{build}
+version: 2.6.0.{build}
 image: 
   - Visual Studio 2019
 platform: x64
@@ -13,7 +13,7 @@ install:
   - C:\Python38\python tools\setupssh.py support@localhost support
 build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:quiet
-  - start /wait msiexec /i src\build\Release\golddrive-2.5.0.msi /qn
+  - start /wait msiexec /i src\build\Release\golddrive-2.6.0.msi /qn
 test:
   categories:
     only:
