@@ -16,7 +16,8 @@
             Platform="x64"/>
 
         <MajorUpgrade
-            DowngradeErrorMessage="A newer version of $(var.MyProductName) is already installed." />
+            DowngradeErrorMessage="A newer version of $(var.MyProductName) is already installed." 
+            Schedule="afterInstallInitialize" />
 
         <Media Id="1" Cabinet="Golddrive.cab" EmbedCab="yes" />
 
