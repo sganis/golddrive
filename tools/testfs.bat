@@ -16,8 +16,9 @@ cd
 del test test.*
 if !ERRORLEVEL! neq 0 goto fail
 
-%DIR%\fstools\fsbench-x64.exe -rdwr_cc_* -mmap_* 
-::	-file_attr* -file_list_single* -file_list_none* -rdwr_nc_*
+%DIR%\fstools\fsbench-x64.exe -rdwr_cc_* -mmap_* ^
+ -file_attr* -file_list_single* -file_list_none*
+:: -rdwr_nc_*
 if !ERRORLEVEL! neq 0 goto fail
 
 %DIR%\iozone\iozone.exe -i0 -i1 -i2 -s 1m -s1g -r1m
