@@ -25,8 +25,8 @@ after_test:
       Z:; cd Z:\tmp; echo hello > test.txt; dir
   - ps: |
       $sw = [Diagnostics.Stopwatch]::StartNew()
-      .\tools\fstools\fsx.exe -N 10000 test xxxxxx
-      $sw.Stop(); Write-Output "Elapsed: $($sw.TotalSeconds) secs."
+      C:\projects\golddrive\tools\fstools\fsx.exe -N 10000 test xxxxxx
+      $sw.Stop(); Write-Output "Elapsed: $($sw.Elapsed.TotalSeconds) secs."
   - C:\projects\golddrive\tools\testfs.bat
 artifacts:
   - path: src\build\Release\golddrive-2.*.msi
