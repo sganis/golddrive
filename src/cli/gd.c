@@ -721,7 +721,7 @@ intptr_t gd_open(const char* path, int flags, unsigned int mode)
 
 	//printf("%d flags=%u %s\n", GetCurrentThreadId(), flags, path);
 	// check if file has hard links
-	if (!g_fs.nohlink) {
+	if (g_fs.nolink == 0) {
 		if ((flags & O_ACCMODE) == O_WRONLY || (flags & O_ACCMODE) == O_RDWR) {
 			struct fuse_stat stbuf;
 			if (!gd_stat(path, &stbuf)) {
