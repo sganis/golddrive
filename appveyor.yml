@@ -27,7 +27,19 @@ after_test:
       $sw = [Diagnostics.Stopwatch]::StartNew()
       C:\projects\golddrive\tools\fstools\fsx.exe -N 10000 test xxxxxx
       $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
-  - C:\projects\golddrive\tools\testfs.bat
+  - ps: |
+      $sw = [Diagnostics.Stopwatch]::StartNew()
+      C:\projects\golddrive\tools\fstools\fsx.exe -N 10000 -L test xxxxxx
+      $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
+  - ps: |
+      $sw = [Diagnostics.Stopwatch]::StartNew()
+      C:\projects\golddrive\tools\fstools\fsbench-x64.exe -rdwr_cc_* -mmap_* -file_attr* -file_list_single* -file_list_none* -rdwr_nc_*
+      $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
+  - ps: |
+      $sw = [Diagnostics.Stopwatch]::StartNew()
+      C:\projects\golddrive\tools\iozone\iozone.exe -i0 -i1 -i2 -s 1m -s10m -r1m
+      $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
+  #- C:\projects\golddrive\tools\testfs.bat
 artifacts:
   - path: src\build\Release\golddrive-2.*.msi
     name: Golddrive

@@ -199,6 +199,8 @@ static const char *sftp_errors[] = {
 		n = full ## n;					\
 	}
 
+
+
 #ifdef USE_LIBSSH
 #define gd_error(path) {															\
     rc = get_ssh_error(g_ssh);												\
@@ -286,20 +288,26 @@ inline void gd_unlock()
 }
 
 /* file flags */
-#define GD_FXF_READ 0x01
-#define GD_FXF_WRITE 0x02
-#define GD_FXF_APPEND 0x04
-#define GD_FXF_CREAT 0x08
-#define GD_FXF_TRUNC 0x10
-#define GD_FXF_EXCL 0x20
-#define GD_FXF_TEXT 0x40
+#define GD_READ   0x01
+#define GD_WRITE  0x02
+#define GD_APPEND 0x04
+#define GD_CREAT  0x08
+#define GD_TRUNC  0x10
+#define GD_EXCL   0x20
+#define GD_TEXT   0x40
 
 /* file type flags */
-#define GD_S_IFMT   00170000
-#define GD_S_IFSOCK 0140000
-#define GD_S_IFLNK  0120000
-#define GD_S_IFREG  0100000
-#define GD_S_IFBLK  0060000
-#define GD_S_IFDIR  0040000
-#define GD_S_IFCHR  0020000
-#define GD_S_IFIFO  0010000
+#define GD_IFMT   0170000 /* type of file mask */
+#define GD_IFSOCK 0140000 /* socket */
+#define GD_IFLNK  0120000 /* symbolic link */
+#define GD_IFREG  0100000 /* regular file */
+#define GD_IFBLK  0060000 /* block special */
+#define GD_IFDIR  0040000 /* directory */
+#define GD_IFCHR  0020000 /* character special */
+#define GD_IFIFO  0010000 /* named pipe */
+
+/* macros to get fily type */
+#define GD_ISLNK(m) (((m) & GD_IFMT) == GD_IFLNK)
+#define GD_ISREG(m) (((m) & GD_IFMT) == GD_IFREG)
+#define GD_ISDIR(m) (((m) & GD_IFMT) == GD_IFDIR)
+

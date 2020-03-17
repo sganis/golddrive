@@ -193,7 +193,7 @@ gdssh_t * gd_init_ssh(
 	}
 
 	/* blocking: 1 block, 0 non-blocking, g_fs.noblock ? 0 : 1 */
-	libssh2_session_set_blocking(ssh, g_fs.noblock ^ 1);
+	//libssh2_session_set_blocking(ssh, g_fs.noblock ^ 1);
 
 
 	/* ... start it up. This will trade welcome banners, exchange keys,
@@ -305,7 +305,7 @@ int gd_stat(const char * path, struct fuse_stat *stbuf)
 
 	sftp_attributes attrs;
 	gd_lock();
-	attrs = sftp_stat(g_ssh->sftp, path);
+	attrs = sftp_lstat(g_ssh->sftp, path);
 	g_sftp_calls++;
 	if (!attrs) {
 		fprintf(stderr, "stat failed (%s)\n", ssh_get_error(g_ssh->ssh));
@@ -315,9 +315,21 @@ int gd_stat(const char * path, struct fuse_stat *stbuf)
 		gd_error(path);
 		rc = error();
 	} else {	
-		copy_attributes(stbuf, attrs);
+		if (GD_ISLNK(attrs->permissions)) {
+			attrs = sftp_stat(g_ssh->sftp, path);
+			g_sftp_calls++;
+			if (!attrs) {
+				fprintf(stderr, "stat failed, broken link (%s)\n", ssh_get_error(g_ssh->ssh));
+				gd_error(path);
+				rc = error();
+			} else{
+
+			}
+		}	
 	}
 	gd_unlock();
+	if(attrs)
+		copy_attributes(stbuf, attrs);
 #else
 
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
@@ -713,6 +725,7 @@ intptr_t gd_open(const char* path, int flags, unsigned int mode)
 		if ((flags & O_ACCMODE) == O_WRONLY || (flags & O_ACCMODE) == O_RDWR) {
 			struct fuse_stat stbuf;
 			if (!gd_stat(path, &stbuf)) {
+				
 				gd_check_hlink(path);
 			}
 		}
@@ -736,29 +749,29 @@ intptr_t gd_open(const char* path, int flags, unsigned int mode)
 	LIBSSH2_SFTP_HANDLE* handle = 0;
 	unsigned int pflags;
 	if ((flags & O_ACCMODE) == O_RDONLY) {
-		pflags = GD_FXF_READ;
+		pflags = GD_READ;
 	}
 	else if ((flags & O_ACCMODE) == O_WRONLY) {
-		pflags = GD_FXF_WRITE;
+		pflags = GD_WRITE;
 	}
 	else if ((flags & O_ACCMODE) == O_RDWR) {
-		pflags = GD_FXF_READ | GD_FXF_WRITE;
+		pflags = GD_READ | GD_WRITE;
 	}
 	else {
 		return -EINVAL;;
 	}
 
 	if (flags & O_CREAT)
-		pflags |= GD_FXF_CREAT;
+		pflags |= GD_CREAT;
 
 	if (flags & O_EXCL)
-		pflags |= GD_FXF_EXCL;
+		pflags |= GD_EXCL;
 
 	if (flags & O_TRUNC)
-		pflags |= GD_FXF_TRUNC;
+		pflags |= GD_TRUNC;
 
 	if (flags & O_APPEND)
-		pflags |= GD_FXF_APPEND;
+		pflags |= GD_APPEND;
 
 	log_info("%s, mode=%u, flags=%d\n", path, mode, pflags);
 
@@ -883,7 +896,7 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 		libssh2_sftp_seek64(handle, offset);
 
 	do {
-		bsize = chunk < BUFFER_SIZE ? chunk : BUFFER_SIZE;
+		bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
 		while ((rc = (int)libssh2_sftp_read(handle, pos, bsize)) ==
 			LIBSSH2_ERROR_EAGAIN) {
 			waitsocket(g_ssh);
@@ -998,7 +1011,7 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	do {
 		//gd_lock();
 		int spin = 0;
-		bsize = chunk < BUFFER_SIZE ? chunk : BUFFER_SIZE;
+		bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
 		while ((rc = (int)libssh2_sftp_write(handle, pos, bsize)) ==
 			LIBSSH2_ERROR_EAGAIN) {
 			waitsocket(g_ssh);
@@ -1287,7 +1300,7 @@ struct gd_dirent_t* gd_readdir(gd_dir_t* dirp)
 	//}
 
 	strcpy_s(dirp->de.d_name, FILENAME_MAX, attrs->name);
-	dirp->de.dir = (GD_S_IFMT & attrs->permissions) == GD_S_IFDIR;
+	dirp->de.dir = GD_ISDIR(attrs->permissions);
 	copy_attributes(&dirp->de.d_stat, attrs);
 	sftp_attributes_free(attrs);
 
@@ -1775,7 +1788,7 @@ void copy_attributes(struct fuse_stat* stbuf, sftp_attributes attrs)
 {
 	stbuf->st_uid = attrs->uid;
 	stbuf->st_gid = attrs->gid;
-	stbuf->st_mode = 0777 | ((GD_S_IFMT & attrs->permissions) == GD_S_IFDIR ? GD_S_IFDIR : 0);
+	stbuf->st_mode = 0777 | (GD_ISDIR(attrs->permissions) ? GD_IFDIR : 0);
 	stbuf->st_size = attrs->size;
 	stbuf->st_birthtim.tv_sec = attrs->mtime;
 	stbuf->st_atim.tv_sec = attrs->atime;
