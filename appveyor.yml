@@ -11,9 +11,13 @@ install:
   - ps: tools\setup_wsl.ps1
   - C:\Python38\python -m pip install --disable-pip-version-check paramiko pyyaml psutil >NUL
   - C:\Python38\python tools\setupssh.py support@localhost support
+  - ps: $env:Version = C:\Python38\python -c "python -c "import re; text = open('src\\version.xml').read().replace('\n',' '); print(re.match(r'.+<MyVersion>([0-9\.]+)</MyVersion>.+', text).group(1))"" | Out-String
+  # - ps: Get-ChildItem Env:Version
+  - echo Version=%Version%
+
 build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:quiet
-  - start /wait msiexec /i src\build\Release\golddrive-2.7.0.msi /qn
+  - start /wait msiexec /i src\build\Release\golddrive-%Version%.msi /qn
   - src\build\Release\golddrive.exe --version
 test:
   categories:
