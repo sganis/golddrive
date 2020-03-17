@@ -14,6 +14,7 @@ install:
 build_script:
   - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:quiet
   - start /wait msiexec /i src\build\Release\golddrive-2.6.0.msi /qn
+  - src\build\Release\golddrive.exe --version
 test:
   categories:
     only:
@@ -21,8 +22,10 @@ test:
 after_test:
   - ps: |
       net use Z: \\golddrive\support@localhost
-  - ps: |
       Z:; cd Z:\tmp; echo hello > test.txt; dir
+      net use /d Z:
+  - ps: |
+      src\build\Release\golddrive.exe Z: \\golddrive\support@localhost -o hlink
   - ps: |
       $sw = [Diagnostics.Stopwatch]::StartNew()
       C:\projects\golddrive\tools\fstools\fsx.exe -N 10000 test xxxxxx
