@@ -20,7 +20,7 @@ if !ERRORLEVEL! neq 0 goto fail
  -file_attr* -file_list_single* -file_list_none* -rdwr_nc_*
 if !ERRORLEVEL! neq 0 goto fail
 
-%DIR%\iozone\iozone.exe -i0 -i1 -i2 -s 1m -s1g -r1m
+%DIR%\iozone\iozone.exe -i0 -i1 -i2 -s 1m -s10m -r1m
 if !ERRORLEVEL! neq 0 goto fail
 
 echo PASSED
