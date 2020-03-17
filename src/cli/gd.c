@@ -308,7 +308,7 @@ int gd_stat(const char * path, struct fuse_stat *stbuf)
 	attrs = sftp_lstat(g_ssh->sftp, path);
 	g_sftp_calls++;
 	if (!attrs) {
-		fprintf(stderr, "stat failed (%s)\n", ssh_get_error(g_ssh->ssh));
+		//fprintf(stderr, "stat failed (%s)\n", ssh_get_error(g_ssh->ssh));
 		//int ssherr = ssh_get_error_code(g_ssh->ssh);
 		//int err = sftp_get_error(g_ssh->sftp);
 
@@ -1383,8 +1383,10 @@ int gd_check_hlink(const char* path)
 	// check for hard link
 	int rc = 0;
 	char cmd[MAX_PATH + 10] = { 0 }, out[100] = { 0 }, err[100] = { 0 };
-	sprintf_s(cmd, sizeof cmd, "/usr/bin/stat -c%%h \"%s\"\n", path);
+	sprintf_s(cmd, sizeof cmd, "/usr/bin/stat -c%%h \"%s\"", path);
+	gd_lock();
 	rc = run_command(cmd, out, err);
+	gd_unlock();
 	int hlinks = 0;
 	if (!rc) {
 		hlinks = atoi(out);

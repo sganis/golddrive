@@ -71,7 +71,6 @@ static struct fuse_opt fs_opts[] = {
 	fs_OPT("-k %s",             pkey, 0),
 	fs_OPT("-k=%s",             pkey, 0),
 	fs_OPT("hlink",             hlink, 1),
-	fs_OPT("nohlink",           hlink, 0),
 	fs_OPT("buffer=%u",         buffer, 0),
 
 	FUSE_OPT_KEY("--version",      KEY_VERSION),
@@ -396,14 +395,18 @@ int main(int argc, char *argv[])
 	// get uid
 	char cmd[1000], out[1000], err[1000];
 	
-	snprintf(cmd,sizeof(cmd), "id -u %s\n", g_fs.user);
+	snprintf(cmd,sizeof(cmd), "id -u %s", g_fs.user);
+	gd_lock();
 	rc = run_command(cmd, out, err);
+	gd_unlock();
 	if (rc == 0) {
 		out[strcspn(out, "\r\n")] = 0;
 		g_fs.remote_uid = atoi(out);
 		gd_log("uid     = %d\n", g_fs.remote_uid);
 	}
-	rc = run_command("echo $HOME\n", out, err);
+	gd_lock();
+	rc = run_command("echo $HOME", out, err);
+	gd_unlock();
 	if (rc == 0) {
 		out[strcspn(out, "\r\n")] = 0;
 		g_fs.home = malloc(sizeof out);

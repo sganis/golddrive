@@ -204,9 +204,9 @@ static const char *sftp_errors[] = {
 #ifdef USE_LIBSSH
 #define gd_error(path) {															\
     rc = get_ssh_error(g_ssh);												\
-	/* skip errors 2, 3, 4 */ \
-	if (2 < rc && rc > 4) { \
-		const char* msg = sftp_errors[rc];				\
+	/* skip errors 2, 3 */ \
+	if (2 < rc && rc > 3) { \
+		const char* msg = ssh_get_error(g_ssh->ssh);				\
 		gd_log("%zd: %d :ERROR: %s: %d: [rc=%d: %s], path: %s\n",					\
 			time_mu(), GetCurrentThreadId(), __func__, __LINE__, rc, msg, path);	\
 	} \
