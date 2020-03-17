@@ -202,7 +202,7 @@ namespace golddrive.Tests
             });
             Unmount();
         }
-        [TestMethod(), TestCategory("Bigfile")]
+        [TestMethod(), TestCategory("Appveyor")]
         public void Copy1GBFileTest()
         {
             Mount();
