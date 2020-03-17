@@ -1571,82 +1571,57 @@ int run_command(const char* cmd, char* out, char* err)
 	ssh_channel channel;
 
 	channel = ssh_channel_new(g_ssh->ssh);
-	if (channel == NULL)
-		return SSH_ERROR;
-
-	rc = ssh_channel_open_session(channel);
-	if (rc != SSH_OK)
-	{
-		ssh_channel_free(channel);
-		return rc;
-	}
-	rc = ssh_channel_request_exec(channel, cmd);
-	if (rc != SSH_OK) {
-		ssh_channel_close(channel);
-		ssh_channel_free(channel);
-		return rc;
-	}
-
-	out[0] = '\0';
-	//memset(out, 0, sizeof * out);
-	for (;;) {
-		rc = ssh_channel_read(channel, buffer, sizeof(buffer), 0);
-		if (rc > 0) {
-			memcpy(out + offset, buffer, rc);
-			offset += rc;
-		}
-		if (rc == 0 || ssh_channel_is_eof(channel)) {
-			rc = 0;
-			break;
-		}
-		if (rc < 0) {
+	if (channel == NULL) {
+		rc = SSH_ERROR;
+	} 
+	else {
+		rc = ssh_channel_open_session(channel);
+		if (rc == SSH_OK) {
+			rc = ssh_channel_request_exec(channel, cmd);
+			if (rc == SSH_OK) {
+				out[0] = '\0';
+				for (;;) {
+					rc = ssh_channel_read(channel, buffer, sizeof(buffer), 0);
+					if (rc <= 0)
+						break;
+					memcpy(out + offset, buffer, rc);
+					offset += rc;
+				}
+				
+				if(rc == 0 && err && !ssh_channel_is_eof(channel)) {
+					err[0] = '\0';
+					offset = 0;
+					for (;;) {
+						rc = ssh_channel_read(channel, buffer, sizeof(buffer), 1);
+						if (rc <= 0)
+							break;
+						memcpy(err + offset, buffer, rc);
+						offset += rc;
+					}
+				}
+				if(rc == 0)
+					ssh_channel_send_eof(channel);	
+			}		
 			ssh_channel_close(channel);
-			ssh_channel_free(channel);
-			return SSH_ERROR;
-		}
-	}
 
-	err[0] = '\0';
-	offset = 0;
-	
-	if (!ssh_channel_is_eof(channel)) {
-		for (;;) {
-			rc = ssh_channel_read(channel, buffer, sizeof(buffer), 1);
-			if (rc > 0) {
-				memcpy(err + offset, buffer, rc);
-				offset += rc;
-			}
-			if (rc == 0 || ssh_channel_is_eof(channel)) {
-				rc = 0;
-				break;
-			}
-			if (rc < 0) {
-				ssh_channel_close(channel);
-				ssh_channel_free(channel);
-				return SSH_ERROR;
+			// get command exit code
+			// https://www.libssh.org/archive/libssh/2011-08/0000017.html
+			//1. call ssh_channel_close() before you call
+			//	ssh_channel_get_exit_status()
+			//2. put ssh_channel_get_exit_status() in a loop and wait for the
+			//	result to be not - 1. I am waiting 20 times 50ms.
+			if (rc == 0) {
+				rc = -1;
+				int i = 1;
+				while (rc == -1 && i < 20) {
+					rc = ssh_channel_get_exit_status(channel);
+					i++;
+					Sleep(50);
+				}
 			}
 		}
-	}
-
-	ssh_channel_send_eof(channel);
-	
-	// get command exit code
-	// https://www.libssh.org/archive/libssh/2011-08/0000017.html
-	//1. call ssh_channel_close() before you call
-	//	ssh_channel_get_exit_status()
-	//2. put ssh_channel_get_exit_status() in a loop and wait for the
-	//	result to be not - 1. I am waiting 20 times 50ms.
-
-	ssh_channel_close(channel);
-	rc = -1;
-	int i = 1;
-	while (rc == -1 && i < 20) {
-		rc = ssh_channel_get_exit_status(channel);
-		i++;
-		Sleep(50);
 	}
 	ssh_channel_free(channel);
-
 #else
 	LIBSSH2_CHANNEL* channel;
 	char* errmsg;
@@ -1745,7 +1720,7 @@ finish:
 
 #endif
 
-	log_error("command executed: %s\n", cmd);
+	//log_error("command executed: %s\n", cmd);
 	return (int)rc;
 }
 

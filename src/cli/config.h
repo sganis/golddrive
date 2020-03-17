@@ -95,6 +95,7 @@ typedef struct fs_config {
 
 extern fs_config g_fs;
 
+#ifndef USE_LIBSSH
 /* SSH Status Codes (returned by libssh2_ssh_last_error() */
 static const char * ssh_errors[] = {
 	"SSH_OK",
@@ -174,6 +175,7 @@ static const char *sftp_errors[] = {
 	"SFTP_LINK_LOOP",
 	"SFTP_UNKNOWN"
 };
+#endif
 
 /* macros */
 #define fi_dirbit                       (0x8000000000000000ULL)
