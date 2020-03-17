@@ -27,6 +27,7 @@ after_test:
       net use /d Z:
   - ps: |
       src\build\Release\golddrive.exe Z: \\golddrive\support@localhost -o hlink
+      Z:; cd Z:\tmp; cd
   - ps: |
       $sw = [Diagnostics.Stopwatch]::StartNew()
       C:\projects\golddrive\tools\fstools\fsx.exe -N 10000 test xxxxxx
