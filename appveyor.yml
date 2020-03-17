@@ -20,15 +20,19 @@ test:
       - Appveyor
 after_test:
   - ps: |
-      net use Z: \\golddrive\support@localhost
-  - ps: Measure-Command { .\tools\fstools\fsx.exe -N 10000 test xxxxxx } | Select-Object -Property TotalSeconds
-  - ps: |
       Z:
       cd Z:\tmp
       cd
       echo hello > test.txt
       dir
-      C:\projects\golddrive\tools\testfs.bat
+  - ps: |
+      net use Z: \\golddrive\support@localhost
+  - ps: |
+      $sw = [Diagnostics.Stopwatch]::StartNew()
+      .\tools\fstools\fsx.exe -N 10000 test xxxxxx
+      $sw.Stop()
+      Write-Host "$sw.TotalSeconds"
+  - C:\projects\golddrive\tools\testfs.bat
 artifacts:
   - path: src\build\Release\golddrive-2.*.msi
     name: Golddrive
