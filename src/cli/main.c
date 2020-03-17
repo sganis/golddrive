@@ -139,7 +139,7 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 		free(version);
 		//fuse_opt_add_arg(outargs, "--version");
 		
-		fuse_main(outargs->argc, outargs->argv, &fs_ops, NULL);
+		//fuse_main(outargs->argc, outargs->argv, &fs_ops, NULL);
 		exit(0);
 	}
 	return 1;
