@@ -23,6 +23,7 @@ after_test:
   - ps: |
       net use Z: \\golddrive\support@localhost
       Z:; cd Z:\tmp; echo hello > test.txt; dir
+      C:
       net use /d Z:
   - ps: |
       src\build\Release\golddrive.exe Z: \\golddrive\support@localhost -o hlink

@@ -133,9 +133,9 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 		GetModuleFileNameA(NULL, exepath, MAX_PATH);
 		char* version = calloc(100, sizeof(char));
 		get_file_version(exepath, version);
-		fprintf(stderr, "Golddrive version %s\nBuild date: %s\n", version, __DATE__);
-		fprintf(stderr, "Libssh version %s\n", ssh_version(0));
-		fprintf(stderr, "FUSE version %s\n", fuse_pkgversion());
+		fprintf(stderr, "Golddrive %s\nBuild date: %s\n", version, __DATE__);
+		fprintf(stderr, "Libssh %s\n", ssh_version(0));
+		fprintf(stderr, "FUSE %s\n", fuse_pkgversion());
 		free(version);
 		//fuse_opt_add_arg(outargs, "--version");
 		
