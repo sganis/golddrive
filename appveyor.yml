@@ -31,7 +31,7 @@ after_test:
       $sw = [Diagnostics.Stopwatch]::StartNew()
       .\tools\fstools\fsx.exe -N 10000 test xxxxxx
       $sw.Stop()
-      Write-Host "$sw.TotalSeconds"
+      Write-Output "Elapsed: $sw.TotalSeconds secs."
   - C:\projects\golddrive\tools\testfs.bat
 artifacts:
   - path: src\build\Release\golddrive-2.*.msi

@@ -54,7 +54,8 @@ gdssh_t * gd_init_ssh(
 	ssh_options_set(ssh, SSH_OPTIONS_COMPRESSION, "no");
 	ssh_options_set(ssh, SSH_OPTIONS_STRICTHOSTKEYCHECK, 0);
 	ssh_options_set(ssh, SSH_OPTIONS_KNOWNHOSTS, "/dev/null");
-
+	int verbosity = SSH_LOG_FUNCTIONS;
+	ssh_options_set(ssh, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
 
 	WSADATA wsadata;
 	int err;
