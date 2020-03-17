@@ -70,7 +70,7 @@ static struct fuse_opt fs_opts[] = {
 	fs_OPT("pkey=%s",           pkey, 0),
 	fs_OPT("-k %s",             pkey, 0),
 	fs_OPT("-k=%s",             pkey, 0),
-	fs_OPT("hlink",             hlink, 1),
+	fs_OPT("nolink",            nolink, 1),
 	fs_OPT("buffer=%u",         buffer, 0),
 
 	FUSE_OPT_KEY("--version",      KEY_VERSION),
@@ -110,7 +110,7 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 			"    -u USER, -o user=USER      user to connect to ssh server, default: current user\n"
 			"    -k PKEY, -o pkey=PKEY      private key, default: %%USERPROFILE%%\\.ssh\\id_rsa\n"
 			"    -p PORT, -o port=PORT      server port, default: 22\n"
-			"    -o hlink                   create new file before saving for hard links\n"
+			"    -o nolink                  hard links are not removed before overwriting data\n"
 			"    -o buffer=BYTES            read/write block size in bytes, default: 65535\n"
 			"\n"
 			"WinFsp-FUSE options:\n"
@@ -377,7 +377,7 @@ int main(int argc, char *argv[])
 	gd_log("root    = %s\n", g_fs.root);
 	gd_log("pkey    = %s\n", g_fs.pkey);
 	gd_log("buffer  = %u\n", g_fs.buffer);
-	gd_log("hlink   = %u\n", g_fs.hlink);
+	gd_log("nolink  = %u\n", g_fs.nolink);
 	//gd_log("intptr_t= %ld\n", sizeof(intptr_t));
 	//gd_log("long    = %ld\n", sizeof(long));
 

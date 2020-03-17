@@ -22,12 +22,7 @@ test:
 after_test:
   - ps: |
       net use Z: \\golddrive\support@localhost
-      Z:; cd Z:\tmp; echo hello > test.txt; dir
-      C:
-      net use /d Z:
-  - ps: |
-      src\build\Release\golddrive.exe Z: \\golddrive\support@localhost -o hlink
-      Z:; cd Z:\tmp; cd
+      Z:; cd Z:\tmp; echo hello > test.txt; dir; cd
   - ps: |
       $sw = [Diagnostics.Stopwatch]::StartNew()
       C:\projects\golddrive\tools\fstools\fsx.exe -N 10000 test xxxxxx
@@ -44,6 +39,8 @@ after_test:
       $sw = [Diagnostics.Stopwatch]::StartNew()
       C:\projects\golddrive\tools\iozone\iozone.exe -i0 -i1 -i2 -s 1m -s10m -r1m
       $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
+  - ps: |
+      net use Z: /d
   #- C:\projects\golddrive\tools\testfs.bat
 artifacts:
   - path: src\build\Release\golddrive-2.*.msi
