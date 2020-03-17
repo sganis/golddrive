@@ -1,3 +1,5 @@
+# Golddrive
+# 09/08/2018, San
 # setup ssh keys
 
 import os
@@ -37,18 +39,13 @@ def run(cmd, capture=False, detach=False, shell=True, timeout=30):
 	if shell:
 		header += ' (SHELL)'
 	logger.debug(f'{header}: {cmd}')
-
 	r = subprocess.CompletedProcess(cmd, 0)
 	r.stdout = ''
 	r.stderr = ''
-
 	try:
 		if detach:
 			CREATE_NEW_PROCESS_GROUP = 0x00000200
 			DETACHED_PROCESS = 0x00000008
-			# p = subprocess.Popen(shlex.split(cmd), 
-			# 		stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-			# 		creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP)
 			p = subprocess.Popen(shlex.split(cmd), close_fds=True,
 					creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP)
 			logger.debug(f'Detached process {p.pid} started.')
@@ -73,7 +70,6 @@ def run(cmd, capture=False, detach=False, shell=True, timeout=30):
 	return r
 	
 def get_app_key():
-
 	return f'{ os.path.expandvars("%USERPROFILE%") }\\.ssh\\id_rsa'
 	
 def testhost(userhost, port=22):
@@ -87,8 +83,7 @@ def testhost(userhost, port=22):
 	client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 	rb = ReturnBox()
 	try:
-		client.connect(hostname=host, username=user, 
-				password='', port=port, timeout=5)	
+		client.connect(hostname=host, username=user, password='', port=port, timeout=5)	
 		rb.returncode = ReturnCode.OK
 	except (paramiko.ssh_exception.AuthenticationException,
 		paramiko.ssh_exception.BadAuthenticationType,
@@ -101,37 +96,35 @@ def testhost(userhost, port=22):
 		client.close()
 	return rb
 
-def testlogin(userhost, password, port=22):
-	'''
-	Test ssh password authentication
-	'''
-	logger.debug(f'Logging in with password for {userhost}...')
-	rb = ReturnBox()
-	if not password:
-		rb.returncode =ReturnCode.BAD_LOGIN
-		rb.error = 'Empty password'
-		return rb
+# def testlogin(userhost, password, port=22):
+# 	'''
+# 	Test ssh password authentication
+# 	'''
+# 	logger.debug(f'Logging in with password for {userhost}...')
+# 	rb = ReturnBox()
+# 	if not password:
+# 		rb.returncode =ReturnCode.BAD_LOGIN
+# 		rb.error = 'Empty password'
+# 		return rb
 
-	user, host = userhost.split('@')
-	client = paramiko.SSHClient()
-	client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+# 	user, host = userhost.split('@')
+# 	client = paramiko.SSHClient()
+# 	client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 	
-	try:
-		client.connect(hostname=host, username=user, 
-				password=password, port=port, timeout=10, 
-				look_for_keys=False)
-		rb.returncode = ReturnCode.OK
-	except (paramiko.ssh_exception.AuthenticationException,
-		paramiko.ssh_exception.BadAuthenticationType,
-		paramiko.ssh_exception.PasswordRequiredException) as ex:
-		rb.returncode = ReturnCode.BAD_LOGIN
-		rb.error = str(ex)
-	except Exception as ex:
-		rb.returncode = ReturnCode.BAD_HOST
-		rb.error = str(ex)
-	finally:
-		client.close()
-	return rb
+# 	try:
+# 		client.connect(hostname=host, username=user, password=password, port=port, timeout=10, look_for_keys=False)
+# 		rb.returncode = ReturnCode.OK
+# 	except (paramiko.ssh_exception.AuthenticationException,
+# 		paramiko.ssh_exception.BadAuthenticationType,
+# 		paramiko.ssh_exception.PasswordRequiredException) as ex:
+# 		rb.returncode = ReturnCode.BAD_LOGIN
+# 		rb.error = str(ex)
+# 	except Exception as ex:
+# 		rb.returncode = ReturnCode.BAD_HOST
+# 		rb.error = str(ex)
+# 	finally:
+# 		client.close()
+# 	return rb
 
 def testssh(userhost, port=22):
 	'''
@@ -158,9 +151,7 @@ def testssh(userhost, port=22):
 	client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 	
 	try:
-		client.connect(hostname=host, username=user, 
-				port=port, timeout=10, 
-				look_for_keys=True)
+		client.connect(hostname=host, username=user, port=port, timeout=10, look_for_keys=True)
 		rb.returncode = ReturnCode.OK
 	except (paramiko.ssh_exception.AuthenticationException,
 		paramiko.ssh_exception.BadAuthenticationType,
@@ -229,38 +220,22 @@ def has_app_keys():
 	return output and output.startswith('ssh-rsa')
 
 def set_key_permissions(user):
-	
 	logger.debug('setting ssh key permissions...')
 	seckey = get_app_key()
 	ssh_folder = os.path.dirname(seckey)
-	# Remove Inheritance ::
-	# subprocess.run(fr'icacls {ssh_folder} /c /t /inheritance:d')
 	run(fr'icacls {seckey} /c /t /inheritance:d', capture=True)
-	
-	# Set Ownership to Owner and SYSTEM account
-	# subprocess.run(fr'icacls {ssh_folder} /c /t /grant %username%:F')
 	run(fr'icacls {seckey} /c /t /grant { os.environ["USERNAME"] }:F', capture=True)
 	run(fr'icacls {seckey} /c /t /grant SYSTEM:F', capture=True)
-	
-	# Remove All Users, except for Owner 
-	# subprocess.run(fr'icacls {ssh_folder} /c /t /remove Administrator BUILTIN\Administrators BUILTIN Everyone System Users')
 	run(fr'icacls {seckey} /c /t /remove Administrator BUILTIN\Administrators BUILTIN Everyone Users', capture=True)
-	
 	# Verify 
 	# run(fr'icacls {seckey}')
 	
 def main(userhost, password, port=22):
-	'''
-	Setup ssh keys, return ReturnBox
-	'''
+	'''Setup ssh keys, return ReturnBox'''
 	logger.debug(f'Setting up ssh keys for {userhost}...')
 	rb = ReturnBox()
-
-	# app key
 	user, host = userhost.split('@')
 	seckey = get_app_key()	
-
-	# Check if keys need to be generated
 	pubkey = ''
 	if has_app_keys():
 		logger.debug('Private key already exists.')
@@ -277,20 +252,16 @@ def main(userhost, password, port=22):
 	# connect
 	client = paramiko.SSHClient()
 	client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
 	rb.error = ''
 	try:
 		logger.debug('Connecting using password...')
-		client.connect(hostname=host, username=user,
-						password=password, port=port, timeout=10,
-						look_for_keys=False)     
+		client.connect(hostname=host, username=user, password=password, port=port, timeout=10, look_for_keys=False)     
 	except paramiko.ssh_exception.AuthenticationException:
 		rb.error = f'User or password wrong'
 		rb.returncode = 1
 	except Exception as ex:
 		rb.error = f'connection error: {ex}'
 		rb.returncode = 2
-
 	if rb.error:
 		logger.error(rb.error)
 		if 'getaddrinfo failed' in rb.error:
@@ -301,8 +272,7 @@ def main(userhost, password, port=22):
 
 	set_key_permissions(user)
 
-	logger.debug(f'Publising public key...')
-		
+	logger.debug(f'Publising public key...')		
 	# Copy to the target machines.
 	# cmd = f"exec bash -c \"cd; umask 077; mkdir -p .ssh && echo '{pubkey}' >> .ssh/authorized_keys || exit 1\" || exit 1"
 	cmd = f"exec sh -c \"cd; umask 077; mkdir -p .ssh; echo '{pubkey}' >> .ssh/authorized_keys\""
@@ -354,9 +324,7 @@ if __name__ == '__main__':
 	import sys
 	import os
 	import getpass
-
 	assert (len(sys.argv) > 2 and '@' in sys.argv[1]) # usage: prog user@host pass
-	
 	os.environ['PATH'] = f'{DIR};' + os.environ['PATH']
 	userhost = sys.argv[1]
 	password = sys.argv[2]
@@ -364,7 +332,7 @@ if __name__ == '__main__':
 
 	if ':' in userhost:
 		userhost, port = userhost.split(':')                             
-	
+
 	logging.basicConfig(level=logging.INFO)
 	# logging.basicConfig(level=logging.DEBUG)
 

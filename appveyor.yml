@@ -22,16 +22,11 @@ after_test:
   - ps: |
       net use Z: \\golddrive\support@localhost
   - ps: |
-      Z:
-      cd Z:\tmp
-      cd
-      echo hello > test.txt
-      dir
+      Z:; cd Z:\tmp; echo hello > test.txt; dir
   - ps: |
       $sw = [Diagnostics.Stopwatch]::StartNew()
       .\tools\fstools\fsx.exe -N 10000 test xxxxxx
-      $sw.Stop()
-      Write-Output "Elapsed: $($sw.TotalSeconds) secs."
+      $sw.Stop(); Write-Output "Elapsed: $($sw.TotalSeconds) secs."
   - C:\projects\golddrive\tools\testfs.bat
 artifacts:
   - path: src\build\Release\golddrive-2.*.msi
