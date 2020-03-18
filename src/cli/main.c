@@ -403,7 +403,11 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 		char* version = calloc(100, sizeof(char));
 		get_file_version(exepath, version);
 		fprintf(stderr, "Golddrive %s\nBuild date: %s\n", version, __DATE__);
+#ifdef USE_LIBSSH
 		fprintf(stderr, "Libssh %s\n", ssh_version(0));
+#else
+		fprintf(stderr, "Libssh2 %s\n", libssh2_version(0));
+#endif
 		fprintf(stderr, "FUSE %s\n", fuse_pkgversion());
 		free(version);
 		//fuse_opt_add_arg(outargs, "--version");
@@ -686,7 +690,7 @@ int main(int argc, char *argv[])
 	// number of threads
 	//printf("Threads = %d\n", gd_threads(5, get_number_of_processors()));
 
-	// default arguments
+	// winfsp arguments
 	char volprefix[256], volname[256], prefix[256];
 	strcpy(prefix, g_fs.remote);
 	if (str_contains(g_fs.remote, ":"))
@@ -708,7 +712,7 @@ int main(int argc, char *argv[])
 	}
 
 	// drive must be the last argument for winfsp
-	fuse_opt_parse(&args, &g_fs, fs_opts, fs_opt_proc);
+	rc = fuse_opt_parse(&args, &g_fs, fs_opts, fs_opt_proc);
 	fuse_opt_add_arg(&args, g_fs.drive);
 
 	// print arguments
