@@ -860,8 +860,9 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 
 	// sync
 	do {
-		bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
-		rc = (int)sftp_read(handle, pos, bsize);
+		//bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
+		//rc = (int)sftp_read(handle, pos, bsize);
+		rc = (int)sftp_read(handle, pos, chunk);
 		g_sftp_calls++;
 		if (rc <= 0)
 			break;
