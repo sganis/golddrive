@@ -3,7 +3,7 @@
 // windows file attributes
 //#define FSP_FUSE_USE_STAT_EX
 
-#define USE_LIBSSH
+//#define USE_LIBSSH
 
 
 #include <stdio.h>
