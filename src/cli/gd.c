@@ -314,7 +314,8 @@ int gd_stat(const char * path, struct fuse_stat *stbuf)
 
 		gd_error(path);
 		rc = error();
-	} else {	
+	} 
+	/*else {	
 		if (GD_ISLNK(attrs->permissions)) {
 			attrs = sftp_stat(g_ssh->sftp, path);
 			g_sftp_calls++;
@@ -326,10 +327,9 @@ int gd_stat(const char * path, struct fuse_stat *stbuf)
 
 			}
 		}	
-	}
+	}*/
 	gd_unlock();
-	if(attrs)
-		copy_attributes(stbuf, attrs);
+	copy_attributes(stbuf, attrs);
 #else
 
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
@@ -721,7 +721,7 @@ intptr_t gd_open(const char* path, int flags, unsigned int mode)
 
 	//printf("%d flags=%u %s\n", GetCurrentThreadId(), flags, path);
 	// check if file has hard links
-	if (g_fs.nolink == 0) {
+	if (g_fs.keeplink == 0) {
 		if ((flags & O_ACCMODE) == O_WRONLY || (flags & O_ACCMODE) == O_RDWR) {
 			struct fuse_stat stbuf;
 			if (!gd_stat(path, &stbuf)) {
@@ -1763,9 +1763,13 @@ finish:
 #ifdef USE_LIBSSH
 void copy_attributes(struct fuse_stat* stbuf, sftp_attributes attrs)
 {
+	if (!attrs)
+		return;
+	memset(stbuf, 0, sizeof * stbuf);
 	stbuf->st_uid = attrs->uid;
 	stbuf->st_gid = attrs->gid;
-	stbuf->st_mode = 0777 | (GD_ISDIR(attrs->permissions) ? GD_IFDIR : 0);
+	//stbuf->st_mode = 0777 | (GD_ISDIR(attrs->permissions) ? GD_IFDIR : 0);
+	stbuf->st_mode = attrs->permissions;
 	stbuf->st_size = attrs->size;
 	stbuf->st_birthtim.tv_sec = attrs->mtime;
 	stbuf->st_atim.tv_sec = attrs->atime;
