@@ -828,48 +828,54 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 		sftp_seek64(handle, offset);
 		g_sftp_calls++;
 	}
-	
+
 	// async
-	//sftp_file_set_nonblocking(handle);
-	//int async = sftp_async_read_begin(handle, chunk);
-	//Sleep(10000);
-	//if (async >= 0) {
-	//	bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
-	//	rc = sftp_async_read(handle, pos, bsize, async);
-	//}
-	//else {
-	//	rc = -1;
-	//}
+	sftp_file_set_nonblocking(handle);
+	//bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
+	int async_request = sftp_async_read_begin(handle, chunk);
+	//Sleep(1);
+	if (async_request >= 0) {
+		rc = sftp_async_read(handle, pos, chunk, async_request);
+		if (rc > 0) {
+			pos += rc;
+			total += rc;
+			chunk -= rc;
+			//log_error("finish reading %d, remaining %d total=%d/%lld\n",
+			//	bsize, chunk, total, size);
 
-	//while (rc > 0 || rc == SSH_AGAIN) {
-	//	if (rc > 0) {
-	//		async = sftp_async_read_begin(handle, bsize);
-	//	}
-	//	else {
-	//		//counter++;
-	//	}
-	//	Sleep(10000);
+		}
+	}
+	else {
+		rc = -1;
+		total = -1;
+	}
 
-	//	if (async >= 0) {
-	//		rc = sftp_async_read(handle, pos, bsize, async);
-	//	}
-	//	else {
-	//		rc = -1;
-	//	}
-	//}
+	while ((rc > 0 || rc == SSH_AGAIN) && chunk) {
 
-	// sync
-	do {
-		//bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
-		//rc = (int)sftp_read(handle, pos, bsize);
-		rc = (int)sftp_read(handle, pos, chunk);
-		g_sftp_calls++;
-		if (rc <= 0)
+		if (rc > 0) {
+			//bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
+			async_request = sftp_async_read_begin(handle, chunk);
+		}
+		//Sleep(1);
+
+		if (async_request >= 0) {
+			rc = sftp_async_read(handle, pos, chunk, async_request);
+			if (rc == 0)
+				break;
+			if (rc > 0) {
+				pos += rc;
+				total += rc;
+				chunk -= rc;
+				//log_error("finish reading %d, remaining %d total=%d/%lld\n",
+				//	bsize, chunk, total, size);
+			}
+		}
+		else {
+			rc = -1;
+			total = -1;
 			break;
-		pos += rc;
-		total += rc;
-		chunk -= rc;
-	} while (chunk);
+		}
+	}
 
 	if (rc < 0) {
 		gd_error("ERROR: Unable to read chuck of file\n");
@@ -877,11 +883,32 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 		if (rc)
 			total = -1;
 	}
+	sftp_file_set_blocking(handle);
+
+	// sync
+	//do {
+	//	//bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
+	//	//rc = (int)sftp_read(handle, pos, bsize);
+	//	rc = (int)sftp_read(handle, pos, chunk);
+	//	g_sftp_calls++;
+	//	if (rc <= 0)
+	//		break;
+	//	pos += rc;
+	//	total += rc;
+	//	chunk -= rc;
+	//} while (chunk);
+
+	//if (rc < 0) {
+	//	gd_error("ERROR: Unable to read chuck of file\n");
+	//	rc = error();
+	//	if (rc)
+	//		total = -1;
+	//}
 
 	gd_unlock();
 #else
 	LIBSSH2_SFTP_HANDLE* handle = sh->file_handle;
-	
+
 
 	log_info("READING HANDLE: %zu size=%lld, offset=%lld\n",
 		(size_t)handle, size, offset);
@@ -898,7 +925,7 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 			waitsocket(g_ssh);
 			g_sftp_calls++;
 		}
-		
+
 		if (rc > 0) {
 			pos += rc;
 			total += rc;
@@ -910,9 +937,9 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	} while (chunk);
 
 	if (rc < 0) {
-		gd_error("ERROR: Unable to read chuck of file\n");		
+		gd_error("ERROR: Unable to read chuck of file\n");
 		rc = error();
-		if(rc)
+		if (rc)
 			total = -1;
 	}
 	gd_unlock();
