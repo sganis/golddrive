@@ -1621,10 +1621,9 @@ int run_command(const char* cmd, char* out, char* err)
 			//	result to be not - 1. I am waiting 20 times 50ms.
 			if (rc == 0) {
 				rc = -1;
-				int i = 1;
-				while (rc == -1 && i < 20) {
+				int i = 0;
+				while (rc == -1 && i++ < 20) {
 					rc = ssh_channel_get_exit_status(channel);
-					i++;
 					Sleep(50);
 				}
 			}

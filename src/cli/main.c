@@ -340,6 +340,7 @@ static struct fuse_opt fs_opts[] = {
 	fs_OPT("-k %s",             pkey, 0),
 	fs_OPT("-k=%s",             pkey, 0),
 	fs_OPT("keeplink",          keeplink, 1),
+	fs_OPT("compress",          compress, 1),
 	fs_OPT("buffer=%u",         buffer, 0),
 
 	FUSE_OPT_KEY("--version",      KEY_VERSION),
@@ -380,6 +381,7 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 			"    -k PKEY, -o pkey=PKEY      private key, default: %%USERPROFILE%%\\.ssh\\id_rsa\n"
 			"    -p PORT, -o port=PORT      server port, default: 22\n"
 			"    -o keeplink                hard links are not removed before overwriting data\n"
+			"    -o compress                use compression\n"
 			"    -o buffer=BYTES            read/write block size in bytes, default: 65535\n"
 			"\n"
 			"WinFsp-FUSE options:\n"
@@ -651,6 +653,7 @@ int main(int argc, char *argv[])
 	gd_log("pkey    = %s\n", g_fs.pkey);
 	gd_log("buffer  = %u\n", g_fs.buffer);
 	gd_log("keeplink = %u\n", g_fs.keeplink);
+	gd_log("compress = %u\n", g_fs.compress);
 	//gd_log("intptr_t= %ld\n", sizeof(intptr_t));
 	//gd_log("long    = %ld\n", sizeof(long));
 
