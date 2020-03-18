@@ -22,16 +22,12 @@ test:
     only:
       - Appveyor
 after_test:
-  - ps: |
-      net use Z: \\golddrive\support@localhost
-      Z:; cd Z:\tmp; echo hello > test.txt; dir; cd
-  - ps: |
-      $sw = [Diagnostics.Stopwatch]::StartNew()
-      C:\projects\golddrive\tools\fstools\fsx.exe -N 10000 test xxxxxx
-      $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
+  - 'net use Z: \\golddrive\support@localhost'
+  - 'Z:; cd Z:\tmp; echo hello > test.txt; dir; cd'
   - ps: |
       $sw = [Diagnostics.Stopwatch]::StartNew()
-      C:\projects\golddrive\tools\fstools\fsx.exe -N 10000 -L test xxxxxx
+      C:\projects\golddrive\tools\fstools\fsx.exe -N 5000 test xxxxxx
+      C:\projects\golddrive\tools\fstools\fsx.exe -N 5000 -L test xxxxxx
       $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
   - ps: |
       $sw = [Diagnostics.Stopwatch]::StartNew()
@@ -41,8 +37,7 @@ after_test:
       $sw = [Diagnostics.Stopwatch]::StartNew()
       C:\projects\golddrive\tools\iozone\iozone.exe -i0 -i1 -i2 -s 1m -s10m -r1m
       $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
-  - ps: |
-      net use Z: /d
+  - 'net use Z: /d'
   #- C:\projects\golddrive\tools\testfs.bat
 artifacts:
   - path: src\build\Release\golddrive-2.*.msi
