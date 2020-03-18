@@ -817,7 +817,7 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	size_t chunk = size;
 	char* pos = buf;
 	size_t curpos;
-	size_t bsize;
+	//size_t bsize;
 
 #ifdef USE_LIBSSH
 	sftp_file handle = sh->file_handle;
@@ -832,10 +832,10 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	// async
 	sftp_file_set_nonblocking(handle);
 	//bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
-	int async_request = sftp_async_read_begin(handle, chunk);
+	int async_request = sftp_async_read_begin(handle, (uint32_t)chunk);
 	//Sleep(1);
 	if (async_request >= 0) {
-		rc = sftp_async_read(handle, pos, chunk, async_request);
+		rc = sftp_async_read(handle, pos, (uint32_t)chunk, async_request);
 		if (rc > 0) {
 			pos += rc;
 			total += rc;
@@ -854,12 +854,12 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 
 		if (rc > 0) {
 			//bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
-			async_request = sftp_async_read_begin(handle, chunk);
+			async_request = sftp_async_read_begin(handle, (uint32_t)chunk);
 		}
 		//Sleep(1);
 
 		if (async_request >= 0) {
-			rc = sftp_async_read(handle, pos, chunk, async_request);
+			rc = sftp_async_read(handle, pos, (uint32_t)chunk, async_request);
 			if (rc == 0)
 				break;
 			if (rc > 0) {
