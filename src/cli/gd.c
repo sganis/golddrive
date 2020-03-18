@@ -3,6 +3,11 @@
 #include "util.h"
 #include "gd.h"
 
+void libssh2_logger(LIBSSH2_SESSION* session, 
+	void* context, const char* data, size_t length)
+{
+	printf("libssh2: %s\n", data);
+}
 
 gdssh_t * gd_init_ssh(void)
 {
@@ -161,12 +166,15 @@ gdssh_t * gd_init_ssh(void)
 	}
 
 	/* debug, need to build with tracing */
-	libssh2_trace(ssh, 
-		LIBSSH2_TRACE_SFTP|LIBSSH2_TRACE_ERROR|LIBSSH2_TRACE_CONN);
+	//libssh2_trace(ssh, 
+		//LIBSSH2_TRACE_SFTP | LIBSSH2_TRACE_ERROR | LIBSSH2_TRACE_CONN
+	//	LIBSSH2_TRACE_SFTP | LIBSSH2_TRACE_ERROR
+	//);
+	//libssh2_trace_sethandler(ssh, 0, libssh2_logger);
 
 	/* blocking: 1 block, 0 non-blocking, g_fs.noblock ? 0 : 1 */
 	//libssh2_session_set_blocking(ssh, g_fs.noblock ^ 1);
-	libssh2_session_set_blocking(ssh, 0);
+	libssh2_session_set_blocking(ssh, 1);
 
 
 	/* ... start it up. This will trade welcome banners, exchange keys,
@@ -752,13 +760,20 @@ intptr_t gd_open(const char* path, int flags, unsigned int mode)
 	sh->flags = pflags;
 
 	// check if file has hard links
-	if (sh->flags == LIBSSH2_FXF_WRITE || sh->flags == (LIBSSH2_FXF_READ | LIBSSH2_FXF_WRITE)) {
-		gd_check_hlink(path);
+	if (g_fs.keeplink == 0) {
+		struct fuse_stat stbuf;
+		if (!gd_stat(path, &stbuf)) {
+			if (sh->flags == LIBSSH2_FXF_WRITE
+				|| sh->flags == (LIBSSH2_FXF_READ | LIBSSH2_FXF_WRITE)) {
+				gd_check_hlink(path);
+			}
+		}
 	}
 
 	gd_lock();
 	do {
-		handle = libssh2_sftp_open_ex(g_ssh->sftp, sh->path, (int)strlen(sh->path),
+		handle = libssh2_sftp_open_ex(
+			g_ssh->sftp, sh->path, (int)strlen(sh->path),
 			sh->flags, sh->mode, LIBSSH2_SFTP_OPENFILE);
 		g_sftp_calls++;
 		if (!handle && libssh2_session_last_errno(g_ssh->ssh) !=
@@ -1005,6 +1020,11 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	if (rc < 0) {
 		gd_error("ERROR: Unable to write chuck of data\n");
 		rc = error();
+
+		if (rc == -1) {
+			errno = EIO;
+		}
+
 		if (rc)
 			total = -1;
 	}

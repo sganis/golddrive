@@ -11,8 +11,8 @@ cmake .. ^
  -DOPENSSL_ROOT_DIR=%OPENSSL_DIR% 		^
  -DOPENSSL_MSVC_STATIC_RT=TRUE 			^
  -DOPENSSL_USE_STATIC_LIBS=TRUE ^
- -DENABLE_DEBUG_LOGGING=ON
+ -DCMAKE_BUILD_TYPE=Debug
 
-cmake --build . --config Debug
+rem cmake --build . --config Debug
 
 

@@ -590,7 +590,7 @@ int main(int argc, char *argv[])
 	// defaults
 	g_fs.port = 22;
 	//g_fs.hlink = 0;
-	g_fs.buffer = 65535; // 64k
+	g_fs.buffer = BUFFER_SIZE;
 
 
 	rc = fuse_opt_parse(&args, &g_fs, fs_opts, fs_opt_proc);
