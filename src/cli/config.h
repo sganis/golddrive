@@ -83,6 +83,7 @@ typedef struct fs_config {
 	char *args;
 	char *home;
 	char* root;
+	char* cipher;
 	int has_root;
 	int keeplink;
 	int compress;

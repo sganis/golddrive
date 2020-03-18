@@ -342,6 +342,7 @@ static struct fuse_opt fs_opts[] = {
 	fs_OPT("keeplink",          keeplink, 1),
 	fs_OPT("compress",          compress, 1),
 	fs_OPT("buffer=%u",         buffer, 0),
+	fs_OPT("cipher=%s",         cipher, 0),
 
 	FUSE_OPT_KEY("--version",      KEY_VERSION),
 	FUSE_OPT_KEY("--help",         KEY_HELP),
@@ -382,6 +383,7 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 			"    -p PORT, -o port=PORT      server port, default: 22\n"
 			"    -o keeplink                hard links are not removed before overwriting data\n"
 			"    -o compress                use compression\n"
+			"    -o cipher                  cipher for symetric encryption, comma-separated list\n"
 			"    -o buffer=BYTES            read/write block size in bytes, default: 65535\n"
 			"\n"
 			"WinFsp-FUSE options:\n"
@@ -631,32 +633,22 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "error: cannot read private key: %s\n", g_fs.pkey);
 		return 1;
 	}
-	//if (!g_fs.port) {
-	//	g_fs.port = 22;
-	//}
-	
-
-	//if (!g_fs.host && g_fs.hostcount > 0) {
-	//	// pick random host
-	//	g_fs.host = g_fs.hostlist[randint(0,g_fs.hostcount-1)];
-	//}
 
 	// show parameters
 	gd_log("Golddrive arguments:\n");
-	gd_log("drive   = %s\n", g_fs.drive);
-	gd_log("remote  = %s\n", g_fs.remote);
-	gd_log("mountp  = %s\n", g_fs.mountpoint);
-	gd_log("user    = %s\n", g_fs.user);
-	gd_log("host    = %s\n", g_fs.host);
-	gd_log("port    = %d\n", g_fs.port);
-	gd_log("root    = %s\n", g_fs.root);
-	gd_log("pkey    = %s\n", g_fs.pkey);
-	gd_log("buffer  = %u\n", g_fs.buffer);
+	gd_log("drive    = %s\n", g_fs.drive);
+	gd_log("remote   = %s\n", g_fs.remote);
+	gd_log("mountp   = %s\n", g_fs.mountpoint);
+	gd_log("user     = %s\n", g_fs.user);
+	gd_log("host     = %s\n", g_fs.host);
+	gd_log("port     = %d\n", g_fs.port);
+	gd_log("root     = %s\n", g_fs.root);
+	gd_log("pkey     = %s\n", g_fs.pkey);
+	gd_log("buffer   = %u\n", g_fs.buffer);
 	gd_log("keeplink = %u\n", g_fs.keeplink);
 	gd_log("compress = %u\n", g_fs.compress);
-	//gd_log("intptr_t= %ld\n", sizeof(intptr_t));
-	//gd_log("long    = %ld\n", sizeof(long));
-
+	if(g_fs.cipher)
+		gd_log("cipher   = %s\n", g_fs.cipher);
 
 	// initiaize small read/write lock
 	InitializeSRWLock(&g_ssh_lock);
@@ -664,7 +656,7 @@ int main(int argc, char *argv[])
 	g_sftp_calls = 0;
 	g_sftp_cached_calls = 0;
 
-	g_ssh = gd_init_ssh(g_fs.host, g_fs.port, g_fs.user, g_fs.pkey);
+	g_ssh = gd_init_ssh();
 	if (!g_ssh) 
 		return 1;
 
@@ -687,7 +679,7 @@ int main(int argc, char *argv[])
 		out[strcspn(out, "\r\n")] = 0;
 		g_fs.home = malloc(sizeof out);
 		strcpy_s(g_fs.home, sizeof out, out);
-		gd_log("home    = %s\n", g_fs.home);
+		gd_log("home     = %s\n", g_fs.home);
 	}
 
 	// number of threads
@@ -700,7 +692,7 @@ int main(int argc, char *argv[])
 		str_replace(g_fs.remote, ":", "", prefix);
 	sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=%s", prefix);
 	sprintf_s(volname, sizeof(volname), "-ovolname=%s", g_fs.mountpoint);
-	gd_log("Prefix  = %s\n", volprefix);
+	//gd_log("Prefix   = %s\n", volprefix);
 
 	int pos = 1;
 	fuse_opt_insert_arg(&args, pos++, volprefix);
@@ -721,7 +713,7 @@ int main(int argc, char *argv[])
 	// print arguments
 	gd_log("\nWinFsp arguments:\n");
 	for (int i = 1; i < args.argc; i++)
-		gd_log("arg %d   = %s\n", i, args.argv[i]);
+		gd_log("arg %d    = %s\n", i, args.argv[i]);
 
 	rc = fuse_main(args.argc, args.argv, &fs_ops, NULL);
 	
