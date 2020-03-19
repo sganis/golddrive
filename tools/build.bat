@@ -5,3 +5,4 @@
 setlocal
 
 msbuild %~dp0..\src\golddrive.sln -t:rebuild -p:Configuration=Release -m:4 -v:minimal
+msbuild %~dp0..\src\golddrive.sln -t:rebuild -p:Configuration=Release2 -m:4 -v:minimal

@@ -3,11 +3,6 @@
 #include "util.h"
 #include "gd.h"
 
-void libssh2_logger(LIBSSH2_SESSION* session, 
-	void* context, const char* data, size_t length)
-{
-	printf("libssh2: %s\n", data);
-}
 
 gdssh_t * gd_init_ssh(void)
 {
@@ -1948,6 +1943,11 @@ int map_error(int rc)
 
 }
 
+void libssh2_logger(LIBSSH2_SESSION* session,
+	void* context, const char* data, size_t length)
+{
+	printf("libssh2: %s\n", data);
+}
 
 #endif
 

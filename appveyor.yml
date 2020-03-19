@@ -14,9 +14,12 @@ install:
   - ps: $env:Version = C:\Python38\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
   - echo Version=%Version%
 build_script:
-  - msbuild src\golddrive.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /verbosity:quiet
+  - msbuild src\golddrive.sln -p:Configuration=Release -m:4 /verbosity:quiet /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - start /wait msiexec /i src\build\Release\golddrive-%Version%.msi /qn
   - src\build\Release\golddrive.exe --version
+  - msbuild src\golddrive.sln -p:Configuration=Release2 -m:4 /verbosity:quiet /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  - rename src\build\Release2\golddrive-%Version%.msi golddrive-%Version%-unstable.msi
+  - src\build\Release2\golddrive.exe --version
 test:
   categories:
     only:
@@ -40,6 +43,24 @@ after_test:
       $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
   - ps: |
       net use Z: /d
+  - start /wait msiexec /x src\build\Release\golddrive-%Version%.msi /qn
+  - start /wait msiexec /i src\build\Release\golddrive-%Version%-unstable.msi /qn
+  - ps: |
+      net use Z: \\golddrive\support@localhost
+      Z:; cd Z:\tmp; echo hello > test.txt; dir; cd
+  - ps: |
+      $sw = [Diagnostics.Stopwatch]::StartNew()
+      C:\projects\golddrive\tools\fstools\fsx.exe -N 5000 test xxxxxx
+      C:\projects\golddrive\tools\fstools\fsx.exe -N 5000 -L test xxxxxx
+      $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
+  - ps: |
+      $sw = [Diagnostics.Stopwatch]::StartNew()
+      C:\projects\golddrive\tools\fstools\fsbench-x64.exe -rdwr_cc_* -mmap_* -file_attr* -file_list_single* -file_list_none* -rdwr_nc_*
+      $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
+  - ps: |
+      $sw = [Diagnostics.Stopwatch]::StartNew()
+      C:\projects\golddrive\tools\iozone\iozone.exe -i0 -i1 -i2 -s 1m -s10m -r1m
+      $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
 artifacts:
   - path: src\build\Release\golddrive-2.*.msi
     name: Golddrive

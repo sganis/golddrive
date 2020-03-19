@@ -3,7 +3,7 @@
   <Import Project="..\version.xml" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>df1247c6-970e-4b88-9965-fb29c2ad4301</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
@@ -13,20 +13,15 @@
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
     <Name>msi</Name>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
-    <OutputPath>$(SolutionDir)build\$(Configuration)\</OutputPath>
-    <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <DefineConstants>Debug;MyProductName=$(MyProductName);MyProductFullName=$(MyProductFullName);MyDescription=$(MyDescription);MyCompanyName=$(MyCompanyName);MyCopyright=$(MyCopyright);MyProductVersion=$(MyProductVersion);MyProductStage=$(MyProductStage);MyVersion=$(MyVersion);MyFullVersion=$(MyFullVersion)</DefineConstants>
     <SuppressValidation>True</SuppressValidation>
     <SuppressAllWarnings>False</SuppressAllWarnings>
     <Pedantic>True</Pedantic>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <OutputPath>$(SolutionDir)build\$(Configuration)\</OutputPath>
-    <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>MyProductName=$(MyProductName);MyProductFullName=$(MyProductFullName);MyDescription=$(MyDescription);MyCompanyName=$(MyCompanyName);MyCopyright=$(MyCopyright);MyProductVersion=$(MyProductVersion);MyProductStage=$(MyProductStage);MyVersion=$(MyVersion);MyFullVersion=$(MyFullVersion)</DefineConstants>
+    <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug2|x64' ">
     <DefineConstants>Debug;MyProductName=$(MyProductName);MyProductFullName=$(MyProductFullName);MyDescription=$(MyDescription);MyCompanyName=$(MyCompanyName);MyCopyright=$(MyCopyright);MyProductVersion=$(MyProductVersion);MyProductStage=$(MyProductStage);MyVersion=$(MyVersion);MyFullVersion=$(MyFullVersion)</DefineConstants>
     <SuppressValidation>True</SuppressValidation>
     <SuppressAllWarnings>False</SuppressAllWarnings>
@@ -40,7 +35,12 @@
     <DefineConstants>MyProductName=$(MyProductName);MyProductFullName=$(MyProductFullName);MyDescription=$(MyDescription);MyCompanyName=$(MyCompanyName);MyCopyright=$(MyCopyright);MyProductVersion=$(MyProductVersion);MyProductStage=$(MyProductStage);MyVersion=$(MyVersion);MyFullVersion=$(MyFullVersion)</DefineConstants>
     <SuppressValidation>False</SuppressValidation>
   </PropertyGroup>
-  <ItemGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release2|x64' ">
+    <OutputPath>$(SolutionDir)build\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>MyProductName=$(MyProductName);MyProductFullName=$(MyProductFullName);MyDescription=$(MyDescription);MyCompanyName=$(MyCompanyName);MyCopyright=$(MyCopyright);MyProductVersion=$(MyProductVersion);MyProductStage=$(MyProductStage);MyVersion=$(MyVersion);MyFullVersion=$(MyFullVersion)</DefineConstants>
+    <SuppressValidation>False</SuppressValidation>
+  </PropertyGroup><ItemGroup>
     <Compile Include="Product.wxs" />
   </ItemGroup>
   <ItemGroup>

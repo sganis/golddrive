@@ -2,8 +2,7 @@
 #include "config.h"
 #include "jsmn.h"
 
-void libssh2_logger(LIBSSH2_SESSION* session, void* context,
-	const char* data, size_t length);
+
 gdssh_t *gd_init_ssh(void);
 int gd_finalize(void);
 int gd_stat(const char *path, struct fuse_stat *stbuf);
@@ -50,6 +49,8 @@ int waitsocket(gdssh_t* sanssh);
 void copy_attributes(struct fuse_stat* stbuf, sftp_attributes attrs);
 
 #else
+void libssh2_logger(LIBSSH2_SESSION* session, void* context,
+	const char* data, size_t length);
 void copy_attributes(struct fuse_stat* stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs);
 void print_permissions(const char* path, LIBSSH2_SFTP_ATTRIBUTES* attrs);
 void print_stat(const char* path, LIBSSH2_SFTP_ATTRIBUTES* attrs);
