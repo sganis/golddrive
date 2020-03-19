@@ -242,8 +242,11 @@ namespace golddrive.Tests
             var now = DateTime.Now.Ticks.ToString();
             var backup_sec = $"{_drive.AppKey}.{now}.bak";
             var backup_pub = $"{_drive.AppPubKey}.{now}.bak";
-            File.Move(_drive.AppKey, backup_sec);
+            
+            bool has_sec = File.Exists(_drive.AppPubKey);
             bool has_pub = File.Exists(_drive.AppPubKey);
+            if (has_sec)
+                File.Move(_drive.AppKey, backup_sec);
             if (has_pub)
                 File.Move(_drive.AppPubKey, backup_pub);
             var r = _mountService.TestSsh(_drive);
@@ -252,7 +255,8 @@ namespace golddrive.Tests
             Assert.IsTrue(r.MountStatus == MountStatus.OK);
             File.Delete(_drive.AppKey);
             File.Delete(_drive.AppPubKey);
-            File.Move(backup_sec, _drive.AppKey);
+            if (has_sec)
+                File.Move(backup_sec, _drive.AppKey);
             if (has_pub)
                 File.Move(backup_pub, _drive.AppPubKey);
         }
