@@ -4,9 +4,9 @@ image:
 platform: x64
 configuration: 
   - Release
-  - Release2
-  - Debug
-  - Debug2
+  # - Release2
+  # - Debug
+  # - Debug2
 install:
   - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/winfsp-1.6.20027.msi
   - start /wait msiexec /i winfsp-1.6.20027.msi /qn ADDLOCAL=ALL
