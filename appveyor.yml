@@ -19,7 +19,7 @@ install:
   - echo Version=%Version%
   - echo Configuration=$(configuration)
 build_script:
-  - msbuild src\golddrive.sln -p:Configuration=$(configuration) -m:4 /verbosity:quiet /logger:Appveyor"
+  - msbuild src\golddrive.sln -p:Configuration=$(configuration) -m:4 /verbosity:quiet /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - start /wait msiexec /i src\build\$(configuration)\golddrive-%Version%.msi /qn
   - src\build\$(configuration)\golddrive.exe --version
 test:
