@@ -17,11 +17,11 @@ install:
   - C:\Python38\python tools\setupssh.py support@localhost support
   - ps: $env:Version = C:\Python38\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
   - echo Version=%Version%
-  - echo Configuration=$(configuration)
+  - echo Configuration=%CONFIGURATION%
 build_script:
-  - msbuild src\golddrive.sln -p:Configuration=$(configuration) -m:4 /verbosity:quiet /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-  - start /wait msiexec /i src\build\$(configuration)\golddrive-%Version%.msi /qn
-  - src\build\$(configuration)\golddrive.exe --version
+  - msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -m:4 /verbosity:quiet /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  - start /wait msiexec /i src\build\%CONFIGURATION%\golddrive-%Version%.msi /qn
+  - src\build\%CONFIGURATION%\golddrive.exe --version
 test:
   categories:
     only:
