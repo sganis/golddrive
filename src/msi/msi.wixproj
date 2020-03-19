@@ -7,7 +7,6 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>df1247c6-970e-4b88-9965-fb29c2ad4301</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>golddrive-unstable-$(MyVersion)</OutputName>
     <OutputType>Package</OutputType>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' AND '$(MSBuildExtensionsPath32)' != '' ">$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
@@ -18,6 +17,7 @@
     <SuppressValidation>True</SuppressValidation>
     <SuppressAllWarnings>False</SuppressAllWarnings>
     <Pedantic>True</Pedantic>
+    <OutputName>golddrive-$(MyVersion)</OutputName>
     <OutputPath>$(SolutionDir)build\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <SuppressSpecificWarnings>
@@ -29,15 +29,18 @@
     <SuppressAllWarnings>False</SuppressAllWarnings>
     <Pedantic>True</Pedantic>
     <OutputPath>$(SolutionDir)build\$(Configuration)\</OutputPath>
+    <OutputName>golddrive-unstable$(MyVersion)</OutputName>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+    <OutputName>golddrive-$(MyVersion)</OutputName>
     <OutputPath>$(SolutionDir)build\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <DefineConstants>MyProductName=$(MyProductName);MyProductFullName=$(MyProductFullName);MyDescription=$(MyDescription);MyCompanyName=$(MyCompanyName);MyCopyright=$(MyCopyright);MyProductVersion=$(MyProductVersion);MyProductStage=$(MyProductStage);MyVersion=$(MyVersion);MyFullVersion=$(MyFullVersion)</DefineConstants>
     <SuppressValidation>False</SuppressValidation>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release2|x64' ">
+    <OutputName>golddrive-unstable$(MyVersion)</OutputName>
     <OutputPath>$(SolutionDir)build\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <DefineConstants>MyProductName=$(MyProductName);MyProductFullName=$(MyProductFullName);MyDescription=$(MyDescription);MyCompanyName=$(MyCompanyName);MyCopyright=$(MyCopyright);MyProductVersion=$(MyProductVersion);MyProductStage=$(MyProductStage);MyVersion=$(MyVersion);MyFullVersion=$(MyFullVersion)</DefineConstants>
