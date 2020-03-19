@@ -29,7 +29,7 @@
     <SuppressAllWarnings>False</SuppressAllWarnings>
     <Pedantic>True</Pedantic>
     <OutputPath>$(SolutionDir)build\$(Configuration)\</OutputPath>
-    <OutputName>golddrive-unstable$(MyVersion)</OutputName>
+    <OutputName>golddrive-$(MyVersion)</OutputName>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
@@ -40,7 +40,7 @@
     <SuppressValidation>False</SuppressValidation>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release2|x64' ">
-    <OutputName>golddrive-unstable$(MyVersion)</OutputName>
+    <OutputName>golddrive-$(MyVersion)</OutputName>
     <OutputPath>$(SolutionDir)build\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <DefineConstants>MyProductName=$(MyProductName);MyProductFullName=$(MyProductFullName);MyDescription=$(MyDescription);MyCompanyName=$(MyCompanyName);MyCopyright=$(MyCopyright);MyProductVersion=$(MyProductVersion);MyProductStage=$(MyProductStage);MyVersion=$(MyVersion);MyFullVersion=$(MyFullVersion)</DefineConstants>
