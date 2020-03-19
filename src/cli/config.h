@@ -18,6 +18,7 @@
 #include <fuse.h>
 
 #define BUFFER_SIZE						30000
+#define COMMAND_SIZE					1000
 
 #define FSP_FUSE_CAP_STAT_EX            (1 << 23)   /* file system supports fuse_stat_ex */
 /* from FreeBSD */
@@ -237,9 +238,11 @@ typedef struct gdssh_t {
 #ifdef USE_LIBSSH
 	ssh_session ssh;
 	sftp_session sftp;
+	ssh_channel channel;
 #else
 	LIBSSH2_SESSION *ssh;			/* ssh session struct */
-	LIBSSH2_SFTP *sftp;				/* sftp session struct */
+	LIBSSH2_SFTP* sftp;				/* sftp session struct */
+	LIBSSH2_CHANNEL* channel;		/* channel for commands */
 #endif
 } gdssh_t;
 

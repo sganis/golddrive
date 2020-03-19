@@ -14,6 +14,7 @@ cd
 %DIR%\fstools\fsx.exe -N 1000 test xxxxxx
 rem %DIR%\fstools\fsx.exe -N 1000 -L test xxxxxx
 rem del test test.*
+echo error: !ERRORLEVEL!
 if !ERRORLEVEL! neq 0 goto fail
 
 rem %DIR%\fstools\fsbench-x64.exe --files=100 -rdwr_cc_* -mmap_* ^

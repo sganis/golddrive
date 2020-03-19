@@ -71,6 +71,11 @@ gdssh_t * gd_init_ssh(void)
 		return 0;
 	}
 
+
+	ssh_channel channel;
+	channel = ssh_channel_new(ssh);
+	//ssh_channel_open_session(channel);
+
 	sftp_session sftp;
 	sftp = sftp_new(ssh);
 	if (sftp == NULL) {
@@ -98,6 +103,7 @@ gdssh_t * gd_init_ssh(void)
 	//g_ssh->socket = 0;
 	g_ssh->ssh = ssh;
 	g_ssh->sftp = sftp;
+	g_ssh->channel = channel;
 	g_ssh->thread = GetCurrentThreadId();
 
 
@@ -110,6 +116,7 @@ gdssh_t * gd_init_ssh(void)
 	LIBSSH2_SESSION* ssh = NULL;
 	//LIBSSH2_CHANNEL *channel;
 	LIBSSH2_SFTP* sftp = NULL;
+	LIBSSH2_CHANNEL* channel = NULL;
 	int thread = GetCurrentThreadId();
 
 	// initialize windows socket
@@ -220,6 +227,19 @@ gdssh_t * gd_init_ssh(void)
 		return 0;
 	}
 
+	// command channel
+	do {
+		channel = libssh2_channel_open_session(ssh);
+		if ((!channel) && (libssh2_session_last_errno(ssh) !=
+			LIBSSH2_ERROR_EAGAIN))
+		{
+			gd_log("%zd: %d :ERROR: %s: %d: "
+				"failed to start sftp session [rc=%d, %s]\n",
+				time_mu(), thread, __func__, __LINE__, rc, errmsg);
+			return 0;
+		}
+	} while (!channel);
+
 	// init sftp channel
 	do {
 		sftp = libssh2_sftp_init(ssh);
@@ -237,13 +257,15 @@ gdssh_t * gd_init_ssh(void)
 	/* default mode is blocking */
 	//libssh2_session_set_blocking(session, 1);
 	g_ssh = malloc(sizeof(gdssh_t));
-	g_ssh->socket = sock;
-	g_ssh->ssh = ssh;
-	g_ssh->sftp = sftp;
-	g_ssh->thread = GetCurrentThreadId();
-	//if (!InitializeCriticalSectionAndSpinCount(&sanssh->lock, 0x00000400))
-	//	return 0;
-
+	if (g_ssh) {
+		g_ssh->socket = sock;
+		g_ssh->ssh = ssh;
+		g_ssh->sftp = sftp;
+		g_ssh->channel = channel;
+		g_ssh->thread = GetCurrentThreadId();
+		//if (!InitializeCriticalSectionAndSpinCount(&sanssh->lock, 0x00000400))
+		//	return 0;
+	}
 #endif
 	return g_ssh;
 }
@@ -251,8 +273,12 @@ gdssh_t * gd_init_ssh(void)
 int gd_finalize(void)
 {
 	log_info("FINALIZE\n");
-#ifdef USE_LIBSSH
 
+#ifdef USE_LIBSSH
+	ssh_disconnect(g_ssh->ssh);
+	sftp_free(g_ssh->sftp);
+	ssh_channel_free(g_ssh->channel);
+	ssh_free(g_ssh->ssh);
 #else
 	while (libssh2_sftp_shutdown(g_ssh->sftp) ==
 		LIBSSH2_ERROR_EAGAIN);
@@ -260,7 +286,6 @@ int gd_finalize(void)
 		LIBSSH2_ERROR_EAGAIN);
 	while (libssh2_session_free(g_ssh->ssh) ==
 		LIBSSH2_ERROR_EAGAIN);
-
 	libssh2_exit();
 	closesocket(g_ssh->socket);
 	
@@ -333,6 +358,7 @@ int gd_fstat(intptr_t fd, struct fuse_stat* stbuf)
 
 	int rc = 0;
 	gd_handle_t* sh = (gd_handle_t*)fd;
+
 #ifdef USE_LIBSSH
 	rc = gd_stat(sh->path, stbuf);
 	//sftp_attributes attrs;
@@ -373,7 +399,7 @@ int gd_fstat(intptr_t fd, struct fuse_stat* stbuf)
 
 	copy_attributes(stbuf, &attrs);
 #endif
-	log_info("%lld, size=%lld\n", (size_t)handle, attrs.filesize);
+	//log_info("%lld, size=%lld\n", (size_t)handle, attrs.filesize);
 	return rc;
 }
 
@@ -617,7 +643,7 @@ int gd_truncate(const char* path, fuse_off_t size)
 		waitsocket(g_ssh);
 		g_sftp_calls++;
 	}
-	if (rc) {
+	if (rc < 0) {
 		gd_error(path);
 		rc = error();
 	}
@@ -630,26 +656,27 @@ int gd_ftruncate(intptr_t fd, fuse_off_t size)
 {
 	int rc = 0;
 	gd_handle_t* sh = (gd_handle_t*)fd;
-//#ifdef USE_LIBSSH
+#ifdef USE_LIBSSH
 	rc = gd_truncate(sh->path, size);
-//#else
-
-	/*LIBSSH2_SFTP_HANDLE* handle = sh->file_handle;
+#else
+	LIBSSH2_SFTP_HANDLE* handle = sh->file_handle;
 	assert(handle);
 	log_info("%lld, %s, size=%lld\n", (size_t)handle, sh->path, size);
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
 	attrs.flags = LIBSSH2_SFTP_ATTR_SIZE;
 	attrs.filesize = size;
-
 	gd_lock();
-	while ((rc = libssh2_sftp_fstat_ex(handle, &attrs, LIBSSH2_SFTP_SETSTAT)) ==
+	while ((rc = libssh2_sftp_fstat_ex(handle, &attrs, 1)) ==
 		LIBSSH2_ERROR_EAGAIN) {
 		waitsocket(g_ssh);
 		g_sftp_calls++;
 	}
-	
-	gd_unlock();*/
-//#endif
+	if (rc < 0) {
+		gd_error(sh->path);
+		rc = error();
+	}
+	gd_unlock();
+#endif
 	//return gd_fsync(fd);
 	return rc;
 }
@@ -1318,7 +1345,7 @@ int gd_closedir(gd_dir_t* dirp)
 	}
 	gd_unlock();
 #endif
-	log_info("CLOSE HANDLE: %zu:%zu\n", (size_t)dirfh, (size_t)handle);
+	//log_info("CLOSE HANDLE: %zu:%zu\n", (size_t)dirfh, (size_t)handle);
 	free(dirfh);
 	dirfh = NULL;
 	free(dirp);
@@ -1655,6 +1682,171 @@ finish:
 	while ((rc = libssh2_channel_free(channel)) ==
 		LIBSSH2_ERROR_EAGAIN)
 		waitsocket(g_ssh);
+
+#endif
+
+	//log_error("command executed: %s\n", cmd);
+	return (int)rc;
+}
+
+int run_command_channel_exec(const char* cmd, char* out, char* err)
+{
+	int rc = 0;
+	size_t offset = 0;
+	char buffer[0x4000];
+
+#ifdef USE_LIBSSH
+	ssh_channel channel;
+
+	channel = g_ssh->channel;
+	if (!channel) {
+		rc = SSH_ERROR;
+	}
+	else {
+		rc = ssh_channel_open_session(channel);
+		if (rc) {
+			printf("cannot open channel: %s\n", ssh_get_error(g_ssh->ssh));
+		}
+		if (rc == SSH_OK) {
+			rc = ssh_channel_request_exec(channel, cmd);
+			if (rc == SSH_OK) {
+				out[0] = '\0';
+				for (;;) {
+					rc = ssh_channel_read(channel, buffer, sizeof(buffer), 0);
+					if (rc <= 0)
+						break;
+					memcpy(out + offset, buffer, rc);
+					offset += rc;
+				}
+				out[min(strcspn(out, "\r\n"), COMMAND_SIZE)] = '\0';
+
+				if (rc == 0 && err && !ssh_channel_is_eof(channel)) {
+					err[0] = '\0';
+					offset = 0;
+					for (;;) {
+						rc = ssh_channel_read(channel, buffer, sizeof(buffer), 1);
+						if (rc <= 0)
+							break;
+						memcpy(err + offset, buffer, rc);
+						offset += rc;
+					}
+					err[min(strcspn(err, "\r\n"), COMMAND_SIZE)] = '\0';
+				}
+				if (rc == 0)
+					ssh_channel_send_eof(channel);
+			}
+			ssh_channel_close(channel);
+
+			// get command exit code
+			// https://www.libssh.org/archive/libssh/2011-08/0000017.html
+			//1. call ssh_channel_close() before you call
+			//	ssh_channel_get_exit_status()
+			//2. put ssh_channel_get_exit_status() in a loop and wait for the
+			//	result to be not - 1. I am waiting 20 times 50ms.
+			if (rc == 0) {
+				rc = -1;
+				int i = 0;
+				while (rc == -1 && i++ < 20) {
+					rc = ssh_channel_get_exit_status(channel);
+					Sleep(50);
+				}
+			}
+		}
+	}
+	//ssh_channel_free(channel);
+#else
+	LIBSSH2_CHANNEL* channel = g_ssh->channel;
+	char* errmsg;
+
+	//do {
+	//	channel = libssh2_channel_open_session(g_ssh->ssh);
+	//	g_sftp_calls++;
+	//	if (!channel && libssh2_session_last_errno(g_ssh->ssh) !=
+	//		LIBSSH2_ERROR_EAGAIN)
+	//		break;
+	//} while (!channel);
+
+	if (!channel) {
+		rc = libssh2_session_last_error(g_ssh->ssh, &errmsg, NULL, 0);
+		log_debug("ERROR: unable to init ssh chanel, rc=%d, %s\n", rc, errmsg);
+		return 1;
+	}
+
+	/*libssh2_channel_set_blocking(channel, g_fs.block);*/
+	//g_sftp_calls++;
+
+	while ((rc = libssh2_channel_exec(channel, cmd))
+		== LIBSSH2_ERROR_EAGAIN) {
+		waitsocket(g_ssh);
+		g_sftp_calls++;
+	}
+
+	if (rc != 0) {
+		rc = libssh2_session_last_error(g_ssh->ssh, &errmsg, NULL, 0);
+		log_debug("ERROR: unable to execute command, rc=%d, %s\n", rc, errmsg);
+		goto finish;
+	}
+
+	/* read stdout */
+	out[0] = '\0';
+	for (;;) {
+		do {
+			//char buffer[0x4000];
+
+			rc = (int)libssh2_channel_read(channel, buffer, sizeof(buffer));
+
+			if (rc > 0) {
+				//strncat(out, buffer, bytesread);
+				memcpy(out + offset, buffer, rc);
+				offset += rc;
+			}
+		} while (rc > 0);
+
+		if (rc == LIBSSH2_ERROR_EAGAIN)
+			waitsocket(g_ssh);
+		else
+			break;
+	}
+	out[min(strcspn(out, "\r\n"), COMMAND_SIZE)] = '\0';
+	/* read stderr */
+	if (err) {
+		err[0] = '\0';
+		offset = 0;
+		for (;;) {
+			do {
+				//char buffer[0x4000];
+
+				rc = (int)libssh2_channel_read_stderr(channel, buffer, sizeof(buffer));
+
+				if (rc > 0) {
+					//strncat(err, buffer, bytesread);
+					memcpy(err + offset, buffer, rc);
+					offset += rc;
+				}
+			} while (rc > 0);
+
+			if (rc == LIBSSH2_ERROR_EAGAIN)
+				waitsocket(g_ssh);
+			else
+				break;
+		}
+		err[min(strcspn(err, "\r\n"), COMMAND_SIZE)] = '\0';
+	}
+	/* get exit code */
+	while ((rc = libssh2_channel_close(channel)) ==
+		LIBSSH2_ERROR_EAGAIN)
+		waitsocket(g_ssh);
+
+	//rc = libssh2_channel_close(channel);
+	if (rc == 0)
+		rc = libssh2_channel_get_exit_status(channel);
+	else
+		rc = 127;
+
+finish:
+	//while ((rc = libssh2_channel_free(channel)) ==
+	//	LIBSSH2_ERROR_EAGAIN)
+	//	waitsocket(g_ssh);
 
 #endif
 
