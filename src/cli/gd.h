@@ -2,7 +2,9 @@
 #include "config.h"
 #include "jsmn.h"
 
-gdssh_t *gd_init_ssh(const char *host, int port, const char *user, const char *pkey);
+void libssh2_logger(LIBSSH2_SESSION* session, void* context,
+	const char* data, size_t length);
+gdssh_t *gd_init_ssh(void);
 int gd_finalize(void);
 int gd_stat(const char *path, struct fuse_stat *stbuf);
 int gd_fstat(intptr_t fd, struct fuse_stat *stbuf);

@@ -10,8 +10,9 @@ cmake .. ^
  -DBUILD_SHARED_LIBS=OFF                ^
  -DOPENSSL_ROOT_DIR=%OPENSSL_DIR% 		^
  -DOPENSSL_MSVC_STATIC_RT=TRUE 			^
- -DOPENSSL_USE_STATIC_LIBS=TRUE
+ -DOPENSSL_USE_STATIC_LIBS=TRUE ^
+ -DCMAKE_BUILD_TYPE=Debug
 
-cmake --build . --config Release
+rem cmake --build . --config Debug
 
 

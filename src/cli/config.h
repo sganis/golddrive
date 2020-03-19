@@ -1,10 +1,9 @@
 #pragma once
 
+//#define USE_LIBSSH
+
 // windows file attributes
 //#define FSP_FUSE_USE_STAT_EX
-
-#define USE_LIBSSH
-
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -15,9 +14,10 @@
 #include <libssh2.h>
 #include <libssh2_sftp.h>
 #endif
-
 #include <winfsp/winfsp.h>
 #include <fuse.h>
+
+#define BUFFER_SIZE						30000
 
 #define FSP_FUSE_CAP_STAT_EX            (1 << 23)   /* file system supports fuse_stat_ex */
 /* from FreeBSD */
@@ -83,8 +83,10 @@ typedef struct fs_config {
 	char *args;
 	char *home;
 	char* root;
+	char* cipher;
 	int has_root;
 	int keeplink;
+	int compress;
 	char *mountpoint;
 	char letter;
 	int port;
@@ -216,8 +218,8 @@ static const char *sftp_errors[] = {
 #else
 #define gd_error(path) {															\
     rc = get_ssh_error(g_ssh);												\
-	/* skip errors 2, 3, 4 */ \
-	if (1 < rc && rc > 4) { \
+	/* skip errors 2, 3 */ \
+	if (2 < rc && rc > 3) { \
 		const char* msg = rc < 0 ? ssh_errors[-rc] : sftp_errors[rc];				\
 		gd_log("%zd: %d :ERROR: %s: %d: [rc=%d: %s], path: %s\n",					\
 			time_mu(), GetCurrentThreadId(), __func__, __LINE__, rc, msg, path);	\
