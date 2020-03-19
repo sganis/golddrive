@@ -20,10 +20,12 @@ build_script:
   - msbuild src\golddrive.sln -p:Configuration=Release2 -m:4 /verbosity:quiet /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - rename src\build\Release2\golddrive-%Version%.msi golddrive-%Version%-unstable.msi
   - src\build\Release2\golddrive.exe --version
-test:
-  categories:
-    only:
-      - Appveyor
+# test:
+#   categories:
+#     only:
+#       - Appveyor
+test_script:
+  - tools\test.bat
 after_test:
   - ps: |
       net use Z: \\golddrive\support@localhost
