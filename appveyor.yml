@@ -40,5 +40,5 @@ after_test:
   - ps: |
       net use Z: /d
 artifacts:
-  - path: src\build\Release\golddrive-2.*.msi
+  - path: src\build\Release\golddrive-*.msi
     name: Golddrive
