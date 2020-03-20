@@ -635,13 +635,9 @@ int main(int argc, char *argv[])
 
 	// get uid
 	char cmd[COMMAND_SIZE], out[COMMAND_SIZE], err[COMMAND_SIZE];
-	snprintf(cmd,sizeof(cmd), "id -u %s", g_fs.user);
-	gd_lock();
-	rc = run_command(cmd, out, err);
-	gd_unlock();
+	snprintf(cmd, sizeof(cmd), "id -u %s", g_fs.user);
 
-
-	// bencharmk commands
+	//// bencharmk commands
 	//LARGE_INTEGER frequency, start, end;
 	//double interval;
 	//QueryPerformanceFrequency(&frequency);
@@ -650,18 +646,27 @@ int main(int argc, char *argv[])
 	//// code to be measured
 	//for (int u = 0; u < 100; u++) {
 	//	rc = run_command_channel_exec(cmd, out, err);
-	//	printf("out: %s, err: %s\n", out, err);
+	//	//printf("out: %s, err: %s\n", out, err);
 	//}
 	//QueryPerformanceCounter(&end);
 	//interval = (double)(end.QuadPart - start.QuadPart) / frequency.QuadPart;
 	//printf("\ncommand execution time: %f\n\n", interval);
 
+
+
+
+
+	gd_lock();
+	rc = run_command_channel_exec(cmd, out, err);
+	gd_unlock();
+
+
 	if (rc == 0) {		
 		g_fs.remote_uid = atoi(out);
-		gd_log("uid     = %d\n", g_fs.remote_uid);
+		gd_log("uid      = %d\n", g_fs.remote_uid);
 	}
 	gd_lock();
-	rc = run_command("echo $HOME", out, err);
+	rc = run_command_channel_exec("echo $HOME", out, err);
 	gd_unlock();
 	if (rc == 0) {
 		g_fs.home = malloc(sizeof out);
