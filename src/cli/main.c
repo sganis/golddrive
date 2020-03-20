@@ -652,10 +652,6 @@ int main(int argc, char *argv[])
 	//interval = (double)(end.QuadPart - start.QuadPart) / frequency.QuadPart;
 	//printf("\ncommand execution time: %f\n\n", interval);
 
-
-
-
-
 	gd_lock();
 	rc = run_command_channel_exec(cmd, out, err);
 	gd_unlock();
