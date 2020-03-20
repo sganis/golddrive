@@ -5,7 +5,7 @@ image:
   # - Visual Studio 2015
 platform: 
   - x64
-  - x86
+  # - x86
 configuration: 
   - Release
   - Release2
