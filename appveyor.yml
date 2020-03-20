@@ -25,9 +25,7 @@ for:
       only:
         - image: Visual Studio 2019
           platform: x64
-          configuration: 
-            - Release
-            - Release2
+          configuration: Release
     before_build:
       - wslconfig /u Ubuntu-18.04
       - rd /s /q C:\WSL\Ubuntu1804
