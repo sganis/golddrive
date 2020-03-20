@@ -16,4 +16,6 @@ set DIR=%DIR:~0,-1%
 ::vstest.console /logger:Appveyor src\test\bin\Debug\golddrive-test.dll
 
 
-vstest.console %DIR%\..\src\build\Release\golddrive-test.dll /Settings:%DIR%\..\src\test\test.runsettings
+vstest.console ^
+	%DIR%\..\src\build\Release\x64\golddrive-test.dll ^
+	/Settings:%DIR%\..\src\test\test.runsettings
