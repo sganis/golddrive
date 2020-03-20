@@ -258,35 +258,35 @@ int path_concat(const char *s1, const char *s2, char *s3)
 	return 0;
 }
 
-void ShowLastError()
-{
-	// Retrieve the system error message for the last-error code
-
-	LPVOID lpMsgBuf;
-	LPVOID lpDisplayBuf;
-	DWORD dw = GetLastError();
-
-	FormatMessage(
-		FORMAT_MESSAGE_ALLOCATE_BUFFER |
-		FORMAT_MESSAGE_FROM_SYSTEM |
-		FORMAT_MESSAGE_IGNORE_INSERTS,
-		NULL,
-		dw,
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(LPTSTR)&lpMsgBuf,
-		0, NULL);
-
-	// Display the error message and exit the process
-
-	lpDisplayBuf = (LPVOID)LocalAlloc(LMEM_ZEROINIT,
-		(lstrlen((LPCTSTR)lpMsgBuf) +  40) * sizeof(TCHAR));
-	StringCchPrintf((LPTSTR)lpDisplayBuf,
-		LocalSize(lpDisplayBuf) / sizeof(TCHAR),
-		TEXT("Function failed with error %d: %s"),
-		dw, lpMsgBuf);
-	MessageBox(NULL, (LPCTSTR)lpDisplayBuf, TEXT("Error"), MB_OK);
-
-	LocalFree(lpMsgBuf);
-	LocalFree(lpDisplayBuf);
-	ExitProcess(dw);
-}
+//void ShowLastError()
+//{
+//	// Retrieve the system error message for the last-error code
+//
+//	LPVOID lpMsgBuf;
+//	LPVOID lpDisplayBuf;
+//	DWORD dw = GetLastError();
+//
+//	FormatMessage(
+//		FORMAT_MESSAGE_ALLOCATE_BUFFER |
+//		FORMAT_MESSAGE_FROM_SYSTEM |
+//		FORMAT_MESSAGE_IGNORE_INSERTS,
+//		NULL,
+//		dw,
+//		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+//		(LPTSTR)&lpMsgBuf,
+//		0, NULL);
+//
+//	// Display the error message and exit the process
+//
+//	lpDisplayBuf = (LPVOID)LocalAlloc(LMEM_ZEROINIT,
+//		(lstrlen((LPCTSTR)lpMsgBuf) +  40) * sizeof(TCHAR));
+//	StringCchPrintf((LPTSTR)lpDisplayBuf,
+//		LocalSize(lpDisplayBuf) / sizeof(TCHAR),
+//		TEXT("Function failed with error %d: %s"),
+//		dw, lpMsgBuf);
+//	MessageBox(NULL, (LPCTSTR)lpDisplayBuf, TEXT("Error"), MB_OK);
+//
+//	LocalFree(lpMsgBuf);
+//	LocalFree(lpDisplayBuf);
+//	ExitProcess(dw);
+//}

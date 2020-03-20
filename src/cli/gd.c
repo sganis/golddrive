@@ -1380,7 +1380,7 @@ int gd_check_hlink(const char* path)
 
 		// backup file
 		char backup[PATH_MAX];
-		sprintf_s(backup, sizeof backup, "%s.%zd.hlink", path, time_mu());
+		sprintf_s(backup, sizeof backup, "%s.%lld.hlink", path, time_mu());
 		rc = gd_rename(path, backup);
 
 		if (rc) {
@@ -1723,9 +1723,9 @@ int run_command_channel_exec(const char* cmd, char* out, char* err)
 		char newcmd[COMMAND_SIZE];
 		strcpy(newcmd, cmd);
 		strcat(newcmd, ";echo RCODE=$?\n");
-		int len = strlen(newcmd);
+		size_t len = strlen(newcmd);
 
-		rc = ssh_channel_write(channel, newcmd, len);
+		rc = ssh_channel_write(channel, newcmd, (uint32_t)len);
 
 		if (rc == len) {
 			rc = ssh_channel_is_open(channel);

@@ -1,12 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<?define UpgradeCode64="39F33CFA-2562-4866-AE81-0A863342BE23"?>
+<?define UpgradeCode32="8842D0D6-C50D-4A35-9BCC-FED5862BF8D3"?>
+<?if $(var.Platform) = x64?>
+<?define UpgradeCode="$(var.UpgradeCode64)"?>
+<?define OtherUpgradeCode="$(var.UpgradeCode32)"?>
+<?define ProgramFilesFolder="ProgramFiles64Folder"?>
+<?define LauncherRegistryKey="Software\WOW6432Node\WinFsp\Services"?>
+<?else?>
+<?define UpgradeCode="$(var.UpgradeCode32)"?>
+<?define OtherUpgradeCode="$(var.UpgradeCode64)"?>
+<?define ProgramFilesFolder="ProgramFilesFolder"?>
+<?define LauncherRegistryKey="Software\WinFsp\Services"?>
+<?endif?>
+
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  
     <Product
         Id="*"
-        Name="$(var.MyProductName) $(var.MyProductVersion)"
+        Name="$(var.MyProductName) $(var.MyProductVersion)  $(var.Platform)"
         Manufacturer="$(var.MyCompanyName)"
         Version="$(var.MyVersion)"
         Language="1033"
-        UpgradeCode="39F33CFA-2562-4866-AE81-0A863342BE23">
+        UpgradeCode="$(var.UpgradeCode)">
 
         <Package
             Description="$(var.MyProductName) - $(var.MyDescription)"
@@ -20,12 +36,19 @@
             Schedule="afterInstallInitialize" />
 
         <Media Id="1" Cabinet="Golddrive.cab" EmbedCab="yes" />
-
-        <Property Id="P.LauncherRegistryKey">Software\WOW6432Node\WinFsp\Services</Property>
+      
+        <Property Id="OTHERINSTALLED">
+          <ProductSearch UpgradeCode="$(var.OtherUpgradeCode)" Minimum="0.0.0.0" />
+        </Property>
+        <Condition Message="A version of $(var.MyProductName) with a different computer architecture is already installed. You must uninstall it before you can install this version.">
+          NOT OTHERINSTALLED
+        </Condition>
+      
+        <Property Id="P.LauncherRegistryKey">$(var.LauncherRegistryKey)</Property>
         <Property Id="P.RegistryKey">Software\WinFsp</Property>
         
         <Directory Id="TARGETDIR" Name="SourceDir">
-            <Directory Id="ProgramFiles64Folder">
+            <Directory Id="$(var.ProgramFilesFolder)">
                 <Directory Id="INSTALLDIR" Name="Golddrive" />
             </Directory>
             <Directory Id="ProgramMenuFolder">
@@ -33,7 +56,7 @@
             </Directory>
         </Directory>
          
-        <DirectoryRef Id="INSTALLDIR" FileSource="..\build\$(var.Configuration)">
+        <DirectoryRef Id="INSTALLDIR" FileSource="..\build\$(var.Configuration)\$(var.Platform)">
             <Component Id="C.golddrive.exe">
                 <File Name="golddrive.exe" KeyPath="yes" />
             </Component>
@@ -76,7 +99,7 @@
         <Icon Id="logo.ico" SourceFile="..\app\golddrive.ico" />
         <Property Id="ARPPRODUCTICON" Value="logo.ico" />
         
-        <DirectoryRef Id="INSTALLDIR" FileSource="..\build\$(var.Configuration)">
+        <DirectoryRef Id="INSTALLDIR" FileSource="..\build\$(var.Configuration)\$(var.Platform)">
             <Component Id="C.app.exe">
                 <File Name="golddrive-app.exe" KeyPath="yes">
                     <Shortcut Id="app_shortcut"

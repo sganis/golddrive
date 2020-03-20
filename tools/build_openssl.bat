@@ -1,6 +1,8 @@
 ::mkdir build && cd build
-perl Configure VC-WIN64A --prefix=C:\Openssl2
-ms\do_win64a
+::perl Configure VC-WIN64A --prefix=C:\Openssl64
+perl Configure VC-WIN32 --prefix=C:\Openssl32
+::ms\do_win64a
+ms\do_nasm.bat
 ::nmake -f ms\nt.mak clean
 nmake -f ms\nt.mak 
 ::nmake -f ms\nt.mak test

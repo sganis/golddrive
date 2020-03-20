@@ -15,4 +15,4 @@ void str_replace(const char *s, const char *oldW, const char *newW, char *result
 int str_contains(const char *str, const char* word);
 int str_startswith(const char *str, const char* beg);
 int path_concat(const char *s1, const char *s2, char *s3);
-void ShowLastError();
+//void ShowLastError();
