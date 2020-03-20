@@ -18,7 +18,7 @@
   
     <Product
         Id="*"
-        Name="$(var.MyProductName) $(var.MyProductVersion)  $(var.Platform)"
+        Name="$(var.MyProductName) $(var.MyProductVersion) ($(var.Platform))"
         Manufacturer="$(var.MyCompanyName)"
         Version="$(var.MyVersion)"
         Language="1033"
