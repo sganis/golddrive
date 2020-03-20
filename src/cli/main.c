@@ -352,6 +352,7 @@ static struct fuse_opt fs_opts[] = {
 static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *outargs)
 {
 	char exepath[MAX_PATH];
+	char version[100];
 	switch (key) {
 	case FUSE_OPT_KEY_NONOPT:
 		if (!g_fs.drive) {
@@ -404,7 +405,7 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 
 	case KEY_VERSION:		
 		GetModuleFileNameA(NULL, exepath, MAX_PATH);
-		char* version = calloc(100, sizeof(char));
+		//char* version = calloc(100, sizeof(char));
 		get_file_version(exepath, version);
 		fprintf(stderr, "Golddrive %s\nBuild date: %s\n", version, __DATE__);
 #ifdef USE_LIBSSH
@@ -413,31 +414,10 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 		fprintf(stderr, "Libssh2 %s\n", libssh2_version(0));
 #endif
 		fprintf(stderr, "FUSE %s\n", fuse_pkgversion());
-		free(version);
-		//fuse_opt_add_arg(outargs, "--version");
-		
-		//fuse_main(outargs->argc, outargs->argv, &fs_ops, NULL);
 		exit(0);
 	}
 	return 1;
 }
-
-//char **new_argv(int count, ...)
-//{
-//	va_list args;
-//	int i;
-//	char **argv = malloc((count + 1) * sizeof(char*));
-//	char *temp;
-//	va_start(args, count);
-//	for (i = 0; i < count; i++) {
-//		temp = va_arg(args, char*);
-//		argv[i] = malloc(sizeof(temp));
-//		argv[i] = temp;
-//	}
-//	argv[i] = NULL;
-//	va_end(args);
-//	return argv;
-//}
 
 static int parse_remote(fs_config* fs)
 {
@@ -478,8 +458,6 @@ static int parse_remote(fs_config* fs)
 		p++;
 	if (*p)
 		*p++ = '\0';
-
-	
 
 	/* parse instance name (syntax: [locuser=]user@host!port/path) */
 	locuser = 0;
@@ -525,11 +503,6 @@ static int parse_remote(fs_config* fs)
 		fs->has_root = strlen(fs->root) > 1;
 	}
 
-	// fixme: support all letters, not only C:
-	//if (str_startswith(fs->root, "/C:/")) {
-	//	str_replace(fs->root, "/C:/", "/C/", s);
-	//	fs->realroot = strdup(s);
-	//}
 	free(npath);
 	return 0;
 }
@@ -662,7 +635,7 @@ int main(int argc, char *argv[])
 
 	// get uid
 	char cmd[COMMAND_SIZE], out[COMMAND_SIZE], err[COMMAND_SIZE];
-	snprintf(cmd,sizeof(cmd), "id -u %s && whoam", g_fs.user);
+	snprintf(cmd,sizeof(cmd), "id -u %s", g_fs.user);
 	gd_lock();
 	rc = run_command(cmd, out, err);
 	gd_unlock();
