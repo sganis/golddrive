@@ -9,6 +9,7 @@ set "MSVC=Visual Studio 16 2019"
 
 ECHO "Building with platform %MSVC%"
 cmake .. 								^
+ -A x86 ^
  -DCMAKE_BUILD_TYPE=Release             ^
  -DCRYPTO_BACKEND=OpenSSL               ^
  -G"%MSVC%"                             ^
