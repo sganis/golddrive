@@ -1,9 +1,11 @@
 version: 2.8.0.{build}
 image: 
   - Visual Studio 2019
-  - Visual Studio 2017
-  - Visual Studio 2015
-platform: x64
+  # - Visual Studio 2017
+  # - Visual Studio 2015
+platform: 
+  - x64
+  - x86
 configuration: 
   - Release
   - Release2
@@ -22,7 +24,10 @@ for:
     matrix:
       only:
         - image: Visual Studio 2019
-        - configuration: Release
+          platform: x64
+          configuration: 
+            - Release
+            - Release2
     before_build:
       - wslconfig /u Ubuntu-18.04
       - rd /s /q C:\WSL\Ubuntu1804
