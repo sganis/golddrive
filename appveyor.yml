@@ -27,8 +27,10 @@ build_script:
 test: off
 for:
   -
-    image: Visual Studio 2019
-    configuration: Release
+    matrix:
+      only:
+        - image: Visual Studio 2019
+        - configuration: Release
     test:
       categories:
         only:
