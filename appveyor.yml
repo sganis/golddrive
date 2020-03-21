@@ -1,8 +1,8 @@
 version: 2.8.0.{build}
 image: 
   - Visual Studio 2019
-  - Visual Studio 2017
-  - Visual Studio 2015
+  # - Visual Studio 2017
+  # - Visual Studio 2015
 platform: 
   - x64
   - x86
@@ -14,9 +14,8 @@ configuration:
 
 matrix:
   allow_failures:
-    - platform: 
-        - x86
-        - x64
+    - platform: x86
+    - platform: x64
       configuration: Release2
 
 install:
