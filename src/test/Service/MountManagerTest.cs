@@ -52,10 +52,10 @@ namespace golddrive.Tests
             Assert.AreEqual(r.DriveStatus, DriveStatus.DISCONNECTED);
 
         }
-        public void RandomFile(string path, int gigabytes)
+        public void RandomFile(string path, int megabytes)
         {
             FileStream fs = new FileStream(path, FileMode.CreateNew);
-            fs.Seek(1024L * 1024 * 1024 * gigabytes, SeekOrigin.Begin);
+            fs.Seek(1024L * 1024 * 1024 * 1024 * megabytes, SeekOrigin.Begin);
             fs.WriteByte(0);
             fs.Close();
         }
@@ -203,12 +203,12 @@ namespace golddrive.Tests
             Unmount();
         }
         [TestMethod(), TestCategory("Appveyor")]
-        public void Copy1GBFileTest()
+        public void CopyBigFileTest()
         {
             Mount();
             var tempfile1 = Path.GetTempPath() + "file_" + Guid.NewGuid().ToString() + ".bin";
             var tempfile2 = Path.GetTempPath() + "file_" + Guid.NewGuid().ToString() + ".bin";
-            RandomFile(tempfile1, 1);
+            RandomFile(tempfile1, 100); // 100 mb
             var hash1 = Md5(tempfile1);
             var path = "X:\\tmp\\file_random.bin";
             if (File.Exists(path))
@@ -274,22 +274,6 @@ namespace golddrive.Tests
             Assert.IsTrue(r.MountStatus == MountStatus.OK);
         }
 
-
-        //bool IsFileLocked(string path)
-        //{
-        //    try
-        //    {
-        //        using (File.Open(path, FileMode.Open))
-        //        {
-        //            return false;
-        //        }
-        //    }
-        //    catch
-        //    {
-        //        Console.WriteLine("File locked: " + path);
-        //        return true;
-        //    }
-        //}
         void CreateFile(int id)
         {
             var path = $"X:\\tmp\\file_{id}.txt";
