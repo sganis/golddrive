@@ -81,7 +81,7 @@ for:
       - echo Configuration=%CONFIGURATION% Platform=%PLATFORM%
       - appveyor DownloadFile https://github.com/sganis/golddrive/releases/download/v%Version%/golddrive-%Version%-%PLATFORM%.msi
       - start /wait msiexec /i golddrive-%Version%-%PLATFORM%.msi /qn 
-      - '"%ProgramFiles%\src\Golddrive\golddrive.exe" --version'
+      - '"%ProgramFiles%\Golddrive\golddrive.exe" --version'
 artifacts:
   - path: src\build\$(configuration)\$(platform)\golddrive-*.msi
     name: Golddrive
