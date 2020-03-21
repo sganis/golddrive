@@ -28,8 +28,7 @@
             Description="$(var.MyProductName) - $(var.MyDescription)"
             InstallerVersion="200" 
             Compressed="yes"
-            InstallScope="perMachine" 
-            Platform="x64"/>
+            InstallScope="perMachine" />
 
         <MajorUpgrade
             DowngradeErrorMessage="A newer version of $(var.MyProductName) is already installed." 
@@ -48,7 +47,6 @@
         <Property Id="P.RegistryKey">Software\$(var.MyProductName)</Property>
       
         <Property Id="INSTALLDIR">
-          
           <RegistrySearch
               Id="R.INSTALLDIR"
               Root="HKLM"
@@ -67,7 +65,7 @@
         </Directory>
          
         <DirectoryRef Id="INSTALLDIR" FileSource="..\build\$(var.Configuration)\$(var.Platform)">
-          <Component Id="C.INSTALLDIR" Guid="{D0E6695E-8423-4A50-A28B-1F7FCB660B3E}">
+          <Component Id="C.INSTALLDIR" Guid="{D0E6695E-8423-4A50-A28B-1F7FCB660B3E}" >
             <RegistryValue
                 Root="HKLM"
                 Key="[P.RegistryKey]"
@@ -171,22 +169,19 @@
             <Component Id="C.ssh.exe"><File Name="ssh.exe" KeyPath="yes" /></Component>
             <Component Id="C.ssh_keygen.exe"><File Name="ssh-keygen.exe" KeyPath="yes" /></Component>
             <Component Id="C.sftp.exe"><File Name="sftp.exe" KeyPath="yes" /></Component>
-          <Component Id="C.libcrypto.dll">
-            <File Name="libcrypto.dll" KeyPath="yes" />
-          </Component>
-          
+            <Component Id="C.libcrypto.dll"><File Name="libcrypto.dll" KeyPath="yes" /></Component>
         </DirectoryRef>
       
          <DirectoryRef Id="INSTALLDIR" FileSource="C:\Windows\System32">
             <Component Id="C.vcruntime140.dll"><File Name="vcruntime140.dll" KeyPath="yes" /></Component>
         </DirectoryRef>
       
-          <ComponentGroup Id="C.cli">
+        <ComponentGroup Id="C.cli">
             <ComponentRef Id="C.golddrive.exe" />
             <ComponentRef Id="C.golddrive.pdb" />
             <ComponentRef Id="C.golddrive.reg" />
             <ComponentRef Id="C.vcruntime140.dll" />
-          </ComponentGroup>
+        </ComponentGroup>
   
         <ComponentGroup Id="C.app">
             <ComponentRef Id="C.app.exe" />
@@ -199,11 +194,10 @@
             <ComponentRef Id="C.NLog.dll" />
             <ComponentRef Id="C.NLog.config" />
             <ComponentRef Id="C.Renci.SshNet.dll" />
-          <ComponentRef Id="C.System.Windows.Interactivity.dll" />
+            <ComponentRef Id="C.System.Windows.Interactivity.dll" />
         </ComponentGroup>
         
-       <ComponentGroup Id="C.ssh">
-            <ComponentRef Id="C.INSTALLDIR"/>
+        <ComponentGroup Id="C.ssh">
             <ComponentRef Id="C.ssh.exe" />
             <ComponentRef Id="C.sftp.exe" />
             <ComponentRef Id="C.ssh_keygen.exe" />
@@ -251,6 +245,7 @@
             AllowAdvertise="no"
             InstallDefault="local"
             Absent="disallow">
+          <ComponentRef Id="C.INSTALLDIR"/>
           <ComponentGroupRef Id="C.cli" />
           <ComponentGroupRef Id="C.ssh" />
           <ComponentGroupRef Id="C.app" />        

@@ -828,7 +828,7 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	int total = 0;
 	size_t chunk = size;
 	char* pos = buf;
-	size_t curpos;
+	uint64_t curpos;
 	
 
 #ifdef USE_LIBSSH
@@ -971,7 +971,7 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	int total = 0;
 	size_t chunk = size;
 	const char* pos = buf;
-	size_t curpos;
+	uint64_t curpos;
 	size_t bsize;
 
 	//log_error("WRITING HANDLE: %zu size: %zu\n", (size_t)sh, size);
@@ -1380,7 +1380,7 @@ int gd_check_hlink(const char* path)
 
 		// backup file
 		char backup[PATH_MAX];
-		sprintf_s(backup, sizeof backup, "%s.%llu.hlink", path, time_mu());
+		sprintf_s(backup, sizeof backup, "%s.%zu.hlink", path, time_mu());
 		rc = gd_rename(path, backup);
 
 		if (rc) {

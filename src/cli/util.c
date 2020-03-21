@@ -48,7 +48,7 @@ size_t time_mu(void)
 	ret -= 116444736000000000LL; /* Convert from file time to UNIX epoch time. */
 	//ret /= 10000; /* From 100 nano seconds (10^-7) to 1 millisecond (10^-3) intervals */
 	ret /= 10; /* From 100 nano seconds (10^-7) to 1 microsecond (10^-6) intervals */
-	return ret;
+	return (size_t)ret;
 }
 
 int get_number_of_processors(void)
