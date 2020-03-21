@@ -8,14 +8,12 @@ platform:
   - x86
 configuration: 
   - Release
-  - Release2
-  # - Debug
-  # - Debug2
+  - Debug
 
 matrix:
   allow_failures:
     - platform: x86
-    - configuration: Release2
+    - configuration: Debug
     - image: Visual Studio 2017
     - image: Visual Studio 2015
 install:
