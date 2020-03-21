@@ -78,7 +78,7 @@ for:
       - ps: $env:Version = C:\Python38\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
       - echo Version=%Version%
       - echo Configuration=%CONFIGURATION% Platform=%PLATFORM%
-      - appveyor DownloadFile https://github.com/sganis/golddrive/releases/download/v%Versioin%/golddrive-%Version%-%PLATFORM%.msi
+      - appveyor DownloadFile https://github.com/sganis/golddrive/releases/download/v%Version%/golddrive-%Version%-%PLATFORM%.msi
       - start /wait msiexec /i golddrive-%Version%-%PLATFORM%.msi /qn 
       - '"%ProgramFiles%\src\Golddrive\golddrive.exe" --version'
 artifacts:
