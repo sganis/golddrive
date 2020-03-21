@@ -1,8 +1,8 @@
 version: 2.8.0.{build}
 image: 
   - Visual Studio 2019
-  # - Visual Studio 2017
-  # - Visual Studio 2015
+  - Visual Studio 2017
+  - Visual Studio 2015
 platform: 
   - x64
   - x86
