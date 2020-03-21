@@ -75,8 +75,11 @@ for:
     install:
       - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/winfsp-1.6.20027.msi
       - start /wait msiexec /i winfsp-1.6.20027.msi /qn ADDLOCAL=ALL
-      - appveyor DownloadFile https://github.com/sganis/golddrive/releases/download/v2.6.0/golddrive-2.6.0.msi
-      - start /wait msiexec /i golddrive-2.6.0.msi /qn 
+      - ps: $env:Version = C:\Python38\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
+      - echo Version=%Version%
+      - echo Configuration=%CONFIGURATION% Platform=%PLATFORM%
+      - appveyor DownloadFile https://github.com/sganis/golddrive/releases/download/v%Versioin%/golddrive-%Version%-%PLATFORM%.msi
+      - start /wait msiexec /i golddrive-%Version%-%PLATFORM%.msi /qn 
       - '"%ProgramFiles%\src\Golddrive\golddrive.exe" --version'
 artifacts:
   - path: src\build\$(configuration)\$(platform)\golddrive-*.msi
