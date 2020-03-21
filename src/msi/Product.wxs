@@ -45,18 +45,38 @@
         </Condition>
       
         <Property Id="P.LauncherRegistryKey">$(var.LauncherRegistryKey)</Property>
-        <Property Id="P.RegistryKey">Software\WinFsp</Property>
-        
+        <Property Id="P.RegistryKey">Software\$(var.MyProductName)</Property>
+      
+        <Property Id="INSTALLDIR">
+          
+          <RegistrySearch
+              Id="R.INSTALLDIR"
+              Root="HKLM"
+              Key="[P.RegistryKey]"
+              Name="InstallDir"
+              Type="raw" />
+        </Property>
+      
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="$(var.ProgramFilesFolder)">
-                <Directory Id="INSTALLDIR" Name="Golddrive" />
+                <Directory Id="INSTALLDIR" Name="$(var.MyProductName)" />
             </Directory>
             <Directory Id="ProgramMenuFolder">
-                <Directory Id="GolddriveShortcut" Name="Golddrive" />
+                <Directory Id="GolddriveShortcut" Name="$(var.MyProductName)" />
             </Directory>
         </Directory>
          
         <DirectoryRef Id="INSTALLDIR" FileSource="..\build\$(var.Configuration)\$(var.Platform)">
+          <Component Id="C.INSTALLDIR" Guid="{D0E6695E-8423-4A50-A28B-1F7FCB660B3E}">
+            <RegistryValue
+                Root="HKLM"
+                Key="[P.RegistryKey]"
+                Name="InstallDir"
+                Type="string"
+                Value="[INSTALLDIR]"
+                KeyPath="yes" />
+          </Component>
+            
             <Component Id="C.golddrive.exe">
                 <File Name="golddrive.exe" KeyPath="yes" />
             </Component>
@@ -64,7 +84,7 @@
                 <File Name="golddrive.pdb" KeyPath="yes" />
             </Component>
           
-          <Component Id="C.golddrive.reg" Guid="{3EF97966-E49E-4A0B-B68D-5EB2BDA61C21}">
+            <Component Id="C.golddrive.reg" Guid="{3EF97966-E49E-4A0B-B68D-5EB2BDA61C21}">
                 <RegistryKey
                     Root="HKLM"
                     Key="[P.LauncherRegistryKey]">
@@ -90,7 +110,11 @@
                         <RegistryValue
                             Type="integer"
                             Name="JobControl"
-                            Value="1" />                        
+                            Value="1" />
+                        <RegistryValue
+                            Type="integer"
+                            Name="Credentials"
+                            Value="0" />
                     </RegistryKey>
                 </RegistryKey>
             </Component>
@@ -179,6 +203,7 @@
         </ComponentGroup>
         
        <ComponentGroup Id="C.ssh">
+            <ComponentRef Id="C.INSTALLDIR"/>
             <ComponentRef Id="C.ssh.exe" />
             <ComponentRef Id="C.sftp.exe" />
             <ComponentRef Id="C.ssh_keygen.exe" />

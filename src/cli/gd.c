@@ -401,14 +401,14 @@ int gd_fstat(intptr_t fd, struct fuse_stat* stbuf)
 
 	copy_attributes(stbuf, &attrs);
 #endif
-	//log_info("%lld, size=%lld\n", (size_t)handle, attrs.filesize);
+	//log_info("%zu, size=%zu\n", (size_t)handle, attrs.filesize);
 	return rc;
 }
 
 int gd_readlink(const char* path, char* buf, size_t size)
 {
-	log_info("%s, size=%lld\n", path, size);
-	log_debug("%s, size=%lld, buf=%s\n", path, size, buf);
+	log_info("%s, size=%zu\n", path, size);
+	log_debug("%s, size=%zu, buf=%s\n", path, size, buf);
 	int rc;
 	assert(size > 0);
 	
@@ -663,7 +663,7 @@ int gd_ftruncate(intptr_t fd, fuse_off_t size)
 #else
 	LIBSSH2_SFTP_HANDLE* handle = sh->file_handle;
 	assert(handle);
-	log_info("%lld, %s, size=%lld\n", (size_t)handle, sh->path, size);
+	log_info("%zu, %s, size=%zu\n", (size_t)handle, sh->path, size);
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
 	attrs.flags = LIBSSH2_SFTP_ATTR_SIZE;
 	attrs.filesize = size;
@@ -853,7 +853,7 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 			pos += rc;
 			total += rc;
 			chunk -= rc;
-			//log_error("finish reading %d, remaining %d total=%d/%lld\n",
+			//log_error("finish reading %d, remaining %d total=%d/%zu\n",
 			//	bsize, chunk, total, size);
 
 		}
@@ -918,7 +918,7 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 #else
 	LIBSSH2_SFTP_HANDLE* handle = sh->file_handle;
 	
-	log_info("READING HANDLE: %zu size=%lld, offset=%lld\n",
+	log_info("READING HANDLE: %zu size=%zu, offset=%zu\n",
 		(size_t)handle, size, offset);
 
 	gd_lock();
@@ -952,7 +952,7 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 
 	//if (rc == 0 && total > -1 && size != total)
 	//{
-	//	//log_warn("**************** WARNING ****************  need=%lld, actual=%lld, probably EOF\n",
+	//	//log_warn("**************** WARNING ****************  need=%zu, actual=%zu, probably EOF\n",
 	//	//	size, total);
 	//	//rc = -1;
 	//	//errno = 0; // EOF
@@ -1056,7 +1056,7 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 
 	//if (rc == 0 && total > -1 && size != total)
 	//{
-	//	log_warn("**************** WARNING **************** need=%lld, actual=%d, probably EOF\n", size, total);
+	//	log_warn("**************** WARNING **************** need=%zu, actual=%d, probably EOF\n", size, total);
 	//	//errno = EIO; // EOF
 	//	//total = -1;
 	//}

@@ -134,7 +134,7 @@ static int f_write(const char* path, const char* buf, size_t size, fuse_off_t of
 	rc = -1 != (nb = gd_write(fd, buf, size, off)) ? nb : -errno;
 
 	//if(size != nb)
-	//	printf("f_write error: %s, flags=%d, size=%lld, rc=%d\n", path, fi->flags, size, rc);
+	//	printf("f_write error: %s, flags=%d, size=%zu, rc=%d\n", path, fi->flags, size, rc);
 
 	return rc;
 }
@@ -411,7 +411,7 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 		//char* version = calloc(100, sizeof(char));
 		get_file_version(exepath, version);
 		fprintf(stderr, "Golddrive %s %d-bit\nBuild date: %s\n", 
-			version, (sizeof(void*) * 8) == 4 ? 32 : 64, __DATE__);
+			version, PLATFORM_BITS, __DATE__);
 #ifdef USE_LIBSSH
 		fprintf(stderr, "Libssh %s\n", ssh_version(0));
 #else

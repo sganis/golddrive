@@ -41,11 +41,11 @@ extern char*		g_logfile;
 #define USE_CACHE	0
 #define CACHE_TTL	1000 /* millisecs */
 
-//#ifdef _WIN64
-//
-//#else
-//
-//#endif
+#ifdef _WIN64
+#define PLATFORM_BITS 64
+#else
+#define PLATFORM_BITS 32
+#endif
 
 /* logging */
 #define ERROR		0
