@@ -20,9 +20,9 @@ matrix:
     - configuration: Debug
       platform: x86
     - configuration: Debug
-      image: 
-        - Visual Studio 2017
-        - Visual Studio 2015
+      image: Visual Studio 2017
+    - configuration: Debug
+      image: Visual Studio 2015
 
 install:
   - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/winfsp-1.6.20027.msi
@@ -65,6 +65,16 @@ for:
           $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
       - ps: |
           net use Z: /d
+  -
+    matrix:
+      only:
+        - image: Visual Studio 2015
+    install:
+      - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/winfsp-1.6.20027.msi
+      - start /wait msiexec /i winfsp-1.6.20027.msi /qn ADDLOCAL=ALL
+      - appveyor DownloadFile https://github.com/sganis/golddrive/releases/download/v2.6.0/golddrive-2.6.0.msi
+      - start /wait msiexec /i golddrive-2.6.0.msi /qn 
+      - cmd: %ProgramFiles%\src\Golddrive\golddrive.exe --version
 artifacts:
   - path: src\build\$(configuration)\$(platform)\golddrive-*.msi
     name: Golddrive
