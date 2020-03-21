@@ -55,7 +55,7 @@ namespace golddrive.Tests
         public void RandomFile(string path, int megabytes)
         {
             FileStream fs = new FileStream(path, FileMode.CreateNew);
-            fs.Seek(1024L * 1024 * 1024 * 1024 * megabytes, SeekOrigin.Begin);
+            fs.Seek(1024L * 1024 * megabytes, SeekOrigin.Begin);
             fs.WriteByte(0);
             fs.Close();
         }
