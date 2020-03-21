@@ -20,12 +20,9 @@ matrix:
   exclude:
     - configuration: Debug
       platform: x86
-    - configuration: Debug
-      image: Visual Studio 2017
-    - configuration: Debug
-      image: Visual Studio 2015
-    - configuration: Debug
-      image: Visual Studio 2013
+    - image: Visual Studio 2017
+    - image: Visual Studio 2015
+    - image: Visual Studio 2013
 
 install:
   - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/winfsp-1.6.20027.msi
