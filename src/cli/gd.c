@@ -293,7 +293,7 @@ int gd_finalize(void)
 	
 #endif
 	free(g_ssh);
-	printf("ssh operations: %lld\n", g_sftp_calls);
+	printf("ssh operations: %zu\n", g_sftp_calls);
 
 	return 0;
 }
@@ -1380,7 +1380,7 @@ int gd_check_hlink(const char* path)
 
 		// backup file
 		char backup[PATH_MAX];
-		sprintf_s(backup, sizeof backup, "%s.%lld.hlink", path, time_mu());
+		sprintf_s(backup, sizeof backup, "%s.%llu.hlink", path, time_mu());
 		rc = gd_rename(path, backup);
 
 		if (rc) {

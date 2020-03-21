@@ -23,12 +23,12 @@ set DIR=%DIR:~0,-1%
 
 set USERHOST=%USER%@%HOST%
 
-set SSH=%DIR%\..\..\sshfs-win\.build\x64\root\bin
-set BUILD=%DIR%\..\..\sshfs-win\.build\x64\src\sshfs\build
-set PATH=%BUILD%;%SSH%;%PATH%
+rem set SSH=%DIR%\..\..\sshfs-win\.build\x64\root\bin
+rem set BUILD=%DIR%\..\..\sshfs-win\.build\x64\src\sshfs\build
+rem set PATH=%BUILD%;%SSH%;%PATH%
 
-rem set "SSH=C:\Program Files\SSHFS-Win\bin"
-rem set PATH=%SSH%;%PATH%
+set "SSH=C:\Program Files (x86)\SSHFS-Win\bin"
+set PATH=%SSH%;%PATH%
 
 where ssh
 where sshfs

@@ -44,7 +44,7 @@ size_t time_mu(void)
 	GetSystemTimeAsFileTime(&ft);
 	li.LowPart = ft.dwLowDateTime;
 	li.HighPart = ft.dwHighDateTime;
-	size_t ret = li.QuadPart;
+	long long ret = li.QuadPart;
 	ret -= 116444736000000000LL; /* Convert from file time to UNIX epoch time. */
 	//ret /= 10000; /* From 100 nano seconds (10^-7) to 1 millisecond (10^-3) intervals */
 	ret /= 10; /* From 100 nano seconds (10^-7) to 1 microsecond (10^-6) intervals */

@@ -353,6 +353,9 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 {
 	char exepath[MAX_PATH];
 	char version[100];
+	//char arch[3];
+	//sprintf_s(arch, 3, "%d", sizeof(void*) * 8);
+
 	switch (key) {
 	case FUSE_OPT_KEY_NONOPT:
 		if (!g_fs.drive) {
@@ -407,7 +410,8 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 		GetModuleFileNameA(NULL, exepath, MAX_PATH);
 		//char* version = calloc(100, sizeof(char));
 		get_file_version(exepath, version);
-		fprintf(stderr, "Golddrive %s\nBuild date: %s\n", version, __DATE__);
+		fprintf(stderr, "Golddrive %s %d-bit\nBuild date: %s\n", 
+			version, (sizeof(void*) * 8) == 4 ? 32 : 64, __DATE__);
 #ifdef USE_LIBSSH
 		fprintf(stderr, "Libssh %s\n", ssh_version(0));
 #else
@@ -546,6 +550,8 @@ static void init_logging()
 
 int main(int argc, char *argv[])
 {
+	
+
 	// load fuse driver
 	if (FspLoad(0) != STATUS_SUCCESS) {
 		fprintf(stderr, "failed to load winfsp driver, either dll not present or wrong version\n");

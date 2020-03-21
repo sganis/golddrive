@@ -41,6 +41,12 @@ extern char*		g_logfile;
 #define USE_CACHE	0
 #define CACHE_TTL	1000 /* millisecs */
 
+//#ifdef _WIN64
+//
+//#else
+//
+//#endif
+
 /* logging */
 #define ERROR		0
 #define WARN		1
@@ -212,7 +218,7 @@ static const char *sftp_errors[] = {
 	/* skip errors 2, 3 */ \
 	if (2 < rc && rc > 3) { \
 		const char* msg = ssh_get_error(g_ssh->ssh);				\
-		gd_log("%zd: %d :ERROR: %s: %d: [rc=%d: %s], path: %s\n",					\
+		gd_log("%zu: %d :ERROR: %s: %d: [rc=%d: %s], path: %s\n",					\
 			time_mu(), GetCurrentThreadId(), __func__, __LINE__, rc, msg, path);	\
 	} \
 }
