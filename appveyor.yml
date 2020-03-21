@@ -16,6 +16,10 @@ matrix:
     - configuration: Debug
     - image: Visual Studio 2017
     - image: Visual Studio 2015
+  exclude:
+    - configuration: Debug
+      platform: x86
+
 install:
   - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/winfsp-1.6.20027.msi
   - start /wait msiexec /i winfsp-1.6.20027.msi /qn ADDLOCAL=ALL
@@ -31,6 +35,7 @@ for:
         - image: Visual Studio 2019
           configuration: Release
           platform: x64
+
     before_build:
       - wslconfig /u Ubuntu-18.04
       - rd /s /q C:\WSL\Ubuntu1804
