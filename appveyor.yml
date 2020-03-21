@@ -82,6 +82,8 @@ for:
       - appveyor DownloadFile https://github.com/sganis/golddrive/releases/download/v%Version%/golddrive-%Version%-%PLATFORM%.msi
       - start /wait msiexec /i golddrive-%Version%-%PLATFORM%.msi /qn 
       - '"%ProgramFiles%\Golddrive\golddrive.exe" --version'
+    build: off
+    build_script: off
 artifacts:
   - path: src\build\$(configuration)\$(platform)\golddrive-*.msi
     name: Golddrive
