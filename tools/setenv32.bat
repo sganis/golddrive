@@ -14,6 +14,7 @@ SET "PATH=C:\Program Files (x86)\WinFsp\bin;%PATH%"
 SET "PATH=C:\Program Files\Git\bin;%PATH%"
 SET "PATH=C:\Program Files\Git\usr\bin;%PATH%"
 SET "PATH=C:\Program Files (x86)\WiX Toolset v3.11\bin;%PATH%"
+SET "PATH=C:\Strawberry\perl\bin;%PATH%"
 
 echo Setting development environment...
 call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat"
