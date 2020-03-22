@@ -18,7 +18,7 @@ setlocal
 set DIR=%~dp0
 set DIR=%DIR:~0,-1%
 
-set PLATFORM=x64
+::set PLATFORM=x64
 set CONFIGURATION=Release
 
 set CURDIR=%CD%
@@ -127,7 +127,7 @@ robocopy C:\libssh-%PLATFORM%\lib 						^
 	%TARGET%\libssh\lib\%PLATFORM% 		^
 	ssh.lib
 robocopy C:\libssh-%PLATFORM%\bin 						^
-	%TARGET%\libssh\bin\%PLATFORM% 		^
+	%TARGET%\libssh\lib\%PLATFORM% 		^
 	ssh.dll
 robocopy C:\libssh-%PLATFORM%\include 					^
 	%TARGET%\libssh\include /e
