@@ -7,6 +7,8 @@ set DIR=%~dp0
 set DIR=%DIR:~0,-1%
 doskey ll=dir
 
+SET PLATFORM=x86
+
 SET "PATH=C:\Windows\System32;C:\Windows;C:\Windows\System32\wbem;%PATH%"
 SET "PATH=C:\Program Files (x86)\WinFsp\bin;%PATH%"
 SET "PATH=C:\Python38;C:\Python38\Scripts;%PATH%"
