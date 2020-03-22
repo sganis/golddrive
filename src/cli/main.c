@@ -1,6 +1,7 @@
 #include "util.h"
 #include "gd.h"
 #include <direct.h>
+#include <openssl/opensslv.h>
 #include <Shlwapi.h> /* PathRemoveFileSpecA */
 #pragma comment(lib, "shlwapi.lib")
 
@@ -410,13 +411,14 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 		GetModuleFileNameA(NULL, exepath, MAX_PATH);
 		//char* version = calloc(100, sizeof(char));
 		get_file_version(exepath, version);
-		fprintf(stderr, "Golddrive %s %d-bit\nBuild date: %s\n", 
+		fprintf(stderr, "Golddrive %s %d-bit %s\n", 
 			version, PLATFORM_BITS, __DATE__);
 #ifdef USE_LIBSSH
-		fprintf(stderr, "Libssh %s\n", ssh_version(0));
+		fprintf(stderr, "LibSSH %s\n", ssh_version(0));
 #else
 		fprintf(stderr, "Libssh2 %s\n", libssh2_version(0));
 #endif
+		fprintf(stderr, "%s\n", OPENSSL_VERSION_TEXT);
 		fprintf(stderr, "FUSE %s\n", fuse_pkgversion());
 		exit(0);
 	}
