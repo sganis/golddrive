@@ -36,6 +36,7 @@ set "MSVC=Visual Studio 16 2019"
 
 set CURDIR=%CD%
 set TARGET=%CD%\lib
+mkdir %TARGET%
 
 set ZLIB=zlib1211
 set ZLIBF=zlib-1.2.11
@@ -74,18 +75,19 @@ cd openssl-%OPENSSL%
 perl Configure no-shared no-asm no-stdio no-sock 		^
 	VC-%OARCH% --prefix=C:\openssl-%PLATFORM% 			^
 	--openssldir=C:\openssl-%PLATFORM%
-nmake 			>NUL 2>&1
-nmake install 	>NUL 2>&1
-mkdir %TARGET%\openssl
-mkdir %TARGET%\openssl\lib
-mkdir %TARGET%\openssl\lib
-mkdir %TARGET%\openssl\lib\%PLATFORM%
-robocopy C:\openssl-%PLATFORM%\include %TARGET%\openssl\include /E /NFL /NDL /NJH /NJS
-robocopy C:\openssl-%PLATFORM%\lib %TARGET%\openssl\lib\%PLATFORM% libcrypto.lib /NFL /NJH /NJS
+nmake
+nmake install
+rem mkdir %TARGET%\openssl 2>NUL
+rem mkdir %TARGET%\openssl\lib 2>NUL
+rem mkdir %TARGET%\openssl\lib 2>NUL
+rem mkdir %TARGET%\openssl\lib\%PLATFORM% 2>NUL
+xcopy C:\openssl-%PLATFORM%\include %TARGET%\openssl\include /y /s /i 
+xcopy C:\openssl-%PLATFORM%\lib\libcrypto.lib* %TARGET%\openssl\lib\%PLATFORM% /y /s /i 
 cd %CURDIR%
 if not exit %TARGET%\openssl\include goto fail
 if not exit %TARGET%\openssl\lib\%PLATFORM%\libcrypto.lib goto fail
 
+pause
 
 :zlib
 if %build_zlib% neq 1 goto libssh
@@ -99,13 +101,13 @@ cmake ..                                         		^
 	-DCMAKE_INSTALL_PREFIX="C:\zlib-%PLATFORM%"  		^
 	-DBUILD_SHARED_LIBS=OFF
 cmake --build . --config Release --target install
-mkdir %TARGET%
-mkdir %TARGET%\zlib
-mkdir %TARGET%\zlib\lib
-mkdir %TARGET%\zlib\lib
-mkdir %TARGET%\zlib\lib\%PLATFORM%
-robocopy C:\zlib-%PLATFORM%\lib %TARGET%\zlib\lib\%PLATFORM% zlibstatic.lib /NFL
-robocopy C:\zlib-%PLATFORM%\include %TARGET%\zlib\include /E /NFL /NDL
+rem mkdir %TARGET%
+rem mkdir %TARGET%\zlib
+rem mkdir %TARGET%\zlib\lib
+rem mkdir %TARGET%\zlib\lib
+rem mkdir %TARGET%\zlib\lib\%PLATFORM%
+xcopy C:\zlib-%PLATFORM%\lib\zlibstatic.lib* %TARGET%\zlib\lib\%PLATFORM% /y /s /i
+xcopy C:\zlib-%PLATFORM%\include %TARGET%\zlib\include /y /s /i
 cd %CURDIR%
 if not exit %TARGET%\zlib\include goto fail
 if not exit %TARGET%\zlib\lib\%PLATFORM%\zlibstatic.lib goto fail
@@ -129,13 +131,13 @@ cmake .. 												^
 	-DOPENSSL_USE_STATIC_LIBS=TRUE						^
 	-DBUILD_SHARED_LIBS=ON
 cmake --build . --config Release --target install
-mkdir %TARGET%
-mkdir %TARGET%\libssh
-mkdir %TARGET%\libssh\lib
-mkdir %TARGET%\libssh\lib
-mkdir %TARGET%\libssh\lib\%PLATFORM%
-robocopy C:\libssh-%PLATFORM%\lib %TARGET%\libssh\lib\%PLATFORM% ssh.lib ssh.dll /NFL
-robocopy C:\libssh-%PLATFORM%\include %TARGET%\libssh\include /E /NFL /NDL
+rem mkdir %TARGET%
+rem mkdir %TARGET%\libssh
+rem mkdir %TARGET%\libssh\lib
+rem mkdir %TARGET%\libssh\lib
+rem mkdir %TARGET%\libssh\lib\%PLATFORM%
+xcopy C:\libssh-%PLATFORM%\lib\ssh.* %TARGET%\libssh\lib\%PLATFORM% /y /s /i
+xcopy C:\libssh-%PLATFORM%\include %TARGET%\libssh\include /y /s /i
 cd %CURDIR%
 if not exit %TARGET%\libssh\include goto fail
 if not exit %TARGET%\libssh\lib\%PLATFORM%\ssh.lib goto fail
@@ -164,13 +166,13 @@ cmake .. 												^
 	-DBUILD_EXAMPLES=OFF
 
 cmake --build . --config Release --target install
-mkdir %TARGET%
-mkdir %TARGET%\libssh2
-mkdir %TARGET%\libssh2\lib
-mkdir %TARGET%\libssh2\lib
-mkdir %TARGET%\libssh2\lib\%PLATFORM%
-robocopy C:\libssh2-%PLATFORM%\lib %TARGET%\libssh2\lib\%PLATFORM% libssh2.lib /NFL
-robocopy C:\libssh2-%PLATFORM%\include %TARGET%\libssh2\include /E /NFL /NDL
+rem mkdir %TARGET%
+rem mkdir %TARGET%\libssh2
+rem mkdir %TARGET%\libssh2\lib
+rem mkdir %TARGET%\libssh2\lib
+rem mkdir %TARGET%\libssh2\lib\%PLATFORM%
+xcopy C:\libssh2-%PLATFORM%\lib\libssh2.lib* %TARGET%\libssh2\lib\%PLATFORM% /y /s /i
+xcopy C:\libssh2-%PLATFORM%\include %TARGET%\libssh2\include /y /s /i
 cd %CURDIR%
 if not exit %TARGET%\libssh2\include goto fail
 if not exit %TARGET%\libssh2\lib\%PLATFORM%\libssh2.lib goto fail
