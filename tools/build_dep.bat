@@ -80,8 +80,8 @@ mkdir %TARGET%\openssl
 mkdir %TARGET%\openssl\lib
 mkdir %TARGET%\openssl\lib
 mkdir %TARGET%\openssl\lib\%PLATFORM%
-robocopy C:\openssl-%PLATFORM%\lib %TARGET%\openssl\lib\%PLATFORM% libcrypto.lib
-robocopy C:\openssl-%PLATFORM%\include %TARGET%\openssl\include /mir
+robocopy C:\openssl-%PLATFORM%\lib %TARGET%\openssl\lib\%PLATFORM% libcrypto.lib /NFL
+robocopy C:\openssl-%PLATFORM%\include %TARGET%\openssl\include /E /NFL /NDL
 cd %CURDIR%
 if not exit %TARGET%\openssl\include goto fail
 if not exit %TARGET%\openssl\lib\%PLATFORM%\libcrypto.lib goto fail
@@ -104,8 +104,8 @@ mkdir %TARGET%\zlib
 mkdir %TARGET%\zlib\lib
 mkdir %TARGET%\zlib\lib
 mkdir %TARGET%\zlib\lib\%PLATFORM%
-robocopy C:\zlib-%PLATFORM%\lib %TARGET%\zlib\lib\%PLATFORM% zlibstatic.lib
-robocopy C:\zlib-%PLATFORM%\include %TARGET%\zlib\include /e
+robocopy C:\zlib-%PLATFORM%\lib %TARGET%\zlib\lib\%PLATFORM% zlibstatic.lib /NFL
+robocopy C:\zlib-%PLATFORM%\include %TARGET%\zlib\include /E /NFL /NDL
 cd %CURDIR%
 if not exit %TARGET%\zlib\include goto fail
 if not exit %TARGET%\zlib\lib\%PLATFORM%\zlibstatic.lib goto fail
@@ -134,9 +134,8 @@ mkdir %TARGET%\libssh
 mkdir %TARGET%\libssh\lib
 mkdir %TARGET%\libssh\lib
 mkdir %TARGET%\libssh\lib\%PLATFORM%
-robocopy C:\libssh-%PLATFORM%\lib %TARGET%\libssh\lib\%PLATFORM% ssh.lib
-robocopy C:\libssh-%PLATFORM%\bin %TARGET%\libssh\lib\%PLATFORM% ssh.dll
-robocopy C:\libssh-%PLATFORM%\include %TARGET%\libssh\include /e
+robocopy C:\libssh-%PLATFORM%\lib %TARGET%\libssh\lib\%PLATFORM% ssh.lib ssh.dll /NFL
+robocopy C:\libssh-%PLATFORM%\include %TARGET%\libssh\include /E /NFL /NDL
 cd %CURDIR%
 if not exit %TARGET%\libssh\include goto fail
 if not exit %TARGET%\libssh\lib\%PLATFORM%\ssh.lib goto fail
@@ -170,8 +169,8 @@ mkdir %TARGET%\libssh2
 mkdir %TARGET%\libssh2\lib
 mkdir %TARGET%\libssh2\lib
 mkdir %TARGET%\libssh2\lib\%PLATFORM%
-robocopy C:\libssh2-%PLATFORM%\lib %TARGET%\libssh2\lib\%PLATFORM% libssh2.lib
-robocopy C:\libssh2-%PLATFORM%\include %TARGET%\libssh2\include /e
+robocopy C:\libssh2-%PLATFORM%\lib %TARGET%\libssh2\lib\%PLATFORM% libssh2.lib /NFL
+robocopy C:\libssh2-%PLATFORM%\include %TARGET%\libssh2\include /E /NFL /NDL
 cd %CURDIR%
 if not exit %TARGET%\libssh2\include goto fail
 if not exit %TARGET%\libssh2\lib\%PLATFORM%\libssh2.lib goto fail
