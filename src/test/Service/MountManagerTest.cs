@@ -24,6 +24,7 @@ namespace golddrive.Tests
             Label = "Golddrive",
             IsGoldDrive = true,
             Status = DriveStatus.DISCONNECTED,
+            Args = "-o cipher=aes128-gcm@openssh.com",
         };
 
         [TestInitialize]

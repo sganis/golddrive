@@ -628,8 +628,7 @@ int main(int argc, char *argv[])
 	gd_log("buffer   = %u\n", g_fs.buffer);
 	gd_log("keeplink = %u\n", g_fs.keeplink);
 	gd_log("compress = %u\n", g_fs.compress);
-	if(g_fs.cipher)
-		gd_log("cipher   = %s\n", g_fs.cipher);
+	gd_log("cipher   = %s\n", g_fs.cipher);
 
 	// initiaize small read/write lock
 	InitializeSRWLock(&g_ssh_lock);
