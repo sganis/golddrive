@@ -18,11 +18,42 @@ setlocal
 set DIR=%~dp0
 set DIR=%DIR:~0,-1%
 
+set download=0
+set build_zlib=1
+set build_ossl=1
+set build_ssh1=1
+set build_ssh2=1
+
+:: run vsvars[64|32].bat and set platform
 ::set PLATFORM=x64
 set CONFIGURATION=Release
+set "MSVC=Visual Studio 16 2019"
 
 set CURDIR=%CD%
 set TARGET=%CD%\lib
+
+set ZLIB=zlib1211
+set ZLIBF=zlib-1.2.11
+set OPENSSL=OpenSSL_1_1_1e
+set LIBSSH=libssh-0.9.3
+set LIBSSH2=libssh2-1.9.0
+
+:: openssl : 	https://github.com/openssl/openssl/archive/OpenSSL_1_1_1e.zip 
+:: zlib: 		http://zlib.net/zlib1211.zip
+:: libssh: 		https://www.libssh.org/files/0.9/libssh-0.9.3.tar.xz
+:: libssh2: 	https://github.com/libssh2/libssh2/releases/download/libssh2-1.9.0/libssh2-1.9.0.tar.gz
+
+set OPENSSL_URL=https://github.com/openssl/openssl/archive/%OPENSSL%.zip
+set ZLIB_URL=http://zlib.net/%ZLIB%.zip
+set LIBSSH_URL=https://www.libssh.org/files/0.9/%LIBSSH%.tar.xz
+set LIBSSH2_URL=https://github.com/libssh2/libssh2/archive/%LIBSSH2%.zip
+
+if %download% equ 1 (
+	powershell -Command "Invoke-WebRequest %OPENSSL_URL% -OutFile openssl-%OPENSSL%.zip"
+	powershell -Command "Invoke-WebRequest %ZLIB_URL% -OutFile %ZLIB%.zip"
+	powershell -Command "Invoke-WebRequest %LIBSSH_URL% -OutFile %LIBSSH%.tar.xz"
+	powershell -Command "Invoke-WebRequest %LIBSSH2_URL% -OutFile libssh2-%LIBSSH2%.zip"
+)
 
 if %PLATFORM%==x86 (
 	set ARCH=Win32
@@ -32,30 +63,11 @@ if %PLATFORM%==x86 (
 	set OARCH=WIN64A
 )
 
-set "MSVC=Visual Studio 16 2019"
-
-:: openssl : 	https://github.com/openssl/openssl/archive/OpenSSL_1_1_1e.zip 
-:: zlib: 		http://zlib.net/zlib1211.zip
-:: libssh: 		https://www.libssh.org/files/0.9/libssh-0.9.3.tar.xz
-:: libssh2: 	https://github.com/libssh2/libssh2/releases/download/libssh2-1.9.0/libssh2-1.9.0.tar.gz
-
-
-set ZLIB=zlib1211
-set ZLIBF=zlib-1.2.11
-set OPENSSL=openssl-OpenSSL_1_1_1e
-set LIBSSH=libssh-0.9.3
-set LIBSSH2=libssh2-1.9.0
-
-set build_zlib=1
-set build_ossl=1
-set build_ssh1=1
-set build_ssh2=1
-
 :: openssl
 if %build_ossl% equ 1 (
-if exist %OPENSSL% rd /s /q %OPENSSL%
-%DIR%\7za.exe x %OPENSSL%.zip
-cd %OPENSSL%
+if exist openssl-%OPENSSL% rd /s /q openssl-%OPENSSL%
+%DIR%\7za.exe x openssl-%OPENSSL%.zip
+cd openssl-%OPENSSL%
 perl Configure no-shared no-asm no-stdio no-sock 		^
 	VC-%OARCH% --prefix=C:\openssl-%PLATFORM% 			^
 	--openssldir=C:\openssl-%PLATFORM%
