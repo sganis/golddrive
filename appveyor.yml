@@ -68,7 +68,7 @@ for:
           $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
       - ps: |
           net use Z: /d
-      - ps: cat %LOCALAPPDATA%\golddrive\golddrive.log
+      - dir "%LocalAppData%"
   -
     matrix:
       only:

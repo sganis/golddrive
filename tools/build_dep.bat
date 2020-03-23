@@ -24,9 +24,9 @@ set DIR=%~dp0
 set DIR=%DIR:~0,-1%
 
 set build_zlib=1
-set build_ossl=0
+set build_ossl=1
 set build_ssh1=1
-set build_ssh2=0
+set build_ssh2=1
 ::set with_zlib=0
 :: run vsvars[64|32].bat and set platform
 ::set PLATFORM=x64
@@ -39,8 +39,8 @@ mkdir %TARGET%
 
 set ZLIB=zlib1211
 set ZLIBF=zlib-1.2.11
-::set OPENSSL=OpenSSL_1_1_1e
-set OPENSSL=OpenSSL_1_0_2u
+set OPENSSL=OpenSSL_1_1_1e
+::set OPENSSL=OpenSSL_1_0_2u
 set LIBSSH=libssh-0.9.3
 set LIBSSH2=libssh2-1.9.0
 
@@ -72,27 +72,22 @@ if %build_ossl% neq 1 goto zlib
 if exist openssl-%OPENSSL% rd /s /q openssl-%OPENSSL%
 %DIR%\7za.exe x openssl-%OPENSSL%.zip
 cd openssl-%OPENSSL%
-perl Configure no-shared VC-%OARCH% --prefix=C:\openssl-%PLATFORM% 			^
-	--openssldir=C:\openssl-%PLATFORM%
-::perl Configure no-shared no-stdio no-sock 		^
-::	VC-%OARCH% --prefix=C:\openssl-%PLATFORM% 			^
+::perl Configure no-shared VC-%OARCH% --prefix=C:\openssl-%PLATFORM% 			^
 ::	--openssldir=C:\openssl-%PLATFORM%
-pause
-call ms\do_win64a
+perl Configure no-shared no-stdio no-sock 				^
+	VC-%OARCH% --prefix=C:\openssl-%PLATFORM% 			^
+	--openssldir=C:\openssl-%PLATFORM%
+::call ms\do_win64a
 ::ms\do_nasm.bat
-pause
-nmake -f ms\nt.mak 
-nmake -f ms\nt.mak install
-::nmake
-::nmake install
-
+::nmake -f ms\nt.mak 
+::nmake -f ms\nt.mak install
+nmake
+nmake install
 xcopy C:\openssl-%PLATFORM%\include %TARGET%\openssl\include /y /s /i 
 xcopy C:\openssl-%PLATFORM%\lib\libcrypto.lib* %TARGET%\openssl\lib\%PLATFORM% /y /s /i 
 cd %CURDIR%
 dir /b %TARGET%\openssl\include || goto fail
 dir /b %TARGET%\openssl\lib\%PLATFORM%\libcrypto.lib || goto fail
-
-pause
 
 :zlib
 if %build_zlib% neq 1 goto libssh
