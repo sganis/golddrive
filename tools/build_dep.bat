@@ -146,7 +146,7 @@ if not exit %TARGET%\libssh\lib\%PLATFORM%\ssh.dll goto fail
 :libssh2
 if %build_ssh2% neq 1 goto end
 if exist libssh2-%LIBSSH2% rd /s /q libssh2-%LIBSSH2%
-%DIR%\7za.exe e libssh2-%LIBSSH2%.zip
+%DIR%\7za.exe e libssh2-%LIBSSH2%.zip -y
 cd libssh2-%LIBSSH2%
 mkdir build && cd build
 cmake .. 												^
