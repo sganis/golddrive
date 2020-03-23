@@ -23,7 +23,7 @@ setlocal
 set DIR=%~dp0
 set DIR=%DIR:~0,-1%
 
-set download=0
+set download=1
 set build_zlib=1
 set build_ossl=1
 set build_ssh1=1
@@ -53,12 +53,10 @@ set ZLIB_URL=http://zlib.net/%ZLIB%.zip
 set LIBSSH_URL=https://www.libssh.org/files/0.9/%LIBSSH%.tar.xz
 set LIBSSH2_URL=https://github.com/libssh2/libssh2/archive/%LIBSSH2%.zip
 
-if %download% equ 1 (
-	powershell -Command "Invoke-WebRequest %OPENSSL_URL% -OutFile openssl-%OPENSSL%.zip"
-	powershell -Command "Invoke-WebRequest %ZLIB_URL% -OutFile %ZLIB%.zip"
-	powershell -Command "Invoke-WebRequest %LIBSSH_URL% -OutFile %LIBSSH%.tar.xz"
-	powershell -Command "Invoke-WebRequest %LIBSSH2_URL% -OutFile libssh2-%LIBSSH2%.zip"
-)
+if not exist openssl-%OPENSSL%.zip 	powershell -Command "Invoke-WebRequest %OPENSSL_URL% -OutFile openssl-%OPENSSL%.zip"
+if not exist %ZLIB%.zip 			powershell -Command "Invoke-WebRequest %ZLIB_URL% -OutFile %ZLIB%.zip"
+if not exist %LIBSSH%.tar.xz 		powershell -Command "Invoke-WebRequest %LIBSSH_URL% -OutFile %LIBSSH%.tar.xz"
+if not exist libssh2-%LIBSSH2%.zip 	powershell -Command "Invoke-WebRequest %LIBSSH2_URL% -OutFile libssh2-%LIBSSH2%.zip"
 
 if %PLATFORM%==x86 (
 	set ARCH=Win32
@@ -154,10 +152,9 @@ cd %CURDIR%
 
 :: libssh2
 if %build_ssh2% equ 1 (
-if exist %LIBSSH2% rd /s /q %LIBSSH2%
-%DIR%\7za.exe e %LIBSSH2%.tar.gz -y 					^
-	&& %DIR%\7za.exe x %LIBSSH2%.tar -y
-cd %LIBSSH2%
+if exist libssh2-%LIBSSH2% rd /s /q libssh2-%LIBSSH2%
+%DIR%\7za.exe e libssh2-%LIBSSH2%.zip
+cd libssh2-%LIBSSH2%
 mkdir build && cd build
 cmake .. 												^
 	-A %ARCH%  											^
