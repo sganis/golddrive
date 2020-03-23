@@ -67,8 +67,8 @@ for:
           C:\projects\golddrive\tools\iozone\iozone.exe -i0 -i1 -i2 -s 1m -s10m -r1m
           $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
       - ps: |
-          net use Z: /d
-      - dir "%LocalAppData%"
+          C:; net use Z: /d
+      - ps: cat "%LocalAppData%"\golddrive\golddrive.log
   -
     matrix:
       only:
