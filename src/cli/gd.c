@@ -90,14 +90,14 @@ gdssh_t * gd_init_ssh(void)
 		return 0;
 	}
 
-	printf("\nSFTP server extensions:\n");
+	printf("SFTP server extensions:\n");
 	int count = sftp_extensions_get_count(sftp);
 	for (int i = 0; i < count; i++) {
 		printf("\t%s, version: %s\n",
 			sftp_extensions_get_name(sftp, i),
 			sftp_extensions_get_data(sftp, i));
 	}
-
+	
 	g_ssh = malloc(sizeof(gdssh_t));
 	assert(g_ssh);
 	//g_ssh->socket = 0;
@@ -2236,11 +2236,12 @@ int load_json(fs_config * fs)
 					for (int k = 0; k < v->size; k++) {
 						tok = &t[i + 1];
 						if (tok->type == JSMN_STRING) {
-							val = str_ndup(JSON_STRING + tok->start, tok->end - tok->start);
-							if (jsoneq(JSON_STRING, &t[i], "Args") == 0) {
-								fs->args = strdup(val);
-								free(val);
+							char* k = str_ndup(JSON_STRING + tok->start, tok->end - tok->start);
+							if (strcmp(k, "Args") == 0) {
+								tok = &t[i + 2];
+								fs->args = str_ndup(JSON_STRING + tok->start, tok->end - tok->start);
 							}
+							free(k);
 							i = i + 2;
 						}
 						else if (tok->type == JSMN_ARRAY) {

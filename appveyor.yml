@@ -69,6 +69,7 @@ for:
       - ps: |
           C:; net use Z: /d
       - set LOCAL
+      # LocalAppData=C:\Users\appveyor\AppData\Local
       - type %LocalAppData%\golddrive\golddrive.log
   -
     matrix:

@@ -614,9 +614,8 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "error: cannot read private key: %s\n", g_fs.pkey);
 		return 1;
 	}
-
 	// show parameters
-	gd_log("Golddrive arguments:\n");
+	gd_log("Arguments:\n");
 	gd_log("drive    = %s\n", g_fs.drive);
 	gd_log("remote   = %s\n", g_fs.remote);
 	gd_log("mountp   = %s\n", g_fs.mountpoint);
@@ -625,60 +624,7 @@ int main(int argc, char *argv[])
 	gd_log("port     = %d\n", g_fs.port);
 	gd_log("root     = %s\n", g_fs.root);
 	gd_log("pkey     = %s\n", g_fs.pkey);
-	gd_log("buffer   = %u\n", g_fs.buffer);
-	gd_log("keeplink = %u\n", g_fs.keeplink);
-	gd_log("compress = %u\n", g_fs.compress);
-	gd_log("cipher   = %s\n", g_fs.cipher);
 
-	// initiaize small read/write lock
-	InitializeSRWLock(&g_ssh_lock);
-
-	g_sftp_calls = 0;
-	g_sftp_cached_calls = 0;
-
-	g_ssh = gd_init_ssh();
-	if (!g_ssh) 
-		return 1;
-
-	// get uid
-	char cmd[COMMAND_SIZE], out[COMMAND_SIZE], err[COMMAND_SIZE];
-	snprintf(cmd, sizeof(cmd), "id -u %s", g_fs.user);
-
-	//// bencharmk commands
-	//LARGE_INTEGER frequency, start, end;
-	//double interval;
-	//QueryPerformanceFrequency(&frequency);
-	//QueryPerformanceCounter(&start);
-
-	//// code to be measured
-	//for (int u = 0; u < 100; u++) {
-	//	rc = run_command_channel_exec(cmd, out, err);
-	//	//printf("out: %s, err: %s\n", out, err);
-	//}
-	//QueryPerformanceCounter(&end);
-	//interval = (double)(end.QuadPart - start.QuadPart) / frequency.QuadPart;
-	//printf("\ncommand execution time: %f\n\n", interval);
-
-	gd_lock();
-	rc = run_command_channel_exec(cmd, out, err);
-	gd_unlock();
-
-
-	if (rc == 0) {		
-		g_fs.remote_uid = atoi(out);
-		gd_log("uid      = %d\n", g_fs.remote_uid);
-	}
-	gd_lock();
-	rc = run_command_channel_exec("echo $HOME", out, err);
-	gd_unlock();
-	if (rc == 0) {
-		g_fs.home = malloc(sizeof out);
-		strcpy_s(g_fs.home, sizeof out, out);
-		gd_log("home     = %s\n", g_fs.home);
-	}
-
-	// number of threads
-	//printf("Threads = %d\n", gd_threads(5, get_number_of_processors()));
 
 	// winfsp arguments
 	char volprefix[256], volname[256], prefix[256];
@@ -706,9 +652,64 @@ int main(int argc, char *argv[])
 	fuse_opt_add_arg(&args, g_fs.drive);
 
 	// print arguments
+	gd_log("buffer   = %u\n", g_fs.buffer);
+	gd_log("keeplink = %u\n", g_fs.keeplink);
+	gd_log("compress = %u\n", g_fs.compress);
+	gd_log("cipher   = %s\n", g_fs.cipher);
+
 	gd_log("\nWinFsp arguments:\n");
 	for (int i = 1; i < args.argc; i++)
 		gd_log("arg %d    = %s\n", i, args.argv[i]);
+
+	// initiaize small read/write lock
+	InitializeSRWLock(&g_ssh_lock);
+
+	g_sftp_calls = 0;
+	g_sftp_cached_calls = 0;
+
+	g_ssh = gd_init_ssh();
+	if (!g_ssh)
+		return 1;
+
+	// get uid
+	char cmd[COMMAND_SIZE], out[COMMAND_SIZE], err[COMMAND_SIZE];
+	snprintf(cmd, sizeof(cmd), "id -u %s", g_fs.user);
+
+	//// bencharmk commands
+	//LARGE_INTEGER frequency, start, end;
+	//double interval;
+	//QueryPerformanceFrequency(&frequency);
+	//QueryPerformanceCounter(&start);
+
+	//// code to be measured
+	//for (int u = 0; u < 100; u++) {
+	//	rc = run_command_channel_exec(cmd, out, err);
+	//	//printf("out: %s, err: %s\n", out, err);
+	//}
+	//QueryPerformanceCounter(&end);
+	//interval = (double)(end.QuadPart - start.QuadPart) / frequency.QuadPart;
+	//printf("\ncommand execution time: %f\n\n", interval);
+
+	gd_lock();
+	rc = run_command_channel_exec(cmd, out, err);
+	gd_unlock();
+
+	if (rc == 0) {
+		g_fs.remote_uid = atoi(out);
+		gd_log("uid      = %d\n", g_fs.remote_uid);
+	}
+	gd_lock();
+	rc = run_command_channel_exec("echo $HOME", out, err);
+	gd_unlock();
+	if (rc == 0) {
+		g_fs.home = malloc(sizeof out);
+		strcpy_s(g_fs.home, sizeof out, out);
+		gd_log("home     = %s\n", g_fs.home);
+	}
+
+	// number of threads
+	//printf("Threads = %d\n", gd_threads(5, get_number_of_processors()));
+
 
 	rc = fuse_main(args.argc, args.argv, &fs_ops, NULL);
 	
