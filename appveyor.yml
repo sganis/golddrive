@@ -79,7 +79,8 @@ for:
       - ps: $env:Version = C:\Python37\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
       - echo Version=%Version%
       - echo Configuration=%CONFIGURATION% Platform=%PLATFORM%
-      - appveyor DownloadFile https://github.com/sganis/golddrive/releases/download/v%Version%/golddrive-%Version%-%PLATFORM%.msi
+      # - appveyor DownloadFile https://github.com/sganis/golddrive/releases/download/v%Version%/golddrive-%Version%-%PLATFORM%.msi
+      - appveyor DownloadFile https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/build/%CONFIGURATION%/%PLATFORM%/golddrive-%Version%-%PLATFORM%.msi?job=2.9.0.207
       - start /wait msiexec /i golddrive-%Version%-%PLATFORM%.msi /qn 
       - if %PLATFORM% == x64 call "c:\Program Files\Golddrive\golddrive.exe" --version"
       - if %PLATFORM% == x86 call "c:\Program Files (x86)\Golddrive\golddrive.exe" --version"
