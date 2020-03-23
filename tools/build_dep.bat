@@ -77,17 +77,11 @@ perl Configure no-shared no-asm no-stdio no-sock 		^
 	--openssldir=C:\openssl-%PLATFORM%
 nmake
 nmake install
-rem mkdir %TARGET%\openssl 2>NUL
-rem mkdir %TARGET%\openssl\lib 2>NUL
-rem mkdir %TARGET%\openssl\lib 2>NUL
-rem mkdir %TARGET%\openssl\lib\%PLATFORM% 2>NUL
 xcopy C:\openssl-%PLATFORM%\include %TARGET%\openssl\include /y /s /i 
 xcopy C:\openssl-%PLATFORM%\lib\libcrypto.lib* %TARGET%\openssl\lib\%PLATFORM% /y /s /i 
 cd %CURDIR%
 dir /b %TARGET%\openssl\include || goto fail
 dir /b %TARGET%\openssl\lib\%PLATFORM%\libcrypto.lib || goto fail
-
-pause
 
 :zlib
 if %build_zlib% neq 1 goto libssh
@@ -101,16 +95,11 @@ cmake ..                                         		^
 	-DCMAKE_INSTALL_PREFIX="C:\zlib-%PLATFORM%"  		^
 	-DBUILD_SHARED_LIBS=OFF
 cmake --build . --config Release --target install
-rem mkdir %TARGET%
-rem mkdir %TARGET%\zlib
-rem mkdir %TARGET%\zlib\lib
-rem mkdir %TARGET%\zlib\lib
-rem mkdir %TARGET%\zlib\lib\%PLATFORM%
 xcopy C:\zlib-%PLATFORM%\lib\zlibstatic.lib* %TARGET%\zlib\lib\%PLATFORM% /y /s /i
 xcopy C:\zlib-%PLATFORM%\include %TARGET%\zlib\include /y /s /i
 cd %CURDIR%
-if not exit %TARGET%\zlib\include goto fail
-if not exit %TARGET%\zlib\lib\%PLATFORM%\zlibstatic.lib goto fail
+dir /b %TARGET%\zlib\include || goto fail
+dir /b %TARGET%\zlib\lib\%PLATFORM%\zlibstatic.lib || goto fail
 
 
 :libssh
@@ -131,17 +120,12 @@ cmake .. 												^
 	-DOPENSSL_USE_STATIC_LIBS=TRUE						^
 	-DBUILD_SHARED_LIBS=ON
 cmake --build . --config Release --target install
-rem mkdir %TARGET%
-rem mkdir %TARGET%\libssh
-rem mkdir %TARGET%\libssh\lib
-rem mkdir %TARGET%\libssh\lib
-rem mkdir %TARGET%\libssh\lib\%PLATFORM%
 xcopy C:\libssh-%PLATFORM%\lib\ssh.* %TARGET%\libssh\lib\%PLATFORM% /y /s /i
 xcopy C:\libssh-%PLATFORM%\include %TARGET%\libssh\include /y /s /i
 cd %CURDIR%
-if not exit %TARGET%\libssh\include goto fail
-if not exit %TARGET%\libssh\lib\%PLATFORM%\ssh.lib goto fail
-if not exit %TARGET%\libssh\lib\%PLATFORM%\ssh.dll goto fail
+dir /b %TARGET%\libssh\include || goto fail
+dir /b %TARGET%\libssh\lib\%PLATFORM%\ssh.lib || goto fail
+dir /b %TARGET%\libssh\lib\%PLATFORM%\ssh.dll || goto fail
 
 
 :libssh2
@@ -166,16 +150,11 @@ cmake .. 												^
 	-DBUILD_EXAMPLES=OFF
 
 cmake --build . --config Release --target install
-rem mkdir %TARGET%
-rem mkdir %TARGET%\libssh2
-rem mkdir %TARGET%\libssh2\lib
-rem mkdir %TARGET%\libssh2\lib
-rem mkdir %TARGET%\libssh2\lib\%PLATFORM%
 xcopy C:\libssh2-%PLATFORM%\lib\libssh2.lib* %TARGET%\libssh2\lib\%PLATFORM% /y /s /i
 xcopy C:\libssh2-%PLATFORM%\include %TARGET%\libssh2\include /y /s /i
 cd %CURDIR%
-if not exit %TARGET%\libssh2\include goto fail
-if not exit %TARGET%\libssh2\lib\%PLATFORM%\libssh2.lib goto fail
+dir /b %TARGET%\libssh2\include || goto fail
+dir /b %TARGET%\libssh2\lib\%PLATFORM%\libssh2.lib || goto fail
 
 :end
 echo PASSED
