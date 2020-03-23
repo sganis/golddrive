@@ -23,11 +23,11 @@ setlocal
 set DIR=%~dp0
 set DIR=%DIR:~0,-1%
 
-set build_zlib=0
+set build_zlib=1
 set build_ossl=0
 set build_ssh1=1
 set build_ssh2=0
-set with_zlib=0
+::set with_zlib=0
 :: run vsvars[64|32].bat and set platform
 ::set PLATFORM=x64
 set CONFIGURATION=Release
@@ -131,8 +131,8 @@ cmake .. 												^
 	-DOPENSSL_MSVC_STATIC_RT=TRUE 						^
 	-DOPENSSL_USE_STATIC_LIBS=TRUE						^
 	-DBUILD_SHARED_LIBS=ON ^
-	-DWITH_SERVER=OFF ^
-	-DWITH_ZLIB=OFF 
+	-DWITH_SERVER=OFF
+::	-DWITH_ZLIB=OFF 
 cmake --build . --config Release --target install
 xcopy C:\libssh-%PLATFORM%\lib\ssh.lib* %TARGET%\libssh\lib\%PLATFORM% /y /s /i
 xcopy C:\libssh-%PLATFORM%\bin\ssh.dll* %TARGET%\libssh\lib\%PLATFORM% /y /s /i
