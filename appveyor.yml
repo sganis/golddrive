@@ -69,7 +69,7 @@ for:
       - ps: |
           C:; net use Z: /d
       - set LOCAL
-      - ps: cat %LocalAppData%\golddrive\golddrive.log
+      - type %LocalAppData%\golddrive\golddrive.log
   -
     matrix:
       only:
