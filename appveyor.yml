@@ -80,7 +80,7 @@ for:
       - echo Version=%Version%
       - echo Configuration=%CONFIGURATION% Platform=%PLATFORM%
       # - appveyor DownloadFile https://github.com/sganis/golddrive/releases/download/v%Version%/golddrive-%Version%-%PLATFORM%.msi
-      - appveyor DownloadFile https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/build/%CONFIGURATION%/%PLATFORM%/golddrive-%Version%-%PLATFORM%.msi?job=2.9.0.207
+      - appveyor DownloadFile https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/build/%CONFIGURATION%/%PLATFORM%/golddrive-%Version%-%PLATFORM%.msi?job=Image%3A+Visual+Studio+2019%3B+Configuration%3A+Release%3B+Platform%3A+%PLATFORM%
       - start /wait msiexec /i golddrive-%Version%-%PLATFORM%.msi /qn 
       - if %PLATFORM% == x64 call "c:\Program Files\Golddrive\golddrive.exe" --version"
       - if %PLATFORM% == x86 call "c:\Program Files (x86)\Golddrive\golddrive.exe" --version"
