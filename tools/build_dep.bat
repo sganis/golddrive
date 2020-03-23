@@ -23,12 +23,12 @@ setlocal
 set DIR=%~dp0
 set DIR=%DIR:~0,-1%
 
-set download=1
-set build_zlib=1
-set build_ossl=1
+set download=0
+set build_zlib=0
+set build_ossl=0
 set build_ssh1=1
-set build_ssh2=1
-
+set build_ssh2=0
+set with_zlib=0
 :: run vsvars[64|32].bat and set platform
 ::set PLATFORM=x64
 set CONFIGURATION=Release
@@ -109,6 +109,7 @@ if exist %LIBSSH% rd /s /q %LIBSSH%
 	&& %DIR%\7za.exe x %LIBSSH%.tar -y
 cd %LIBSSH%
 mkdir build && cd build
+
 cmake .. 												^
 	-A %ARCH%  											^
 	-G"%MSVC%"                             				^
@@ -118,7 +119,8 @@ cmake .. 												^
 	-DZLIB_INCLUDE_DIR="C:\zlib-%PLATFORM%\include"     ^
 	-DOPENSSL_MSVC_STATIC_RT=TRUE 						^
 	-DOPENSSL_USE_STATIC_LIBS=TRUE						^
-	-DBUILD_SHARED_LIBS=ON
+	-DBUILD_SHARED_LIBS=ON ^
+	-DWITH_ZLIB=OFF 
 cmake --build . --config Release --target install
 xcopy C:\libssh-%PLATFORM%\lib\ssh.lib* %TARGET%\libssh\lib\%PLATFORM% /y /s /i
 xcopy C:\libssh-%PLATFORM%\bin\ssh.dll* %TARGET%\libssh\lib\%PLATFORM% /y /s /i
