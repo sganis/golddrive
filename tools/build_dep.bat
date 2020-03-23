@@ -81,7 +81,7 @@ mkdir %TARGET%\openssl\lib
 mkdir %TARGET%\openssl\lib
 mkdir %TARGET%\openssl\lib\%PLATFORM%
 robocopy C:\openssl-%PLATFORM%\lib %TARGET%\openssl\lib\%PLATFORM% libcrypto.lib
-robocopy C:\openssl-%PLATFORM%\include %TARGET%\openssl\include /e
+robocopy C:\openssl-%PLATFORM%\include %TARGET%\openssl\include /mir
 cd %CURDIR%
 if not exit %TARGET%\openssl\include goto fail
 if not exit %TARGET%\openssl\lib\%PLATFORM%\libcrypto.lib goto fail
