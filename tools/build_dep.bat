@@ -84,8 +84,8 @@ rem mkdir %TARGET%\openssl\lib\%PLATFORM% 2>NUL
 xcopy C:\openssl-%PLATFORM%\include %TARGET%\openssl\include /y /s /i 
 xcopy C:\openssl-%PLATFORM%\lib\libcrypto.lib* %TARGET%\openssl\lib\%PLATFORM% /y /s /i 
 cd %CURDIR%
-if not exit %TARGET%\openssl\include goto fail
-if not exit %TARGET%\openssl\lib\%PLATFORM%\libcrypto.lib goto fail
+dir /b %TARGET%\openssl\include || goto fail
+dir /b %TARGET%\openssl\lib\%PLATFORM%\libcrypto.lib || goto fail
 
 pause
 
