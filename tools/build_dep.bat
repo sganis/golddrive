@@ -120,7 +120,8 @@ cmake .. 												^
 	-DOPENSSL_USE_STATIC_LIBS=TRUE						^
 	-DBUILD_SHARED_LIBS=ON
 cmake --build . --config Release --target install
-xcopy C:\libssh-%PLATFORM%\lib\ssh.* %TARGET%\libssh\lib\%PLATFORM% /y /s /i
+xcopy C:\libssh-%PLATFORM%\lib\ssh.lib* %TARGET%\libssh\lib\%PLATFORM% /y /s /i
+xcopy C:\libssh-%PLATFORM%\bin\ssh.dll* %TARGET%\libssh\lib\%PLATFORM% /y /s /i
 xcopy C:\libssh-%PLATFORM%\include %TARGET%\libssh\include /y /s /i
 cd %CURDIR%
 dir /b %TARGET%\libssh\include || goto fail
