@@ -2,6 +2,11 @@
 :: 10/30/2018, sganis
 ::
 :: Build dependencies
+:: 1. OpenSSL
+:: 2. Zlib
+:: 3. LibSSH
+:: 4. LibSSH2
+
 
 @echo off
 setlocal
