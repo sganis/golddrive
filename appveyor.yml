@@ -70,7 +70,7 @@ for:
           C:; net use Z: /d
       - set LOCAL
       # LocalAppData=C:\Users\appveyor\AppData\Local
-      - type %LocalAppData%\golddrive\golddrive.log
+      - ps: get-content -tail 30 %LocalAppData%\golddrive\golddrive.log
   -
     matrix:
       only:

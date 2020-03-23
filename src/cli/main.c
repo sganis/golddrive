@@ -646,7 +646,7 @@ int main(int argc, char *argv[])
 	if (g_fs.args && strcmp(g_fs.args, "") != 0) {
 		fuse_opt_insert_arg(&args, pos++, g_fs.args);
 	}
-
+	
 	// drive must be the last argument for winfsp
 	rc = fuse_opt_parse(&args, &g_fs, fs_opts, fs_opt_proc);
 	fuse_opt_add_arg(&args, g_fs.drive);
