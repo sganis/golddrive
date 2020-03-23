@@ -74,14 +74,14 @@ cd openssl-%OPENSSL%
 perl Configure no-shared no-asm no-stdio no-sock 		^
 	VC-%OARCH% --prefix=C:\openssl-%PLATFORM% 			^
 	--openssldir=C:\openssl-%PLATFORM%
-nmake
-nmake install 
+nmake 			>NUL 2>&1
+nmake install 	>NUL 2>&1
 mkdir %TARGET%\openssl
 mkdir %TARGET%\openssl\lib
 mkdir %TARGET%\openssl\lib
 mkdir %TARGET%\openssl\lib\%PLATFORM%
-robocopy C:\openssl-%PLATFORM%\lib %TARGET%\openssl\lib\%PLATFORM% libcrypto.lib /NFL
-robocopy C:\openssl-%PLATFORM%\include %TARGET%\openssl\include /E /NFL /NDL
+robocopy C:\openssl-%PLATFORM%\include %TARGET%\openssl\include /E /NFL /NDL /NJH /NJS
+robocopy C:\openssl-%PLATFORM%\lib %TARGET%\openssl\lib\%PLATFORM% libcrypto.lib /NFL /NJH /NJS
 cd %CURDIR%
 if not exit %TARGET%\openssl\include goto fail
 if not exit %TARGET%\openssl\lib\%PLATFORM%\libcrypto.lib goto fail
