@@ -20,8 +20,11 @@ if ($installed) {
     Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
 }
 
-$exe = "C:\WSL\Ubuntu1804\ubuntu1804.exe"
+$exe = "C:\MyWSL\Ubuntu1804\ubuntu1804.exe"
 $cache = "C:\cache\wsl-ubuntu-1804.zip"
+
+New-Item -ItemType Directory -Force -Path C:\cache
+New-Item -ItemType Directory -Force -Path C:\MyWSL
 
 if (!(Test-Path $exe)) {
     Write-host "Installing Ubuntu 18.04 for WSL"
@@ -33,7 +36,7 @@ if (!(Test-Path $exe)) {
         Write-host "Downloaded already, found in cache..."
     }
     Write-host "Installing..."
-    Expand-Archive -Path "$cache" -DestinationPath "C:\WSL\Ubuntu1804" -Force
+    Expand-Archive -Path "$cache" -DestinationPath "C:\MyWSL\Ubuntu1804" -Force
     # Remove-Item "$env:TEMP\wsl-ubuntu-1804.zip"
     . $exe install --root
 }

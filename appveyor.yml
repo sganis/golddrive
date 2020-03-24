@@ -30,7 +30,7 @@ matrix:
       image: Visual Studio 2013
 
 install:
-  - dir C:\cache
+  - dir /b C:\cache || mkdir C:\cache
   - set winfsp=winfsp-1.6.20027.msi
   - if not exist C:\cache\%winfsp% (   
       appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/%winfsp% -FileName C:\cache\%winfsp%
@@ -50,7 +50,7 @@ for:
           platform: x64
     before_build:
       - wslconfig /u Ubuntu-18.04
-      - rd /s /q C:\WSL\Ubuntu1804
+      #- rd /s /q C:\WSL\Ubuntu1804
       - ps: tools\setup_wsl.ps1
       - C:\Python37\python -m pip install --disable-pip-version-check paramiko pyyaml psutil >NUL
       - C:\Python37\python tools\setupssh.py support@localhost support
