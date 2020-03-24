@@ -30,7 +30,7 @@ New-Item -ItemType Directory -Force -Path C:\MyWSL
 if (!(Test-Path $tar)) {
     if (!(Test-Path $exe)) {
         Write-host "Installing Ubuntu 18.04 for WSL"
-        if (!(Test-Path $cache)) {
+        if (!(Test-Path $zip)) {
             Write-host "Downloading..."
             [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
             (New-Object Net.WebClient).DownloadFile('https://aka.ms/wsl-ubuntu-1804', "$zip")
