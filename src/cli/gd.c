@@ -417,8 +417,11 @@ int gd_readlink(const char* path, char* buf, size_t size)
 	char* target = sftp_readlink(g_ssh->sftp, path);
 	g_sftp_calls++;
 	if (!target) {
-		gd_error(path);
 		gd_unlock();
+		if (strlen(path)==1 && path[0] == '/')
+			return 0;
+		gd_error(path);
+		
 		return error();
 	}
 	gd_unlock();
@@ -464,8 +467,8 @@ int gd_mkdir(const char* path, fuse_mode_t mode)
 	rc = sftp_mkdir(g_ssh->sftp, path, mode);
 	g_sftp_calls++;
 	if (rc) {
-		//int err = sftp_get_error(g_ssh->sftp);
-		gd_error(path);
+		if (sftp_get_error(g_ssh->sftp) != SSH_FX_FILE_ALREADY_EXISTS)
+			gd_error(path); 
 		rc = error();
 	}
 	gd_unlock();
