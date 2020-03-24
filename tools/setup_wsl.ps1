@@ -21,15 +21,20 @@ if ($installed) {
 }
 
 $exe = "C:\WSL\Ubuntu1804\ubuntu1804.exe"
+$cache = "C:\cache\wsl-ubuntu-1804.zip"
 
 if (!(Test-Path $exe)) {
     Write-host "Installing Ubuntu 18.04 for WSL"
-    Write-host "Downloading..."
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    (New-Object Net.WebClient).DownloadFile('https://aka.ms/wsl-ubuntu-1804', "$env:TEMP\wsl-ubuntu-1804.zip")
+    if (!(Test-Path $cache)) {
+        Write-host "Downloading..."
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        (New-Object Net.WebClient).DownloadFile('https://aka.ms/wsl-ubuntu-1804', "$cache")
+    } else {
+        Write-host "Downloaded already, found in cache..."
+    }
     Write-host "Installing..."
-    Expand-Archive -Path "$env:TEMP\wsl-ubuntu-1804.zip" -DestinationPath "C:\WSL\Ubuntu1804" -Force
-    Remove-Item "$env:TEMP\wsl-ubuntu-1804.zip"
+    Expand-Archive -Path "$cache" -DestinationPath "C:\WSL\Ubuntu1804" -Force
+    # Remove-Item "$env:TEMP\wsl-ubuntu-1804.zip"
     . $exe install --root
 }
 
