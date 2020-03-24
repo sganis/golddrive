@@ -39,13 +39,13 @@ for:
       - wslconfig /u Ubuntu-18.04
       #- rd /s /q C:\WSL\Ubuntu1804
       #- ps: tools\setup_wsl.ps1
-      - if not exist C:\cache\MyWSL\ubuntu1804.tar ( 
+      - if not exist C:\cache\ubuntu1804.tar ( 
           powershell -File tools\setup_wsl.ps1
           echo Exporting...
-          wsl --export Ubuntu-18.04 C:\cache\MyWSL\ubuntu1804.tar
+          wsl --export Ubuntu-18.04 C:\cache\ubuntu1804.tar
         ) else (
           echo Importing...
-          wsl --import Ubuntu-18.04 C:\MyWSL C:\cache\MyWSL\ubuntu1804.tar
+          wsl --import Ubuntu-18.04 C:\MyWSL C:\cache\ubuntu1804.tar
         )
       - C:\Python37\python -m pip install --disable-pip-version-check paramiko pyyaml psutil >NUL
       - C:\Python37\python tools\setupssh.py support@localhost support
