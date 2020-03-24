@@ -10,7 +10,8 @@ platform:
 configuration: 
   - Release
   - Debug
-
+cache:
+  - C:\cache
 matrix:
   allow_failures:
     - platform: x86
@@ -29,7 +30,13 @@ matrix:
       image: Visual Studio 2013
 
 install:
-  - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/winfsp-1.6.20027.msi
+  - cmd: |
+    if not exist C:\cache\winfsp-1.6.20027.msi (
+      set curdir=%CD%
+      mkdir C:\cache >nul
+      appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/winfsp-1.6.20027.msi
+      cd %curdir%
+    )
   - start /wait msiexec /i winfsp-1.6.20027.msi /qn ADDLOCAL=ALL
 build_script:
   - msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -m:4 /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
