@@ -36,17 +36,10 @@ for:
           appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/%winfsp% -FileName C:\cache\%winfsp%
         )
       - start /wait msiexec /i C:\cache\%winfsp% /qn ADDLOCAL=ALL
+      # uninstall and setup my own wsl
       - wslconfig /u Ubuntu-18.04
       #- rd /s /q C:\WSL\Ubuntu1804
-      #- ps: tools\setup_wsl.ps1
-      - if not exist C:\cache\ubuntu1804.tar ( 
-          powershell -File tools\setup_wsl.ps1
-          echo Exporting...
-          wsl --export Ubuntu-18.04 C:\cache\ubuntu1804.tar
-        ) else (
-          echo Importing...
-          wsl --import Ubuntu-18.04 C:\MyWSL C:\cache\ubuntu1804.tar
-        )
+      - ps: tools\setup_wsl.ps1
       - C:\Python37\python -m pip install --disable-pip-version-check paramiko pyyaml psutil >NUL
       - C:\Python37\python tools\setupssh.py support@localhost support
       - ps: $env:Version = C:\Python37\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
