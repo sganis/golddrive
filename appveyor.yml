@@ -13,6 +13,7 @@ configuration:
 cache:
   - C:\cache
 matrix:
+  fast_finish: true
   allow_failures:
     - platform: x86
     - configuration: Debug
