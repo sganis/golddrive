@@ -36,7 +36,6 @@ install:
       appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/%winfsp% -FileName C:\cache\%winfsp%
     )
   - start /wait msiexec /i C:\cache\%winfsp% /qn ADDLOCAL=ALL
-before_build:
   - ps: $env:VERSION = C:\Python37\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
   - echo Version=%VERSION% 
   - echo Configuration=%CONFIGURATION% Platform=%PLATFORM%
@@ -60,9 +59,6 @@ for:
       - ps: tools\setup_wsl.ps1
       - C:\Python37\python -m pip install --disable-pip-version-check paramiko pyyaml psutil >NUL
       - C:\Python37\python tools\setupssh.py support@localhost support
-      - ps: $env:Version = C:\Python37\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
-      - echo Version=%Version%
-      - echo Configuration=%CONFIGURATION% Platform=%PLATFORM%
     test:
       categories:
         only:
@@ -79,8 +75,6 @@ for:
           $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
       - ps: |
           C:; net use Z: /d
-      - set LOCAL
-      # LocalAppData=C:\Users\appveyor\AppData\Local
       - ps: get-content -tail 30 $env:LOCALAPPDATA\golddrive\golddrive.log
   -
     matrix:
@@ -89,7 +83,7 @@ for:
         - image: Visual Studio 2015
         - image: Visual Studio 2013
     build_script: 
-    after_build:
+    test_script:
       - ps: Start-FileDownload "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/build/$env:CONFIGURATION/$env:PLATFORM/golddrive-$env:VERSION-$env:PLATFORM.msi?branch=master&job=Image%3A%20Visual%20Studio%202019%3B%20Configuration%3A%20Release%3B%20Platform%3A%20$env:PLATFORM"
       - start /wait msiexec /i golddrive-%VERSION%-%PLATFORM%.msi /qn 
       - if %PLATFORM% == x64 call "c:\Program Files\Golddrive\golddrive.exe" --version"
