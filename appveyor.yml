@@ -28,6 +28,13 @@ matrix:
       image: Visual Studio 2015
     - configuration: Debug
       image: Visual Studio 2013
+install:
+  - dir /b C:\cache || mkdir C:\cache
+  - set winfsp=winfsp-1.6.20027.msi
+  - if not exist C:\cache\%winfsp% (   
+      appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/%winfsp% -FileName C:\cache\%winfsp%
+    )
+  - start /wait msiexec /i C:\cache\%winfsp% /qn ADDLOCAL=ALL
 build_script:
   - msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -m:4 /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - start /wait msiexec /i src\build\%CONFIGURATION%\%PLATFORM%\golddrive-%Version%-%PLATFORM%.msi /qn
@@ -41,13 +48,7 @@ for:
         - image: Visual Studio 2019
           configuration: Release
           platform: x64
-    install:
-      - dir /b C:\cache || mkdir C:\cache
-      - set winfsp=winfsp-1.6.20027.msi
-      - if not exist C:\cache\%winfsp% (   
-          appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/%winfsp% -FileName C:\cache\%winfsp%
-        )
-      - start /wait msiexec /i C:\cache\%winfsp% /qn ADDLOCAL=ALL
+    before_build:
       # uninstall and setup my own wsl
       - wslconfig /u Ubuntu-18.04
       #- rd /s /q C:\WSL\Ubuntu1804
