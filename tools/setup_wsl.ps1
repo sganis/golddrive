@@ -60,7 +60,7 @@ if (!(Test-Path $tar)) {
     . $exe run sudo service ssh --full-restart
 
     Write-Host "Export only available from Version 10.0.18363.720"
-    ver
+    $host
     # Write-host "Exporting..."
     # wsl --export Ubuntu-18.04 $tar
 } else {
