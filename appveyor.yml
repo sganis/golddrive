@@ -57,7 +57,6 @@ for:
         ) else (
           wsl --import Ubuntu-18.04 C:\MyWSL C:\cache\MyWSL\ubuntu1804.tar
         )
-      - if exist C:\cache\MyWSL\ubuntu1804.tar ( wsl --import '& "tools\setup_wsl.ps1"' )
       - C:\Python37\python -m pip install --disable-pip-version-check paramiko pyyaml psutil >NUL
       - C:\Python37\python tools\setupssh.py support@localhost support
       - ps: $env:Version = C:\Python37\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
