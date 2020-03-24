@@ -30,8 +30,7 @@ matrix:
       image: Visual Studio 2013
 
 install:
-  - cmd: |
-    if not exist C:\cache\winfsp-1.6.20027.msi (
+  - if not exist C:\cache\winfsp-1.6.20027.msi (
       set curdir=%CD%
       mkdir C:\cache >nul
       appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/winfsp-1.6.20027.msi
