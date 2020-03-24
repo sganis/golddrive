@@ -30,6 +30,7 @@ matrix:
       image: Visual Studio 2013
 
 install:
+  - dir C:\cache
   - set winfsp=winfsp-1.6.20027.msi
   - if not exist C:\cache\%winfsp% (   
       appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/%winfsp% -FileName C:\cache\%winfsp%
