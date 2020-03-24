@@ -36,9 +36,14 @@ install:
       appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/%winfsp% -FileName C:\cache\%winfsp%
     )
   - start /wait msiexec /i C:\cache\%winfsp% /qn ADDLOCAL=ALL
+before_build:
+  - ps: $env:VERSION = C:\Python37\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
+  - echo Version=%VERSION% 
+  - echo Configuration=%CONFIGURATION% Platform=%PLATFORM%
+
 build_script:
   - msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -m:4 /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-  - start /wait msiexec /i src\build\%CONFIGURATION%\%PLATFORM%\golddrive-%Version%-%PLATFORM%.msi /qn
+  - start /wait msiexec /i src\build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%.msi /qn
   - src\build\%CONFIGURATION%\%PLATFORM%\golddrive.exe --version
 test: off
 
@@ -84,19 +89,13 @@ for:
         - image: Visual Studio 2017
         - image: Visual Studio 2015
         - image: Visual Studio 2013
-    install:
-      - appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/winfsp-1.6.20027.msi
-      - start /wait msiexec /i winfsp-1.6.20027.msi /qn ADDLOCAL=ALL
-      - ps: $env:VERSION = C:\Python37\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
-      - echo Version=%VERSION% 
-      - echo Configuration=%CONFIGURATION% Platform=%PLATFORM%
+    build: off
+    build_script: 
+    after_build:
       - ps: Start-FileDownload "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/build/$env:CONFIGURATION/$env:PLATFORM/golddrive-$env:VERSION-$env:PLATFORM.msi?branch=master&job=Image%3A%20Visual%20Studio%202019%3B%20Configuration%3A%20Release%3B%20Platform%3A%20$env:PLATFORM"
       - start /wait msiexec /i golddrive-%VERSION%-%PLATFORM%.msi /qn 
       - if %PLATFORM% == x64 call "c:\Program Files\Golddrive\golddrive.exe" --version"
       - if %PLATFORM% == x86 call "c:\Program Files (x86)\Golddrive\golddrive.exe" --version"
-    build: off
-    build_script: 
-    test: off
 
 artifacts:
   - path: src\build\$(configuration)\$(platform)\golddrive-*.msi
