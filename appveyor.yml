@@ -30,14 +30,11 @@ matrix:
       image: Visual Studio 2013
 
 install:
-  - if not exist C:\cache\winfsp-1.6.20027.msi (
-      set curdir=%CD%
-      mkdir C:\cache >nul
-      cd C:\cache
-      appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/winfsp-1.6.20027.msi
-      cd %curdir%
+  - mkdir C:\cache >nul
+  - if not exist C:\cache\winfsp-1.6.20027.msi (   
+      appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/winfsp-1.6.20027.msi -FileName C:\cache\winfsp-1.6.20027.msi
     )
-  - start /wait msiexec /i winfsp-1.6.20027.msi /qn ADDLOCAL=ALL
+  - start /wait msiexec /i C:\cache\winfsp-1.6.20027.msi /qn ADDLOCAL=ALL
 build_script:
   - msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -m:4 /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - start /wait msiexec /i src\build\%CONFIGURATION%\%PLATFORM%\golddrive-%Version%-%PLATFORM%.msi /qn
