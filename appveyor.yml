@@ -53,7 +53,7 @@ for:
       #- rd /s /q C:\WSL\Ubuntu1804
       #- ps: tools\setup_wsl.ps1
       - if not exist C:\cache\MyWSL\ubuntu1804.tar ( 
-          powershell -noexit "& ""tools\setup_wsl.ps1""" 
+          powershell -File tools\setup_wsl.ps1
         ) else (
           wsl --import Ubuntu-18.04 C:\MyWSL C:\cache\MyWSL\ubuntu1804.tar
         )
