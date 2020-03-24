@@ -1,6 +1,6 @@
 version: 2.9.0.{build}
 image: 
-  # - Visual Studio 2019
+  - Visual Studio 2019
   - Visual Studio 2017
   - Visual Studio 2015
   - Visual Studio 2013
@@ -28,7 +28,10 @@ matrix:
       image: Visual Studio 2015
     - configuration: Debug
       image: Visual Studio 2013
-build: off
+build_script:
+  - msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -m:4 /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  - start /wait msiexec /i src\build\%CONFIGURATION%\%PLATFORM%\golddrive-%Version%-%PLATFORM%.msi /qn
+  - src\build\%CONFIGURATION%\%PLATFORM%\golddrive.exe --version
 test: off
 
 for:
@@ -54,10 +57,6 @@ for:
       - ps: $env:Version = C:\Python37\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
       - echo Version=%Version%
       - echo Configuration=%CONFIGURATION% Platform=%PLATFORM%
-    build_script:
-      - msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -m:4 /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-      - start /wait msiexec /i src\build\%CONFIGURATION%\%PLATFORM%\golddrive-%Version%-%PLATFORM%.msi /qn
-      - src\build\%CONFIGURATION%\%PLATFORM%\golddrive.exe --version
     test:
       categories:
         only:
@@ -96,6 +95,7 @@ for:
       - if %PLATFORM% == x64 call "c:\Program Files\Golddrive\golddrive.exe" --version"
       - if %PLATFORM% == x86 call "c:\Program Files (x86)\Golddrive\golddrive.exe" --version"
     build: off
+    build_script: 
     test: off
 
 artifacts:
