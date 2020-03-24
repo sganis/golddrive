@@ -91,8 +91,10 @@ for:
       - ps: $env:Version = C:\Python37\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
       - echo Version=%Version%
       - echo Configuration=%CONFIGURATION% Platform=%PLATFORM%
-      - appveyor DownloadFile https://github.com/sganis/golddrive/releases/download/v%Version%/golddrive-%Version%-%PLATFORM%.msi
-      # - appveyor DownloadFile "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/build/%CONFIGURATION%/%PLATFORM%/golddrive-%Version%-%PLATFORM%.msi?job=Image%3A Visual Studio 2019%3B Configuration%3A %CONFIGURATION%%3B Platform%3A %PLATFORM%"
+      # - appveyor DownloadFile https://github.com/sganis/golddrive/releases/download/v%Version%/golddrive-%Version%-%PLATFORM%.msi
+      - cmd: >-
+        appveyor DownloadFile "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/build/%CONFIGURATION%/%PLATFORM%/golddrive-%Version%-%PLATFORM%.msi?job=Image: Visual Studio 2019; Configuration: Release; Platform: x64"
+      # https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/build/Release/x64/golddrive-2.9.0-x64.msi?job=Image%3AVisual+Studio+2019%3BConfiguration%3ARelease%3BPlatform%3Ax64"
       # - curl -fsSL -o golddrive-%Version%-%PLATFORM%.msi "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/build/%CONFIGURATION%/%PLATFORM%/golddrive-%Version%-%PLATFORM%.msi?job=Image%3A+Visual+Studio+2019%3B+Configuration%3A+%CONFIGURATION%%3B+Platform%3A+%PLATFORM%"
       - start /wait msiexec /i golddrive-%Version%-%PLATFORM%.msi /qn 
       - if %PLATFORM% == x64 call "c:\Program Files\Golddrive\golddrive.exe" --version"
