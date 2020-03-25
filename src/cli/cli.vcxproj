@@ -8,7 +8,7 @@
     </ProjectConfiguration>
     <ProjectConfiguration Include="Debug2|x86">
       <Configuration>Debug2</Configuration>
-      <Platform>x64</Platform>
+      <Platform>Win32</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -16,7 +16,7 @@
     </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|x86">
       <Configuration>Debug</Configuration>
-      <Platform>x64</Platform>
+      <Platform>Win32</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release2|Win32">
       <Configuration>Release2</Configuration>
@@ -24,7 +24,7 @@
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release2|x86">
       <Configuration>Release2</Configuration>
-      <Platform>x64</Platform>
+      <Platform>Win32</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
@@ -32,7 +32,7 @@
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|x86">
       <Configuration>Release</Configuration>
-      <Platform>x64</Platform>
+      <Platform>Win32</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Debug2|x64">
       <Configuration>Debug2</Configuration>
