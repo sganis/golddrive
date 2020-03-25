@@ -176,26 +176,32 @@ def generate_keys(userhost):
 	if os.path.exists(pubkey):
 		os.rename(pubkey, f'{pubkey}.{ now }.bak')
 	rb = ReturnBox()
-	sk = paramiko.RSAKey.generate(2048)
-	try:
-		sshdir = os.path.dirname(seckey)
-		if not os.path.exists(sshdir):
-			os.makedirs(sshdir)
-			os.chmod(sshdir, 0o700)
-		sk.write_private_key_file(seckey)	
-	except Exception as ex:
-		logger.error(f'{ex}, {seckey}')
-		rb.error = str(ex)
-		return rb	
+	cmd = f"echo y |ssh-keygen -q -N '' -f {seckey}"
+	run(cmd)
+	# sk = paramiko.RSAKey.generate(2048)
+	# try:
+	# 	sshdir = os.path.dirname(seckey)
+	# 	if not os.path.exists(sshdir):
+	# 		os.makedirs(sshdir)
+	# 		os.chmod(sshdir, 0o700)
+	# 	sk.write_private_key_file(seckey)	
+	# except Exception as ex:
+	# 	logger.error(f'{ex}, {seckey}')
+	# 	rb.error = str(ex)
+	# 	return rb	
 	
-	pubkey = f'ssh-rsa {sk.get_base64()} {userhost}'
+	# pubkey = f'ssh-rsa {sk.get_base64()} {userhost}'
 	
-	try:
-		with open(seckey + '.pub', 'wt') as w:
-			w.write(pubkey)
-	except Exception as ex:
-		logger.error(f'Could not save public key: {ex}')
-
+	# try:
+	# 	with open(seckey + '.pub', 'wt') as w:
+	# 		w.write(pubkey)
+	# except Exception as ex:
+	# 	msg = f'Could not save public key: {ex}'
+	# 	logger.error(msg)
+	# 	rb.error = msg
+	# 	return rb
+	with open(pubkey) as r:
+		pubkey = r.read()
 	rb.output = pubkey
 	return rb
 

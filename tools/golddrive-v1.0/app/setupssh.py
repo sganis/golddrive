@@ -113,19 +113,21 @@ def testssh(userhost, seckey, port=22):
 def generate_keys(seckey, userhost):
 	logger.debug('Generating new ssh keys...')
 	rb = util.ReturnBox()
-	sk = paramiko.RSAKey.generate(2048)
-	try:
-		sshdir = os.path.dirname(seckey)
-		if not os.path.exists(sshdir):
-			os.makedirs(sshdir)
-			os.chmod(sshdir, 0o700)
-		sk.write_private_key_file(seckey)	
-	except Exception as ex:
-		logger.error(f'{ex}, {seckey}')
-		rb.error = str(ex)
-		return rb	
+	cmd = "ssh-keygen -N ''"
+
+	# sk = paramiko.RSAKey.generate(2048)
+	# try:
+	# 	sshdir = os.path.dirname(seckey)
+	# 	if not os.path.exists(sshdir):
+	# 		os.makedirs(sshdir)
+	# 		os.chmod(sshdir, 0o700)
+	# 	sk.write_private_key_file(seckey)	
+	# except Exception as ex:
+	# 	logger.error(f'{ex}, {seckey}')
+	# 	rb.error = str(ex)
+	# 	return rb	
 	
-	pubkey = f'ssh-rsa {sk.get_base64()} {userhost}'
+	# pubkey = f'ssh-rsa {sk.get_base64()} {userhost}'
 	
 	# try:
 	# 	with open(seckey + '.pub', 'wt') as w:
