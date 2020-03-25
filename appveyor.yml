@@ -43,8 +43,10 @@ install:
   - echo Configuration=%CONFIGURATION% Platform=%PLATFORM%
 build_script:
   - msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -m:4 /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-  - start /wait msiexec /i src\build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%.msi /qn
   - src\build\%CONFIGURATION%\%PLATFORM%\golddrive.exe --version
+  - start /wait msiexec /i src\build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%.msi /qn
+  - if %PLATFORM% == x64 call "c:\Program Files\Golddrive\golddrive.exe" --version"
+  - if %PLATFORM% == x86 call "c:\Program Files (x86)\Golddrive\golddrive.exe" --version"
 test: off
 
 for:
