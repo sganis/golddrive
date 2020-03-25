@@ -44,8 +44,7 @@ install:
 build_script:
   - msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -m:4 /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - src\build\%CONFIGURATION%\%PLATFORM%\golddrive.exe --version
-  - start /wait msiexec /i src\build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%.msi /qn /L*V! "C:\msilog.log" 
-  - type "C:\msilog.log" 
+  - start /wait msiexec /i src\build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%.msi /qn
   - if %PLATFORM% == x64 call "c:\Program Files\Golddrive\golddrive.exe" --version"
   - if %PLATFORM% == x86 call "c:\Program Files (x86)\Golddrive\golddrive.exe" --version"
   - reg query HKLM\Software\WOW6432Node\WinFsp\Services\golddrive /s
@@ -82,9 +81,9 @@ for:
           C:\projects\golddrive\tools\fstools\fsbench-x64.exe --files=100 -rdwr_cc_* -mmap_* -file_attr* -file_list_single* -file_list_none* -rdwr_nc_*
           C:\projects\golddrive\tools\iozone\iozone.exe -i0 -i1 -i2 -s 1m -s10m -r1m
           $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
+      - ps: get-content -tail 30 $env:LOCALAPPDATA\golddrive\golddrive.log
       - ps: |
           C:; net use Z: /d
-      - ps: get-content -tail 30 $env:LOCALAPPDATA\golddrive\golddrive.log
   -
     matrix:
       only:
