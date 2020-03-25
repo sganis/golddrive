@@ -8,9 +8,9 @@ platform:
   - x64
   - x86
 configuration: 
-  - Release
+  # - Release
   - Release2
-  - Debug
+  # - Debug
 cache:
   - C:\cache
 matrix:
