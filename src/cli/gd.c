@@ -176,7 +176,7 @@ gdssh_t * gd_init_ssh(void)
 
 	/* blocking: 1 block, 0 non-blocking, g_fs.noblock ? 0 : 1 */
 	//libssh2_session_set_blocking(ssh, g_fs.noblock ^ 1);
-	libssh2_session_set_blocking(ssh, 0);
+	libssh2_session_set_blocking(ssh, 1);
 
 
 	/* ... start it up. This will trade welcome banners, exchange keys,
@@ -1041,22 +1041,22 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	// 0 if non-bloking, 1 if blocking
 	//int block = libssh2_session_get_blocking(g_ssh->ssh);
 	//assert(block == (g_fs.noblock ^ 1) );
-
+	int spin = 0;
 	do {
 		bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
 		while ((rc = (int)libssh2_sftp_write(handle, pos, bsize)) ==
 			LIBSSH2_ERROR_EAGAIN) {
 			waitsocket(g_ssh);
 			g_sftp_calls++;
-			//Sleep(10);
-			//if (++spin > 3)
-			//{
-			//	log_error("***** possible access denied???? *****\n");
-			//	errno = EACCES;
-			//	rc = EACCES;
-			//	total = -1;
-			//	break;
-			//}
+			Sleep(10);
+			if (++spin > 3)
+			{
+				log_error("***** possible access denied???? *****\n");
+				errno = EACCES;
+				rc = EACCES;
+				total = -1;
+				break;
+			}
 		}
 		if (rc <= 0)
 			break;
@@ -1078,12 +1078,12 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	}
 	gd_unlock();
 
-	//if (rc == 0 && total > -1 && size != total)
-	//{
-	//	log_warn("**************** WARNING **************** need=%zu, actual=%d, probably EOF\n", size, total);
-	//	//errno = EIO; // EOF
-	//	//total = -1;
-	//}
+	if (rc == 0 && total > -1 && size != total)
+	{
+		log_error("**************** WARNING **************** need=%zu, actual=%d, probably EOF\n", size, total);
+		//errno = EIO; // EOF
+		//total = -1;
+	}
 
 #endif
 	log_debug("FINISH WRITING %zu, bytes: %zu\n", (size_t)handle, total);
