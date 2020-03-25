@@ -18,6 +18,7 @@ matrix:
   allow_failures:
     - platform: x86
     - configuration: Debug
+    - configuration: Release2
     - image: Visual Studio 2017
     - image: Visual Studio 2015
     - image: Visual Studio 2013
