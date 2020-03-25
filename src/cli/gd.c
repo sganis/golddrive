@@ -627,7 +627,7 @@ int gd_rename(const char *from, const char *to)
 int gd_truncate(const char* path, fuse_off_t size)
 {
 	int rc = 0;
-	log_error("%s, size=%zu\n", path, size);
+	//log_error("%s, size=%zu\n", path, size);
 #ifdef USE_LIBSSH
 	struct sftp_attributes_struct attrs;
 	attrs.flags = SSH_FILEXFER_ATTR_SIZE;
@@ -658,9 +658,9 @@ int gd_truncate(const char* path, fuse_off_t size)
 	
 	gd_unlock();
 
-	struct fuse_stat stbuf;
-	gd_stat(path, &stbuf);
-	log_error("new size: %zu\n", stbuf.st_size);
+	//struct fuse_stat stbuf;
+	//gd_stat(path, &stbuf);
+	//log_error("new size: %zu\n", stbuf.st_size);
 #endif
 	return rc;
 }
@@ -736,7 +736,7 @@ intptr_t gd_open(const char* path, int flags, unsigned int mode)
 	if (flags & O_APPEND)
 		pflags |= O_APPEND;
 
-	log_error("%s, mode=%u, flags=%d\n", path, mode, pflags);
+	//log_error("%s, mode=%u, flags=%d\n", path, mode, pflags);
 
 	//printf("%d flags=%u %s\n", GetCurrentThreadId(), flags, path);
 	// check if file has hard links
@@ -792,13 +792,13 @@ intptr_t gd_open(const char* path, int flags, unsigned int mode)
 	if (flags & O_APPEND)
 		pflags |= GD_APPEND;
 
-	log_error("%s, mode=%u, flags=%d\n", path, mode, pflags);
+	//log_error("%s, mode=%u, flags=%d\n", path, mode, pflags);
 
 	//error("%s, pflags: %d\n", path, pflags);
 	sh->flags = pflags;
 
 	// check if file has hard links
-	/*if (g_fs.keeplink == 0) {
+	if (g_fs.keeplink == 0) {
 		struct fuse_stat stbuf;
 		if (!gd_stat(path, &stbuf)) {
 			if (sh->flags == LIBSSH2_FXF_WRITE
@@ -806,7 +806,7 @@ intptr_t gd_open(const char* path, int flags, unsigned int mode)
 				gd_check_hlink(path);
 			}
 		}
-	}*/
+	}
 
 	gd_lock();
 	do {
@@ -1023,20 +1023,20 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	LIBSSH2_SFTP_HANDLE* handle = sh->file_handle;
 	log_info("WRITING HANDLE: %zu size: %zu\n", (size_t)handle, size);
 
-	struct fuse_stat stbuf;
-	gd_stat(sh->path, &stbuf);
-	printf("writing %s, file size: %zu\n", sh->path, stbuf.st_size);
+	//struct fuse_stat stbuf;
+	//gd_stat(sh->path, &stbuf);
+	//printf("writing %s, file size: %zu\n", sh->path, stbuf.st_size);
 
 	gd_lock();
 	curpos = libssh2_sftp_tell64(handle);
 	if (offset > curpos) {
 		if (offset > size) {
-			printf("offset > size %zu > %zu\n", offset, size);
+			//printf("offset > size %zu > %zu\n", offset, size);
 		}
 	}
 	if (offset != curpos)
 		libssh2_sftp_seek64(handle, offset);
-	printf("cur pos: %zu\n", libssh2_sftp_tell64(handle));
+	//printf("cur pos: %zu\n", libssh2_sftp_tell64(handle));
 	
 	// 0 if non-bloking, 1 if blocking
 	//int block = libssh2_session_get_blocking(g_ssh->ssh);
