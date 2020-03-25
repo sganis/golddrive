@@ -66,10 +66,10 @@ for:
       - ps: tools\setup_wsl.ps1
       - C:\Python37\python -m pip install --disable-pip-version-check paramiko pyyaml psutil >NUL
       - C:\Python37\python tools\setupssh.py support@localhost support
-    test: off
-      # categories:
-      #   only:
-      #     - Appveyor
+    test: 
+      categories:
+        only:
+          - Appveyor2
     after_test:
       - ps: |
           net use Z: \\golddrive\support@localhost
