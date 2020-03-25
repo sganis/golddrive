@@ -216,8 +216,11 @@ gdssh_t * gd_init_ssh(void)
 
 
 	// authenticate
+	char pubkey[1000];
+	strcpy(pubkey, g_fs.pkey);
+	strcat(pubkey, ".pub");
 	while ((rc = libssh2_userauth_publickey_fromfile(
-			ssh, g_fs.user, NULL, g_fs.pkey, NULL)) ==
+			ssh, g_fs.user, pubkey, g_fs.pkey, NULL)) ==
 			LIBSSH2_ERROR_EAGAIN);
 	if (rc) {
 		rc = libssh2_session_last_error(ssh, &errmsg, &errlen, 0);
@@ -1701,14 +1704,14 @@ int run_command_channel_exec(const char* cmd, char* out, char* err)
 	int rc = 0;
 	int rcode = 0;
 	size_t offset = 0;
-	char buffer[0x4000];
+	
 	memset(out, 0, COMMAND_SIZE);
 	if (err)
 		memset(err, 0, COMMAND_SIZE);
 
 #ifdef USE_LIBSSH
 	ssh_channel channel;
-
+	char buffer[0x4000];
 	channel = g_ssh->channel;
 	if (!channel) {
 		rc = SSH_ERROR;
