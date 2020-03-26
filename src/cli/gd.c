@@ -856,70 +856,49 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	}
 
 	// async
-	sftp_file_set_nonblocking(handle);
-	//size_t bsize;
-	//bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
-	int async_request = sftp_async_read_begin(handle, (uint32_t)chunk);
-	//Sleep(1);
-	if (async_request >= 0) {
-		rc = sftp_async_read(handle, pos, (uint32_t)chunk, async_request);
-		if (rc > 0) {
-			pos += rc;
-			total += rc;
-			chunk -= rc;
-			//log_error("finish reading %d, remaining %d total=%d/%zu\n",
-			//	bsize, chunk, total, size);
+	//sftp_file_set_nonblocking(handle);
+	////size_t bsize;
+	////bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
+	//int async_request = sftp_async_read_begin(handle, (uint32_t)chunk);
+	////Sleep(1);
+	//if (async_request >= 0) {
+	//	rc = sftp_async_read(handle, pos, (uint32_t)chunk, async_request);
+	//	if (rc > 0) {
+	//		pos += rc;
+	//		total += rc;
+	//		chunk -= rc;
+	//		//log_error("finish reading %d, remaining %d total=%d/%zu\n",
+	//		//	bsize, chunk, total, size);
 
-		}
-	}
-	else {
-		rc = -1;
-		total = -1;
-	}
+	//	}
+	//}
+	//else {
+	//	rc = -1;
+	//	total = -1;
+	//}
 
-	while ((rc > 0 || rc == SSH_AGAIN) && chunk) {
-		if (rc > 0) {
-			//bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
-			async_request = sftp_async_read_begin(handle, (uint32_t)chunk);
-		}
-		if (async_request >= 0) {
-			rc = sftp_async_read(handle, pos, (uint32_t)chunk, async_request);
-			if (rc == 0) {
-				break;
-			} 
-			if (rc > 0) {
-				pos += rc;
-				total += rc;
-				chunk -= rc;
-			}
-		}
-		else {
-			rc = -1;
-			total = -1;
-			break;
-		}
-	}
-
-	if (rc < 0) {
-		gd_error("ERROR: Unable to read chuck of file\n");
-		rc = error();
-		if (rc)
-			total = -1;
-	}
-	sftp_file_set_blocking(handle);
-
-	// sync
-	//do {
-	//	//bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
-	//	//rc = (int)sftp_read(handle, pos, bsize);
-	//	rc = (int)sftp_read(handle, pos, chunk);
-	//	g_sftp_calls++;
-	//	if (rc <= 0)
+	//while ((rc > 0 || rc == SSH_AGAIN) && chunk) {
+	//	if (rc > 0) {
+	//		//bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
+	//		async_request = sftp_async_read_begin(handle, (uint32_t)chunk);
+	//	}
+	//	if (async_request >= 0) {
+	//		rc = sftp_async_read(handle, pos, (uint32_t)chunk, async_request);
+	//		if (rc == 0) {
+	//			break;
+	//		} 
+	//		if (rc > 0) {
+	//			pos += rc;
+	//			total += rc;
+	//			chunk -= rc;
+	//		}
+	//	}
+	//	else {
+	//		rc = -1;
+	//		total = -1;
 	//		break;
-	//	pos += rc;
-	//	total += rc;
-	//	chunk -= rc;
-	//} while (chunk);
+	//	}
+	//}
 
 	//if (rc < 0) {
 	//	gd_error("ERROR: Unable to read chuck of file\n");
@@ -927,6 +906,28 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	//	if (rc)
 	//		total = -1;
 	//}
+	//sftp_file_set_blocking(handle);
+
+	// sync
+	size_t bsize;
+	do {
+		bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
+		//rc = (int)sftp_read(handle, pos, bsize);
+		rc = (int)sftp_read(handle, pos, bsize);
+		g_sftp_calls++;
+		if (rc <= 0)
+			break;
+		pos += rc;
+		total += rc;
+		chunk -= rc;
+	} while (chunk);
+
+	if (rc < 0) {
+		gd_error("ERROR: Unable to read chuck of file\n");
+		rc = error();
+		if (rc)
+			total = -1;
+	}
 
 	gd_unlock();
 #else
