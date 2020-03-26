@@ -59,12 +59,12 @@ if (!(Test-Path $tar)) {
     . $exe run sudo apt-get install -y -qq openssh-server `>`/dev/null
     . $exe run sudo service ssh --full-restart
 
-    Write-Host "Export only available from Version 10.0.18363.720"
-    $host
+    # Write-Host "Export only available from Version 10.0.18363.720"
+    # $host
     # Write-host "Exporting..."
     # wsl --export Ubuntu-18.04 $tar
 } else {
-    Write-host "Found in cache, importing image..."
-    wsl --import Ubuntu-18.04 C:\MyWSL $tar
+    # Write-host "Found in cache, importing image..."
+    # wsl --import Ubuntu-18.04 C:\MyWSL $tar
 }
 

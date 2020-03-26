@@ -176,7 +176,9 @@ def generate_keys(userhost):
 	if os.path.exists(pubkey):
 		os.rename(pubkey, f'{pubkey}.{ now }.bak')
 	rb = ReturnBox()
-	cmd = f"echo y |ssh-keygen -q -N '' -f {seckey}"
+	print(run('where ssh-keygen'))
+	cmd = f'echo y |ssh-keygen -q -N "" -f {seckey}'
+	print(cmd)
 	run(cmd)
 	# sk = paramiko.RSAKey.generate(2048)
 	# try:
@@ -331,7 +333,7 @@ if __name__ == '__main__':
 	import os
 	import getpass
 	assert (len(sys.argv) > 2 and '@' in sys.argv[1]) # usage: prog user@host pass
-	os.environ['PATH'] = f'{DIR};' + os.environ['PATH']
+	os.environ['PATH'] = f'{DIR};{DIR}\\openssh;{os.environ["PATH"]}'
 	userhost = sys.argv[1]
 	password = sys.argv[2]
 	port=22

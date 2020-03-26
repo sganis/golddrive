@@ -6,7 +6,7 @@ image:
   # - Visual Studio 2013
 platform: 
   - x64
-#  - x86
+  # - x86
 configuration: 
   - Release
   - Release2
@@ -47,7 +47,7 @@ build_script:
   - start /wait msiexec /i src\build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%.msi /qn
   - if %PLATFORM% == x64 call "c:\Program Files\Golddrive\golddrive.exe" --version"
   - if %PLATFORM% == x86 call "c:\Program Files (x86)\Golddrive\golddrive.exe" --version"
-  - reg query HKLM\Software\WOW6432Node\WinFsp\Services\golddrive /s
+#  - reg query HKLM\Software\WOW6432Node\WinFsp\Services\golddrive /s
 test: off
 
 for:
@@ -70,7 +70,7 @@ for:
     test: 
       categories:
         only:
-          - Appveyor2
+          - Appveyor
     after_test:
       - ps: |
           net use Z: \\golddrive\support@localhost

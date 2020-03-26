@@ -301,6 +301,7 @@ inline void gd_unlock()
 }
 
 /* file flags */
+#define GD_READONLY   0x00
 #define GD_READ   0x01
 #define GD_WRITE  0x02
 #define GD_APPEND 0x04

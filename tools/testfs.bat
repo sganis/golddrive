@@ -11,8 +11,8 @@ set DIR=%DIR:~0,-1%
 echo current dir:
 cd
 
-%DIR%\fstools\fsx.exe -N 5000 test xxxxxx
-rem %DIR%\fstools\fsx.exe -N 1000 -L test xxxxxx
+%DIR%\fstools\fsx.exe -N 1000 test xxxxxx
+rem %DIR%\fstools\fsx.exe -N 5000 -L test xxxxxx
 rem del test test.*
 echo error: !ERRORLEVEL!
 if !ERRORLEVEL! neq 0 goto fail
@@ -23,6 +23,7 @@ if !ERRORLEVEL! neq 0 goto fail
 
 %DIR%\iozone\iozone.exe -i0 -i1 -i2 -s 1m -s10m -s100m -s1g -r1m
 if !ERRORLEVEL! neq 0 goto fail
+
 
 echo PASSED
 exit /b 0
