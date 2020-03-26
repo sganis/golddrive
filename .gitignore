@@ -2,12 +2,9 @@ __pycache__/
 .vs/
 .pytest_cache/
 temp/
-release/
 build/
 ipch/
 obj/
-Release/
-Debug/
 packages/
 *.VC.db
 *.VC.opendb

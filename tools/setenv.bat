@@ -5,9 +5,6 @@
 @echo off
 set DIR=%~dp0
 set DIR=%DIR:~0,-1%
-doskey ll=dir
-
-SET PLATFORM=x64
 
 SET "PATH=C:\Windows\System32;C:\Windows;C:\Windows\System32\wbem;%PATH%"
 SET "PATH=C:\Program Files (x86)\WinFsp\bin;%PATH%"
@@ -19,9 +16,9 @@ SET "PATH=C:\Program Files (x86)\WiX Toolset v3.11\bin;%PATH%"
 SET "PATH=C:\Strawberry\perl\bin;%PATH%"
 SET "PATH=C:\Program Files\NASM;%PATH%"
 
-echo Setting development environment...
-call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
-
+echo Setting x64 development environment...
+SET PLATFORM=x64
+call "%VSINSTALLDIR%VC\Auxiliary\Build\vcvars64.bat"
 
 ::set GOLDDRIVE=%DIR%\..
 ECHO Select remote test host:
@@ -61,3 +58,6 @@ set GOLDDRIVE_PASS=%PASS%
 set GOLDDRIVE_HOST=%HOST%
 set GOLDDRIVE_PORT=22
 
+doskey ll=dir
+doskey gc=if $1. neq . (git commit -am "$*" $T git push) else (echo "git commit and push usage: gc <message>")
+doskey gs=git status

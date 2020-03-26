@@ -79,7 +79,7 @@ for:
           $sw = [Diagnostics.Stopwatch]::StartNew()
           C:\projects\golddrive\tools\fstools\fsx.exe -N 5000 test xxxxxx
           C:\projects\golddrive\tools\fstools\fsbench-x64.exe --files=100 -rdwr_cc_* -mmap_* -file_attr* -file_list_single* -file_list_none* -rdwr_nc_*
-          C:\projects\golddrive\tools\iozone\iozone.exe -i0 -i1 -i2 -s 1m -s10m -r1m
+          C:\projects\golddrive\tools\iozone\iozone.exe -i0 -i1 -i2 -s 1m -s10m -s100m -s1g -r1m
           $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
       - ps: get-content -tail 30 $env:LOCALAPPDATA\golddrive\golddrive.log
       - ps: |
