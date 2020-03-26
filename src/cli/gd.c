@@ -1029,11 +1029,11 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 
 	gd_lock();
 	curpos = libssh2_sftp_tell64(handle);
-	if (offset > curpos) {
-		if (offset > size) {
-			//printf("offset > size %zu > %zu\n", offset, size);
-		}
-	}
+	//if (offset != curpos) {
+	//	if (offset > size) {
+	//		//printf("offset > size %zu > %zu\n", offset, size);
+	//	}
+	//}
 	if (offset != curpos)
 		libssh2_sftp_seek64(handle, offset);
 	//printf("cur pos: %zu\n", libssh2_sftp_tell64(handle));
