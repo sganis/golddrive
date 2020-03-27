@@ -550,7 +550,7 @@ int main(int argc, char* argv[])
 
 	//printf("testing...\n");
 
-	WS_SFTPNAME* n = san_stat(ssh, "/tmp/file.bin");
+	//n = san_stat(ssh, "/tmp/file.bin");
 
 	// mkdir
 	//san_mkdir(ssh, sftp);
