@@ -1,75 +1,87 @@
 #pragma once
 
+//#define USE_LIBSSH
+#define USE_LIBSSH2 1
+//#define USE_WOLFSSH 1
+
 #define BUFFER_SIZE 32767
 #define ERROR_LEN MAXERRORLENGTH
+#define MAX_PATH 1024
+#define ERROR_LEN 1024
 
 #ifdef USE_LIBSSH
 #include <libssh/libssh.h>
 #include <libssh/sftp.h>
-
-typedef struct _SANSSH {
-    SOCKET socket;
-    ssh_session* ssh;
-    sftp_session* sftp;
-    int rc;
-    char error[ERROR_LEN];
-} SANSSH;
-
-typedef struct _SANSSH_ATTRIBUTES {
-    uint32_t flags;
-    uint64_t size;
-    uint32_t uid, gid, mode, atime, mtime;
-} SANSSH_ATTRIBUTES;
-
-typedef struct _SANSSH_STATVFS {
-    uint64_t  f_bsize;    /* file system block size */
-    uint64_t  f_frsize;   /* fragment size */
-    uint64_t  f_blocks;   /* size of fs in f_frsize units */
-    uint64_t  f_bfree;    /* # free blocks */
-    uint64_t  f_bavail;   /* # free blocks for non-root */
-    uint64_t  f_files;    /* # inodes */
-    uint64_t  f_ffree;    /* # free inodes */
-    uint64_t  f_favail;   /* # free inodes for non-root */
-    uint64_t  f_fsid;     /* file system ID */
-    uint64_t  f_flag;     /* mount flags */
-    uint64_t  f_namemax;  /* maximum filename length */
-} SANSSH_STATVFS;
-
-#else // USE_LIBSSH2
+#elif USE_LIBSSH2
 #include <libssh2.h>
 #include <libssh2_sftp.h>
+#elif USE_WOLFSSH
+#include <wolfssh/ssh.h>
+#include <wolfssh/wolfsftp.h>
+#endif
 
-typedef struct _SANSSH {
-	SOCKET socket;
-	LIBSSH2_SESSION *ssh;
-	LIBSSH2_SFTP *sftp;
+#ifdef USE_LIBSSH
+
+#elif USE_LIBSSH2
+
+#elif USE_WOLFSSH
+
+#endif
+
+typedef struct SANSSH {
+#ifdef USE_LIBSSH
+
+#elif USE_LIBSSH2
+    LIBSSH2_SESSION* ssh;
+    LIBSSH2_SFTP* sftp;
+#elif USE_WOLFSSH
+    WOLFSSH* ssh;
+#endif	
+    SOCKET socket;
 	int rc;
 	char error[ERROR_LEN];
 } SANSSH;
 
-typedef struct _SANSSH_ATTRIBUTES {
-    unsigned long flags;
-    libssh2_uint64_t filesize;
-    unsigned long uid, gid;
-    unsigned long mode;
-    unsigned long atime, mtime;
-} SANSSH_ATTRIBUTES;
-
-typedef struct _SANSSH_STATVFS {
-    libssh2_uint64_t  f_bsize;    /* file system block size */
-    libssh2_uint64_t  f_frsize;   /* fragment size */
-    libssh2_uint64_t  f_blocks;   /* size of fs in f_frsize units */
-    libssh2_uint64_t  f_bfree;    /* # free blocks */
-    libssh2_uint64_t  f_bavail;   /* # free blocks for non-root */
-    libssh2_uint64_t  f_files;    /* # inodes */
-    libssh2_uint64_t  f_ffree;    /* # free inodes */
-    libssh2_uint64_t  f_favail;   /* # free inodes for non-root */
-    libssh2_uint64_t  f_fsid;     /* file system ID */
-    libssh2_uint64_t  f_flag;     /* mount flags */
-    libssh2_uint64_t  f_namemax;  /* maximum filename length */
-} SANSSH_STATVFS;
-
+typedef struct SANHANDLE {
+#ifdef USE_LIBSSH
+    sftp_file file_handle;				/* key, remote file handler				*/
+    sftp_dir dir_handle;				/* key, remote dir handler				*/
+#elif USE_LIBSSH2
+    LIBSSH2_SFTP_HANDLE* file_handle;	/* key, remote file handler				*/
+    LIBSSH2_SFTP_HANDLE* dir_handle;	/* key, remote file handler				*/
+#elif USE_WOLFSSH
+    byte* file_handle;
+    byte* dir_handle;
 #endif
+    int dir;						/* is directory							*/
+    int flags;						/* open flags							*/
+    int mode;						/* open mode							*/
+    char path[MAX_PATH];			/* file full path						*/
+} SANHANDLE;
+
+typedef struct SANSTAT {
+    unsigned long flags;
+    unsigned long filesize;
+    unsigned long uid;
+    unsigned long gid;
+    unsigned long mode;
+    unsigned long atime;
+    unsigned long mtime;
+} SANSTAT;
+
+typedef struct SANSTATVFS {
+    unsigned long  f_bsize;    /* file system block size */
+    unsigned long  f_frsize;   /* fragment size */
+    unsigned long  f_blocks;   /* size of fs in f_frsize units */
+    unsigned long  f_bfree;    /* # free blocks */
+    unsigned long  f_bavail;   /* # free blocks for non-root */
+    unsigned long  f_files;    /* # inodes */
+    unsigned long  f_ffree;    /* # free inodes */
+    unsigned long  f_favail;   /* # free inodes for non-root */
+    unsigned long  f_fsid;     /* file system ID */
+    unsigned long  f_flag;     /* mount flags */
+    unsigned long  f_namemax;  /* maximum filename length */
+} SANSTATVFS;
 
 int file_exists(const char* path);
 int waitsocket(SANSSH *sanssh);
@@ -78,9 +90,8 @@ SANSSH* san_init(const char* hostname, int port, const char* username,
 int san_finalize(SANSSH *sanssh);
 int san_mkdir(SANSSH *sanssh, const char *path);
 int san_rmdir(SANSSH *sanssh, const char *path);
-int san_stat(SANSSH *sanssh, const char *path, SANSSH_ATTRIBUTES *attrs);
-int san_lstat(SANSSH *sanssh, const char *path, SANSSH_ATTRIBUTES *attrs);
-int san_statvfs(SANSSH *sanssh, const char *path, SANSSH_STATVFS *st);
+int san_stat(SANSSH *sanssh, const char *path, SANSTAT*attrs);
+int san_statvfs(SANSSH *sanssh, const char *path, SANSTATVFS*st);
 int san_rename(SANSSH *sanssh, const char *source, const char *destination);
 int san_delete(SANSSH *sanssh, const char *filename);
 int san_realpath(SANSSH *sanssh, const char *path, char *target);
@@ -89,21 +100,12 @@ int san_read(SANSSH *sanssh, const char * remotefile, const char * localfile);
 int san_read_async(SANSSH *sanssh, const char * remotefile, const char * localfile);
 int san_write(SANSSH* sanssh, const char* remotefile, const char* localfile);
 int san_write_async(SANSSH* sanssh, const char* remotefile, const char* localfile);
-void print_stat(const char* path, SANSSH_ATTRIBUTES *attrs);
-void print_statvfs(const char* path, SANSSH_STATVFS *st);
-void get_filetype(unsigned long perm, char* filetype);
+void print_stat(const char* path, SANSTAT*attrs);
+void print_statvfs(const char* path, SANSTATVFS*st);
+//void get_filetype(unsigned long perm, char* filetype);
 void usage(const char* prog);
 int run_command(SANSSH *sanssh,	const char *cmd, char *out, char *err);
-#ifdef USE_LIBSSH
-sftp_file san_open(SANSSH* sanssh, const char* path, long mode);
-int san_close_file(sftp_file handle);
-sftp_dir* san_opendir(SANSSH* sanssh, const char* path);
-int san_close_file(sftp_file handle);
-int san_close_dir(sftp_dir handle);
-void copy_attributes(struct SANSSH_ATTRIBUTES* stbuf, sftp_attributes* attrs);
-#else
-LIBSSH2_SFTP_HANDLE* san_open(SANSSH* sanssh, const char* path, long mode);
-LIBSSH2_SFTP_HANDLE* san_opendir(SANSSH* sanssh, const char* path);
-int san_close_handle(LIBSSH2_SFTP_HANDLE* handle);
-void copy_attributes(struct SANSSH_ATTRIBUTES* stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs);
-#endif
+SANHANDLE* san_open(SANSSH* sanssh, const char* path, long mode);
+SANHANDLE* san_opendir(SANSSH* sanssh, const char* path);
+int san_close(SANHANDLE* handle);
+void copy_attributes(struct SANSTAT* stbuf, void* attrs);

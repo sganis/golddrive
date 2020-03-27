@@ -3,7 +3,7 @@
 
 void usage(const char* prog)
 {
-	printf("Sanssh2 - sftp client using libssh2\n");
+	printf("Sanssh - sftp client\n");
 	printf("usage: %s [options] <host> <port> <user> <remote file> <local file> [public key]\n", prog);
 	printf("options:\n");
 	printf("    -V           show version\n");
@@ -13,17 +13,17 @@ int file_exists(const char* path)
 	DWORD attr = GetFileAttributesA(path);
 	return (attr != INVALID_FILE_ATTRIBUTES && !(attr & FILE_ATTRIBUTE_DIRECTORY));
 }
-void get_filetype(unsigned long perm, char* filetype)
-{
-	if (LIBSSH2_SFTP_S_ISLNK(perm))			strcpy(filetype, "LNK");
-	else if (LIBSSH2_SFTP_S_ISREG(perm))	strcpy(filetype, "REG");
-	else if (LIBSSH2_SFTP_S_ISDIR(perm))	strcpy(filetype, "DIR");
-	else if (LIBSSH2_SFTP_S_ISCHR(perm))	strcpy(filetype, "CHR");
-	else if (LIBSSH2_SFTP_S_ISBLK(perm))	strcpy(filetype, "BLK");
-	else if (LIBSSH2_SFTP_S_ISFIFO(perm))	strcpy(filetype, "FIF");
-	else if (LIBSSH2_SFTP_S_ISSOCK(perm))	strcpy(filetype, "SOC");
-	else									strcpy(filetype, "NAN");
-}
+//void get_filetype(unsigned long perm, char* filetype)
+//{
+//	if (LIBSSH2_SFTP_S_ISLNK(perm))			strcpy(filetype, "LNK");
+//	else if (LIBSSH2_SFTP_S_ISREG(perm))	strcpy(filetype, "REG");
+//	else if (LIBSSH2_SFTP_S_ISDIR(perm))	strcpy(filetype, "DIR");
+//	else if (LIBSSH2_SFTP_S_ISCHR(perm))	strcpy(filetype, "CHR");
+//	else if (LIBSSH2_SFTP_S_ISBLK(perm))	strcpy(filetype, "BLK");
+//	else if (LIBSSH2_SFTP_S_ISFIFO(perm))	strcpy(filetype, "FIF");
+//	else if (LIBSSH2_SFTP_S_ISSOCK(perm))	strcpy(filetype, "SOC");
+//	else									strcpy(filetype, "NAN");
+//}
 
 SANSSH * san_init(const char* hostname,	int port, const char* username, 
 	const char* pkey, char* error)
@@ -133,10 +133,17 @@ SANSSH * san_init(const char* hostname,	int port, const char* username,
 }
 int san_finalize(SANSSH *sanssh)
 {
+#ifdef USE_LIBSSH
+
+#elif USE_LIBSSH2
 	libssh2_sftp_shutdown(sanssh->sftp);
 	libssh2_session_disconnect(sanssh->ssh, "sanssh2 disconnected");
 	libssh2_session_free(sanssh->ssh);
 	libssh2_exit();
+#elif USE_WOLFSSH
+
+#endif
+
 	closesocket(sanssh->socket);
 	WSACleanup();
 	free(sanssh);
@@ -144,11 +151,14 @@ int san_finalize(SANSSH *sanssh)
 }
 int waitsocket(SANSSH *sanssh)
 {
+#ifdef USE_LIBSSH
+
+#elif USE_LIBSSH2
 	struct timeval timeout;
 	int rc;
 	fd_set fd;
-	fd_set *writefd = NULL;
-	fd_set *readfd = NULL;
+	fd_set* writefd = NULL;
+	fd_set* readfd = NULL;
 	int dir;
 	timeout.tv_sec = 10;
 	timeout.tv_usec = 0;
@@ -162,13 +172,20 @@ int waitsocket(SANSSH *sanssh)
 		writefd = &fd;
 	rc = select(sanssh->socket + 1, readfd, writefd, NULL, &timeout);
 	return rc;
+#elif USE_WOLFSSH
+
+#endif
+
 }
 int san_read(SANSSH *sanssh, const char * remotefile, const char * localfile)
 {
-	LIBSSH2_SFTP_HANDLE *handle;
+#ifdef USE_LIBSSH
+
+#elif USE_LIBSSH2
+	LIBSSH2_SFTP_HANDLE* handle;
 
 	/* Since we have set non-blocking, tell libssh2 we are blocking */
-	
+
 
 	/* Request a file via SFTP */
 	handle = libssh2_sftp_open(sanssh->sftp, remotefile, LIBSSH2_FXF_READ, 0);
@@ -178,7 +195,7 @@ int san_read(SANSSH *sanssh, const char * remotefile, const char * localfile)
 		return 0;
 	}
 
-	FILE *file;
+	FILE* file;
 	unsigned bytesWritten = 0;
 	if (fopen_s(&file, localfile, "wb")) {
 		fprintf(stderr, "error opening %s for writing\n", localfile);
@@ -196,7 +213,7 @@ int san_read(SANSSH *sanssh, const char * remotefile, const char * localfile)
 	fprintf(stderr, "donwloading %s -> %s...\n", remotefile, localfile);
 	//printf("buffer size    bytes read     bytes written  total bytes\n");
 	start = time(NULL);
-	char *mem = (char*)malloc(bufsize);
+	char* mem = (char*)malloc(bufsize);
 	for (;;) {
 		bytesread = libssh2_sftp_read(handle, mem, bufsize);
 		if (bytesread == 0)
@@ -207,7 +224,7 @@ int san_read(SANSSH *sanssh, const char * remotefile, const char * localfile)
 	}
 	free(mem);
 	duration = time(NULL) - start;
-	if(file)
+	if (file)
 		fclose(file);
 	printf("bytes     : %d\n", total);
 	printf("elapsed   : %ld secs.\n", duration);
@@ -215,9 +232,16 @@ int san_read(SANSSH *sanssh, const char * remotefile, const char * localfile)
 
 	libssh2_sftp_close(handle);
 	return 0;
+
+#elif USE_WOLFSSH
+
+#endif
 }
 int san_write(SANSSH* sanssh, const char* remotefile, const char* localfile)
 {
+#ifdef USE_LIBSSH
+
+#elif USE_LIBSSH2
 	LIBSSH2_SFTP_HANDLE* handle;
 
 	/* Since we have set non-blocking, tell libssh2 we are blocking */
@@ -226,7 +250,7 @@ int san_write(SANSSH* sanssh, const char* remotefile, const char* localfile)
 	/* Request a file via SFTP */
 	handle = libssh2_sftp_open(sanssh->sftp, remotefile,
 		LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_TRUNC,
-		LIBSSH2_SFTP_S_IRUSR | LIBSSH2_SFTP_S_IWUSR );
+		LIBSSH2_SFTP_S_IRUSR | LIBSSH2_SFTP_S_IWUSR);
 	if (!handle) {
 		fprintf(stderr, "Unable to open file with SFTP: %ld\n",
 			libssh2_sftp_last_error(sanssh->sftp));
@@ -234,7 +258,7 @@ int san_write(SANSSH* sanssh, const char* remotefile, const char* localfile)
 	}
 
 	FILE* file;
-	
+
 	if (fopen_s(&file, localfile, "rb")) {
 		fprintf(stderr, "error opening %s for reading\n", localfile);
 		return 0;
@@ -271,18 +295,25 @@ int san_write(SANSSH* sanssh, const char* remotefile, const char* localfile)
 
 	free(mem);
 	duration = time(NULL) - start;
-	if(file)
+	if (file)
 		fclose(file);
 	printf("bytes     : %d\n", total);
 	printf("elapsed   : %d secs.\n", duration);
 	printf("speed     : %d MB/s.\n", (int)(total / 1024.0 / 1024.0 / (double)(duration)));
 
 	libssh2_sftp_close(handle);
+
+#elif USE_WOLFSSH
+
+#endif
 	return 0;
 }
 int san_read_async(SANSSH *sanssh, const char * remotefile, const char * localfile)
 {
-	LIBSSH2_SFTP_HANDLE *handle;
+#ifdef USE_LIBSSH
+
+#elif USE_LIBSSH2
+	LIBSSH2_SFTP_HANDLE* handle;
 	int rc;
 	int spin = 0;
 	int total = 0;
@@ -321,7 +352,7 @@ int san_read_async(SANSSH *sanssh, const char * remotefile, const char * localfi
 		}
 	} while (!handle);
 
-	FILE *file;
+	FILE* file;
 	if (fopen_s(&file, localfile, "wb")) {
 		fprintf(stderr, "error opening %s for writing\n", localfile);
 		return -3;
@@ -336,7 +367,7 @@ int san_read_async(SANSSH *sanssh, const char * remotefile, const char * localfi
 	start = time(NULL);
 
 	do {
-		char *mem = (char*)malloc(buf_size);
+		char* mem = (char*)malloc(buf_size);
 		while ((rc = libssh2_sftp_read(handle, mem, buf_size))
 			== LIBSSH2_ERROR_EAGAIN) {
 			spin++;
@@ -359,10 +390,17 @@ int san_read_async(SANSSH *sanssh, const char * remotefile, const char * localfi
 	printf("speed     : %d MB/s.\n", (int)(total / 1024.0 / 1024.0 / (double)duration));
 
 	libssh2_sftp_close(handle);
+
+#elif USE_WOLFSSH
+
+#endif
 	return 0;
 }
 int san_write_async(SANSSH* sanssh, const char* remotefile, const char* localfile)
 {
+#ifdef USE_LIBSSH
+
+#elif USE_LIBSSH2
 	LIBSSH2_SFTP_HANDLE* handle;
 	int rc;
 	int spin = 0;
@@ -440,10 +478,18 @@ int san_write_async(SANSSH* sanssh, const char* remotefile, const char* localfil
 	printf("speed     : %d MB/s.\n", (int)(total / 1024.0 / 1024.0 / (double)duration));
 
 	libssh2_sftp_close(handle);
+
+#elif USE_WOLFSSH
+
+#endif
 	return 0;
 }
+
 int san_mkdir(SANSSH *sanssh, const char * path)
 {
+#ifdef USE_LIBSSH
+
+#elif USE_LIBSSH2
 	int block = libssh2_session_get_blocking(sanssh->ssh);
 	int rc;
 	rc = (int)libssh2_sftp_mkdir(sanssh->sftp, path,
@@ -455,20 +501,35 @@ int san_mkdir(SANSSH *sanssh, const char * path)
 			rc, libssh2_sftp_last_error(sanssh->sftp));
 	}
 	return rc;
+#elif USE_WOLFSSH
+
+#endif
+
 }
 int san_rmdir(SANSSH *sanssh, const char * path)
 {
 	int rc = 0;
+#ifdef USE_LIBSSH
+
+#elif USE_LIBSSH2
 	rc = libssh2_sftp_rmdir(sanssh->sftp, path);
 	if (rc) {
 		fprintf(stderr, "libssh2_sftp_rmdir failed: rc=%d, error=%ld\n",
 			rc, libssh2_sftp_last_error(sanssh->sftp));
 	}
+
+#elif USE_WOLFSSH
+
+#endif
+	
 	return rc;
 }
-int san_stat(SANSSH *sanssh, const char * path, SANSSH_ATTRIBUTES *attrs)
+int san_stat(SANSSH *sanssh, const char * path, SANSTAT*attrs)
 {
 	int rc = 0;
+#ifdef USE_LIBSSH
+
+#elif USE_LIBSSH2
 	LIBSSH2_SFTP_ATTRIBUTES att;
 	rc = libssh2_sftp_stat(sanssh->sftp, path, &att);
 	if (rc) {
@@ -476,19 +537,15 @@ int san_stat(SANSSH *sanssh, const char * path, SANSSH_ATTRIBUTES *attrs)
 			rc, libssh2_sftp_last_error(sanssh->sftp));
 	}
 	copy_attributes(attrs, &att);
+
+#elif USE_WOLFSSH
+
+#endif
+	
 	return rc;
 }
-int san_lstat(SANSSH *sanssh, const char * path, SANSSH_ATTRIBUTES*attrs)
-{
-	int rc = 0;
-	rc = libssh2_sftp_lstat(sanssh->sftp, path, attrs);
-	if (rc) {
-		fprintf(stderr, "libssh2_sftp_lstat failed: rc=%d, error=%ld\n",
-			rc, libssh2_sftp_last_error(sanssh->sftp));
-	}
-	return rc;
-}
-void print_stat(const char* path, SANSSH_ATTRIBUTES *attrs)
+
+void print_stat(const char* path, SANSTAT *attrs)
 {
 	printf("path:  %s\n", path);
 	printf("flags: %ld\n", attrs->flags);
@@ -499,17 +556,24 @@ void print_stat(const char* path, SANSSH_ATTRIBUTES *attrs)
 	printf("atime: %ld\n", attrs->atime);
 	printf("mtime: %ld\n", attrs->mtime);
 }
-int san_statvfs(SANSSH *sanssh, const char * path, SANSSH_STATVFS *st)
+int san_statvfs(SANSSH *sanssh, const char * path, SANSTATVFS *st)
 {
 	int rc = 0;
+#ifdef USE_LIBSSH
+
+#elif USE_LIBSSH2
 	rc = libssh2_sftp_statvfs(sanssh->sftp, path, strlen(path), st);
 	if (rc) {
 		fprintf(stderr, "libssh2_sftp_statvfs failed: rc=%d, error=%ld\n",
 			rc, libssh2_sftp_last_error(sanssh->sftp));
 	}
+
+#elif USE_WOLFSSH
+
+#endif
 	return rc;
 }
-void print_statvfs(const char* path, SANSSH_STATVFS *st)
+void print_statvfs(const char* path, SANSTATVFS *st)
 {
 	printf("path:    %s\n", path);
 	printf("bsize:   %lld\n", st->f_bsize);    	/* file system block size */
@@ -525,9 +589,13 @@ void print_statvfs(const char* path, SANSSH_STATVFS *st)
 	printf("namemax: %lld\n", st->f_namemax);  	/* maximum filename length */
 
 }
-LIBSSH2_SFTP_HANDLE * san_open(SANSSH *sanssh, const char *path, long mode)
+SANHANDLE * san_open(SANSSH *sanssh, const char *path, long mode)
 {
-	LIBSSH2_SFTP_HANDLE * handle;
+	SANHANDLE* sh;
+#ifdef USE_LIBSSH
+
+#elif USE_LIBSSH2
+	LIBSSH2_SFTP_HANDLE* handle;
 	handle = libssh2_sftp_open(sanssh->sftp, path,
 		LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_TRUNC,
 		LIBSSH2_SFTP_S_IRUSR | LIBSSH2_SFTP_S_IWUSR |
@@ -535,56 +603,128 @@ LIBSSH2_SFTP_HANDLE * san_open(SANSSH *sanssh, const char *path, long mode)
 	if (!handle) {
 		fprintf(stderr, "Unable to open file\n");
 	}
-	return handle;
+	
+	sh->file_handle = handle;
+#elif USE_WOLFSSH
+
+#endif
+	return sh;
 }
-LIBSSH2_SFTP_HANDLE * san_opendir(SANSSH *sanssh, const char *path)
+SANHANDLE * san_opendir(SANSSH *sanssh, const char *path)
 {
-	LIBSSH2_SFTP_HANDLE * handle;
+	SANHANDLE* sh;
+#ifdef USE_LIBSSH
+
+#elif USE_LIBSSH2
+		LIBSSH2_SFTP_HANDLE* handle;
 	handle = libssh2_sftp_opendir(sanssh->sftp, path);
 	if (!handle) {
 		fprintf(stderr, "Unable to open directory\n");
 	}
-	return handle;
+	sh->file_handle = handle;
+#elif USE_WOLFSSH
+
+#endif
+	return sh;
 }
-int san_close_handle(LIBSSH2_SFTP_HANDLE *handle)
+
+void copy_attributes(SANSTAT* stbuf, void* attr)
 {
+#ifdef USE_LIBSSH
+
+#elif USE_LIBSSH2
+	LIBSSH2_SFTP_ATTRIBUTES* attrs = (LIBSSH2_SFTP_ATTRIBUTES*)attr;
+	stbuf->flags = attrs->flags;
+	stbuf->uid = attrs->uid;
+	stbuf->gid = attrs->gid;
+	stbuf->mode = attrs->permissions;
+	stbuf->filesize = attrs->filesize;
+	stbuf->atime = attrs->atime;
+	stbuf->mtime = attrs->mtime;
+#elif USE_WOLFSSH
+	WS_SFTP_FILEATRB* attrs = (WS_SFTP_FILEATRB*)attr;
+	stbuf->flags = attrs->flags;
+	stbuf->uid = attrs->uid;
+	stbuf->gid = attrs->gid;
+	stbuf->mode = attrs->per;
+	stbuf->filesize = attrs->sz[0];
+	stbuf->atime = attrs->atime;
+	stbuf->mtime = attrs->mtime;
+#endif
+}
+int san_close(SANHANDLE *handle)
+{
+#ifdef USE_LIBSSH
+
+#elif USE_LIBSSH2
 	return libssh2_sftp_close_handle(handle);
+#elif USE_WOLFSSH
+
+#endif
+	
 }
 int san_rename(SANSSH *sanssh, const char *source, const char *destination)
 {
 	int rc;
+#ifdef USE_LIBSSH
+
+#elif USE_LIBSSH2
 	rc = libssh2_sftp_rename(sanssh->sftp, source, destination);
 	if (rc) {
 		fprintf(stderr, "libssh2_sftp_rename failed: rc=%d, error=%ld\n",
 			rc, libssh2_sftp_last_error(sanssh->sftp));
 	}
+#elif USE_WOLFSSH
+
+#endif
+	
+
 	return rc;
 
 }
 int san_delete(SANSSH *sanssh, const char *filename)
 {
 	int rc;
+#ifdef USE_LIBSSH
+
+#elif USE_LIBSSH2
 	rc = libssh2_sftp_unlink(sanssh->sftp, filename);
 	if (rc) {
 		fprintf(stderr, "libssh2_sftp_unlink failed: rc=%d, error=%ld\n",
 			rc, libssh2_sftp_last_error(sanssh->sftp));
 	}
+#elif USE_WOLFSSH
+
+#endif
+	
+	
 	return rc;
 }
 int san_realpath(SANSSH *sanssh, const char *path, char *target)
 {
 	int rc;
+#ifdef USE_LIBSSH
+
+#elif USE_LIBSSH2
 	rc = libssh2_sftp_realpath(sanssh->sftp, path, target, MAX_PATH);
 	if (rc < 0) {
 		fprintf(stderr, "libssh2_sftp_readlink failed: rc=%d, error=%ld\n",
 			rc, libssh2_sftp_last_error(sanssh->sftp));
 	}
+#elif USE_WOLFSSH
+
+#endif
+	
+	
 	return rc;
 }
 int san_readdir(SANSSH *sanssh, const char *path)
 {
 	int rc = 0;
-	LIBSSH2_SFTP_HANDLE *handle;
+#ifdef USE_LIBSSH
+
+#elif USE_LIBSSH2
+	LIBSSH2_SFTP_HANDLE* handle;
 	handle = libssh2_sftp_opendir(sanssh->sftp, path);
 	if (!handle) {
 		fprintf(stderr, "Unable to open dir with SFTP\n");
@@ -598,12 +738,12 @@ int san_readdir(SANSSH *sanssh, const char *path)
 			longentry, sizeof(longentry), &attrs);
 		if (rc > 0) {
 			/* rc is the length of the file name in the mem buffer */
-			char filetype[4];
-			get_filetype(attrs.permissions, &filetype);
+			//char filetype[4];
+			//get_filetype(attrs.permissions, &filetype);
 			if (longentry[0] != '\0') {
-				printf("%3s %10ld %5ld %5ld %s\n",
+				/*printf("%3s %10ld %5ld %5ld %s\n",
 					filetype, attrs.filesize, attrs.uid, attrs.gid,
-					longentry);
+					longentry);*/
 			}
 			else {
 				if (attrs.flags & LIBSSH2_SFTP_ATTR_PERMISSIONS) {
@@ -632,14 +772,23 @@ int san_readdir(SANSSH *sanssh, const char *path)
 	} while (1);
 
 	libssh2_sftp_closedir(handle);
+
+#elif USE_WOLFSSH
+
+#endif
+	
 }
 int run_command(SANSSH *sanssh,	const char *cmd, char *out, char *err)
 {
-	LIBSSH2_CHANNEL *channel;
-	int rc;
+	int rc = 0;
+#ifdef USE_LIBSSH
+
+#elif USE_LIBSSH2
+	LIBSSH2_CHANNEL* channel;
+	
 	int bytes = 0;
 	int errlen = 0;
-	char *errmsg;
+	char* errmsg;
 	channel = libssh2_channel_open_session(sanssh->ssh);
 	if (!channel) {
 		int rc = libssh2_session_last_error(sanssh->ssh, &errmsg, NULL, 0);
@@ -699,28 +848,10 @@ int run_command(SANSSH *sanssh,	const char *cmd, char *out, char *err)
 		rc = 127;
 	//libssh2_channel_set_blocking(channel, 1);
 	libssh2_channel_free(channel);
-	return rc;
-}
 
-void copy_attributes(SANSSH_ATTRIBUTES* stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs)
-{
+#elif USE_WOLFSSH
 
-
-	//int isdir = LIBSSH2_SFTP_S_ISDIR(attrs->permissions);
-	//memset(stbuf, 0, sizeof *stbuf);
-	stbuf->flags = attrs->flags;
-	stbuf->uid = attrs->uid;
-	stbuf->gid = attrs->gid;
-	stbuf->mode = 0777 | ((LIBSSH2_SFTP_S_ISDIR(attrs->permissions)) ? S_IFDIR : 0);
-	stbuf->filesize = attrs->filesize;
-	stbuf->atime = attrs->atime;
-	stbuf->mtime = attrs->mtime;
-	/*if (LIBSSH2_SFTP_S_ISLNK(attrs->permissions)) {
-		int a = attrs->permissions;
-	}*/
-#if defined(FSP_FUSE_USE_STAT_EX)
-	//	if (hidden) {
-	//		stbuf->st_flags |= FSP_FUSE_UF_READONLY;
-	//	}
 #endif
+	return rc;
+
 }

@@ -472,7 +472,7 @@ int main(int argc, char* argv[])
 
 	// wolf
 	WOLFSSH_CTX* ctx = NULL;
-	static WOLFSSH* ssh = NULL;
+    WOLFSSH* ssh = NULL;
 	SOCKET_T sockFd = WOLFSSH_SOCKET_INVALID;
 	SOCKADDR_IN_T clientAddr;
 	socklen_t clientAddrSz = sizeof(clientAddr);

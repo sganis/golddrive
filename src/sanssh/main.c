@@ -5,23 +5,15 @@
  *
  * Download a file from remote ssh server.
  *
- * usage: sanssh hostname port user /tmp/file.bin c:\temp\file.bin [private key]
+ * usage: sanssh hostname port user pass /tmp/file.bin c:\temp\file.bin [private key]
  * private key defaults to %USERPROFILE%\.ssh\id_rsa
  */
 #include <stdio.h>
 #include <assert.h>
-
-#define USE_LIBSSH
-//#define USE_LIBSSH2
-//#define USE_WOLFSSH
-
 #include "sanssh.h"
-
 
 int main(int argc, char *argv[])
 {
-	
-
 	char *hostname = "";
 	int port = 22;
 	char *username = "";
@@ -45,8 +37,9 @@ int main(int argc, char *argv[])
 	hostname = argv[1];
 	port = atoi(argv[2]);
 	username = argv[3];
-	remotefile = argv[4];
-	localfile = argv[5];
+	password = argv[4];
+	remotefile = argv[5];
+	localfile = argv[6];
 
 	// get public key
 	char profile[BUFFER_SIZE];
@@ -80,13 +73,13 @@ int main(int argc, char *argv[])
 	san_mkdir(sanssh, path);
 	
 	/* stat */
-	SANSSH_ATTRIBUTES attrs;
+	SANSTAT attrs;
 	san_stat(sanssh, path, &attrs);
 	print_stat(path, &attrs);
 
 
 	/* statfvs */
-	SANSSH_STATVFS st;
+	SANSTATVFS st;
 	san_statvfs(sanssh, path, &st);
 	print_statvfs(path, &st);
 
