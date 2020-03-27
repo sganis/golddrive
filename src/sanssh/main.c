@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
 	printf("starting test...\n");
 	int start = time(NULL);
 	
-	const char* path = "/tmp/sftp_folder";
+	const char* path = "/tmp/folder";
 
 	/* mkdir */
 	san_mkdir(sanssh, path);
@@ -81,22 +81,27 @@ int main(int argc, char *argv[])
 	/* statfvs */
 	SANSTATVFS st;
 	san_statvfs(sanssh, path, &st);
-	print_statvfs(path, &st);
+	//print_statvfs(path, &st);
 
 	/* rmdir */
-	san_rmdir(sanssh, "/tmp/sftp_folder");
+	san_rmdir(sanssh, "/tmp/folder");
 
 	/* readdir */
 	san_readdir(sanssh, "/tmp");
 
 	// read in blocking mode
+	start = time(NULL);
 	san_write(sanssh, remotefile, localfile);
-
+	printf("upload: %d secs.\n", time(NULL) - start);
 	// read in blocking mode
-	san_read(sanssh, remotefile, localfile);
-
+	char newlocal[1000];
+	strcpy(newlocal, localfile);
+	strcat(newlocal, ".downloaded");
+	start = time(NULL);
+	san_read(sanssh, remotefile, newlocal);
+	printf("download: %d secs.\n", time(NULL) - start);
 	// read in non-blocking mode
-	san_read_async(sanssh, remotefile, localfile);
+	//san_read_async(sanssh, remotefile, localfile);
 
 
 	/* run command */
@@ -113,7 +118,7 @@ int main(int argc, char *argv[])
 	//	run_command(sock, session, cmd, out, eer);
 	//
 	
-	printf("duration: %d secs.\n", time(NULL) - start);
+	printf("total test time: %d secs.\n", time(NULL) - start);
 
 	/* close */
 	san_finalize(sanssh);

@@ -93,7 +93,10 @@ SANSSH * san_init(const char* hostname,	int port, const char* username,
 	}
 
 	// authenticate
-	rc = libssh2_userauth_publickey_fromfile(ssh, username, NULL, pkey, NULL);
+	char pubkey[1000];
+	strcpy(pubkey, pkey);
+	strcat(pubkey, ".pub");
+	rc = libssh2_userauth_publickey_fromfile(ssh, username, pubkey, pkey, NULL);
 	//while ((rc = libssh2_userauth_publickey_fromfile(
 	//	session, username, NULL, pkey, NULL)) == LIBSSH2_ERROR_EAGAIN);
 	if (rc) {
@@ -136,9 +139,12 @@ int san_finalize(SANSSH *sanssh)
 #ifdef USE_LIBSSH
 
 #elif USE_LIBSSH2
-	libssh2_sftp_shutdown(sanssh->sftp);
-	libssh2_session_disconnect(sanssh->ssh, "sanssh2 disconnected");
-	libssh2_session_free(sanssh->ssh);
+	while (libssh2_sftp_shutdown(sanssh->sftp) ==
+		LIBSSH2_ERROR_EAGAIN);
+	while (libssh2_session_disconnect(sanssh->ssh, "ssh session disconnected") ==
+		LIBSSH2_ERROR_EAGAIN);
+	while (libssh2_session_free(sanssh->ssh) ==
+		LIBSSH2_ERROR_EAGAIN);
 	libssh2_exit();
 #elif USE_WOLFSSH
 
@@ -203,22 +209,19 @@ int san_read(SANSSH *sanssh, const char * remotefile, const char * localfile)
 	}
 	int bytesread;
 	size_t total = 0;
-	size_t bytesize = sizeof(char);
 	size_t byteswritten = 0;
-	int bufsize = 2 * 1024 * 1024;
-	//int bufsize = 64 * 1024;
 	int start;
 	int duration;
 
 	fprintf(stderr, "donwloading %s -> %s...\n", remotefile, localfile);
 	//printf("buffer size    bytes read     bytes written  total bytes\n");
 	start = time(NULL);
-	char* mem = (char*)malloc(bufsize);
+	char* mem = (char*)malloc(BUFFER_SIZE);
 	for (;;) {
-		bytesread = libssh2_sftp_read(handle, mem, bufsize);
+		bytesread = libssh2_sftp_read(handle, mem, BUFFER_SIZE);
 		if (bytesread == 0)
 			break;
-		byteswritten = fwrite(mem, bytesize, bytesread, file);
+		byteswritten = fwrite(mem, 1, bytesread, file);
 		total += bytesread;
 		//printf("%-15d%-15d%-15ld%-15ld\n", bufsize, bytesread, byteswritten, total);
 	}
@@ -267,24 +270,23 @@ int san_write(SANSSH* sanssh, const char* remotefile, const char* localfile)
 	int total = 0;
 	size_t bytesize = sizeof(char);
 	size_t rc = 0;
-	int bufsize = 2 * 1024 * 1024;
-	//int bufsize = 64 * 1024;
 	int start;
 	int duration;
 
 	fprintf(stderr, "uploading %s -> %s...\n", localfile, remotefile);
 	//printf("buffer size    bytes read     bytes written  total bytes\n");
 	start = time(NULL);
-	char* mem = (char*)malloc(bufsize);
+	char* mem = (char*)malloc(BUFFER_SIZE);
 	char* ptr;
 
 	do {
-		bytesread = fread(mem, 1, sizeof(mem), file);
+		bytesread = fread(mem, 1, BUFFER_SIZE, file);
 		if (bytesread == 0)
 			break;
 		ptr = mem;
 		do {
-			rc = libssh2_sftp_write(handle, ptr, bytesread);
+			int chunk = bytesread < BUFFER_SIZE ? bytesread : BUFFER_SIZE;
+			rc = libssh2_sftp_write(handle, ptr, chunk);
 			if (rc < 0)
 				break;
 			ptr += rc;
@@ -365,10 +367,10 @@ int san_read_async(SANSSH *sanssh, const char * remotefile, const char * localfi
 	int duration;
 	fprintf(stderr, "donwloading %s -> %s...\n", remotefile, localfile);
 	start = time(NULL);
-
+	char* mem = (char*)malloc(BUFFER_SIZE);
 	do {
-		char* mem = (char*)malloc(buf_size);
-		while ((rc = libssh2_sftp_read(handle, mem, buf_size))
+		
+		while ((rc = libssh2_sftp_read(handle, mem, BUFFER_SIZE))
 			== LIBSSH2_ERROR_EAGAIN) {
 			spin++;
 			waitsocket(sanssh); /* now we wait */
@@ -376,12 +378,13 @@ int san_read_async(SANSSH *sanssh, const char * remotefile, const char * localfi
 		if (rc > 0) {
 			fwrite(mem, bytesize, rc, file);
 			total += rc;
+
 		}
 		else {
 			break;
 		}
 	} while (1);
-
+	free(mem);
 	duration = time(NULL) - start;
 	fclose(file);
 	printf("bytes     : %d\n", total);
@@ -453,10 +456,10 @@ int san_write_async(SANSSH* sanssh, const char* remotefile, const char* localfil
 	int duration;
 	fprintf(stderr, "donwloading %s -> %s...\n", remotefile, localfile);
 	start = time(NULL);
-
+	char* mem = (char*)malloc(BUFFER_SIZE);
 	do {
-		char* mem = (char*)malloc(buf_size);
-		while ((rc = libssh2_sftp_read(handle, mem, buf_size))
+		
+		while ((rc = libssh2_sftp_read(handle, mem, BUFFER_SIZE))
 			== LIBSSH2_ERROR_EAGAIN) {
 			spin++;
 			waitsocket(sanssh); /* now we wait */
@@ -469,7 +472,7 @@ int san_write_async(SANSSH* sanssh, const char* remotefile, const char* localfil
 			break;
 		}
 	} while (1);
-
+	free(mem);
 	duration = time(NULL) - start;
 	fclose(file);
 	printf("bytes     : %d\n", total);
@@ -562,12 +565,24 @@ int san_statvfs(SANSSH *sanssh, const char * path, SANSTATVFS *st)
 #ifdef USE_LIBSSH
 
 #elif USE_LIBSSH2
-	rc = libssh2_sftp_statvfs(sanssh->sftp, path, strlen(path), st);
+	LIBSSH2_SFTP_STATVFS att;
+	rc = libssh2_sftp_statvfs(sanssh->sftp, path, strlen(path), &att);
 	if (rc) {
 		fprintf(stderr, "libssh2_sftp_statvfs failed: rc=%d, error=%ld\n",
 			rc, libssh2_sftp_last_error(sanssh->sftp));
 	}
-
+	memset(st, 0, sizeof(SANSTATVFS));
+	st->f_bsize = att.f_bsize;			/* file system block size */
+	st->f_frsize = att.f_frsize;			/* fragment size */
+	st->f_blocks = att.f_blocks;			/* size of fs in f_frsize units */
+	st->f_bfree = att.f_bfree;			/* # free blocks */
+	st->f_bavail = att.f_bavail;			/* # free blocks for non-root */
+	st->f_files = att.f_files;			/* # inodes */
+	st->f_ffree = att.f_ffree;			/* # free inodes */
+	st->f_favail = att.f_favail;			/* # free inodes for non-root */
+	st->f_fsid = att.f_fsid;				/* file system ID */
+	st->f_flag = att.f_flag;				/* mount flags */
+	st->f_namemax = att.f_namemax;		/* maximum filename length */
 #elif USE_WOLFSSH
 
 #endif
@@ -735,7 +750,7 @@ int san_readdir(SANSSH *sanssh, const char *path)
 		char longentry[512];
 		LIBSSH2_SFTP_ATTRIBUTES attrs;
 		rc = libssh2_sftp_readdir_ex(handle, mem, sizeof(mem),
-			longentry, sizeof(longentry), &attrs);
+			NULL, 0, &attrs);
 		if (rc > 0) {
 			/* rc is the length of the file name in the mem buffer */
 			//char filetype[4];
