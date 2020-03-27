@@ -279,10 +279,9 @@
   <PropertyGroup>
     <PostBuildEvent>xcopy /y $(ProjectDir)golddrive.ico $(OutDir)
 xcopy /y $(ProjectDir)..\..\tools\openssh\* $(OutDir)
-xcopy /y $(ProjectDir)..\lib\openssl\lib-Release-$(Platform)\libcrypto-1_1-x64.dll $(OutDir)
-xcopy /y $(ProjectDir)..\lib\libssh\lib-Release-$(Platform)\ssh.dll $(OutDir)
-xcopy /y $(ProjectDir)..\lib\libssh2\lib-Release-$(Platform)\libssh2.dll $(OutDir)
-xcopy /y $(ProjectDir)..\lib\zlib\lib-Release-$(Platform)\zlib1.dll $(OutDir)
+xcopy /y $(ProjectDir)..\lib\libssh\lib\$(Platform)\ssh.dll $(OutDir)
+rem xcopy /y $(ProjectDir)..\lib\openssl\lib\$(Platform)\libcrypto-1_1-x64.dll $(OutDir)
+rem xcopy /y $(ProjectDir)..\lib\libssh2\lib\$(Platform)\libssh2.dll $(OutDir)
 </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

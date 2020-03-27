@@ -10,6 +10,7 @@ size_t		g_sftp_calls;
 size_t		g_sftp_cached_calls;
 gdssh_t *	g_ssh;
 SRWLOCK		g_ssh_lock;
+CRITICAL_SECTION g_critical_section;
 fs_config	g_fs;
 char*		g_logfile;
 
@@ -663,6 +664,7 @@ int main(int argc, char *argv[])
 
 	// initiaize small read/write lock
 	InitializeSRWLock(&g_ssh_lock);
+	//InitializeCriticalSectionAndSpinCount(&g_critical_section, 0x00000400);
 
 	g_sftp_calls = 0;
 	g_sftp_cached_calls = 0;
@@ -714,7 +716,6 @@ int main(int argc, char *argv[])
 	rc = fuse_main(args.argc, args.argv, &fs_ops, NULL);
 	
 	// cleanup
-	InitializeSRWLock(&g_ssh_lock);
 	gd_finalize();
 	return rc;
 }

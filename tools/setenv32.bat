@@ -8,4 +8,4 @@ set DIR=%DIR:~0,-1%
 
 echo Setting x86 development environment...
 SET PLATFORM=x86
-call "%VSINSTALLDIR%VC\Auxiliary\Build\vcvars32.bat"
+call call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat"

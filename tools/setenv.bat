@@ -19,7 +19,7 @@ SET "PATH=C:\Program Files\NASM;%PATH%"
 echo Setting x64 development environment...
 SET PLATFORM=x64
 set CONFIGURATION=Release
-call "%VSINSTALLDIR%VC\Auxiliary\Build\vcvars64.bat"
+call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
 
 ::set GOLDDRIVE=%DIR%\..
 ECHO Select remote test host:

@@ -264,6 +264,7 @@ typedef struct gdhandle_t {
 	int flags;						/* open flags							*/
 	int mode;						/* open mode							*/
 	char path[PATH_MAX];			/* file full path						*/
+	long size;
 } gd_handle_t;
 
 struct gd_dirent_t {
@@ -286,17 +287,21 @@ enum _FILE_TYPE {
 
 extern gdssh_t *g_ssh;
 extern SRWLOCK g_ssh_lock;
+//extern CRITICAL_SECTION g_critical_section;
 
 inline void gd_lock() 
 { 
 	//printf("locking...");
-	AcquireSRWLockExclusive(&g_ssh_lock); 
+	AcquireSRWLockExclusive(&g_ssh_lock);
+	//EnterCriticalSection(&g_critical_section);
 	//printf("locking done\n");
 }
 inline void gd_unlock() 
 {
 	//printf("unlocking...");
-	ReleaseSRWLockExclusive(&g_ssh_lock); 
+	ReleaseSRWLockExclusive(&g_ssh_lock);
+	//LeaveCriticalSection(&g_critical_section);
+	//ReleaseSRWLockShared(&g_ssh_lock);
 	//printf("unlocking done\n");
 }
 
