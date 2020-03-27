@@ -92,7 +92,7 @@
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir)..\lib\libssh\include;$(ProjectDir)..\lib\libssh2\include;$(ProjectDir)..\lib\openssl\include;$(ProjectDir)..\lib\wolf\include</AdditionalIncludeDirectories>
@@ -101,14 +101,14 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib\$(Configuration)\$(PlatformTarget);$(ProjectDir)..\lib\libssh2\lib\$(Configuration)\$(PlatformTarget);$(ProjectDir)..\lib\openssl\lib\$(Configuration)\$(PlatformTarget);$(ProjectDir)..\lib\zlib\lib\$(Configuration)\$(PlatformTarget);$(ProjectDir)..\lib\wolf\lib\$(Configuration)\$(PlatformTarget)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib-$(Configuration)-$(PlatformTarget);$(ProjectDir)..\lib\libssh2\lib-$(Configuration)-$(PlatformTarget);$(ProjectDir)..\lib\openssl\lib-$(Configuration)-$(PlatformTarget);$(ProjectDir)..\lib\zlib\lib-$(Configuration)-$(PlatformTarget);$(ProjectDir)..\lib\wolf\lib-$(Configuration)-$(PlatformTarget)</AdditionalLibraryDirectories>
       <AdditionalDependencies>ssh.lib;libssh2.lib;libcrypto.lib;wolfssl.lib;wolfssh.lib;crypt32.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;LIBSSH_STATIC;WOLFSSL_USER_SETTINGS;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir)..\lib\libssh\include;$(ProjectDir)..\lib\libssh2\include;$(ProjectDir)..\lib\openssl\include;$(ProjectDir)..\lib\wolf\include</AdditionalIncludeDirectories>
@@ -117,7 +117,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>ssh.lib;libssh2.lib;libcrypto.lib;wolfssl.lib;wolfssh.lib;crypt32.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib\$(Configuration)\$(PlatformTarget);$(ProjectDir)..\lib\libssh2\lib\$(Configuration)\$(PlatformTarget);$(ProjectDir)..\lib\openssl\lib\$(Configuration)\$(PlatformTarget);$(ProjectDir)..\lib\zlib\lib\$(Configuration)\$(PlatformTarget);$(ProjectDir)..\lib\wolf\lib\$(Configuration)\$(PlatformTarget)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib-$(Configuration)-$(PlatformTarget);$(ProjectDir)..\lib\libssh2\lib-$(Configuration)-$(PlatformTarget);$(ProjectDir)..\lib\openssl\lib-$(Configuration)-$(PlatformTarget);$(ProjectDir)..\lib\zlib\lib-$(Configuration)-$(PlatformTarget);$(ProjectDir)..\lib\wolf\lib-$(Configuration)-$(PlatformTarget)</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <ProjectReference />
@@ -128,7 +128,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
@@ -142,13 +142,13 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib\$(Configuration)\$(PlatformTarget);$(ProjectDir)..\lib\libssh2\lib\$(Configuration)\$(PlatformTarget);$(ProjectDir)..\lib\openssl\lib\$(Configuration)\$(PlatformTarget);$(ProjectDir)..\lib\zlib\lib\$(Configuration)\$(PlatformTarget);$(ProjectDir)..\lib\wolf\lib\$(Configuration)\$(PlatformTarget)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib-$(Configuration)-$(PlatformTarget);$(ProjectDir)..\lib\libssh2\lib-$(Configuration)-$(PlatformTarget);$(ProjectDir)..\lib\openssl\lib-$(Configuration)-$(PlatformTarget);$(ProjectDir)..\lib\zlib\lib-$(Configuration)-$(PlatformTarget);$(ProjectDir)..\lib\wolf\lib-$(Configuration)-$(PlatformTarget)</AdditionalLibraryDirectories>
       <AdditionalDependencies>ssh.lib;libssh2.lib;libcrypto.lib;wolfssl.lib;wolfssh.lib;crypt32.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
@@ -163,7 +163,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>ssh.lib;libssh2.lib;libcrypto.lib;wolfssl.lib;wolfssh.lib;crypt32.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib\$(Configuration)\$(PlatformTarget);$(ProjectDir)..\lib\libssh2\lib\$(Configuration)\$(PlatformTarget);$(ProjectDir)..\lib\openssl\lib\$(Configuration)\$(PlatformTarget);$(ProjectDir)..\lib\zlib\lib\$(Configuration)\$(PlatformTarget);$(ProjectDir)..\lib\wolf\lib\$(Configuration)\$(PlatformTarget)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib-$(Configuration)-$(PlatformTarget);$(ProjectDir)..\lib\libssh2\lib-$(Configuration)-$(PlatformTarget);$(ProjectDir)..\lib\openssl\lib-$(Configuration)-$(PlatformTarget);$(ProjectDir)..\lib\zlib\lib-$(Configuration)-$(PlatformTarget);$(ProjectDir)..\lib\wolf\lib-$(Configuration)-$(PlatformTarget)</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>

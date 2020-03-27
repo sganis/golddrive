@@ -42,8 +42,8 @@ int main(int argc, char *argv[])
 	localfile = argv[6];
 
 	// get public key
-	char profile[BUFFER_SIZE];
-	ExpandEnvironmentStringsA("%USERPROFILE%", profile, BUFFER_SIZE);
+	char profile[MAX_PATH];
+	ExpandEnvironmentStringsA("%USERPROFILE%", profile, MAX_PATH);
 	strcpy_s(pkey, MAX_PATH, profile);
 	strcat_s(pkey, MAX_PATH, "\\.ssh\\id_rsa");
 	
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 	/* statfvs */
 	SANSTATVFS st;
 	san_statvfs(sanssh, path, &st);
-	//print_statvfs(path, &st);
+	print_statvfs(path, &st);
 
 	/* rmdir */
 	san_rmdir(sanssh, "/tmp/folder");
@@ -93,6 +93,7 @@ int main(int argc, char *argv[])
 	start = time(NULL);
 	san_write(sanssh, remotefile, localfile);
 	printf("upload: %d secs.\n", time(NULL) - start);
+
 	// read in blocking mode
 	char newlocal[1000];
 	strcpy(newlocal, localfile);

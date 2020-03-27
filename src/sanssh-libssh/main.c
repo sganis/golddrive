@@ -486,67 +486,6 @@ int main(int argc, char *argv[])
 	printf("private key: %s\n", pkeypath);
 	printf("connecting...\n");
 
-	ssh_session ssh = ssh_new();
-	if (ssh == NULL)
-		exit(-1);
-
-	ssh_options_set(ssh, SSH_OPTIONS_HOST, hostname);
-	ssh_options_set(ssh, SSH_OPTIONS_USER, username);
-	ssh_options_set(ssh, SSH_OPTIONS_PORT, &port);
-	ssh_options_set(ssh, SSH_OPTIONS_COMPRESSION, "no");
-	ssh_options_set(ssh, SSH_OPTIONS_STRICTHOSTKEYCHECK, 0);
-	ssh_options_set(ssh, SSH_OPTIONS_KNOWNHOSTS, "/dev/null");
-
-
-	WSADATA wsadata;
-	int err;
-	err = WSAStartup(MAKEWORD(2, 0), &wsadata);
-	if (err != 0) {
-		fprintf(stderr, "WSAStartup failed with error: %d\n", err);
-		return 1;
-	}
-
-	// Connect
-	rc = ssh_connect(ssh);
-	if (rc != SSH_OK) {
-		fprintf(stderr, "Error connecting to localhost: %s\n", ssh_get_error(ssh));
-		goto shutdown;
-	}
-	// Verify the server's identity
-	// For the source code of verify_knowhost(), check previous example
-	//  if (verify_knownhost(ssh) < 0)
-	//  {
-	//    ssh_disconnect(ssh);
-	//    ssh_free(ssh);
-	//    exit(-1);
-	//  }
-	// Authenticate ourselves
-	// Give password here
-
-	ssh_key pkey;
-	rc = ssh_pki_import_privkey_file(pkeypath, "", NULL, NULL, &pkey);
-	if (rc != SSH_OK) {
-		fprintf(stderr, "Cannot read private key\n");
-		goto shutdown;
-	}
-	rc = ssh_userauth_publickey(ssh, username, pkey);
-	if (rc != SSH_AUTH_SUCCESS)	{
-		fprintf(stderr, "Key authentication wrong\n");
-		goto shutdown;
-	}
-	
-	sftp_session sftp;
-	sftp = sftp_new(ssh);
-	if (sftp == NULL) {
-		fprintf(stderr, "Error allocating SFTP session: %s\n", ssh_get_error(ssh));
-		return SSH_ERROR;
-	}
-	rc = sftp_init(sftp);
-	if (rc != SSH_OK) {
-		fprintf(stderr, "Error initializing SFTP session: %d.\n", sftp_get_error(sftp));
-		sftp_free(sftp);
-		return rc;
-	}
 
 	printf("testing...\n");
 

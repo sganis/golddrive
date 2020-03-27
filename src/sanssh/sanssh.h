@@ -1,13 +1,27 @@
 #pragma once
 
-//#define USE_LIBSSH
-#define USE_LIBSSH2 1
+#define USE_LIBSSH 1
+//#define USE_LIBSSH2 1
 //#define USE_WOLFSSH 1
 
 #define BUFFER_SIZE 256000
 #define ERROR_LEN MAXERRORLENGTH
 #define MAX_PATH 1024
 #define ERROR_LEN 1024
+
+#define S_IRWXU 0000700    /* RWX mask for owner */
+#define S_IRUSR 0000400    /* R for owner */
+#define S_IWUSR 0000200    /* W for owner */
+#define S_IXUSR 0000100    /* X for owner */
+#define S_IRWXG 0000070    /* RWX mask for group */
+#define S_IRGRP 0000040    /* R for group */
+#define S_IWGRP 0000020    /* W for group */
+#define S_IXGRP 0000010    /* X for group */
+#define S_IRWXO 0000007    /* RWX mask for other */
+#define S_IROTH 0000004    /* R for other */
+#define S_IWOTH 0000002    /* W for other */
+#define S_IXOTH 0000001    /* X for other */
+
 
 #ifdef USE_LIBSSH
 #include <libssh/libssh.h>
@@ -20,6 +34,8 @@
 #include <wolfssh/wolfsftp.h>
 #endif
 
+#include <fcntl.h>
+
 #ifdef USE_LIBSSH
 
 #elif USE_LIBSSH2
@@ -30,7 +46,8 @@
 
 typedef struct SANSSH {
 #ifdef USE_LIBSSH
-
+    ssh_session ssh;
+    sftp_session sftp;
 #elif USE_LIBSSH2
     LIBSSH2_SESSION* ssh;
     LIBSSH2_SFTP* sftp;
