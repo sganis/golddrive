@@ -163,7 +163,7 @@
           <Component Id="C.ssh.dll">
             <File Name="ssh.dll" KeyPath="yes" />
           </Component>
-          <Component Id="C.libssh2.dll">
+          <!--<Component Id="C.libssh2.dll">
             <File Name="libssh2.dll" KeyPath="yes" />
           </Component>
           <Component Id="C.zlib1.dll">
@@ -171,7 +171,7 @@
           </Component>
           <Component Id="C.libcrypto_1_1_x64.dll">
             <File Name="libcrypto-1_1-x64.dll" KeyPath="yes" />
-          </Component>
+          </Component>-->
         </DirectoryRef>
 
         <DirectoryRef Id="INSTALLDIR" FileSource="..\..\tools\openssh">
@@ -212,9 +212,9 @@
             <ComponentRef Id="C.ssh_keygen.exe" />
             <ComponentRef Id="C.libcrypto.dll" />
             <ComponentRef Id="C.ssh.dll" />
-            <ComponentRef Id="C.libcrypto_1_1_x64.dll" />
+            <!--<ComponentRef Id="C.libcrypto_1_1_x64.dll" />
             <ComponentRef Id="C.zlib1.dll" />
-            <ComponentRef Id="C.libssh2.dll" />
+            <ComponentRef Id="C.libssh2.dll" />-->
         </ComponentGroup>
 
         <!--<Feature
