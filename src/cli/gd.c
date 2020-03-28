@@ -952,7 +952,6 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	size_t bsize;
 	do {
 		bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
-		//rc = (int)sftp_read(handle, pos, bsize);
 		rc = (int)sftp_read(handle, pos, bsize);
 		g_sftp_calls++;
 		if (rc <= 0)
@@ -982,11 +981,6 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	size_t bsize;
 	do {
 		bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
-		//while ((rc = (int)libssh2_sftp_read(handle, pos, bsize)) ==
-		//	LIBSSH2_ERROR_EAGAIN) {
-		//	waitsocket(g_ssh);
-		//	g_sftp_calls++;
-		//}
 		rc = (int)libssh2_sftp_read(handle, pos, bsize);
 		g_sftp_calls++;
 		if (rc <= 0)
@@ -1004,18 +998,8 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	}
 	gd_unlock();
 
-
-	//if (rc == 0 && total > -1 && size != total)
-	//{
-	//	//log_warn("**************** WARNING ****************  need=%zu, actual=%zu, probably EOF\n",
-	//	//	size, total);
-	//	//rc = -1;
-	//	//errno = 0; // EOF
-	//	//total = -1;
-	//}
 #endif
 	log_debug("FINISH READING HANDLE %zu, bytes: %zu\n", (size_t)handle, total);
-
 	return total;// >= 0 ? (int)total : rc;
 }
 
@@ -1026,7 +1010,6 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	int total = 0;
 	size_t chunk = size;
 	const char* pos = buf;
-	//uint64_t curpos;
 	size_t bsize;
 
 	//log_error("WRITING HANDLE: %zu size: %zu\n", (size_t)sh, size);
@@ -1064,11 +1047,6 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	libssh2_sftp_seek64(handle, offset);
 	do {
 		bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
-		//while ((rc = (int)libssh2_sftp_write(handle, pos, bsize)) ==
-		//	LIBSSH2_ERROR_EAGAIN) {
-		//	waitsocket(g_ssh);
-		//	g_sftp_calls++;
-		//}
 		rc = (int)libssh2_sftp_write(handle, pos, bsize);
 		g_sftp_calls++;
 		if (rc <= 0)
