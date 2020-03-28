@@ -180,10 +180,9 @@ gdssh_t * gd_init_ssh(void)
 
 	/* ... start it up. This will trade welcome banners, exchange keys,
 	* and setup crypto, compression, and MAC layers	*/
-	while ((rc = libssh2_session_handshake(ssh, sock)) ==
-		LIBSSH2_ERROR_EAGAIN);
-	
-	
+	//while ((rc = libssh2_session_handshake(ssh, sock)) ==
+	//	LIBSSH2_ERROR_EAGAIN);
+	rc = libssh2_session_handshake(ssh, sock);
 	if (rc) {
 		rc = libssh2_session_last_error(ssh, &errmsg, &errlen, 0);
 		gd_log("%zd: %d :ERROR: %s: %d: "
@@ -218,14 +217,15 @@ gdssh_t * gd_init_ssh(void)
 	char pubkey[1000];
 	strcpy(pubkey, g_fs.pkey);
 	strcat(pubkey, ".pub");
-	while ((rc = libssh2_userauth_publickey_fromfile(
-			ssh, g_fs.user, pubkey, g_fs.pkey, NULL)) ==
-			LIBSSH2_ERROR_EAGAIN);
+	//while ((rc = libssh2_userauth_publickey_fromfile(
+	//	ssh, g_fs.user, pubkey, g_fs.pkey, NULL)) ==
+	//	LIBSSH2_ERROR_EAGAIN);
+	rc = libssh2_userauth_publickey_fromfile(
+		ssh, g_fs.user, pubkey, g_fs.pkey, NULL);
 	// password
 	//while ((rc = libssh2_userauth_password(
 	//	ssh, g_fs.user, "support")) ==
 	//	LIBSSH2_ERROR_EAGAIN);
-
 	if (rc) {
 		rc = libssh2_session_last_error(ssh, &errmsg, &errlen, 0);
 		gd_log("%zd: %d :ERROR: %s: %d: "
@@ -235,38 +235,55 @@ gdssh_t * gd_init_ssh(void)
 	}
 
 	// command channel
-	do {
-		channel = libssh2_channel_open_session(ssh);
-		if ((!channel) && (libssh2_session_last_errno(ssh) != LIBSSH2_ERROR_EAGAIN))
-		{
-			gd_log("%zd: %d :ERROR: %s: %d: "
-				"failed to start sftp session [rc=%d, %s]\n",
-				time_mu(), thread, __func__, __LINE__, rc, errmsg);
-			return 0;
-		}
-
-	} while (!channel);
-	
-	while ((rc = libssh2_channel_shell(channel)) == LIBSSH2_ERROR_EAGAIN);
+	//do {
+	//	channel = libssh2_channel_open_session(ssh);
+	//	if ((!channel) && (libssh2_session_last_errno(ssh) != LIBSSH2_ERROR_EAGAIN))
+	//	{
+	//		gd_log("%zd: %d :ERROR: %s: %d: "
+	//			"failed to start sftp session [rc=%d, %s]\n",
+	//			time_mu(), thread, __func__, __LINE__, rc, errmsg);
+	//		return 0;
+	//	}
+	//} while (!channel);
+	//while ((rc = libssh2_channel_shell(channel)) == LIBSSH2_ERROR_EAGAIN);
+	//if (rc) {
+	//	rc = libssh2_session_last_error(g_ssh->ssh, &errmsg, NULL, 0);
+	//	gd_log("cannot request shell: [rc=%d, %s]\n", rc, errmsg);
+	//	return 0;
+	//}
+	channel = libssh2_channel_open_session(ssh);
+	if (!channel) {
+		gd_log("%zd: %d :ERROR: %s: %d: "
+			"failed to start sftp session [rc=%d, %s]\n",
+			time_mu(), thread, __func__, __LINE__, rc, errmsg);
+		return 0;
+	}
+	rc = libssh2_channel_shell(channel);
 	if (rc) {
 		rc = libssh2_session_last_error(g_ssh->ssh, &errmsg, NULL, 0);
 		gd_log("cannot request shell: [rc=%d, %s]\n", rc, errmsg);
 		return 0;
 	}
 	
-	
 	// init sftp channel
-	do {
-		sftp = libssh2_sftp_init(ssh);
-		if ((!sftp) && (libssh2_session_last_errno(ssh) !=
-			LIBSSH2_ERROR_EAGAIN))
-		{
-			gd_log("%zd: %d :ERROR: %s: %d: "
-				"failed to start sftp session [rc=%d, %s]\n",
-				time_mu(), thread, __func__, __LINE__, rc, errmsg);
-			return 0;
-		}
-	} while (!sftp);
+	//do {
+	//	sftp = libssh2_sftp_init(ssh);
+	//	if ((!sftp) && (libssh2_session_last_errno(ssh) !=
+	//		LIBSSH2_ERROR_EAGAIN))
+	//	{
+	//		gd_log("%zd: %d :ERROR: %s: %d: "
+	//			"failed to start sftp session [rc=%d, %s]\n",
+	//			time_mu(), thread, __func__, __LINE__, rc, errmsg);
+	//		return 0;
+	//	}
+	//} while (!sftp);
+	sftp = libssh2_sftp_init(ssh);
+	if (!sftp) {
+		gd_log("%zd: %d :ERROR: %s: %d: "
+			"failed to start sftp session [rc=%d, %s]\n",
+			time_mu(), thread, __func__, __LINE__, rc, errmsg);
+		return 0;
+	} 
 
 	g_ssh = malloc(sizeof(gdssh_t));
 	if (g_ssh) {
@@ -292,17 +309,21 @@ int gd_finalize(void)
 	sftp_free(g_ssh->sftp);
 	ssh_free(g_ssh->ssh);
 #else
-	while (libssh2_sftp_shutdown(g_ssh->sftp) ==
-		LIBSSH2_ERROR_EAGAIN);
-	while (libssh2_session_disconnect(g_ssh->ssh, "ssh session disconnected") ==
-		LIBSSH2_ERROR_EAGAIN);
-	while (libssh2_session_free(g_ssh->ssh) ==
-		LIBSSH2_ERROR_EAGAIN);
-	while (libssh2_channel_close(g_ssh->channel) ==
-		LIBSSH2_ERROR_EAGAIN);
-	while (libssh2_channel_free(g_ssh->channel) ==
-		LIBSSH2_ERROR_EAGAIN);
-
+	//while (libssh2_sftp_shutdown(g_ssh->sftp) ==
+	//	LIBSSH2_ERROR_EAGAIN);
+	//while (libssh2_session_disconnect(g_ssh->ssh, "ssh session disconnected") ==
+	//	LIBSSH2_ERROR_EAGAIN);
+	//while (libssh2_session_free(g_ssh->ssh) ==
+	//	LIBSSH2_ERROR_EAGAIN);
+	//while (libssh2_channel_close(g_ssh->channel) ==
+	//	LIBSSH2_ERROR_EAGAIN);
+	//while (libssh2_channel_free(g_ssh->channel) ==
+	//	LIBSSH2_ERROR_EAGAIN);
+	libssh2_sftp_shutdown(g_ssh->sftp);
+	libssh2_session_disconnect(g_ssh->ssh, "ssh session disconnected");
+	libssh2_session_free(g_ssh->ssh);
+	libssh2_channel_close(g_ssh->channel);
+	libssh2_channel_free(g_ssh->channel);
 	libssh2_exit();
 	closesocket(g_ssh->socket);
 	
@@ -339,11 +360,14 @@ int gd_stat(const char * path, struct fuse_stat *stbuf)
 
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
 	gd_lock();
-	while ((rc = libssh2_sftp_stat_ex(g_ssh->sftp, path, (int)strlen(path), LIBSSH2_SFTP_LSTAT, &attrs)) ==
-		LIBSSH2_ERROR_EAGAIN) {
-		waitsocket(g_ssh);
-		g_sftp_calls++;
-	}
+	//while ((rc = libssh2_sftp_stat_ex(g_ssh->sftp, path, (int)strlen(path), LIBSSH2_SFTP_LSTAT, &attrs)) ==
+	//	LIBSSH2_ERROR_EAGAIN) {
+	//	waitsocket(g_ssh);
+	//	g_sftp_calls++;
+	//}
+	rc = libssh2_sftp_stat_ex(g_ssh->sftp, path, (int)strlen(path),
+		LIBSSH2_SFTP_LSTAT, &attrs);
+	g_sftp_calls++;
 	gd_unlock();
 
 	log_debug("rc=%d, %s\n", rc, path);
@@ -388,11 +412,14 @@ int gd_fstat(intptr_t fd, struct fuse_stat* stbuf)
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
 	
 	gd_lock();
-	while ((rc = libssh2_sftp_fstat_ex(handle, &attrs, 0)) ==
-		LIBSSH2_ERROR_EAGAIN) {
-		waitsocket(g_ssh);
-		g_sftp_calls++;
-	}
+	//while ((rc = libssh2_sftp_fstat_ex(handle, &attrs, 0)) ==
+	//	LIBSSH2_ERROR_EAGAIN) {
+	//	waitsocket(g_ssh);
+	//	g_sftp_calls++;
+	//}
+	rc = libssh2_sftp_fstat_ex(handle, &attrs, 0);
+	g_sftp_calls++;
+	g_sftp_calls++;
 	gd_unlock();
 
 	log_debug("rc=%d, %s\n", rc, sh->path);
@@ -434,12 +461,15 @@ int gd_readlink(const char* path, char* buf, size_t size)
 	char* target = malloc(MAX_PATH);
 	// rc is number of bytes in target
 	gd_lock();
-	while ((rc = libssh2_sftp_symlink_ex(g_ssh->sftp, path, (int)strlen(path),
-		target, MAX_PATH, LIBSSH2_SFTP_READLINK)) ==
-		LIBSSH2_ERROR_EAGAIN) {
-		waitsocket(g_ssh);
-		g_sftp_calls++;
-	}
+	//while ((rc = libssh2_sftp_symlink_ex(g_ssh->sftp, path, (int)strlen(path),
+	//	target, MAX_PATH, LIBSSH2_SFTP_READLINK)) ==
+	//	LIBSSH2_ERROR_EAGAIN) {
+	//	waitsocket(g_ssh);
+	//	g_sftp_calls++;
+	//}
+	rc = libssh2_sftp_symlink_ex(g_ssh->sftp, path, (int)strlen(path),
+		target, MAX_PATH, LIBSSH2_SFTP_READLINK);
+	g_sftp_calls++;
 	gd_unlock();
 	
 	log_debug("rc=%d, %s\n", rc, path);
@@ -477,12 +507,13 @@ int gd_mkdir(const char* path, fuse_mode_t mode)
 	gd_unlock();
 #else
 	gd_lock();
-	while ((rc = libssh2_sftp_mkdir_ex(g_ssh->sftp, path, (int)strlen(path), mode)) ==
-		LIBSSH2_ERROR_EAGAIN) {
-		waitsocket(g_ssh);
-		g_sftp_calls++;
-	}
-
+	//while ((rc = libssh2_sftp_mkdir_ex(g_ssh->sftp, path, (int)strlen(path), mode)) ==
+	//	LIBSSH2_ERROR_EAGAIN) {
+	//	waitsocket(g_ssh);
+	//	g_sftp_calls++;
+	//}
+	rc = libssh2_sftp_mkdir_ex(g_ssh->sftp, path, (int)strlen(path), mode);
+	g_sftp_calls++;
 	gd_unlock();
 
 	if (rc < 0) {
@@ -509,11 +540,13 @@ int gd_unlink(const char *path)
 	gd_unlock();
 #else
 	gd_lock();
-	while ((rc = libssh2_sftp_unlink_ex(g_ssh->sftp, path, (int)strlen(path))) ==
-			LIBSSH2_ERROR_EAGAIN) {
-			waitsocket(g_ssh);
-			g_sftp_calls++;
-		}
+	//while ((rc = libssh2_sftp_unlink_ex(g_ssh->sftp, path, (int)strlen(path))) ==
+	//	LIBSSH2_ERROR_EAGAIN) {
+	//	waitsocket(g_ssh);
+	//	g_sftp_calls++;
+	//}
+	rc = libssh2_sftp_unlink_ex(g_ssh->sftp, path, (int)strlen(path));
+	g_sftp_calls++;
 	gd_unlock();
 
 	if (rc) {
@@ -541,11 +574,13 @@ int gd_rmdir(const char* path)
 	gd_unlock();
 #else
 	gd_lock();
-	while ((rc = libssh2_sftp_rmdir_ex(g_ssh->sftp, path, (int)strlen(path))) ==
-		LIBSSH2_ERROR_EAGAIN) {
-		waitsocket(g_ssh);
-		g_sftp_calls++;
-	}
+	//while ((rc = libssh2_sftp_rmdir_ex(g_ssh->sftp, path, (int)strlen(path))) ==
+	//	LIBSSH2_ERROR_EAGAIN) {
+	//	waitsocket(g_ssh);
+	//	g_sftp_calls++;
+	//}
+	rc = libssh2_sftp_rmdir_ex(g_ssh->sftp, path, (int)strlen(path));
+	g_sftp_calls++;
 	gd_unlock();
 
 	if (rc < 0) {
@@ -563,13 +598,17 @@ static int _gd_rename(const char *from, const char *to)
 
 #else
 	gd_lock();
-	while ((rc = libssh2_sftp_rename_ex(g_ssh->sftp,
+	//while ((rc = libssh2_sftp_rename_ex(g_ssh->sftp,
+	//	from, (int)strlen(from), to, (int)strlen(to),
+	//	LIBSSH2_SFTP_RENAME_OVERWRITE)) ==
+	//	LIBSSH2_ERROR_EAGAIN) {
+	//	waitsocket(g_ssh);
+	//	g_sftp_calls++;
+	//}
+	rc = libssh2_sftp_rename_ex(g_ssh->sftp,
 		from, (int)strlen(from), to, (int)strlen(to),
-		LIBSSH2_SFTP_RENAME_OVERWRITE)) ==
-		LIBSSH2_ERROR_EAGAIN) {
-		waitsocket(g_ssh);
-		g_sftp_calls++;
-	}
+		LIBSSH2_SFTP_RENAME_OVERWRITE);
+	g_sftp_calls++;
 	gd_unlock();
 
 	if (rc < 0) {
@@ -645,12 +684,15 @@ int gd_truncate(const char* path, fuse_off_t size)
 	attrs.flags = LIBSSH2_SFTP_ATTR_SIZE;
 	attrs.filesize = size;
 	gd_lock();
-	while ((rc = libssh2_sftp_stat_ex(g_ssh->sftp, path, (int)strlen(path), 
-		LIBSSH2_SFTP_SETSTAT, &attrs)) ==
-		LIBSSH2_ERROR_EAGAIN) {
-		waitsocket(g_ssh);
-		g_sftp_calls++;
-	}
+	//while ((rc = libssh2_sftp_stat_ex(g_ssh->sftp, path, (int)strlen(path), 
+	//	LIBSSH2_SFTP_SETSTAT, &attrs)) ==
+	//	LIBSSH2_ERROR_EAGAIN) {
+	//	waitsocket(g_ssh);
+	//	g_sftp_calls++;
+	//}
+	rc = libssh2_sftp_stat_ex(g_ssh->sftp, path, (int)strlen(path),
+		LIBSSH2_SFTP_SETSTAT, &attrs);
+	g_sftp_calls++;
 	if (rc < 0) {
 		gd_error(path);
 		rc = error();
@@ -809,16 +851,20 @@ intptr_t gd_open(const char* path, int flags, unsigned int mode)
 	}
 
 	gd_lock();
-	do {
-		handle = libssh2_sftp_open_ex(
+	//do {
+	//	handle = libssh2_sftp_open_ex(
+	//		g_ssh->sftp, sh->path, (int)strlen(sh->path),
+	//		sh->flags, sh->mode, LIBSSH2_SFTP_OPENFILE);
+	//	g_sftp_calls++;
+	//	if (!handle && libssh2_session_last_errno(g_ssh->ssh) !=
+	//		LIBSSH2_ERROR_EAGAIN)
+	//		break;
+	//} while (!handle);
+
+	handle = libssh2_sftp_open_ex(
 			g_ssh->sftp, sh->path, (int)strlen(sh->path),
 			sh->flags, sh->mode, LIBSSH2_SFTP_OPENFILE);
-		g_sftp_calls++;
-		if (!handle && libssh2_session_last_errno(g_ssh->ssh) !=
-			LIBSSH2_ERROR_EAGAIN)
-			break;
-	} while (!handle);
-	
+	g_sftp_calls++;
 	if (!handle) {
 		gd_error(sh->path);
 		gd_unlock();
@@ -937,18 +983,18 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 		(size_t)handle, size, offset);
 
 	gd_lock();
-	curpos = libssh2_sftp_tell64(handle);
-	if (offset != curpos)
-		libssh2_sftp_seek64(handle, offset);
-	
+	libssh2_sftp_seek64(handle, offset);
+
 	size_t bsize;
 	do {
 		bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
-		while ((rc = (int)libssh2_sftp_read(handle, pos, bsize)) ==
-			LIBSSH2_ERROR_EAGAIN) {
-			waitsocket(g_ssh);
-			g_sftp_calls++;
-		}
+		//while ((rc = (int)libssh2_sftp_read(handle, pos, bsize)) ==
+		//	LIBSSH2_ERROR_EAGAIN) {
+		//	waitsocket(g_ssh);
+		//	g_sftp_calls++;
+		//}
+		rc = (int)libssh2_sftp_read(handle, pos, bsize);
+		g_sftp_calls++;
 		if (rc <= 0)
 			break;
 		pos += rc;
@@ -1024,11 +1070,13 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	libssh2_sftp_seek64(handle, offset);
 	do {
 		bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
-		while ((rc = (int)libssh2_sftp_write(handle, pos, bsize)) ==
-			LIBSSH2_ERROR_EAGAIN) {
-			waitsocket(g_ssh);
-			g_sftp_calls++;
-		}
+		//while ((rc = (int)libssh2_sftp_write(handle, pos, bsize)) ==
+		//	LIBSSH2_ERROR_EAGAIN) {
+		//	waitsocket(g_ssh);
+		//	g_sftp_calls++;
+		//}
+		rc = (int)libssh2_sftp_write(handle, pos, bsize);
+		g_sftp_calls++;
 		if (rc <= 0)
 			break;
 		pos += rc;
@@ -1083,17 +1131,18 @@ int gd_statvfs(const char* path, struct fuse_statvfs* stbuf)
 	LIBSSH2_SFTP_STATVFS stvfs;
 
 	gd_lock();
-	while ((rc = libssh2_sftp_statvfs(g_ssh->sftp, path, strlen(path), &stvfs)) ==
-		LIBSSH2_ERROR_EAGAIN) {
-		waitsocket(g_ssh);
-		g_sftp_calls++;
-	}
+	//while ((rc = libssh2_sftp_statvfs(g_ssh->sftp, path, strlen(path), &stvfs)) ==
+	//	LIBSSH2_ERROR_EAGAIN) {
+	//	waitsocket(g_ssh);
+	//	g_sftp_calls++;
+	//}
+	rc = libssh2_sftp_statvfs(g_ssh->sftp, path, strlen(path), &stvfs);
+	g_sftp_calls++;
 	if (rc < 0) {
 		gd_error(path);
 		rc = error();
 	}
 	gd_unlock();
-
 
 	memset(stbuf, 0, sizeof(struct fuse_statvfs));
 	stbuf->f_bsize = stvfs.f_bsize;			/* file system block size */
@@ -1144,11 +1193,13 @@ int gd_close(intptr_t fd)
 	handle = sh->file_handle;
 	assert(handle);
 	gd_lock();
-	while ((rc = libssh2_sftp_close_handle(handle)) ==
-		LIBSSH2_ERROR_EAGAIN) {
-		waitsocket(g_ssh);
-		g_sftp_calls++;
-	}
+	//while ((rc = libssh2_sftp_close_handle(handle)) ==
+	//	LIBSSH2_ERROR_EAGAIN) {
+	//	waitsocket(g_ssh);
+	//	g_sftp_calls++;
+	//}
+	rc = libssh2_sftp_close_handle(handle);
+	g_sftp_calls++;
 	if (rc < 0) {
 		gd_error(sh->path);
 		rc = error();
@@ -1189,13 +1240,16 @@ gd_dir_t* gd_opendir(const char* path)
 #else
 	LIBSSH2_SFTP_HANDLE* handle;
 	gd_lock();
-	do {
-		handle = libssh2_sftp_open_ex(g_ssh->sftp, path, (int)strlen(path), 0, 0, LIBSSH2_SFTP_OPENDIR);
-		g_sftp_calls++;
-		if (!handle && libssh2_session_last_errno(g_ssh->ssh) !=
-			LIBSSH2_ERROR_EAGAIN)
-			break;
-	} while (!handle);
+	//do {
+	//	handle = libssh2_sftp_open_ex(g_ssh->sftp, path, (int)strlen(path), 0, 0, LIBSSH2_SFTP_OPENDIR);
+	//	g_sftp_calls++;
+	//	if (!handle && libssh2_session_last_errno(g_ssh->ssh) !=
+	//		LIBSSH2_ERROR_EAGAIN)
+	//		break;
+	//} while (!handle);
+	handle = libssh2_sftp_open_ex(g_ssh->sftp, path, 
+			(int)strlen(path), 0, 0, LIBSSH2_SFTP_OPENDIR);
+	g_sftp_calls++;
 	if (!handle) {
 		gd_error(path);
 		gd_unlock();
@@ -1277,12 +1331,17 @@ struct gd_dirent_t* gd_readdir(gd_dir_t* dirp)
 	char fname[FILENAME_MAX];
 
 	gd_lock();
-	while ((rc = libssh2_sftp_readdir(
-		handle, fname, FILENAME_MAX, &attrs)) ==
-		LIBSSH2_ERROR_EAGAIN) {
-		waitsocket(g_ssh);
-		g_sftp_calls++;
-	}
+	//while ((rc = libssh2_sftp_readdir(
+	//	handle, fname, FILENAME_MAX, &attrs)) ==
+	//	LIBSSH2_ERROR_EAGAIN) {
+	//	waitsocket(g_ssh);
+	//	g_sftp_calls++;
+	//}
+
+	rc = libssh2_sftp_readdir(
+		handle, fname, FILENAME_MAX, &attrs);
+	g_sftp_calls++;
+
 	if (rc < 0) {
 		gd_error(dirp->path);
 		gd_unlock();
@@ -1320,11 +1379,14 @@ int gd_closedir(gd_dir_t* dirp)
 #else
 	LIBSSH2_SFTP_HANDLE* handle = dirfh->dir_handle;
 	gd_lock();
-	while ((rc = libssh2_sftp_close_handle(handle)) ==
-		LIBSSH2_ERROR_EAGAIN) {
-		waitsocket(g_ssh);
-		g_sftp_calls++;
-	}
+	//while ((rc = libssh2_sftp_close_handle(handle)) ==
+	//	LIBSSH2_ERROR_EAGAIN) {
+	//	waitsocket(g_ssh);
+	//	g_sftp_calls++;
+	//}
+	rc = libssh2_sftp_close_handle(handle);
+	g_sftp_calls++;
+	
 	if (rc < 0) {
 		gd_error(dirfh->path);
 		rc = error();
@@ -1400,19 +1462,27 @@ int gd_check_hlink(const char* path)
 			unsigned flags = LIBSSH2_FXF_READ | LIBSSH2_FXF_WRITE
 				| LIBSSH2_FXF_CREAT | LIBSSH2_FXF_EXCL; // int 43
 
-			do {
-				handle = libssh2_sftp_open_ex(
+			//do {
+			//	handle = libssh2_sftp_open_ex(
+			//		g_ssh->sftp, path, (int)strlen(path),
+			//		flags, mode, LIBSSH2_SFTP_OPENFILE);
+			//	g_sftp_calls++;
+			//	if (!handle && libssh2_session_last_errno(g_ssh->ssh) !=
+			//		LIBSSH2_ERROR_EAGAIN)
+			//		break;
+
+			//} while (!handle);
+			//while ((rc = libssh2_sftp_close_handle(handle)) ==
+			//	LIBSSH2_ERROR_EAGAIN) {
+			//	waitsocket(g_ssh);
+			//	g_sftp_calls++;
+			//}
+			handle = libssh2_sftp_open_ex(
 					g_ssh->sftp, path, (int)strlen(path),
 					flags, mode, LIBSSH2_SFTP_OPENFILE);
-				g_sftp_calls++;
-				if (!handle && libssh2_session_last_errno(g_ssh->ssh) !=
-					LIBSSH2_ERROR_EAGAIN)
-					break;
-
-			} while (!handle);
-			while ((rc = libssh2_sftp_close_handle(handle)) ==
-				LIBSSH2_ERROR_EAGAIN) {
-				waitsocket(g_ssh);
+			g_sftp_calls++;
+			if (handle) {
+				rc = libssh2_sftp_close_handle(handle);
 				g_sftp_calls++;
 			}
 			gd_unlock();
@@ -1460,13 +1530,17 @@ int gd_utimens(const char* path, const struct fuse_timespec tv[2], struct fuse_f
 	attrs.atime = (unsigned long)LastAccessTime;
 	attrs.mtime = (unsigned long)LastWriteTime;
 	gd_lock();
-	while ((rc = libssh2_sftp_stat_ex(
-		g_ssh->sftp, path, (int)strlen(path),
-		LIBSSH2_SFTP_SETSTAT, &attrs)) ==
-		LIBSSH2_ERROR_EAGAIN) {
-		waitsocket(g_ssh);
-		g_sftp_calls++;
-	}
+	//while ((rc = libssh2_sftp_stat_ex(
+	//	g_ssh->sftp, path, (int)strlen(path),
+	//	LIBSSH2_SFTP_SETSTAT, &attrs)) ==
+	//	LIBSSH2_ERROR_EAGAIN) {
+	//	waitsocket(g_ssh);
+	//	g_sftp_calls++;
+	//}
+	rc = libssh2_sftp_stat_ex(g_ssh->sftp, path, (int)strlen(path),	
+		LIBSSH2_SFTP_SETSTAT, &attrs);
+	g_sftp_calls++;
+	
 	if (rc < 0) {
 		gd_error(path);
 		rc = error();
@@ -1504,11 +1578,14 @@ int gd_fsync(intptr_t fd)
 	log_info("%s\n", sh->path);
 	// flush file ?
 	gd_lock();
-	while ((rc = libssh2_sftp_fsync(handle)) ==
-		LIBSSH2_ERROR_EAGAIN) {
-		waitsocket(g_ssh);
-		g_sftp_calls++;
-	}
+	//while ((rc = libssh2_sftp_fsync(handle)) ==
+	//	LIBSSH2_ERROR_EAGAIN) {
+	//	waitsocket(g_ssh);
+	//	g_sftp_calls++;
+	//}
+	rc = libssh2_sftp_fsync(handle);
+	g_sftp_calls++;
+	
 	if (rc < 0) {
 		gd_error(sh->path);
 		rc = error();
@@ -1584,29 +1661,29 @@ int run_command(const char* cmd, char* out, char* err)
 	LIBSSH2_CHANNEL* channel;
 	char* errmsg;
 
-	do {
-		channel = libssh2_channel_open_session(g_ssh->ssh);
-		g_sftp_calls++;
-		if (!channel && libssh2_session_last_errno(g_ssh->ssh) !=
-			LIBSSH2_ERROR_EAGAIN)
-			break;
-	} while (!channel);
-
+	//do {
+	//	channel = libssh2_channel_open_session(g_ssh->ssh);
+	//	g_sftp_calls++;
+	//	if (!channel && libssh2_session_last_errno(g_ssh->ssh) !=
+	//		LIBSSH2_ERROR_EAGAIN)
+	//		break;
+	//} while (!channel);
+	channel = libssh2_channel_open_session(g_ssh->ssh);
+	g_sftp_calls++;
 	if (!channel) {
 		rc = libssh2_session_last_error(g_ssh->ssh, &errmsg, NULL, 0);
 		log_debug("ERROR: unable to init ssh chanel, rc=%d, %s\n", rc, errmsg);
 		return 1;
 	}
 
-	/*libssh2_channel_set_blocking(channel, g_fs.block);*/
-	//g_sftp_calls++;
-
-	while ((rc = libssh2_channel_exec(channel, cmd)) 
-		== LIBSSH2_ERROR_EAGAIN) {
-		waitsocket(g_ssh);
-		g_sftp_calls++;
-	}
-
+	//while ((rc = libssh2_channel_exec(channel, cmd)) 
+	//	== LIBSSH2_ERROR_EAGAIN) {
+	//	waitsocket(g_ssh);
+	//	g_sftp_calls++;
+	//}
+	rc = libssh2_channel_exec(channel, cmd);
+	g_sftp_calls++;
+	
 	if (rc != 0) {
 		rc = libssh2_session_last_error(g_ssh->ssh, &errmsg, NULL, 0);
 		log_debug("ERROR: unable to execute command, rc=%d, %s\n", rc, errmsg);
@@ -1615,53 +1692,68 @@ int run_command(const char* cmd, char* out, char* err)
 
 	/* read stdout */
 	out[0] = '\0';
-	for (;;) {
-		do {
-			//char buffer[0x4000];
+	//for (;;) {
+	//	do {
+	//		//char buffer[0x4000];
 
-			rc = (int)libssh2_channel_read(channel, buffer, sizeof(buffer));
+	//		rc = (int)libssh2_channel_read(channel, buffer, sizeof(buffer));
 
-			if (rc > 0) {
-				//strncat(out, buffer, bytesread);
-				memcpy(out + offset, buffer, rc);
-				offset += rc;
-			}
-		} while (rc > 0);
+	//		if (rc > 0) {
+	//			//strncat(out, buffer, bytesread);
+	//			memcpy(out + offset, buffer, rc);
+	//			offset += rc;
+	//		}
+	//	} while (rc > 0);
 
-		if (rc == LIBSSH2_ERROR_EAGAIN)
-			waitsocket(g_ssh);
-		else
-			break;
-	}
+	//	if (rc == LIBSSH2_ERROR_EAGAIN)
+	//		waitsocket(g_ssh);
+	//	else
+	//		break;
+	//}
+
+	do {
+		rc = (int)libssh2_channel_read(channel, buffer, sizeof(buffer));
+		if (rc > 0) {
+			memcpy(out + offset, buffer, rc);
+			offset += rc;
+		}
+	} while (rc > 0);
+
 	/* read stderr */
 	if (err) {
 		err[0] = '\0';
 		offset = 0;
-		for (;;) {
-			do {
-				//char buffer[0x4000];
+		//for (;;) {
+		//	do {
+		//		//char buffer[0x4000];
 
-				rc = (int)libssh2_channel_read_stderr(channel, buffer, sizeof(buffer));
+		//		rc = (int)libssh2_channel_read_stderr(channel, buffer, sizeof(buffer));
 
-				if (rc > 0) {
-					//strncat(err, buffer, bytesread);
-					memcpy(out + offset, buffer, rc);
-					offset += rc;
-				}
-			} while (rc > 0);
+		//		if (rc > 0) {
+		//			//strncat(err, buffer, bytesread);
+		//			memcpy(out + offset, buffer, rc);
+		//			offset += rc;
+		//		}
+		//	} while (rc > 0);
 
-			if (rc == LIBSSH2_ERROR_EAGAIN)
-				waitsocket(g_ssh);
-			else
-				break;
-		}
+		//	if (rc == LIBSSH2_ERROR_EAGAIN)
+		//		waitsocket(g_ssh);
+		//	else
+		//		break;
+		//}
+		do {
+			rc = (int)libssh2_channel_read_stderr(channel, buffer, sizeof(buffer));
+			if (rc > 0) {
+				memcpy(out + offset, buffer, rc);
+				offset += rc;
+			}
+		} while (rc > 0);
 	}
 	/* get exit code */
-	while ((rc = libssh2_channel_close(channel)) ==
-		LIBSSH2_ERROR_EAGAIN)
-		waitsocket(g_ssh);
-
-	//rc = libssh2_channel_close(channel);
+	//while ((rc = libssh2_channel_close(channel)) ==
+	//	LIBSSH2_ERROR_EAGAIN)
+	//	waitsocket(g_ssh);
+	rc = libssh2_channel_close(channel);
 	if (rc == 0)
 		rc = libssh2_channel_get_exit_status(channel);
 	else
@@ -1687,10 +1779,10 @@ int run_command_channel_exec(const char* cmd, char* out, char* err)
 	memset(out, 0, COMMAND_SIZE);
 	if (err)
 		memset(err, 0, COMMAND_SIZE);
-	char buffer[0x4000];
+	
 
 #ifdef USE_LIBSSH
-
+	char buffer[0x4000];
 	ssh_channel channel;
 	channel = g_ssh->channel;
 	if (!channel) {
@@ -1750,7 +1842,7 @@ int run_command_channel_exec(const char* cmd, char* out, char* err)
 	}
 
 #else
-
+	char buffer[0x4000];
 	//rcode = run_command(cmd, out, err);
 
 
