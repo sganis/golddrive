@@ -949,10 +949,10 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	//sftp_file_set_blocking(handle);
 
 	// sync
-	size_t bsize;
+	//size_t bsize;
 	do {
-		bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
-		rc = (int)sftp_read(handle, pos, bsize);
+		//bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
+		rc = (int)sftp_read(handle, pos, chunk);
 		g_sftp_calls++;
 		if (rc <= 0)
 			break;
