@@ -174,7 +174,6 @@ gdssh_t * gd_init_ssh(void)
 	//libssh2_trace_sethandler(ssh, 0, libssh2_logger);
 
 	/* blocking: 1 block, 0 non-blocking, g_fs.noblock ? 0 : 1 */
-	//libssh2_session_set_blocking(ssh, g_fs.noblock ^ 1);
 	libssh2_session_set_blocking(ssh, 1);
 
 
@@ -714,26 +713,27 @@ int gd_ftruncate(intptr_t fd, fuse_off_t size)
 #ifdef USE_LIBSSH
 	rc = gd_truncate(sh->path, size);
 #else
-	rc = gd_truncate(sh->path, size);
-	/*LIBSSH2_SFTP_HANDLE* handle = sh->file_handle;
+	//rc = gd_truncate(sh->path, size);
+	LIBSSH2_SFTP_HANDLE* handle = sh->file_handle;
 	assert(handle);
 	log_info("%zu, %s, size=%zu\n", (size_t)handle, sh->path, size);
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
 	attrs.flags = LIBSSH2_SFTP_ATTR_SIZE;
 	attrs.filesize = size;
 	gd_lock();
-	while ((rc = libssh2_sftp_fstat_ex(handle, &attrs, 1)) ==
-		LIBSSH2_ERROR_EAGAIN) {
-		waitsocket(g_ssh);
-		g_sftp_calls++;
-	}
+	//while ((rc = libssh2_sftp_fstat_ex(handle, &attrs, 1)) ==
+	//	LIBSSH2_ERROR_EAGAIN) {
+	//	waitsocket(g_ssh);
+	//	g_sftp_calls++;
+	//}
+	rc = libssh2_sftp_fstat_ex(handle, &attrs, 1);
+	g_sftp_calls++;
 	if (rc < 0) {
 		gd_error(sh->path);
 		rc = error();
 	}
-	gd_unlock();*/
+	gd_unlock();
 #endif
-	//return gd_fsync(fd);
 	return rc;
 }
 
@@ -888,19 +888,13 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	int total = 0;
 	size_t chunk = size;
 	char* pos = buf;
-	uint64_t curpos;
 	
 
 #ifdef USE_LIBSSH
 	sftp_file handle = sh->file_handle;
 	gd_lock();
-	curpos = sftp_tell64(handle);
-	g_sftp_calls++;
-	if (offset != curpos) {
-		sftp_seek64(handle, offset);
-		g_sftp_calls++;
-	}
-
+	sftp_seek64(handle, offset);
+	
 	// async
 	//sftp_file_set_nonblocking(handle);
 	////size_t bsize;
@@ -1760,9 +1754,10 @@ int run_command(const char* cmd, char* out, char* err)
 		rc = 127;
 
 finish:
-	while ((rc = libssh2_channel_free(channel)) ==
-		LIBSSH2_ERROR_EAGAIN)
-		waitsocket(g_ssh);
+	//while ((rc = libssh2_channel_free(channel)) ==
+	//	LIBSSH2_ERROR_EAGAIN)
+	//	waitsocket(g_ssh);
+	rc = libssh2_channel_free(channel);
 
 #endif
 
@@ -1842,11 +1837,11 @@ int run_command_channel_exec(const char* cmd, char* out, char* err)
 	}
 
 #else
-	char buffer[0x4000];
 	//rcode = run_command(cmd, out, err);
 
 
 	// TODO
+	//char buffer[0x4000];
 	//LIBSSH2_CHANNEL* channel = g_ssh->channel;
 	//char* errmsg;
 
