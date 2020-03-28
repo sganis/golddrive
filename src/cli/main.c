@@ -675,6 +675,9 @@ int main(int argc, char *argv[])
 
 	// get uid
 	char cmd[COMMAND_SIZE], out[COMMAND_SIZE], err[COMMAND_SIZE];
+	snprintf(cmd, sizeof(cmd), "hostname", g_fs.user);
+	rc = run_command_channel_exec(cmd, out, err);
+
 	snprintf(cmd, sizeof(cmd), "id -u %s", g_fs.user);
 
 	// bencharmk commands
@@ -686,7 +689,7 @@ int main(int argc, char *argv[])
 	// code to be measured
 	for (int u = 0; u < 100; u++) {
 		rc = run_command_channel_exec(cmd, out, err);
-		//printf("out: %s, err: %s\n", out, err);
+		printf("out: %s, err: %s\n", out, err);
 	}
 	QueryPerformanceCounter(&end);
 	interval = (double)(end.QuadPart - start.QuadPart) / frequency.QuadPart;
