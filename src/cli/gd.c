@@ -246,11 +246,11 @@ gdssh_t * gd_init_ssh(void)
 		}
 
 	} while (!channel);
-		
+	
 	while ((rc = libssh2_channel_shell(channel)) == LIBSSH2_ERROR_EAGAIN);
 	if (rc) {
 		rc = libssh2_session_last_error(g_ssh->ssh, &errmsg, NULL, 0);
-		log_error("cannot request shell: %s\n", rc, errmsg);
+		gd_log("cannot request shell: [rc=%d, %s]\n", rc, errmsg);
 		return 0;
 	}
 	
@@ -1753,66 +1753,68 @@ int run_command_channel_exec(const char* cmd, char* out, char* err)
 
 	//rcode = run_command(cmd, out, err);
 
-	LIBSSH2_CHANNEL* channel = g_ssh->channel;
-	char* errmsg;
 
-	if (!channel) {
-		rc = libssh2_session_last_error(g_ssh->ssh, &errmsg, NULL, 0);
-		log_error("ERROR: invalid channel to run commands, rc=%d, %s\n", rc, errmsg);
-		return rc;
-	}
+	// TODO
+	//LIBSSH2_CHANNEL* channel = g_ssh->channel;
+	//char* errmsg;
+
+	//if (!channel) {
+	//	rc = libssh2_session_last_error(g_ssh->ssh, &errmsg, NULL, 0);
+	//	log_error("ERROR: invalid channel to run commands, rc=%d, %s\n", rc, errmsg);
+	//	return rc;
+	//}
 
 
 
-	char newcmd[COMMAND_SIZE];
-	strcpy(newcmd, cmd);
-	strcat(newcmd, ";echo RCODE=$?\n");
-	size_t len = strlen(newcmd);
+	//char newcmd[COMMAND_SIZE];
+	//strcpy(newcmd, cmd);
+	//strcat(newcmd, ";echo RCODE=$?\n");
+	//size_t len = strlen(newcmd);
 
-	while ((rc = (int)libssh2_channel_write(channel, newcmd, len)) ==
-		LIBSSH2_ERROR_EAGAIN) {
-		waitsocket(g_ssh);
-		g_sftp_calls++;
-	}
+	//while ((rc = (int)libssh2_channel_write(channel, newcmd, len)) ==
+	//	LIBSSH2_ERROR_EAGAIN) {
+	//	waitsocket(g_ssh);
+	//	g_sftp_calls++;
+	//}
 
-	if (rc == len) {
-		for (;;) {
-			while ((rc = (int)libssh2_channel_read_ex(
-				channel, 0, buffer, sizeof(buffer))) ==
-				LIBSSH2_ERROR_EAGAIN) {
-				waitsocket(g_ssh);
-				g_sftp_calls++;
-			}
-			memcpy(out + offset, buffer, rc);
-			offset += rc;
-			char* ptr = strstr(out, "RCODE=");
-			if (ptr) {
-				char* rcs = str_ndup(ptr + 6, 10);
-				rcs[min(strcspn(rcs, "\n"), 10)] = '\0';
-				rcode = atoi(rcs);
-				free(rcs);
-				*ptr = '\0';
-				out[min(strcspn(out, "\r\n"), COMMAND_SIZE)] = '\0';
-			}
-			if (!libssh2_poll_channel_read(channel, 0))
-				break;
+	//if (rc == len) {
+	//	for (;;) {
+	//		while ((rc = (int)libssh2_channel_read_ex(
+	//			channel, 0, buffer, sizeof(buffer))) ==
+	//			LIBSSH2_ERROR_EAGAIN) {
+	//			waitsocket(g_ssh);
+	//			g_sftp_calls++;
+	//		}
+	//		memcpy(out + offset, buffer, rc);
+	//		offset += rc;
+	//		char* ptr = strstr(out, "RCODE=");
+	//		if (ptr) {
+	//			char* rcs = str_ndup(ptr + 6, 10);
+	//			rcs[min(strcspn(rcs, "\n"), 10)] = '\0';
+	//			rcode = atoi(rcs);
+	//			free(rcs);
+	//			*ptr = '\0';
+	//			out[min(strcspn(out, "\r\n"), COMMAND_SIZE)] = '\0';
+	//		}
+	//		if (!libssh2_poll_channel_read(channel, 0))
+	//			break;
 
-		}
-		if (err && libssh2_poll_channel_read(channel, 1)) {
-			offset = 0;
-			while ((rc = (int)libssh2_channel_read_ex(
-				channel, 1, buffer, sizeof(buffer))) ==
-				LIBSSH2_ERROR_EAGAIN) {
-				waitsocket(g_ssh);
-				g_sftp_calls++;
-				if (libssh2_channel_eof(channel))
-					break;
-			}
-			memcpy(err + offset, buffer, rc);
-			offset += rc;
-			err[min(strcspn(err, "\r\n"), COMMAND_SIZE)] = '\0';
-		}
-	}
+	//	}
+	//	if (err && libssh2_poll_channel_read(channel, 1)) {
+	//		offset = 0;
+	//		while ((rc = (int)libssh2_channel_read_ex(
+	//			channel, 1, buffer, sizeof(buffer))) ==
+	//			LIBSSH2_ERROR_EAGAIN) {
+	//			waitsocket(g_ssh);
+	//			g_sftp_calls++;
+	//			if (libssh2_channel_eof(channel))
+	//				break;
+	//		}
+	//		memcpy(err + offset, buffer, rc);
+	//		offset += rc;
+	//		err[min(strcspn(err, "\r\n"), COMMAND_SIZE)] = '\0';
+	//	}
+	//}
 #endif
 
 	//log_error("command executed: %s\n", cmd);

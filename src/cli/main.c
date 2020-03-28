@@ -593,8 +593,10 @@ int main(int argc, char *argv[])
 	load_config_file(&g_fs);
 
 	// parse network path
-	if(g_fs.remote)
-		parse_remote(&g_fs);
+	if (g_fs.remote) {
+		if (parse_remote(&g_fs))
+			return 1;
+	}
 
 	// finally setup missing arguments with defaults
 	// user
@@ -675,25 +677,25 @@ int main(int argc, char *argv[])
 
 	// get uid
 	char cmd[COMMAND_SIZE], out[COMMAND_SIZE], err[COMMAND_SIZE];
-	snprintf(cmd, sizeof(cmd), "hostname", g_fs.user);
-	rc = run_command_channel_exec(cmd, out, err);
+	//snprintf(cmd, sizeof(cmd), "hostname", g_fs.user);
+	//rc = run_command_channel_exec(cmd, out, err);
 
 	snprintf(cmd, sizeof(cmd), "id -u %s", g_fs.user);
 
-	// bencharmk commands
-	LARGE_INTEGER frequency, start, end;
-	double interval;
-	QueryPerformanceFrequency(&frequency);
-	QueryPerformanceCounter(&start);
+	//// bencharmk commands
+	//LARGE_INTEGER frequency, start, end;
+	//double interval;
+	//QueryPerformanceFrequency(&frequency);
+	//QueryPerformanceCounter(&start);
 
-	// code to be measured
-	for (int u = 0; u < 100; u++) {
-		rc = run_command_channel_exec(cmd, out, err);
-		printf("out: %s, err: %s\n", out, err);
-	}
-	QueryPerformanceCounter(&end);
-	interval = (double)(end.QuadPart - start.QuadPart) / frequency.QuadPart;
-	printf("\ncommand execution time: %f\n\n", interval);
+	//// code to be measured
+	//for (int u = 0; u < 100; u++) {
+	//	rc = run_command_channel_exec(cmd, out, err);
+	//	printf("out: %s, err: %s\n", out, err);
+	//}
+	//QueryPerformanceCounter(&end);
+	//interval = (double)(end.QuadPart - start.QuadPart) / frequency.QuadPart;
+	//printf("\ncommand execution time: %f\n\n", interval);
 
 	gd_lock();
 	rc = run_command_channel_exec(cmd, out, err);
