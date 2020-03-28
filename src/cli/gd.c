@@ -168,11 +168,11 @@ gdssh_t * gd_init_ssh(void)
 	}
 
 	/* debug, need to build with tracing */
-	libssh2_trace(ssh, 
-		//LIBSSH2_TRACE_SFTP | LIBSSH2_TRACE_ERROR | LIBSSH2_TRACE_CONN
-		LIBSSH2_TRACE_SFTP | LIBSSH2_TRACE_ERROR
-	);
-	libssh2_trace_sethandler(ssh, 0, libssh2_logger);
+	//libssh2_trace(ssh, 
+	//	//LIBSSH2_TRACE_SFTP | LIBSSH2_TRACE_ERROR | LIBSSH2_TRACE_CONN
+	//	LIBSSH2_TRACE_SFTP | LIBSSH2_TRACE_ERROR
+	//);
+	//libssh2_trace_sethandler(ssh, 0, libssh2_logger);
 
 	/* blocking: 1 block, 0 non-blocking, g_fs.noblock ? 0 : 1 */
 	//libssh2_session_set_blocking(ssh, g_fs.noblock ^ 1);
@@ -314,28 +314,15 @@ int gd_stat(const char * path, struct fuse_stat *stbuf)
 	attrs = sftp_lstat(g_ssh->sftp, path);
 	g_sftp_calls++;
 	if (!attrs) {
-		//fprintf(stderr, "stat failed (%s)\n", ssh_get_error(g_ssh->ssh));
-		//int ssherr = ssh_get_error_code(g_ssh->ssh);
-		//int err = sftp_get_error(g_ssh->sftp);
-
 		gd_error(path);
 		rc = error();
-	} 
-	/*else {	
-		if (GD_ISLNK(attrs->permissions)) {
-			attrs = sftp_stat(g_ssh->sftp, path);
-			g_sftp_calls++;
-			if (!attrs) {
-				fprintf(stderr, "stat failed, broken link (%s)\n", ssh_get_error(g_ssh->ssh));
-				gd_error(path);
-				rc = error();
-			} else{
-
-			}
-		}	
-	}*/
+	}
+	else {
+		copy_attributes(stbuf, attrs);
+		sftp_attributes_free(attrs);
+	}
 	gd_unlock();
-	copy_attributes(stbuf, attrs);
+	
 #else
 
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
@@ -365,22 +352,21 @@ int gd_fstat(intptr_t fd, struct fuse_stat* stbuf)
 	gd_handle_t* sh = (gd_handle_t*)fd;
 
 #ifdef USE_LIBSSH
-	rc = gd_stat(sh->path, stbuf);
-	//sftp_attributes attrs;
-	//sftp_file handle = sh->file_handle;
-	//gd_lock();
-	//attrs = sftp_fstat(g_ssh->sftp, handle);
-	//if (!attrs) {
-	//	//fprintf(stderr, "stat failed (%s)\n", ssh_get_error(g_ssh->ssh));
-	//	//int err = sftp_get_error(g_ssh->sftp);
-	//	gd_error(sh->path);
-	//	rc = error();
-	//}
-	//else {
-	//	copy_attributes(stbuf, attrs);
-	//	sftp_attributes_free(attrs);
-	//}
-	//gd_unlock();
+	//rc = gd_stat(sh->path, stbuf);
+	sftp_attributes attrs;
+	sftp_file handle = sh->file_handle;
+	gd_lock();
+	attrs = sftp_fstat(handle);
+	if (!attrs) {
+		gd_error(sh->path);
+		rc = error();
+	}
+	else {
+		//sh->size = attrs->size;
+		copy_attributes(stbuf, attrs);
+		sftp_attributes_free(attrs);
+	}
+	gd_unlock();
 #else
 	//rc = gd_stat(sh->path, stbuf);
 
@@ -388,8 +374,7 @@ int gd_fstat(intptr_t fd, struct fuse_stat* stbuf)
 	assert(handle);
 
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
-	memset(stbuf, 0, sizeof * stbuf);
-
+	
 	gd_lock();
 	while ((rc = libssh2_sftp_fstat_ex(handle, &attrs, 0)) ==
 		LIBSSH2_ERROR_EAGAIN) {
@@ -403,6 +388,7 @@ int gd_fstat(intptr_t fd, struct fuse_stat* stbuf)
 		gd_error(sh->path);
 		rc = error();
 	}
+	// debugging libssh2 write issue
 	//sh->size = attrs.filesize;
 	copy_attributes(stbuf, &attrs);
 #endif
@@ -988,7 +974,7 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	int total = 0;
 	size_t chunk = size;
 	const char* pos = buf;
-	uint64_t curpos;
+	//uint64_t curpos;
 	size_t bsize;
 
 	//log_error("WRITING HANDLE: %zu size: %zu\n", (size_t)sh, size);
@@ -997,12 +983,8 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 
 	sftp_file handle = sh->file_handle;
 	gd_lock();
-	curpos = sftp_tell64(handle);
-	g_sftp_calls++;
-	if (offset != curpos) {
-		sftp_seek64(handle, offset);
-		g_sftp_calls++;
-	}
+	sftp_seek64(handle, offset);
+	
 	do {
 		bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
 		rc = (int)sftp_write(handle, pos, bsize);
@@ -1026,69 +1008,21 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	LIBSSH2_SFTP_HANDLE* handle = sh->file_handle;
 	log_info("WRITING HANDLE: %zu size: %zu\n", (size_t)handle, size);
 
-	//struct fuse_stat stbuf;
-	//gd_stat(sh->path, &stbuf);
-	//printf("writing %s, file size: %zu\n", sh->path, stbuf.st_size);
-
 	gd_lock();
-	curpos = libssh2_sftp_tell64(handle);
-	if (offset + size > sh->size) {
-		//printf("offset=%zu size=%zu file_size=%zu\n", offset, size, sh->size);
-		// expand
-
-
-	}
-	
-	if (offset != curpos)
-		libssh2_sftp_seek64(handle, offset);
-	//printf("cur pos: %zu\n", libssh2_sftp_tell64(handle));
-	
-	// 0 if non-bloking, 1 if blocking
-	//int block = libssh2_session_get_blocking(g_ssh->ssh);
-	//assert(block == (g_fs.noblock ^ 1) );
-	int spin = 0;
-	//char* mem = malloc(size);
-	//const char* pmem = mem;
-	//memcpy(mem, buf, size);
+	libssh2_sftp_seek64(handle, offset);
 	do {
 		bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
 		while ((rc = (int)libssh2_sftp_write(handle, pos, bsize)) ==
 			LIBSSH2_ERROR_EAGAIN) {
 			waitsocket(g_ssh);
 			g_sftp_calls++;
-			Sleep(10);
-			/*if (++spin > 3)
-			{
-				log_error("***** possible access denied???? *****\n");
-				errno = EACCES;
-				rc = EACCES;
-				total = -1;
-				break;
-			}*/
 		}
-		if (rc <= 0) {
-			//if (rc == 0 || libssh2_sftp_last_error(g_ssh->sftp)== LIBSSH2_FX_EOF) {
-			//	// EXPAND FILE
-			//	gd_unlock();
-			//	struct fuse_stat stbuf;
-			//	gd_stat(sh->path, &stbuf);
-			//	size_t newsize = stbuf.st_size + chunk;
-			//	rc = gd_truncate(sh->path, newsize);
-			//	gd_lock();
-			//	if(rc)
-			//		break;
-			//	continue;				
-			//}
-			//else {
-				break;
-			//}			
-		}
+		if (rc <= 0)
+			break;
 		pos += rc;
 		total += rc;
 		chunk -= rc;
 	} while (chunk);
-	
-	//free(mem);
 
 	if (rc < 0) {
 		gd_error("ERROR: Unable to write chuck of data\n");
@@ -1098,14 +1032,8 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	}
 	gd_unlock();
 
-	if (rc == 0 && total > -1 && size != total)
-	{
-		log_error("**************** WARNING **************** need=%zu, actual=%d, probably EOF\n", size, total);
-		//errno = EIO; // EOF
-		//total = -1;
-	}
-
 #endif
+	
 	log_debug("FINISH WRITING %zu, bytes: %zu\n", (size_t)handle, total);
 	return total;// >= 0 ? (int)total : rc;
 }
