@@ -1010,7 +1010,7 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	int total = 0;
 	size_t chunk = size;
 	const char* pos = buf;
-	size_t bsize;
+	
 
 	//log_error("WRITING HANDLE: %zu size: %zu\n", (size_t)sh, size);
 
@@ -1019,7 +1019,7 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	sftp_file handle = sh->file_handle;
 	gd_lock();
 	sftp_seek64(handle, offset);
-	
+	size_t bsize;
 	do {
 		bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
 		rc = (int)sftp_write(handle, pos, bsize);
@@ -1045,9 +1045,10 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 
 	gd_lock();
 	libssh2_sftp_seek64(handle, offset);
+	//size_t bsize;
 	do {
-		bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
-		rc = (int)libssh2_sftp_write(handle, pos, bsize);
+		//bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
+		rc = (int)libssh2_sftp_write(handle, pos, chunk);
 		g_sftp_calls++;
 		if (rc <= 0)
 			break;
