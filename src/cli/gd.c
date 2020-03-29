@@ -175,7 +175,7 @@ gdssh_t * gd_init_ssh(void)
 
 	/* blocking: 1 block, 0 non-blocking, g_fs.noblock ? 0 : 1 */
 	//libssh2_session_set_blocking(ssh, g_fs.noblock ^ 1);
-	libssh2_session_set_blocking(ssh, 1);
+	libssh2_session_set_blocking(ssh, 0);
 
 
 	/* ... start it up. This will trade welcome banners, exchange keys,
