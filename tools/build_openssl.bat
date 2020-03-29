@@ -1,11 +1,26 @@
-::mkdir build && cd build
-perl Configure no-shared VC-WIN64A --prefix=C:\Openssl
-nmake
-nmake install
+:: Golddrive
+:: 09/08/2018, San
+@echo off
+setlocal
+setlocal EnableDelayedExpansion
+
+:: this script directory
+set DIR=%~dp0
+set DIR=%DIR:~0,-1%
+
+perl Configure no-shared no-comp no-engine no-hw no-ssl2 no-ssl3 no-zlib no-sock VC-WIN64A ^
+	--prefix=C:\Openssl --openssldir=C:\Openssl
+nmake build_libs
+nmake install_dev
+
+rem call ms\do_win64a
+rem nmake -f ms\nt.mak clean
+rem nmake -f ms\nt.mak
+rem nmake -f ms\nt.mak install
 
 ::perl Configure VC-WIN32 --prefix=C:\Openssl32
 
-:: nasm and this command not need in v1.1+, just run nmake 
+:: this command not need in v1.1+, just run nmake 
 ::ms\do_win64a
 ::ms\do_nasm.bat
 ::nmake -f ms\nt.mak clean

@@ -18,6 +18,14 @@
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Release222|Win32">
+      <Configuration>Release222</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release222|x64">
+      <Configuration>Release222</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release2|Win32">
       <Configuration>Release2</Configuration>
       <Platform>Win32</Platform>
@@ -103,7 +111,21 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release222|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release2|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release222|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
@@ -136,6 +158,13 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release222|x86'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -151,6 +180,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release2|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release222|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -201,6 +233,12 @@
     <IntDir>$(SolutionDir)build\$(ProjectName).build\$(Configuration)\$(PlatformTarget)\</IntDir>
     <TargetName>golddrive</TargetName>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release222|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)build\$(Configuration)\$(PlatformTarget)\</OutDir>
+    <IntDir>$(SolutionDir)build\$(ProjectName).build\$(Configuration)\$(PlatformTarget)\</IntDir>
+    <TargetName>golddrive</TargetName>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)build\$(Configuration)\$(PlatformTarget)\</OutDir>
@@ -217,7 +255,17 @@
     <IntDir>$(SolutionDir)build\$(ProjectName).build\$(Configuration)\$(PlatformTarget)\</IntDir>
     <TargetName>golddrive</TargetName>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release222|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)build\$(Configuration)\$(PlatformTarget)\</OutDir>
+    <IntDir>$(SolutionDir)build\$(ProjectName).build\$(Configuration)\$(PlatformTarget)\</IntDir>
+    <TargetName>golddrive</TargetName>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release2|Win32'">
+    <TargetName>golddrive</TargetName>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release222|Win32'">
     <TargetName>golddrive</TargetName>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
@@ -274,7 +322,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libcrypto.lib;wolfssl.lib;wolfssh.lib;zlibstatic.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libcrypto.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <DelayLoadDLLs>winfsp-$(PlatformTarget).dll</DelayLoadDLLs>
       <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib\$(PlatformTarget);$(ProjectDir)..\lib\libssh2\lib\$(PlatformTarget);$(ProjectDir)..\lib\openssl\lib\$(PlatformTarget);$(ProjectDir)..\lib\zlib\lib\$(PlatformTarget);$(ProjectDir)..\lib\wolf\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4098 /ignore:4099 %(AdditionalOptions)</AdditionalOptions>
@@ -303,7 +351,7 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libcrypto.lib;wolfssl.lib;wolfssh.lib;zlibstatic.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libcrypto.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <DelayLoadDLLs>winfsp-$(PlatformTarget).dll</DelayLoadDLLs>
       <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib\$(PlatformTarget);$(ProjectDir)..\lib\libssh2\lib\$(PlatformTarget);$(ProjectDir)..\lib\openssl\lib\$(PlatformTarget);$(ProjectDir)..\lib\zlib\lib\$(PlatformTarget);$(ProjectDir)..\lib\wolf\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4098 /ignore:4099 %(AdditionalOptions)</AdditionalOptions>
@@ -332,7 +380,7 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libcrypto.lib;wolfssl.lib;wolfssh.lib;zlibstatic.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libcrypto.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <DelayLoadDLLs>winfsp-$(PlatformTarget).dll</DelayLoadDLLs>
       <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib\$(PlatformTarget);$(ProjectDir)..\lib\libssh2\lib\$(PlatformTarget);$(ProjectDir)..\lib\openssl\lib\$(PlatformTarget);$(ProjectDir)..\lib\zlib\lib\$(PlatformTarget);$(ProjectDir)..\lib\wolf\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4098 /ignore:4099 /NODEFAULTLIB:LIBCMTD %(AdditionalOptions)</AdditionalOptions>
@@ -361,7 +409,7 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libcrypto.lib;wolfssl.lib;wolfssh.lib;zlibstatic.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libcrypto.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <DelayLoadDLLs>winfsp-$(PlatformTarget).dll</DelayLoadDLLs>
       <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib\$(PlatformTarget);$(ProjectDir)..\lib\libssh2\lib\$(PlatformTarget);$(ProjectDir)..\lib\openssl\lib\$(PlatformTarget);$(ProjectDir)..\lib\zlib\lib\$(PlatformTarget);$(ProjectDir)..\lib\wolf\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4098 /ignore:4099 /NODEFAULTLIB:LIBCMTD %(AdditionalOptions)</AdditionalOptions>
@@ -400,6 +448,30 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release2|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(MSBuildProgramFiles32)\WinFsp\inc\fuse3;$(MSBuildProgramFiles32)\WinFsp\inc</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <DelayLoadDLLs>winfsp-$(PlatformTarget).dll</DelayLoadDLLs>
+      <Profile>true</Profile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release222|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>
@@ -442,7 +514,7 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libcrypto.lib;wolfssl.lib;wolfssh.lib;zlibstatic.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libcrypto.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <DelayLoadDLLs>winfsp-$(PlatformTarget).dll</DelayLoadDLLs>
       <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib\$(PlatformTarget);$(ProjectDir)..\lib\libssh2\lib\$(PlatformTarget);$(ProjectDir)..\lib\openssl\lib\$(PlatformTarget);$(ProjectDir)..\lib\zlib\lib\$(PlatformTarget);$(ProjectDir)..\lib\wolf\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4098 /ignore:4099 %(AdditionalOptions)</AdditionalOptions>
@@ -477,7 +549,7 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libcrypto.lib;wolfssl.lib;wolfssh.lib;zlibstatic.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libcrypto.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <DelayLoadDLLs>winfsp-$(PlatformTarget).dll</DelayLoadDLLs>
       <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib\$(PlatformTarget);$(ProjectDir)..\lib\libssh2\lib\$(PlatformTarget);$(ProjectDir)..\lib\openssl\lib\$(PlatformTarget);$(ProjectDir)..\lib\zlib\lib\$(PlatformTarget);$(ProjectDir)..\lib\wolf\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4098 /ignore:4099 %(AdditionalOptions)</AdditionalOptions>
@@ -512,9 +584,44 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libcrypto.lib;wolfssl.lib;wolfssh.lib;zlibstatic.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libcrypto.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <DelayLoadDLLs>winfsp-$(PlatformTarget).dll</DelayLoadDLLs>
       <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib\$(PlatformTarget);$(ProjectDir)..\lib\libssh2\lib\$(PlatformTarget);$(ProjectDir)..\lib\openssl\lib\$(PlatformTarget);$(ProjectDir)..\lib\zlib\lib\$(PlatformTarget);$(ProjectDir)..\lib\wolf\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
+      <AdditionalOptions>/ignore:4098 /ignore:4099 /NODEFAULTLIB:LIBCMT %(AdditionalOptions)</AdditionalOptions>
+      <Profile>true</Profile>
+      <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
+    </Link>
+    <PostBuildEvent>
+      <Command>rem copy $(ProjectDir)golddrive.ini $(Outdir)
+rem copy $(ProjectDir)golddrive.ini $(SolutionDir)..\tools\golddrive
+rem copy $(ProjectDir)golddrive.ini $(SolutionDir)..\golddrive\bin
+rem copy $(OutDir)golddrive.exe $(SolutionDir)..\golddrive\bin
+rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release222|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>_WIN64;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(MSBuildProgramFiles32)\WinFsp\inc\fuse3;$(MSBuildProgramFiles32)\WinFsp\inc;$(ProjectDir)..\lib222\libssh2\include;$(ProjectDir)..\lib222\openssl\include</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libeay32.lib;crypt32.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <DelayLoadDLLs>winfsp-$(PlatformTarget).dll</DelayLoadDLLs>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib\$(PlatformTarget);$(ProjectDir)..\lib222\libssh2\lib;$(ProjectDir)..\lib222\openssl\lib</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4098 /ignore:4099 /NODEFAULTLIB:LIBCMT %(AdditionalOptions)</AdditionalOptions>
       <Profile>true</Profile>
       <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
@@ -547,9 +654,44 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libcrypto.lib;wolfssl.lib;wolfssh.lib;zlibstatic.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libcrypto.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <DelayLoadDLLs>winfsp-$(PlatformTarget).dll</DelayLoadDLLs>
       <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib\$(PlatformTarget);$(ProjectDir)..\lib\libssh2\lib\$(PlatformTarget);$(ProjectDir)..\lib\openssl\lib\$(PlatformTarget);$(ProjectDir)..\lib\zlib\lib\$(PlatformTarget);$(ProjectDir)..\lib\wolf\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
+      <AdditionalOptions>/ignore:4098 /ignore:4099 /NODEFAULTLIB:LIBCMT %(AdditionalOptions)</AdditionalOptions>
+      <Profile>true</Profile>
+      <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
+    </Link>
+    <PostBuildEvent>
+      <Command>rem copy $(ProjectDir)golddrive.ini $(Outdir)
+rem copy $(ProjectDir)golddrive.ini $(SolutionDir)..\tools\golddrive
+rem copy $(ProjectDir)golddrive.ini $(SolutionDir)..\golddrive\bin
+rem copy $(OutDir)golddrive.exe $(SolutionDir)..\golddrive\bin
+rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release222|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(MSBuildProgramFiles32)\WinFsp\inc\fuse3;$(MSBuildProgramFiles32)\WinFsp\inc;$(ProjectDir)..\lib222\libssh2\include;$(ProjectDir)..\lib222\openssl\include</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libeay32.lib;crypt32.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <DelayLoadDLLs>winfsp-$(PlatformTarget).dll</DelayLoadDLLs>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib\$(PlatformTarget);$(ProjectDir)..\lib222\libssh2\lib;$(ProjectDir)..\lib222\openssl\lib</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4098 /ignore:4099 /NODEFAULTLIB:LIBCMT %(AdditionalOptions)</AdditionalOptions>
       <Profile>true</Profile>
       <FullProgramDatabaseFile>true</FullProgramDatabaseFile>

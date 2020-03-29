@@ -163,6 +163,7 @@ gdssh_t * gd_init_ssh(void)
 		gd_log("%zd: %d :ERROR: %s: %d: "
 			"failed allocate memory for ssh session\n",
 			time_mu(), thread, __func__, __LINE__);
+			time_mu(), thread, __func__, __LINE__);
 		return 0;
 	}
 
@@ -174,8 +175,7 @@ gdssh_t * gd_init_ssh(void)
 	//libssh2_trace_sethandler(ssh, 0, libssh2_logger);
 
 	/* blocking: 1 block, 0 non-blocking, g_fs.noblock ? 0 : 1 */
-	libssh2_session_set_blocking(ssh, 1);
-
+	libssh2_session_set_blocking(ssh, 0);
 
 	/* ... start it up. This will trade welcome banners, exchange keys,
 	* and setup crypto, compression, and MAC layers	*/
@@ -308,21 +308,16 @@ int gd_finalize(void)
 	sftp_free(g_ssh->sftp);
 	ssh_free(g_ssh->ssh);
 #else
-	//while (libssh2_sftp_shutdown(g_ssh->sftp) ==
-	//	LIBSSH2_ERROR_EAGAIN);
-	//while (libssh2_session_disconnect(g_ssh->ssh, "ssh session disconnected") ==
-	//	LIBSSH2_ERROR_EAGAIN);
-	//while (libssh2_session_free(g_ssh->ssh) ==
-	//	LIBSSH2_ERROR_EAGAIN);
-	//while (libssh2_channel_close(g_ssh->channel) ==
-	//	LIBSSH2_ERROR_EAGAIN);
-	//while (libssh2_channel_free(g_ssh->channel) ==
-	//	LIBSSH2_ERROR_EAGAIN);
-	libssh2_sftp_shutdown(g_ssh->sftp);
-	libssh2_session_disconnect(g_ssh->ssh, "ssh session disconnected");
-	libssh2_session_free(g_ssh->ssh);
-	libssh2_channel_close(g_ssh->channel);
-	libssh2_channel_free(g_ssh->channel);
+	while (libssh2_channel_close(g_ssh->channel) ==
+		LIBSSH2_ERROR_EAGAIN);
+	while (libssh2_channel_free(g_ssh->channel) ==
+		LIBSSH2_ERROR_EAGAIN);
+	while (libssh2_sftp_shutdown(g_ssh->sftp) ==
+		LIBSSH2_ERROR_EAGAIN);
+	while (libssh2_session_disconnect(g_ssh->ssh, "ssh session disconnected") ==
+		LIBSSH2_ERROR_EAGAIN);
+	while (libssh2_session_free(g_ssh->ssh) ==
+		LIBSSH2_ERROR_EAGAIN);
 	libssh2_exit();
 	closesocket(g_ssh->socket);
 	
@@ -1816,14 +1811,14 @@ int run_command_channel_exec(const char* cmd, char* out, char* err)
 	}
 
 #else
-	//rcode = run_command(cmd, out, err);
+	rcode = run_command(cmd, out, err);
 
 
 	// TODO
 	//char buffer[0x4000];
 	//LIBSSH2_CHANNEL* channel = g_ssh->channel;
 	//char* errmsg;
-
+	//char buffer[0x4000];
 	//if (!channel) {
 	//	rc = libssh2_session_last_error(g_ssh->ssh, &errmsg, NULL, 0);
 	//	log_error("ERROR: invalid channel to run commands, rc=%d, %s\n", rc, errmsg);

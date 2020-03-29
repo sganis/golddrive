@@ -24,8 +24,11 @@ extern "C" {
  * OpenSSL was configured with the following options:
  */
 
-#ifndef OPENSSL_SYS_WIN32
-# define OPENSSL_SYS_WIN32 1
+#ifndef OPENSSL_SYS_WIN64A
+# define OPENSSL_SYS_WIN64A 1
+#endif
+#ifndef OPENSSL_NO_COMP
+# define OPENSSL_NO_COMP
 #endif
 #ifndef OPENSSL_NO_MD2
 # define OPENSSL_NO_MD2
@@ -42,14 +45,8 @@ extern "C" {
 #ifndef OPENSSL_NO_AFALGENG
 # define OPENSSL_NO_AFALGENG
 #endif
-#ifndef OPENSSL_NO_APPS
-# define OPENSSL_NO_APPS
-#endif
 #ifndef OPENSSL_NO_ASAN
 # define OPENSSL_NO_ASAN
-#endif
-#ifndef OPENSSL_NO_CAPIENG
-# define OPENSSL_NO_CAPIENG
 #endif
 #ifndef OPENSSL_NO_CRYPTO_MDEBUG
 # define OPENSSL_NO_CRYPTO_MDEBUG
@@ -78,6 +75,9 @@ extern "C" {
 #ifndef OPENSSL_NO_EGD
 # define OPENSSL_NO_EGD
 #endif
+#ifndef OPENSSL_NO_ENGINE
+# define OPENSSL_NO_ENGINE
+#endif
 #ifndef OPENSSL_NO_EXTERNAL_TESTS
 # define OPENSSL_NO_EXTERNAL_TESTS
 #endif
@@ -89,6 +89,9 @@ extern "C" {
 #endif
 #ifndef OPENSSL_NO_HEARTBEATS
 # define OPENSSL_NO_HEARTBEATS
+#endif
+#ifndef OPENSSL_NO_HW
+# define OPENSSL_NO_HW
 #endif
 #ifndef OPENSSL_NO_MSAN
 # define OPENSSL_NO_MSAN
@@ -107,12 +110,6 @@ extern "C" {
 #endif
 #ifndef OPENSSL_NO_SSL3_METHOD
 # define OPENSSL_NO_SSL3_METHOD
-#endif
-#ifndef OPENSSL_NO_STDIO
-# define OPENSSL_NO_STDIO
-#endif
-#ifndef OPENSSL_NO_TESTS
-# define OPENSSL_NO_TESTS
 #endif
 #ifndef OPENSSL_NO_UBSAN
 # define OPENSSL_NO_UBSAN
@@ -211,11 +208,11 @@ extern "C" {
  * The following are cipher-specific, but are part of the public API.
  */
 #if !defined(OPENSSL_SYS_UEFI)
-# define BN_LLONG
+# undef BN_LLONG
 /* Only one for the following should be defined */
 # undef SIXTY_FOUR_BIT_LONG
-# undef SIXTY_FOUR_BIT
-# define THIRTY_TWO_BIT
+# define SIXTY_FOUR_BIT
+# undef THIRTY_TWO_BIT
 #endif
 
 #define RC4_INT unsigned int

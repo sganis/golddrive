@@ -8,6 +8,10 @@ platform:
   - x64
   # - x86
 configuration: 
+<<<<<<< HEAD
+=======
+  - Release222
+>>>>>>> 35e7963e182d563875910c98b1fc971604e903b6
   - Release2
   - Release
   # - Debug
@@ -32,12 +36,12 @@ matrix:
     - configuration: Debug
       image: Visual Studio 2013
 install:
-  # - dir /b C:\cache || mkdir C:\cache
+  - dir /b C:\cache || mkdir C:\cache
   - set winfsp=winfsp-1.6.20027.msi
-  - if not exist C:\cache\%winfsp% (   
-      appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/%winfsp% -FileName C:\cache\%winfsp%
+  - if not exist C:\cache\winfsp-1.6.20027.msi (   
+      appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/winfsp-1.6.20027.msi -FileName C:\cache\winfsp-1.6.20027.msi
     )
-  - start /wait msiexec /i C:\cache\%winfsp% /qn ADDLOCAL=ALL
+  - start /wait msiexec /i C:\cache\winfsp-1.6.20027.msi /qn ADDLOCAL=ALL
   - ps: $env:VERSION = C:\Python37\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
   - echo Version=%VERSION% Configuration=%CONFIGURATION% Platform=%PLATFORM%
 build_script:
@@ -59,6 +63,9 @@ for:
         - image: Visual Studio 2019
           configuration: Release2
           platform: x64
+        - image: Visual Studio 2019
+          configuration: Release222
+          platform: x64
     before_build:
       # uninstall and setup my own wsl
       - wslconfig /u Ubuntu-18.04
@@ -78,7 +85,7 @@ for:
           $sw = [Diagnostics.Stopwatch]::StartNew()
           C:\projects\golddrive\tools\fstools\fsx.exe -N 5000 test xxxxxx
           C:\projects\golddrive\tools\fstools\fsbench-x64.exe --files=100 -rdwr_cc_* -mmap_* -file_attr* -file_list_single* -file_list_none* -rdwr_nc_*
-          C:\projects\golddrive\tools\iozone\iozone.exe -i0 -i1 -i2 -s100m -r1m
+          C:\projects\golddrive\tools\iozone\iozone.exe -i0 -i1 -i2 -s1m -s10m -s100m -r1m
           $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
       - ps: get-content -tail 30 $env:LOCALAPPDATA\golddrive\golddrive.log
       - ps: |
