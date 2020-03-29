@@ -244,7 +244,7 @@ namespace golddrive.Tests
             var backup_sec = $"{_drive.AppKey}.{now}.bak";
             var backup_pub = $"{_drive.AppPubKey}.{now}.bak";
             
-            bool has_sec = File.Exists(_drive.AppPubKey);
+            bool has_sec = File.Exists(_drive.AppKey);
             bool has_pub = File.Exists(_drive.AppPubKey);
             if (has_sec)
                 File.Move(_drive.AppKey, backup_sec);
