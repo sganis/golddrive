@@ -180,7 +180,7 @@ def generate_keys(userhost):
 	# use ssh-keygen
 	# print(run('where ssh-keygen'))
 	cmd = f'echo y |ssh-keygen -q -N "" -f {seckey} -b 2048 -m PEM'
-	# run(cmd)
+	run(cmd)
 	with open(pubkey) as r:
 		pubkey = r.read()
 
