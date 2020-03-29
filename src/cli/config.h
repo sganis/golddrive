@@ -93,6 +93,7 @@ typedef struct fs_config {
 	int has_root;
 	int keeplink;
 	int compress;
+	int block;
 	char *mountpoint;
 	char letter;
 	int port;

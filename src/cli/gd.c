@@ -147,12 +147,14 @@ gdssh_t* gd_init_ssh(void)
 		return 0;
 	}
 
+	
+
 	/* create socket  */
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 	rc = connect(sock, (SOCKADDR*)(&sin), sizeof(SOCKADDR_IN));
 	if (rc) {
 		gd_log("%zd: %d :ERROR: %s: %d: "
-			"failed to open socket, connect() rc=%d\n",
+			"failed to open socket, host not found or port not open, rc=%d\n",
 			time_mu(), thread, __func__, __LINE__, rc);
 		return 0;
 	}
@@ -166,6 +168,7 @@ gdssh_t* gd_init_ssh(void)
 		return 0;
 	}
 
+	
 	/* debug, need to build with tracing */
 	//libssh2_trace(ssh, 
 	//	//LIBSSH2_TRACE_SFTP | LIBSSH2_TRACE_ERROR | LIBSSH2_TRACE_CONN
@@ -173,15 +176,16 @@ gdssh_t* gd_init_ssh(void)
 	//);
 	//libssh2_trace_sethandler(ssh, 0, libssh2_logger);
 
-	/* blocking: 1 block, 0 non-blocking, g_fs.noblock ? 0 : 1 */
-	//libssh2_session_set_blocking(ssh, g_fs.noblock ^ 1);
-	libssh2_session_set_blocking(ssh, 0);
-
+	// non-blocking mode by default
+	libssh2_session_set_blocking(ssh, g_fs.block);
+	// compression
+	libssh2_session_flag(ssh, LIBSSH2_FLAG_COMPRESS, g_fs.compress);
 
 	/* ... start it up. This will trade welcome banners, exchange keys,
 	* and setup crypto, compression, and MAC layers	*/
 	while ((rc = libssh2_session_handshake(ssh, sock)) ==
-		LIBSSH2_ERROR_EAGAIN);
+		LIBSSH2_ERROR_EAGAIN)
+		Sleep(10);
 
 
 	if (rc) {
@@ -214,14 +218,16 @@ gdssh_t* gd_init_ssh(void)
 	 //}
 
 
-	 // authenticate
+	 // authenticate with keys
 	char pubkey[1000];
 	strcpy(pubkey, g_fs.pkey);
 	strcat(pubkey, ".pub");
 	while ((rc = libssh2_userauth_publickey_fromfile(
 		ssh, g_fs.user, pubkey, g_fs.pkey, NULL)) ==
-		LIBSSH2_ERROR_EAGAIN);
-	// password
+		LIBSSH2_ERROR_EAGAIN)
+		Sleep(10);
+	
+	// or password
 	//while ((rc = libssh2_userauth_password(
 	//	ssh, g_fs.user, "support")) ==
 	//	LIBSSH2_ERROR_EAGAIN);
@@ -247,7 +253,9 @@ gdssh_t* gd_init_ssh(void)
 
 	} while (!channel);
 
-	while ((rc = libssh2_channel_shell(channel)) == LIBSSH2_ERROR_EAGAIN);
+	while ((rc = libssh2_channel_shell(channel)) 
+		== LIBSSH2_ERROR_EAGAIN)
+		Sleep(10);
 	if (rc) {
 		rc = libssh2_session_last_error(g_ssh->ssh, &errmsg, NULL, 0);
 		gd_log("cannot request shell: [rc=%d, %s]\n", rc, errmsg);

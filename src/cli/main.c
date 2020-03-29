@@ -342,6 +342,7 @@ static struct fuse_opt fs_opts[] = {
 	fs_OPT("-k=%s",             pkey, 0),
 	fs_OPT("keeplink",          keeplink, 1),
 	fs_OPT("compress",          compress, 1),
+	fs_OPT("block",             block, 1),
 	fs_OPT("buffer=%u",         buffer, 0),
 	fs_OPT("cipher=%s",         cipher, 0),
 
@@ -388,6 +389,7 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 			"    -p PORT, -o port=PORT      server port, default: 22\n"
 			"    -o keeplink                hard links are not removed before overwriting data\n"
 			"    -o compress                use compression\n"
+			"    -o block                   disable non-blocking protocol mode\n"
 			"    -o cipher                  cipher for symetric encryption, comma-separated list\n"
 			"    -o buffer=BYTES            read/write block size in bytes, default: 65535\n"
 			"\n"
@@ -570,7 +572,6 @@ int main(int argc, char *argv[])
 	
 	// defaults
 	g_fs.port = 22;
-	//g_fs.hlink = 0;
 	g_fs.buffer = BUFFER_SIZE;
 
 
@@ -657,6 +658,7 @@ int main(int argc, char *argv[])
 	gd_log("buffer   = %u\n", g_fs.buffer);
 	gd_log("keeplink = %u\n", g_fs.keeplink);
 	gd_log("compress = %u\n", g_fs.compress);
+	gd_log("block    = %u\n", g_fs.block);
 	gd_log("cipher   = %s\n", g_fs.cipher);
 
 	gd_log("\nWinFsp arguments:\n");
