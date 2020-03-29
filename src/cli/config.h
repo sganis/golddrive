@@ -18,7 +18,7 @@
 #include <fuse.h>
 
 #define BUFFER_SIZE						256000
-#define COMMAND_SIZE					1000
+#define COMMAND_SIZE					1024
 
 #define FSP_FUSE_CAP_STAT_EX            (1 << 23)   /* file system supports fuse_stat_ex */
 /* from FreeBSD */
@@ -34,7 +34,6 @@
 #define AT_SYMLINK_NOFOLLOW             2
 
 extern size_t		g_sftp_calls;
-extern size_t		g_sftp_cached_calls;
 extern char*		g_logfile;
 
 #define STATS		0

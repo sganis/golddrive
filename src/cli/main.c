@@ -7,7 +7,6 @@
 
 /* global variables */
 size_t		g_sftp_calls;
-size_t		g_sftp_cached_calls;
 gdssh_t *	g_ssh;
 SRWLOCK		g_ssh_lock;
 CRITICAL_SECTION g_critical_section;
@@ -669,8 +668,7 @@ int main(int argc, char *argv[])
 	//InitializeCriticalSectionAndSpinCount(&g_critical_section, 0x00000400);
 
 	g_sftp_calls = 0;
-	g_sftp_cached_calls = 0;
-
+	
 	g_ssh = gd_init_ssh();
 	if (!g_ssh)
 		return 1;
