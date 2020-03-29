@@ -10,8 +10,8 @@ set DIR=%DIR:~0,-1%
 
 mkdir build && cd build
 
-set OPENSSL_DIR=%DIR%\..\src\lib\openssl
-set OPENSSL_DIR=C:\openssl
+::set OPENSSL_DIR=%DIR%\..\src\lib\openssl
+set OPENSSL_DIR=C:\openssl2
 
 cmake .. ^
  -DCRYPTO_BACKEND=OpenSSL               ^
