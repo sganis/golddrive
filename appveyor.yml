@@ -35,10 +35,10 @@ matrix:
 install:
   - dir /b C:\cache || mkdir C:\cache
   - set winfsp=winfsp-1.6.20027.msi
-  - if not exist C:\cache\winfsp-1.6.20027.msi (   
-      appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/winfsp-1.6.20027.msi -FileName C:\cache\winfsp-1.6.20027.msi
+  - if not exist C:\cache\%winfsp% (   
+      appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/%winfsp% -FileName C:\cache\%winfsp%
     )
-  - start /wait msiexec /i C:\cache\winfsp-1.6.20027.msi /qn ADDLOCAL=ALL
+  - start /wait msiexec /i C:\cache\%winfsp% /qn ADDLOCAL=ALL
   - ps: $env:VERSION = C:\Python37\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
   - echo Version=%VERSION% Configuration=%CONFIGURATION% Platform=%PLATFORM%
 build_script:

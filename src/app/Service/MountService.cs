@@ -888,7 +888,7 @@ namespace golddrive
                     Directory.CreateDirectory(dotssh);
                 if (!File.Exists(drive.AppKey))
                 {
-                    ReturnBox r = RunLocal($@"""{AppPath}\ssh-keygen.exe""", $@"-m PEM -t rsa -N """" -f ""{drive.AppKey}""");
+                    ReturnBox r = RunLocal($@"""{AppPath}\ssh-keygen.exe""", $@"-m PEM -t rsa -b 2048 -N """" -f ""{drive.AppKey}""");
                 }
                 if (File.Exists(drive.AppPubKey))
                 {
