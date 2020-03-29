@@ -8,10 +8,7 @@ platform:
   - x64
   # - x86
 configuration: 
-<<<<<<< HEAD
-=======
   - Release222
->>>>>>> 35e7963e182d563875910c98b1fc971604e903b6
   - Release2
   - Release
   # - Debug
