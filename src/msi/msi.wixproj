@@ -84,6 +84,13 @@
     <DefineConstants>MyProductName=$(MyProductName);MyProductFullName=$(MyProductFullName);MyDescription=$(MyDescription);MyCompanyName=$(MyCompanyName);MyCopyright=$(MyCopyright);MyProductVersion=$(MyProductVersion);MyProductStage=$(MyProductStage);MyVersion=$(MyVersion);MyFullVersion=$(MyFullVersion)</DefineConstants>
     <SuppressValidation>False</SuppressValidation>
   </PropertyGroup>
+ <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release222|x64' ">
+    <OutputName>golddrive-$(MyVersion)-$(Platform)</OutputName>
+    <OutputPath>$(SolutionDir)build\$(Configuration)\$(Platform)\</OutputPath>
+    <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>MyProductName=$(MyProductName);MyProductFullName=$(MyProductFullName);MyDescription=$(MyDescription);MyCompanyName=$(MyCompanyName);MyCopyright=$(MyCopyright);MyProductVersion=$(MyProductVersion);MyProductStage=$(MyProductStage);MyVersion=$(MyVersion);MyFullVersion=$(MyFullVersion)</DefineConstants>
+    <SuppressValidation>False</SuppressValidation>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="Product.wxs" />
   </ItemGroup>
