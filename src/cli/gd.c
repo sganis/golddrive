@@ -1687,10 +1687,10 @@ int run_command_channel_exec(const char* cmd, char* out, char* err)
 	memset(out, 0, COMMAND_SIZE);
 	if (err)
 		memset(err, 0, COMMAND_SIZE);
-	char buffer[0x4000];
+	
 
 #ifdef USE_LIBSSH
-
+	char buffer[0x4000];
 	ssh_channel channel;
 	channel = g_ssh->channel;
 	if (!channel) {
@@ -1751,13 +1751,13 @@ int run_command_channel_exec(const char* cmd, char* out, char* err)
 
 #else
 
-	//rcode = run_command(cmd, out, err);
+	rcode = run_command(cmd, out, err);
 
 
 	// TODO
 	//LIBSSH2_CHANNEL* channel = g_ssh->channel;
 	//char* errmsg;
-
+	//char buffer[0x4000];
 	//if (!channel) {
 	//	rc = libssh2_session_last_error(g_ssh->ssh, &errmsg, NULL, 0);
 	//	log_error("ERROR: invalid channel to run commands, rc=%d, %s\n", rc, errmsg);

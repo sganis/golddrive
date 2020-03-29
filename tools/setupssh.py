@@ -176,10 +176,15 @@ def generate_keys(userhost):
 	if os.path.exists(pubkey):
 		os.rename(pubkey, f'{pubkey}.{ now }.bak')
 	rb = ReturnBox()
+	
+	# use ssh-keygen
 	print(run('where ssh-keygen'))
 	cmd = f'echo y |ssh-keygen -q -N "" -f {seckey}'
-	print(cmd)
 	run(cmd)
+	with open(pubkey) as r:
+		pubkey = r.read()
+
+	# use paramiko
 	# sk = paramiko.RSAKey.generate(2048)
 	# try:
 	# 	sshdir = os.path.dirname(seckey)
@@ -191,9 +196,7 @@ def generate_keys(userhost):
 	# 	logger.error(f'{ex}, {seckey}')
 	# 	rb.error = str(ex)
 	# 	return rb	
-	
 	# pubkey = f'ssh-rsa {sk.get_base64()} {userhost}'
-	
 	# try:
 	# 	with open(seckey + '.pub', 'wt') as w:
 	# 		w.write(pubkey)
@@ -202,8 +205,7 @@ def generate_keys(userhost):
 	# 	logger.error(msg)
 	# 	rb.error = msg
 	# 	return rb
-	with open(pubkey) as r:
-		pubkey = r.read()
+
 	rb.output = pubkey
 	return rb
 
