@@ -292,16 +292,17 @@ int gd_finalize(void)
 	sftp_free(g_ssh->sftp);
 	ssh_free(g_ssh->ssh);
 #else
+	while (libssh2_channel_close(g_ssh->channel) ==
+		LIBSSH2_ERROR_EAGAIN);
+	while (libssh2_channel_free(g_ssh->channel) ==
+		LIBSSH2_ERROR_EAGAIN);
 	while (libssh2_sftp_shutdown(g_ssh->sftp) ==
 		LIBSSH2_ERROR_EAGAIN);
 	while (libssh2_session_disconnect(g_ssh->ssh, "ssh session disconnected") ==
 		LIBSSH2_ERROR_EAGAIN);
 	while (libssh2_session_free(g_ssh->ssh) ==
 		LIBSSH2_ERROR_EAGAIN);
-	while (libssh2_channel_close(g_ssh->channel) ==
-		LIBSSH2_ERROR_EAGAIN);
-	while (libssh2_channel_free(g_ssh->channel) ==
-		LIBSSH2_ERROR_EAGAIN);
+	
 
 	libssh2_exit();
 	closesocket(g_ssh->socket);
