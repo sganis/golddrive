@@ -274,7 +274,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libcrypto.lib;wolfssl.lib;wolfssh.lib;zlibstatic.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libeay32.lib;wolfssl.lib;wolfssh.lib;zlibstatic.lib;crypt32.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <DelayLoadDLLs>winfsp-$(PlatformTarget).dll</DelayLoadDLLs>
       <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib\$(PlatformTarget);$(ProjectDir)..\lib\libssh2\lib\$(PlatformTarget);$(ProjectDir)..\lib\openssl\lib\$(PlatformTarget);$(ProjectDir)..\lib\zlib\lib\$(PlatformTarget);$(ProjectDir)..\lib\wolf\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4098 /ignore:4099 %(AdditionalOptions)</AdditionalOptions>
@@ -303,7 +303,7 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libcrypto.lib;wolfssl.lib;wolfssh.lib;zlibstatic.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libeay32.lib;wolfssl.lib;wolfssh.lib;zlibstatic.lib;crypt32.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <DelayLoadDLLs>winfsp-$(PlatformTarget).dll</DelayLoadDLLs>
       <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib\$(PlatformTarget);$(ProjectDir)..\lib\libssh2\lib\$(PlatformTarget);$(ProjectDir)..\lib\openssl\lib\$(PlatformTarget);$(ProjectDir)..\lib\zlib\lib\$(PlatformTarget);$(ProjectDir)..\lib\wolf\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4098 /ignore:4099 %(AdditionalOptions)</AdditionalOptions>
@@ -332,7 +332,7 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libcrypto.lib;wolfssl.lib;wolfssh.lib;zlibstatic.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libeay32.lib;wolfssl.lib;wolfssh.lib;zlibstatic.lib;crypt32.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <DelayLoadDLLs>winfsp-$(PlatformTarget).dll</DelayLoadDLLs>
       <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib\$(PlatformTarget);$(ProjectDir)..\lib\libssh2\lib\$(PlatformTarget);$(ProjectDir)..\lib\openssl\lib\$(PlatformTarget);$(ProjectDir)..\lib\zlib\lib\$(PlatformTarget);$(ProjectDir)..\lib\wolf\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4098 /ignore:4099 /NODEFAULTLIB:LIBCMTD %(AdditionalOptions)</AdditionalOptions>
@@ -361,7 +361,7 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libcrypto.lib;wolfssl.lib;wolfssh.lib;zlibstatic.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libeay32.lib;wolfssl.lib;wolfssh.lib;zlibstatic.lib;crypt32.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <DelayLoadDLLs>winfsp-$(PlatformTarget).dll</DelayLoadDLLs>
       <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib\$(PlatformTarget);$(ProjectDir)..\lib\libssh2\lib\$(PlatformTarget);$(ProjectDir)..\lib\openssl\lib\$(PlatformTarget);$(ProjectDir)..\lib\zlib\lib\$(PlatformTarget);$(ProjectDir)..\lib\wolf\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4098 /ignore:4099 /NODEFAULTLIB:LIBCMTD %(AdditionalOptions)</AdditionalOptions>
@@ -442,7 +442,7 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libcrypto.lib;wolfssl.lib;wolfssh.lib;zlibstatic.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libeay32.lib;wolfssl.lib;wolfssh.lib;zlibstatic.lib;crypt32.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <DelayLoadDLLs>winfsp-$(PlatformTarget).dll</DelayLoadDLLs>
       <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib\$(PlatformTarget);$(ProjectDir)..\lib\libssh2\lib\$(PlatformTarget);$(ProjectDir)..\lib\openssl\lib\$(PlatformTarget);$(ProjectDir)..\lib\zlib\lib\$(PlatformTarget);$(ProjectDir)..\lib\wolf\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4098 /ignore:4099 %(AdditionalOptions)</AdditionalOptions>
@@ -477,7 +477,7 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libcrypto.lib;wolfssl.lib;wolfssh.lib;zlibstatic.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libeay32.lib;wolfssl.lib;wolfssh.lib;zlibstatic.lib;crypt32.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <DelayLoadDLLs>winfsp-$(PlatformTarget).dll</DelayLoadDLLs>
       <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib\$(PlatformTarget);$(ProjectDir)..\lib\libssh2\lib\$(PlatformTarget);$(ProjectDir)..\lib\openssl\lib\$(PlatformTarget);$(ProjectDir)..\lib\zlib\lib\$(PlatformTarget);$(ProjectDir)..\lib\wolf\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4098 /ignore:4099 %(AdditionalOptions)</AdditionalOptions>
@@ -512,7 +512,7 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libcrypto.lib;wolfssl.lib;wolfssh.lib;zlibstatic.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libeay32.lib;wolfssl.lib;wolfssh.lib;zlibstatic.lib;crypt32.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <DelayLoadDLLs>winfsp-$(PlatformTarget).dll</DelayLoadDLLs>
       <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib\$(PlatformTarget);$(ProjectDir)..\lib\libssh2\lib\$(PlatformTarget);$(ProjectDir)..\lib\openssl\lib\$(PlatformTarget);$(ProjectDir)..\lib\zlib\lib\$(PlatformTarget);$(ProjectDir)..\lib\wolf\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4098 /ignore:4099 /NODEFAULTLIB:LIBCMT %(AdditionalOptions)</AdditionalOptions>
@@ -547,7 +547,7 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libcrypto.lib;wolfssl.lib;wolfssh.lib;zlibstatic.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(MSBuildProgramFiles32)\WinFsp\lib\winfsp-$(PlatformTarget).lib;version.lib;ssh.lib;libssh2.lib;libeay32.lib;wolfssl.lib;wolfssh.lib;zlibstatic.lib;crypt32.lib;ws2_32.lib;msvcrt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <DelayLoadDLLs>winfsp-$(PlatformTarget).dll</DelayLoadDLLs>
       <AdditionalLibraryDirectories>$(ProjectDir)..\lib\libssh\lib\$(PlatformTarget);$(ProjectDir)..\lib\libssh2\lib\$(PlatformTarget);$(ProjectDir)..\lib\openssl\lib\$(PlatformTarget);$(ProjectDir)..\lib\zlib\lib\$(PlatformTarget);$(ProjectDir)..\lib\wolf\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4098 /ignore:4099 /NODEFAULTLIB:LIBCMT %(AdditionalOptions)</AdditionalOptions>
