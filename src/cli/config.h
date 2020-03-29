@@ -17,7 +17,7 @@
 #include <winfsp/winfsp.h>
 #include <fuse.h>
 
-#define BUFFER_SIZE						30000
+#define BUFFER_SIZE						256000
 #define COMMAND_SIZE					1000
 
 #define FSP_FUSE_CAP_STAT_EX            (1 << 23)   /* file system supports fuse_stat_ex */
