@@ -1,7 +1,6 @@
 #pragma once
 
 //#define USE_LIBSSH
-
 // windows file attributes
 //#define FSP_FUSE_USE_STAT_EX
 
@@ -19,8 +18,19 @@
 
 #define BUFFER_SIZE						256000
 #define COMMAND_SIZE					1024
+/* logging */
+#define ERROR							0
+#define WARN							1
+#define INFO							2
+#define DEBUG							3
+#define LOGLEVEL						ERROR
 
-#define FSP_FUSE_CAP_STAT_EX            (1 << 23)   /* file system supports fuse_stat_ex */
+
+extern size_t g_sftp_calls;
+extern char* g_logfile;
+
+/* file system supports fuse_stat_ex */
+#define FSP_FUSE_CAP_STAT_EX            (1 << 23)   
 /* from FreeBSD */
 #define FSP_FUSE_UF_HIDDEN              0x00008000
 #define FSP_FUSE_UF_READONLY            0x00001000
@@ -33,12 +43,9 @@
 #define AT_FDCWD                        -2
 #define AT_SYMLINK_NOFOLLOW             2
 
-extern size_t		g_sftp_calls;
-extern char*		g_logfile;
-
-#define STATS		0
-#define USE_CACHE	0
-#define CACHE_TTL	1000 /* millisecs */
+//#define STATS		0
+//#define USE_CACHE	0
+//#define CACHE_TTL	1000 /* millisecs */
 
 #ifdef _WIN64
 #define PLATFORM_BITS 64
@@ -46,12 +53,6 @@ extern char*		g_logfile;
 #define PLATFORM_BITS 32
 #endif
 
-/* logging */
-#define ERROR		0
-#define WARN		1
-#define INFO		2
-#define DEBUG		3
-#define LOGLEVEL	ERROR
 
 #define log_message(level, format, ...) {								\
 	int thread = GetCurrentThreadId();									\
@@ -195,10 +196,7 @@ static const char *sftp_errors[] = {
 										(intptr_t)fi_fh(fi, ~fi_dirbit))
 #define fi_setfd(fi, fd)                (fi_setfh(fi, fd, 0))
 #define fi_dirp(fi)                     ((gd_dir_t *)(intptr_t)fi_fh(fi, ~fi_dirbit))
-//#define fi_dirp(fi)                     ((DIR *)(intptr_t)fi_fh(fi, ~fi_dirbit))
-
 #define fi_setdirp(fi, dirp)            (fi_setfh(fi, dirp, fi_dirbit))
-
 #define concat_path(s1, s2, s)			(sizeof s > (unsigned)snprintf(s, sizeof s, "%s%s", s1, s2))
 #define error()						    ((errno = map_error(rc)) == 0 ? 0 : -1)
 #define error0()						((errno = map_error(rc)) == 0 ? 0 : 0)
@@ -209,8 +207,6 @@ static const char *sftp_errors[] = {
 			return -ENAMETOOLONG;       \
 		n = full ## n;					\
 	}
-
-
 
 #ifdef USE_LIBSSH
 #define gd_error(path) {															\
@@ -254,11 +250,11 @@ typedef struct gdssh_t {
 
 typedef struct gdhandle_t {
 #ifdef USE_LIBSSH
-	sftp_file file_handle;				/* key, remote file handler				*/
-	sftp_dir dir_handle;				/* key, remote dir handler				*/
+	sftp_file file_handle;				/* key, remote file handler		*/
+	sftp_dir dir_handle;				/* key, remote dir handler		*/
 #else
-	LIBSSH2_SFTP_HANDLE* file_handle;	/* key, remote file handler				*/
-	LIBSSH2_SFTP_HANDLE* dir_handle;	/* key, remote file handler				*/
+	LIBSSH2_SFTP_HANDLE* file_handle;	/* key, remote file handler		*/
+	LIBSSH2_SFTP_HANDLE* dir_handle;	/* key, remote file handler		*/
 #endif
 	int dir;						/* is directory							*/
 	int flags;						/* open flags							*/
@@ -287,33 +283,29 @@ enum _FILE_TYPE {
 
 extern gdssh_t *g_ssh;
 extern SRWLOCK g_ssh_lock;
-//extern CRITICAL_SECTION g_critical_section;
 
 inline void gd_lock() 
 { 
 	//printf("locking...");
 	AcquireSRWLockExclusive(&g_ssh_lock);
-	//EnterCriticalSection(&g_critical_section);
 	//printf("locking done\n");
 }
 inline void gd_unlock() 
 {
 	//printf("unlocking...");
 	ReleaseSRWLockExclusive(&g_ssh_lock);
-	//LeaveCriticalSection(&g_critical_section);
-	//ReleaseSRWLockShared(&g_ssh_lock);
 	//printf("unlocking done\n");
 }
 
 /* file flags */
 #define GD_READONLY   0x00
-#define GD_READ   0x01
-#define GD_WRITE  0x02
-#define GD_APPEND 0x04
-#define GD_CREAT  0x08
-#define GD_TRUNC  0x10
-#define GD_EXCL   0x20
-#define GD_TEXT   0x40
+#define GD_READ       0x01
+#define GD_WRITE      0x02
+#define GD_APPEND     0x04
+#define GD_CREAT      0x08
+#define GD_TRUNC      0x10
+#define GD_EXCL       0x20
+#define GD_TEXT       0x40
 
 /* file type flags */
 #define GD_IFMT   0170000 /* type of file mask */
