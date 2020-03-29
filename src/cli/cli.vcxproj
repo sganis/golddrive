@@ -610,7 +610,7 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_WIN64;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MSBuildProgramFiles32)\WinFsp\inc\fuse3;$(MSBuildProgramFiles32)\WinFsp\inc;$(ProjectDir)..\lib\libssh\include;$(ProjectDir)..\lib\libssh2\include;$(ProjectDir)..\lib\openssl\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSBuildProgramFiles32)\WinFsp\inc\fuse3;$(MSBuildProgramFiles32)\WinFsp\inc;$(ProjectDir)..\lib222\libssh2\include;$(ProjectDir)..\lib222\openssl\include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
@@ -680,7 +680,7 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MSBuildProgramFiles32)\WinFsp\inc\fuse3;$(MSBuildProgramFiles32)\WinFsp\inc;$(ProjectDir)..\lib\libssh\include;$(ProjectDir)..\lib\libssh2\include;$(ProjectDir)..\lib\openssl\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSBuildProgramFiles32)\WinFsp\inc\fuse3;$(MSBuildProgramFiles32)\WinFsp\inc;$(ProjectDir)..\lib222\libssh2\include;$(ProjectDir)..\lib222\openssl\include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
