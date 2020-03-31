@@ -324,33 +324,30 @@ namespace golddrive
         #region Local Drive Management
 
 
-        public void UpdateDrives(Settings settings)
-        {
+        public void UpdateDrives(Settings settings) {
             string GOLDLETTERS = "GHIJKLMNOPQRSTUVWXYZ";
             List<char> letters = GOLDLETTERS.ToCharArray().ToList();
 
             DriveInfo[] drives = DriveInfo.GetDrives();
             Drives.Clear();
-            List<Drive> settingsDrives = settings.Drives.Values.ToList();
+            var settingsDrives = settings.Drives.Values.ToList();
+            var netUseDrives = GetUsedDrives();
 
-            foreach (char c in letters)
-            {
+            foreach (char c in letters) {
                 //if (c == 'W')
                 //    c.ToString();
                 bool used = false;
                 Drive d = new Drive { Letter = c.ToString() };
-                for (int i = 0; i < drives.Length; i++)
-                {
-                    try
-                    {
+
+                for (int i = 0; i < drives.Length; i++) {
+                    try {
                         DriveInfo dinfo = drives[i];
-                        if (dinfo.Name[0] == c)
-                        {
-                            used = true;
+                        if (dinfo.Name[0] == c) {                          
                             d.Status = DriveStatus.UNKNOWN;
+                            // this triggers IOException when drive is unavailable
                             d.IsGoldDrive = dinfo.DriveFormat == "FUSE-Golddrive";
-                            if (d.IsGoldDrive == true)
-                            {
+                            used = true;
+                            if (d.IsGoldDrive == true) {
                                 d.MountPoint = dinfo.VolumeLabel.Replace("/", "\\");
                                 d.Label = GetExplorerDriveLabel(d);
                                 if (dinfo.IsReady)
@@ -358,8 +355,7 @@ namespace golddrive
                                 else
                                     d.Status = DriveStatus.BROKEN;
                                 var d1 = settingsDrives.Find(x => x.Letter == d.Letter);
-                                if (d1 != null)
-                                {
+                                if (d1 != null) {
                                     //d.MountPoint = d1.MountPoint;
                                     d.Args = d1.Args;
                                     d.Label = d1.Label;
@@ -368,29 +364,41 @@ namespace golddrive
                             Drives.Add(d);
                             break;
                         }
-                    }
-                    catch (Exception ex)
-                    {
+                    } catch (IOException e) {
+
+                    } catch (Exception ex) {
 
                     }
                 }
 
-
-                if (!used)
-                {
-                    // add settings drives
-                    var d1 = settingsDrives.Find(x => x.Letter == d.Letter);
-                    if (d1 != null)
-                    {
-                        d.Status = DriveStatus.DISCONNECTED;
-                        d.MountPoint = d1.MountPoint;
-                        d.Args = d1.Args;
-                        d.Label = d1.Label;
-                        d.IsGoldDrive = true;
-                    }
-                    else
-                    {
-                        d.Status = DriveStatus.FREE;
+                if (!used) {
+                    var d0 = netUseDrives.Find(x => x.Letter == d.Letter);
+                    if (d0 != null) {
+                        d.IsGoldDrive = d0.IsGoldDrive;
+                        d.Status = d0.Status;
+                        if (d.IsGoldDrive==true) {
+                            d.Status = DriveStatus.BROKEN;
+                            d.MountPoint = d0.MountPoint;
+                            d.Label = d0.Label;
+                            var d1 = settingsDrives.Find(x1 => x1.Letter == d.Letter);
+                            if (d1 != null) {
+                                d.Args = d1.Args;
+                                d.Label = d1.Label;
+                            }
+                        } else {
+                            d.Status = DriveStatus.UNKNOWN;
+                        }  
+                    } else {
+                        var d1 = settingsDrives.Find(x1 => x1.Letter == d.Letter);
+                        if (d1 != null) {
+                            d.Status = DriveStatus.DISCONNECTED;
+                            d.MountPoint = d1.MountPoint;
+                            d.Args = d1.Args;
+                            d.Label = d1.Label;
+                            d.IsGoldDrive = true;
+                        } else {
+                            d.Status = DriveStatus.FREE;
+                        }
                     }
                     Drives.Add(d);
                 }
@@ -412,10 +420,15 @@ namespace golddrive
                     {
                         Drive d = new Drive
                         {
-                            //d.NetUseStatus = match.Groups[1].Value;
                             Letter = match.Groups[2].Value[0].ToString(),
                             IsGoldDrive = match.Groups[3].Value.Contains(@"\\golddrive\")
                         };
+
+                        if (match.Groups[1].Value == "Unavailable")
+                            d.Status = DriveStatus.BROKEN;
+                        else
+                            d.Status = DriveStatus.IN_USE;
+
                         if (d.IsGoldDrive == true)
                         {
                             //d.VolumeLabel = GetVolumeName(d.Letter);
@@ -548,7 +561,7 @@ namespace golddrive
                 {
                     r.MountStatus = MountStatus.BAD_DRIVE;
                     r.DriveStatus = DriveStatus.BROKEN;
-                    r.Error = "Check if /tmp in remote host is writable";
+                    r.Error = "Drive is broken";
                 }
                 else
                 {
@@ -560,15 +573,25 @@ namespace golddrive
         }
         public bool CheckIfDriveWorks(Drive drive)
         {
-            int epoch = (int)(DateTime.Now - new DateTime(1970, 1, 1, 0, 0, 0, 0)).TotalSeconds;
-            string tempfile = $@"{ drive.Name }\tmp\{drive.User}@{drive.Host}.{epoch}";
-            var r = RunLocal("type nul > " + tempfile);
-            if (r.ExitCode == 0)
-            {
-                RunLocal("del " + tempfile);
-                return true;
+            // Fist try DriveInfo
+            var info = new DriveInfo(drive.Letter);
+            bool ok = false;
+            try {
+                ok = info.AvailableFreeSpace >= 0;
+            } catch (IOException) {
+                return false;
             }
-            return false;
+            return ok;
+            //if (works) {
+            //    int epoch = (int)(DateTime.Now - new DateTime(1970, 1, 1, 0, 0, 0, 0)).TotalSeconds;
+            //    string tempfile = $@"{ drive.Name }\tmp\{drive.User}@{drive.Host}.{epoch}";
+            //    var r = RunLocal("type nul > " + tempfile);
+            //    if (r.ExitCode == 0) {
+            //        RunLocal("del " + tempfile);
+            //        return true;
+            //    }
+            //}
+            //return false;
         }
         public string GetExplorerDriveLabel(Drive drive)
         {

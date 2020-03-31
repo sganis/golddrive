@@ -123,9 +123,12 @@ namespace golddrive
             }
         }
 
-        public string ConnectButtonText => DriveStatus == DriveStatus.CONNECTED ? "Disconnect" : "Connect";
+        public string ConnectButtonText => 
+            (DriveStatus == DriveStatus.CONNECTED 
+            || DriveStatus == DriveStatus.BROKEN ) ? "Disconnect" : "Connect";
         public string ConnectButtonColor => DriveStatus == DriveStatus.CONNECTED ? "#689F38" : "#607d8b";
-        public bool ConnectButtonIsEnabled => MountStatus == MountStatus.OK;
+        public bool ConnectButtonIsEnabled => (MountStatus == MountStatus.OK 
+            || (MountStatus==MountStatus.BAD_DRIVE || DriveStatus == DriveStatus.BROKEN ));
         public bool IsSettingsChanged { get; set; }
 
         private string message;
