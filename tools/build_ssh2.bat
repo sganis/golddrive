@@ -29,6 +29,6 @@ cmake .. ^
  -DZLIB_LIBRARY=%ZLIB_DIR%/lib/zlibstatic.lib   ^
  -DZLIB_INCLUDE_DIR=%ZLIB_DIR%/include 			
 
-cmake --build . --config Release  --target install -- /clp:ErrorsOnly
+cmake --build . --config Debug  --target install -- /clp:ErrorsOnly
 
 

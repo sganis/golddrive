@@ -8,7 +8,6 @@ platform:
   - x64
   # - x86
 configuration: 
-  - Release222
   - Release2
   - Release
   # - Debug
