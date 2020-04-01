@@ -16,6 +16,7 @@ set ZLIB_DIR="C:/zlib-x64"
 
 cmake .. ^
  -DCMAKE_INSTALL_PREFIX="C:/libssh2-x64"		^
+ -DCMAKE_BUILD_TYPE=Debug 						^
  -DCRYPTO_BACKEND=OpenSSL               		^
  -DBUILD_SHARED_LIBS=OFF                		^
  -DOPENSSL_ROOT_DIR=%OPENSSL_DIR% 				^
@@ -29,6 +30,6 @@ cmake .. ^
  -DZLIB_LIBRARY=%ZLIB_DIR%/lib/zlibstatic.lib   ^
  -DZLIB_INCLUDE_DIR=%ZLIB_DIR%/include 			
 
-cmake --build . --config Debug  --target install -- /clp:ErrorsOnly
+cmake --build . --target install -- /clp:ErrorsOnly
 
 
