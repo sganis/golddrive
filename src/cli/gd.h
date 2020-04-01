@@ -3,7 +3,7 @@
 #include "jsmn.h"
 
 
-gdssh_t *gd_init_ssh(void);
+GDSSH *gd_init_ssh(void);
 int gd_finalize(void);
 int gd_stat(const char *path, struct fuse_stat *stbuf);
 int gd_fstat(intptr_t fd, struct fuse_stat *stbuf);
@@ -15,15 +15,15 @@ int gd_rename(const char *from, const char *to);
 int gd_truncate(const char *path, fuse_off_t size);
 int gd_ftruncate(intptr_t fd, fuse_off_t size);
 intptr_t gd_open(const char *path, int flags, unsigned int mode);
-gd_dir_t* gd_opendir(const char* path);
+GDDIR* gd_opendir(const char* path);
 int gd_read(intptr_t fd, void *buf, size_t size, fuse_off_t offset);
 int gd_write(intptr_t fd, const void *buf, size_t size, fuse_off_t offset);
 int gd_statvfs(const char * path, struct fuse_statvfs *stbuf);
 int gd_close(intptr_t fd);
-void gd_rewinddir(gd_dir_t* dirp);
-struct gd_dirent_t * gd_readdir(gd_dir_t *dirp);
-int gd_closedir(gd_dir_t *dirp);
-intptr_t gd_dirfd(gd_dir_t *dirp);
+void gd_rewinddir(GDDIR* dirp);
+struct GDDIRENT * gd_readdir(GDDIR *dirp);
+int gd_closedir(GDDIR *dirp);
+intptr_t gd_dirfd(GDDIR *dirp);
 int gd_check_hlink(const char *path);
 int gd_utimens(const char* path, const struct fuse_timespec tv[2], struct fuse_file_info* fi);
 int gd_fsync(intptr_t fd);
@@ -37,14 +37,14 @@ int gd_flush(intptr_t fd);
 
 void gd_log(const char* fmt, ...);
 int jsoneq(const char* json, jsmntok_t* tok, const char* s);
-int load_json(fs_config* fs);
-int get_ssh_error(gdssh_t* ssh);
+int load_json(GDCONFIG* fs);
+int get_ssh_error(GDSSH* ssh);
 int map_error(int rc);
 void mode_human(unsigned long mode, char* human);
 void get_filetype(unsigned long perm, char* filetype);
 int run_command(const char* cmd, char* out, char* err);
 int run_command_channel_exec(const char* cmd, char* out, char* err);
-int waitsocket(gdssh_t* sanssh);
+int waitsocket(GDSSH* sanssh);
 
 #ifdef USE_LIBSSH
 void copy_attributes(struct fuse_stat* stbuf, sftp_attributes attrs);

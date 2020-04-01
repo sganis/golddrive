@@ -79,7 +79,7 @@ extern char* g_logfile;
 #define log_warn(format, ...) {}
 #endif
 
-typedef struct fs_config {
+typedef struct GDCONFIG {
 	char *remote;
 	char *host;
 	char *locuser;
@@ -101,9 +101,9 @@ typedef struct fs_config {
 	unsigned buffer;
 	unsigned local_uid;
 	unsigned remote_uid;
-} fs_config;
+} GDCONFIG;
 
-extern fs_config g_fs;
+extern GDCONFIG g_fs;
 
 #ifndef USE_LIBSSH
 /* SSH Status Codes (returned by libssh2_ssh_last_error() */
@@ -192,10 +192,10 @@ static const char *sftp_errors[] = {
 #define fi_fh(fi, MASK)                 ((fi)->fh & (MASK))
 #define fi_setfh(fi, FH, MASK)          ((fi)->fh = (intptr_t)(FH) | (MASK))
 #define fi_fd(fi)                       (fi_fh(fi, fi_dirbit) ? \
-										gd_dirfd((gd_dir_t *)(intptr_t)fi_fh(fi, ~fi_dirbit)) : \
+										gd_dirfd((GDDIR *)(intptr_t)fi_fh(fi, ~fi_dirbit)) : \
 										(intptr_t)fi_fh(fi, ~fi_dirbit))
 #define fi_setfd(fi, fd)                (fi_setfh(fi, fd, 0))
-#define fi_dirp(fi)                     ((gd_dir_t *)(intptr_t)fi_fh(fi, ~fi_dirbit))
+#define fi_dirp(fi)                     ((GDDIR *)(intptr_t)fi_fh(fi, ~fi_dirbit))
 #define fi_setdirp(fi, dirp)            (fi_setfh(fi, dirp, fi_dirbit))
 #define concat_path(s1, s2, s)			(sizeof s > (unsigned)snprintf(s, sizeof s, "%s%s", s1, s2))
 #define error()						    ((errno = map_error(rc)) == 0 ? 0 : -1)
@@ -233,7 +233,7 @@ static const char *sftp_errors[] = {
 /* n is the -o ThreadCount=n arg, c is number of cores*/
 int gd_threads(int n, int c);
 
-typedef struct gdssh_t {
+typedef struct GDSSH {
 	int rc;							/* return code from the last ssh/sftp call */
 	int thread;						/* key, thread id that owns this struct */
 	SOCKET socket;					/* sockey id */
@@ -246,9 +246,9 @@ typedef struct gdssh_t {
 	LIBSSH2_SFTP* sftp;				/* sftp session struct */
 	LIBSSH2_CHANNEL* channel;		/* channel for commands */
 #endif
-} gdssh_t;
+} GDSSH;
 
-typedef struct gdhandle_t {
+typedef struct GDHANDLE {
 #ifdef USE_LIBSSH
 	sftp_file file_handle;				/* key, remote file handler		*/
 	sftp_dir dir_handle;				/* key, remote dir handler		*/
@@ -261,27 +261,27 @@ typedef struct gdhandle_t {
 	int mode;						/* open mode							*/
 	char path[PATH_MAX];			/* file full path						*/
 	long size;
-} gd_handle_t;
+} GDHANDLE;
 
-struct gd_dirent_t {
+struct GDDIRENT {
 	struct fuse_stat d_stat;		/* file stats                           */
 	char d_name[FILENAME_MAX];		/* file name                            */
 	int dir;						/* is directory							*/
 	int hidden;						/* is hidden							*/
 };
 
-typedef struct gd_dir_t {
-	gd_handle_t *handle;			/* file handle			                */
-	struct gd_dirent_t de;			/* file item entry		                */
+typedef struct GDDIR {
+	GDHANDLE *handle;				/* file handle			                */
+	struct GDDIRENT de;			/* file item entry		                */
 	char path[PATH_MAX];			/* directory full path	                */
-} gd_dir_t;
+} GDDIR;
 
 enum _FILE_TYPE {
 	FILE_ISREG = 0,
 	FILE_ISDIR = 1,
 } FILE_TYPE;
 
-extern gdssh_t *g_ssh;
+extern GDSSH *g_ssh;
 extern SRWLOCK g_ssh_lock;
 
 inline void gd_lock() 

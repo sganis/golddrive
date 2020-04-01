@@ -66,7 +66,7 @@ int file_exists(const char* path)
 
 
 
-//int load_ini(const char* appdir, fs_config * fs)
+//int load_ini(const char* appdir, GDCONFIG * fs)
 //{
 //	//printf("loading ini..., json.jsonfile=%s\n",json->jsonfile);
 //	char key[100] = { '\0' };

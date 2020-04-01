@@ -7,10 +7,10 @@
 
 /* global variables */
 size_t		g_sftp_calls;
-gdssh_t *	g_ssh;
+GDSSH     * g_ssh;
 SRWLOCK		g_ssh_lock;
 CRITICAL_SECTION g_critical_section;
-fs_config	g_fs;
+GDCONFIG	g_fs;
 char*		g_logfile;
 
 static void* f_init(struct fuse_conn_info* conn, struct fuse_config* conf)
@@ -161,15 +161,15 @@ static int f_rename(const char* oldpath, const char* newpath, unsigned int flags
 static int f_opendir(const char* path, struct fuse_file_info* fi)
 {
 	realpath(path);
-	gd_dir_t* dirp;
+	GDDIR* dirp;
 	return 0 != (dirp = gd_opendir(path)) ? (fi_setdirp(fi, dirp), 0) : -errno;
 }
 
 static int f_readdir(const char* path, void* buf, fuse_fill_dir_t filler, fuse_off_t off,
 	struct fuse_file_info* fi, enum fuse_readdir_flags flags)
 {
-	gd_dir_t* dirp = fi_dirp(fi);
-	struct gd_dirent_t* de;
+	GDDIR* dirp = fi_dirp(fi);
+	struct GDDIRENT* de;
 
 	gd_rewinddir(dirp);
 
@@ -188,7 +188,7 @@ static int f_readdir(const char* path, void* buf, fuse_fill_dir_t filler, fuse_o
 
 static int f_releasedir(const char* path, struct fuse_file_info* fi)
 {
-	gd_dir_t* dirp = fi_dirp(fi);
+	GDDIR* dirp = fi_dirp(fi);
 	return gd_closedir(dirp);
 }
 
@@ -325,7 +325,7 @@ enum {
 	KEY_VERSION,
 };
 
-#define fs_OPT(t, p, v) { t, offsetof(fs_config, p), v }
+#define fs_OPT(t, p, v) { t, offsetof(GDCONFIG, p), v }
 
 static struct fuse_opt fs_opts[] = {
 	fs_OPT("host=%s",           host, 0),
@@ -427,7 +427,7 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 	return 1;
 }
 
-static int parse_remote(fs_config* fs)
+static int parse_remote(GDCONFIG* fs)
 {
 	char *npath, *locuser, *user, *host, *port, *p;
 	
@@ -515,7 +515,7 @@ static int parse_remote(fs_config* fs)
 	return 0;
 }
 
-static int load_config_file(fs_config* fs)
+static int load_config_file(GDCONFIG* fs)
 {
 	int rc = 0;
 	//// app dir
