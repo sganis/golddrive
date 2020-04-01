@@ -328,6 +328,10 @@ GDSSH* gd_init_ssh(void)
 		return 0;
 	}
 
+	// users was autheticated
+
+
+
 	// command channel
 	do {
 		channel = libssh2_channel_open_session(ssh);
