@@ -126,34 +126,12 @@ GDSSH* gd_init_ssh(void)
 		return 0;
 	}
 
-	// resolve hostname	
-	he = gethostbyname(g_fs.host);
-	if (!he) {
-		gd_log("%zd: %d :ERROR: %s: %d: host not found: %s\n",
-			time_mu(), thread, __func__, __LINE__, g_fs.host);
-		return 0;
-	}
-	sin.sin_addr.s_addr = **(int**)he->h_addr_list;
-	sin.sin_family = AF_INET;
-	sin.sin_port = htons((u_short)g_fs.port);
 
 	// init ssh
 	rc = libssh2_init(0);
 	if (rc) {
 		gd_log("%zd: %d :ERROR: %s: %d: "
 			"failed to initialize crypto library, rc=%d\n",
-			time_mu(), thread, __func__, __LINE__, rc);
-		return 0;
-	}
-
-	
-
-	/* create socket  */
-	sock = socket(AF_INET, SOCK_STREAM, 0);
-	rc = connect(sock, (SOCKADDR*)(&sin), sizeof(SOCKADDR_IN));
-	if (rc) {
-		gd_log("%zd: %d :ERROR: %s: %d: "
-			"failed to open socket, host not found or port not open, rc=%d\n",
 			time_mu(), thread, __func__, __LINE__, rc);
 		return 0;
 	}
@@ -166,6 +144,7 @@ GDSSH* gd_init_ssh(void)
 			time_mu(), thread, __func__, __LINE__);
 		return 0;
 	}
+
 
 	/* supported symetric algorithms */
 	//const char** algorithms;
@@ -253,6 +232,25 @@ GDSSH* gd_init_ssh(void)
 	// non-blocking mode by default
 	libssh2_session_set_blocking(ssh, g_fs.block);
 
+	/* create socket  */
+	he = gethostbyname(g_fs.host);
+	if (!he) {
+		gd_log("%zd: %d :ERROR: %s: %d: host not found: %s\n",
+			time_mu(), thread, __func__, __LINE__, g_fs.host);
+		return 0;
+	}
+	sin.sin_addr.s_addr = **(int**)he->h_addr_list;
+	sin.sin_family = AF_INET;
+	sin.sin_port = htons((u_short)g_fs.port);
+	sock = socket(AF_INET, SOCK_STREAM, 0);
+	rc = connect(sock, (SOCKADDR*)(&sin), sizeof(SOCKADDR_IN));
+	if (rc) {
+		gd_log("%zd: %d :ERROR: %s: %d: "
+			"failed to open socket, host not found or port not open, rc=%d\n",
+			time_mu(), thread, __func__, __LINE__, rc);
+		return 0;
+	}
+
 	/* ... start it up. This will trade welcome banners, exchange keys,
 	* and setup crypto, compression, and MAC layers	*/
 	while ((rc = libssh2_session_handshake(ssh, sock)) ==
@@ -267,14 +265,14 @@ GDSSH* gd_init_ssh(void)
 		return 0;
 	}
 
-	gd_log("Session symmetric encryption:\n\t%s\n", 
-		libssh2_session_methods(ssh, LIBSSH2_METHOD_CRYPT_CS));
-	gd_log("Session key exchange:\n\t%s\n",
-		libssh2_session_methods(ssh, LIBSSH2_METHOD_KEX));
-	gd_log("Session host keys:\n\t%s\n",
-		libssh2_session_methods(ssh, LIBSSH2_METHOD_HOSTKEY));
-	gd_log("Session MAC:\n\t%s\n",
-		libssh2_session_methods(ssh, LIBSSH2_METHOD_MAC_CS));
+	//gd_log("Session symmetric encryption:\n\t%s\n", 
+	//	libssh2_session_methods(ssh, LIBSSH2_METHOD_CRYPT_CS));
+	//gd_log("Session key exchange:\n\t%s\n",
+	//	libssh2_session_methods(ssh, LIBSSH2_METHOD_KEX));
+	//gd_log("Session host keys:\n\t%s\n",
+	//	libssh2_session_methods(ssh, LIBSSH2_METHOD_HOSTKEY));
+	//gd_log("Session MAC:\n\t%s\n",
+	//	libssh2_session_methods(ssh, LIBSSH2_METHOD_MAC_CS));
 	
 	/* At this point we havn't yet authenticated.  The first thing to do
 	 * is check the hostkey's fingerprint against our known hosts Your app
@@ -289,18 +287,18 @@ GDSSH* gd_init_ssh(void)
 	 //gd_log("\n");
 
 	 /* check what authentication methods are available */
-	char* userauthlist = NULL;
-	do {
-		userauthlist = libssh2_userauth_list(
-			ssh, g_fs.user, (unsigned int)strlen(g_fs.user));
-	} while (!userauthlist && libssh2_session_last_errno(ssh) == 
-		LIBSSH2_ERROR_EAGAIN);
-	
-	if (strstr(userauthlist, "publickey") == NULL) {
-		gd_log("Publick key authentication not available in server.\n");
-		gd_log("Authentication methods: %s\n", userauthlist);
-		return 0;
-	}
+	//char* userauthlist = NULL;
+	//do {
+	//	userauthlist = libssh2_userauth_list(
+	//		ssh, g_fs.user, (unsigned int)strlen(g_fs.user));
+	//} while (!userauthlist && libssh2_session_last_errno(ssh) == 
+	//	LIBSSH2_ERROR_EAGAIN);
+	//
+	//if (strstr(userauthlist, "publickey") == NULL) {
+	//	gd_log("Publick key authentication not available in server.\n");
+	//	gd_log("Authentication methods: %s\n", userauthlist);
+	//	return 0;
+	//}
 
 
 	 // authenticate with keys
@@ -342,16 +340,6 @@ GDSSH* gd_init_ssh(void)
 		}
 
 	} while (!channel);
-
-	while ((rc = libssh2_channel_shell(channel)) == 
-		LIBSSH2_ERROR_EAGAIN)
-		Sleep(10);
-	if (rc) {
-		rc = libssh2_session_last_error(g_ssh->ssh, &errmsg, NULL, 0);
-		gd_log("cannot request shell: [rc=%d, %s]\n", rc, errmsg);
-		return 0;
-	}
-
 
 	// init sftp channel
 	do {
@@ -1810,8 +1798,8 @@ int run_command_channel_exec(const char* cmd, char* out, char* err)
 	rc = ssh_channel_write(channel, newcmd, (uint32_t)len);
 
 	if (rc == len) {
-		rc = ssh_channel_is_open(channel);
-		rc = ssh_channel_is_eof(channel);
+		//rc = ssh_channel_is_open(channel);
+		//rc = ssh_channel_is_eof(channel);
 		while (ssh_channel_poll(channel, 0) == 0 && ssh_channel_poll(channel, 1) == 0) {
 			Sleep(10);
 		}
@@ -1848,70 +1836,77 @@ int run_command_channel_exec(const char* cmd, char* out, char* err)
 
 #else
 
-	rcode = run_command(cmd, out, err);
+	//rcode = run_command(cmd, out, err);
 
 
 	// TODO
-	//LIBSSH2_CHANNEL* channel = g_ssh->channel;
-	//char* errmsg;
-	//char buffer[0x4000];
-	//if (!channel) {
-	//	rc = libssh2_session_last_error(g_ssh->ssh, &errmsg, NULL, 0);
-	//	log_error("ERROR: invalid channel to run commands, rc=%d, %s\n", rc, errmsg);
-	//	return rc;
-	//}
+	LIBSSH2_CHANNEL* channel = g_ssh->channel;
+	char* errmsg;
+	char buffer[0x4000];
+	if (!channel) {
+		rc = libssh2_session_last_error(g_ssh->ssh, &errmsg, NULL, 0);
+		log_error("ERROR: invalid channel to run commands, rc=%d, %s\n", rc, errmsg);
+		return rc;
+	}
+	while ((rc = libssh2_channel_shell(channel)) ==
+		LIBSSH2_ERROR_EAGAIN)
+		Sleep(10);
+	if (rc) {
+		rc = libssh2_session_last_error(g_ssh->ssh, &errmsg, NULL, 0);
+		gd_log("cannot request shell: [rc=%d, %s]\n", rc, errmsg);
+		return 0;
+	}
 
 
+	char newcmd[COMMAND_SIZE];
+	strcpy(newcmd, cmd);
+	strcat(newcmd, ";echo RCODE=$?\n");
+	size_t len = strlen(newcmd);
 
-	//char newcmd[COMMAND_SIZE];
-	//strcpy(newcmd, cmd);
-	//strcat(newcmd, ";echo RCODE=$?\n");
-	//size_t len = strlen(newcmd);
+	while ((rc = (int)libssh2_channel_write(channel, newcmd, len)) ==
+		LIBSSH2_ERROR_EAGAIN) {
+		waitsocket(g_ssh);
+		g_sftp_calls++;
+	}
 
-	//while ((rc = (int)libssh2_channel_write(channel, newcmd, len)) ==
-	//	LIBSSH2_ERROR_EAGAIN) {
-	//	waitsocket(g_ssh);
-	//	g_sftp_calls++;
-	//}
+	if (rc == len) {
+		for (;;) {
+			while ((rc = (int)libssh2_channel_read_ex(
+				channel, 0, buffer, sizeof(buffer))) ==
+				LIBSSH2_ERROR_EAGAIN) {
+				waitsocket(g_ssh);
+				g_sftp_calls++;
+			}
+			memcpy(out + offset, buffer, rc);
+			offset += rc;
+			char* ptr = strstr(out, "RCODE=");
+			if (ptr) {
+				char* rcs = str_ndup(ptr + 6, 10);
+				rcs[min(strcspn(rcs, "\n"), 10)] = '\0';
+				rcode = atoi(rcs);
+				free(rcs);
+				*ptr = '\0';
+				out[min(strcspn(out, "\r\n"), COMMAND_SIZE)] = '\0';
+			}
+			if (!libssh2_poll_channel_read(channel, 0))
+				break;
 
-	//if (rc == len) {
-	//	for (;;) {
-	//		while ((rc = (int)libssh2_channel_read_ex(
-	//			channel, 0, buffer, sizeof(buffer))) ==
-	//			LIBSSH2_ERROR_EAGAIN) {
-	//			waitsocket(g_ssh);
-	//			g_sftp_calls++;
-	//		}
-	//		memcpy(out + offset, buffer, rc);
-	//		offset += rc;
-	//		char* ptr = strstr(out, "RCODE=");
-	//		if (ptr) {
-	//			char* rcs = str_ndup(ptr + 6, 10);
-	//			rcs[min(strcspn(rcs, "\n"), 10)] = '\0';
-	//			rcode = atoi(rcs);
-	//			free(rcs);
-	//			*ptr = '\0';
-	//			out[min(strcspn(out, "\r\n"), COMMAND_SIZE)] = '\0';
-	//		}
-	//		if (!libssh2_poll_channel_read(channel, 0))
-	//			break;
-
-	//	}
-	//	if (err && libssh2_poll_channel_read(channel, 1)) {
-	//		offset = 0;
-	//		while ((rc = (int)libssh2_channel_read_ex(
-	//			channel, 1, buffer, sizeof(buffer))) ==
-	//			LIBSSH2_ERROR_EAGAIN) {
-	//			waitsocket(g_ssh);
-	//			g_sftp_calls++;
-	//			if (libssh2_channel_eof(channel))
-	//				break;
-	//		}
-	//		memcpy(err + offset, buffer, rc);
-	//		offset += rc;
-	//		err[min(strcspn(err, "\r\n"), COMMAND_SIZE)] = '\0';
-	//	}
-	//}
+		}
+		if (err && libssh2_poll_channel_read(channel, 1)) {
+			offset = 0;
+			while ((rc = (int)libssh2_channel_read_ex(
+				channel, 1, buffer, sizeof(buffer))) ==
+				LIBSSH2_ERROR_EAGAIN) {
+				waitsocket(g_ssh);
+				g_sftp_calls++;
+				if (libssh2_channel_eof(channel))
+					break;
+			}
+			memcpy(err + offset, buffer, rc);
+			offset += rc;
+			err[min(strcspn(err, "\r\n"), COMMAND_SIZE)] = '\0';
+		}
+	}
 #endif
 
 	//log_error("command executed: %s\n", cmd);

@@ -699,22 +699,22 @@ int main(int argc, char *argv[])
 	//interval = (double)(end.QuadPart - start.QuadPart) / frequency.QuadPart;
 	//printf("\ncommand execution time: %f\n\n", interval);
 
-	gd_lock();
-	rc = run_command_channel_exec(cmd, out, err);
-	gd_unlock();
+	//gd_lock();
+	//rc = run_command_channel_exec(cmd, out, err);
+	//gd_unlock();
 
-	if (rc == 0) {
-		g_fs.remote_uid = atoi(out);
-		gd_log("uid      = %d\n", g_fs.remote_uid);
-	}
-	gd_lock();
-	rc = run_command_channel_exec("echo $HOME", out, err);
-	gd_unlock();
-	if (rc == 0) {
-		g_fs.home = malloc(sizeof out);
-		strcpy_s(g_fs.home, sizeof out, out);
-		gd_log("home     = %s\n", g_fs.home);
-	}
+	//if (rc == 0) {
+	//	g_fs.remote_uid = atoi(out);
+	//	gd_log("uid      = %d\n", g_fs.remote_uid);
+	//}
+	//gd_lock();
+	//rc = run_command_channel_exec("echo $HOME", out, err);
+	//gd_unlock();
+	//if (rc == 0) {
+	//	g_fs.home = malloc(sizeof out);
+	//	strcpy_s(g_fs.home, sizeof out, out);
+	//	gd_log("home     = %s\n", g_fs.home);
+	//}
 
 	// number of threads
 	//printf("Threads = %d\n", gd_threads(5, get_number_of_processors()));
