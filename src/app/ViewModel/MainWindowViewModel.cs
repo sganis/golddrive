@@ -127,8 +127,7 @@ namespace golddrive
             (DriveStatus == DriveStatus.CONNECTED 
             || DriveStatus == DriveStatus.BROKEN ) ? "Disconnect" : "Connect";
         public string ConnectButtonColor => DriveStatus == DriveStatus.CONNECTED ? "#689F38" : "#607d8b";
-        public bool ConnectButtonIsEnabled => (MountStatus == MountStatus.OK 
-            || (MountStatus==MountStatus.BAD_DRIVE || DriveStatus == DriveStatus.BROKEN ));
+        public bool ConnectButtonIsEnabled => true;
         public bool IsSettingsChanged { get; set; }
 
         private string message;
@@ -187,6 +186,8 @@ namespace golddrive
         private void WorkStart(string message)
         {
             Message = message;
+            if (IsWorking)
+                return;
             IsWorking = true;
         }
         private void WorkDone(ReturnBox r = null)
@@ -341,6 +342,8 @@ namespace golddrive
         }
         private async void OnConnect(object obj)
         {
+            if (IsWorking)
+                return;
             if (GoldDrives.Count == 0 || string.IsNullOrEmpty(SelectedDrive.Host))
             {
                 if (SelectedDrive != null)
