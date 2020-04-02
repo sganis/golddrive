@@ -832,7 +832,7 @@ namespace golddrive
                 bool linux = !client.ConnectionInfo.ServerVersion.ToLower().Contains("windows");
                 if (linux)
                 {
-                    cmd = $"exec sh -c \"cd; umask 077; mkdir -p .ssh; echo '{pubkey}' >> .ssh/authorized_keys\"";
+                    cmd = $"exec sh -c \"cd; mkdir -p .ssh; echo '{pubkey}' >> .ssh/authorized_keys; chmod 700 .ssh; chmod 644 .ssh/authorized_keys\"";
                 }
                 else
                 {
