@@ -659,7 +659,8 @@ int main(int argc, char *argv[])
 	gd_log("keeplink = %u\n", g_fs.keeplink);
 	gd_log("compress = %u\n", g_fs.compress);
 	gd_log("block    = %u\n", g_fs.block);
-	gd_log("cipher   = %s\n", g_fs.cipher);
+	if (g_fs.cipher)
+		gd_log("cipher   = %s\n", g_fs.cipher);
 
 	gd_log("\nWinFsp arguments:\n");
 	for (int i = 1; i < args.argc; i++)
