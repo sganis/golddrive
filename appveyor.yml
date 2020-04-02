@@ -8,8 +8,8 @@ platform:
   - x64
   # - x86
 configuration: 
-  - Release2
   - Release
+  - Release2
   # - Debug
 cache:
   - C:\cache
