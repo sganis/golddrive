@@ -18,17 +18,16 @@ cmake .. ^
  -DCMAKE_INSTALL_PREFIX="C:/libssh2-x64"		^
  -DCMAKE_BUILD_TYPE=Release						^
  -DCRYPTO_BACKEND=OpenSSL               		^
- -DBUILD_SHARED_LIBS=ON                 		^
+ -DBUILD_SHARED_LIBS=OFF                 		^
  -DOPENSSL_ROOT_DIR=%OPENSSL_DIR% 				^
  -DOPENSSL_MSVC_STATIC_RT=TRUE 					^
  -DOPENSSL_USE_STATIC_LIBS=TRUE 				^
- -DENABLE_ZLIB_COMPRESSION=ON 					^
+ -DENABLE_ZLIB_COMPRESSION=OFF 					^
  -DBUILD_TESTING=OFF 							^
- -DBUILD_EXAMPLES=OFF %DOPEN_SSL_STATIC%		^
- -DENABLE_CRYPT_NONE=ON							^
- -DENABLE_MAC_NONE=ON ^
- -DZLIB_LIBRARY=%ZLIB_DIR%/lib/zlibstatic.lib   ^
- -DZLIB_INCLUDE_DIR=%ZLIB_DIR%/include 			
+ -DBUILD_EXAMPLES=OFF 							^
+ -DENABLE_CRYPT_NONE=ON							
+ ::-DZLIB_LIBRARY=%ZLIB_DIR%/lib/zlibstatic.lib   ^
+ ::-DZLIB_INCLUDE_DIR=%ZLIB_DIR%/include 			
 
 cmake --build . --target install -- /clp:ErrorsOnly
 

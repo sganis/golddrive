@@ -168,7 +168,7 @@ GDSSH* gd_init_ssh(void)
 	}
 
 	/* supported symetric algorithms */
-	const char** algorithms;
+	//const char** algorithms;
 	//rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_CRYPT_CS, &algorithms);
 	//if (rc > 0) {
 	//	gd_log("Supported symmetric encryption:\n");
