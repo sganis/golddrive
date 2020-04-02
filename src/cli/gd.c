@@ -168,7 +168,7 @@ GDSSH* gd_init_ssh(void)
 	}
 
 	/* supported symetric algorithms */
-	//const char** algorithms;
+	const char** algorithms;
 	//rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_CRYPT_CS, &algorithms);
 	//if (rc > 0) {
 	//	gd_log("Supported symmetric encryption:\n");
@@ -229,10 +229,10 @@ GDSSH* gd_init_ssh(void)
 
 	// encryption
 	if (g_fs.cipher) {
-		rc = libssh2_session_method_pref(ssh, LIBSSH2_METHOD_CRYPT_CS,
-			g_fs.cipher);
-		rc = libssh2_session_method_pref(ssh, LIBSSH2_METHOD_CRYPT_SC,
-			g_fs.cipher);
+		rc = libssh2_session_method_pref(ssh, 
+			LIBSSH2_METHOD_CRYPT_CS, g_fs.cipher);
+		rc = libssh2_session_method_pref(ssh, 
+			LIBSSH2_METHOD_CRYPT_SC, g_fs.cipher);
 			//while (libssh2_session_method_pref(ssh, LIBSSH2_METHOD_CRYPT_CS,
 		//	g_fs.cipher) == LIBSSH2_ERROR_EAGAIN);
 		//while (libssh2_session_method_pref(ssh, LIBSSH2_METHOD_MAC_CS,
@@ -249,8 +249,6 @@ GDSSH* gd_init_ssh(void)
 			return 0;
 		}
 	}
-
-
 
 	// non-blocking mode by default
 	libssh2_session_set_blocking(ssh, g_fs.block);
@@ -1037,9 +1035,7 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 		(size_t)handle, size, offset);
 
 	gd_lock();
-	curpos = libssh2_sftp_tell64(handle);
-	if (offset != curpos)
-		libssh2_sftp_seek64(handle, offset);
+	libssh2_sftp_seek64(handle, offset);
 
 	size_t bsize;
 	do {
