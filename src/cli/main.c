@@ -573,7 +573,7 @@ int main(int argc, char *argv[])
 	// defaults
 	g_fs.port = 22;
 	g_fs.buffer = BUFFER_SIZE;
-	g_fs.keeplink = 1;
+	//g_fs.keeplink = 1;
 
 
 	rc = fuse_opt_parse(&args, &g_fs, fs_opts, fs_opt_proc);
@@ -682,9 +682,10 @@ int main(int argc, char *argv[])
 	//snprintf(cmd, sizeof(cmd), "hostname", g_fs.user);
 	//rc = run_command_channel_exec(cmd, out, err);
 
+	//snprintf(cmd, sizeof(cmd), "id -u %s", g_fs.user);
 	snprintf(cmd, sizeof(cmd), "id -u %s", g_fs.user);
 
-	//// bencharmk commands
+	// bencharmk commands
 	//LARGE_INTEGER frequency, start, end;
 	//double interval;
 	//QueryPerformanceFrequency(&frequency);
@@ -692,29 +693,31 @@ int main(int argc, char *argv[])
 
 	//// code to be measured
 	//for (int u = 0; u < 100; u++) {
+	//	memset(out, 0, COMMAND_SIZE);
+	//	memset(err, 0, COMMAND_SIZE);
 	//	rc = run_command_channel_exec(cmd, out, err);
-	//	printf("out: %s, err: %s\n", out, err);
+	//	//printf("out: %s, err: %s\n", out, err);
 	//}
 	//QueryPerformanceCounter(&end);
 	//interval = (double)(end.QuadPart - start.QuadPart) / frequency.QuadPart;
 	//printf("\ncommand execution time: %f\n\n", interval);
 
-	//gd_lock();
-	//rc = run_command_channel_exec(cmd, out, err);
-	//gd_unlock();
+	gd_lock();
+	rc = run_command_channel_exec(cmd, out, err);
+	gd_unlock();
 
-	//if (rc == 0) {
-	//	g_fs.remote_uid = atoi(out);
-	//	gd_log("uid      = %d\n", g_fs.remote_uid);
-	//}
-	//gd_lock();
-	//rc = run_command_channel_exec("echo $HOME", out, err);
-	//gd_unlock();
-	//if (rc == 0) {
-	//	g_fs.home = malloc(sizeof out);
-	//	strcpy_s(g_fs.home, sizeof out, out);
-	//	gd_log("home     = %s\n", g_fs.home);
-	//}
+	if (rc == 0) {
+		g_fs.remote_uid = atoi(out);
+		gd_log("uid      = %d\n", g_fs.remote_uid);
+	}
+	gd_lock();
+	rc = run_command_channel_exec("echo $HOME", out, err);
+	gd_unlock();
+	if (rc == 0) {
+		g_fs.home = malloc(sizeof out);
+		strcpy_s(g_fs.home, sizeof out, out);
+		gd_log("home     = %s\n", g_fs.home);
+	}
 
 	// number of threads
 	//printf("Threads = %d\n", gd_threads(5, get_number_of_processors()));

@@ -93,10 +93,22 @@ GDSSH* gd_init_ssh(void)
 			sftp_extensions_get_data(sftp, i));
 	}
 
-	// command channel
 	ssh_channel channel;
 	channel = ssh_channel_new(ssh);
-
+	if (!channel) {
+		printf("cannot create channel instance: %s\n", ssh_get_error(g_ssh->ssh));
+		return 0;
+	}
+	rc = ssh_channel_open_session(channel);
+	if (rc) {
+		printf("cannot open channel session: %s\n", ssh_get_error(g_ssh->ssh));
+		return 0;
+	}
+	rc = ssh_channel_request_shell(channel);
+	if (rc) {
+		printf("cannot request shell: %s\n", ssh_get_error(g_ssh->ssh));
+		return 0;
+	}
 	g_ssh = malloc(sizeof(GDSSH));
 	assert(g_ssh);
 	//g_ssh->socket = 0;
@@ -229,7 +241,8 @@ GDSSH* gd_init_ssh(void)
 		}
 	}
 
-	// non-blocking mode by default
+	// non-blocking mode by 
+	//g_fs.block = 1;
 	libssh2_session_set_blocking(ssh, g_fs.block);
 
 	/* create socket  */
@@ -325,22 +338,6 @@ GDSSH* gd_init_ssh(void)
 
 	// users was autheticated
 
-
-
-	// command channel
-	do {
-		channel = libssh2_channel_open_session(ssh);
-		if ((!channel) && (libssh2_session_last_errno(ssh) != 
-			LIBSSH2_ERROR_EAGAIN))
-		{
-			gd_log("%zd: %d :ERROR: %s: %d: "
-				"failed to start sftp session [rc=%d, %s]\n",
-				time_mu(), thread, __func__, __LINE__, rc, errmsg);
-			return 0;
-		}
-
-	} while (!channel);
-
 	// init sftp channel
 	do {
 		sftp = libssh2_sftp_init(ssh);
@@ -353,6 +350,30 @@ GDSSH* gd_init_ssh(void)
 			return 0;
 		}
 	} while (!sftp);
+
+	do {
+		channel = libssh2_channel_open_session(ssh);
+		if ((!channel) && (libssh2_session_last_errno(ssh) !=
+			LIBSSH2_ERROR_EAGAIN))
+			break;
+	} while (!channel);
+	if (!channel) {
+		rc = libssh2_session_last_error(ssh, &errmsg, NULL, 0);
+		log_error("ERROR: invalid channel to run commands, rc=%d, %s\n", rc, errmsg);
+		return 0;
+	}
+	else {
+		while ((rc = libssh2_channel_shell(channel)) ==
+			LIBSSH2_ERROR_EAGAIN)
+			Sleep(10);
+		if (rc) {
+			rc = libssh2_session_last_error(ssh, &errmsg, NULL, 0);
+			gd_log("cannot request shell: [rc=%d, %s]\n", rc, errmsg);
+			return 0;
+		}
+	}
+	
+
 
 	g_ssh = malloc(sizeof(GDSSH));
 	if (g_ssh) {
@@ -1761,7 +1782,7 @@ finish:
 
 	//log_error("command executed: %s\n", cmd);
 	return (int)rc;
-}
+				}
 
 int run_command_channel_exec(const char* cmd, char* out, char* err)
 {
@@ -1781,35 +1802,34 @@ int run_command_channel_exec(const char* cmd, char* out, char* err)
 	if (!channel) {
 		return SSH_ERROR;
 	}
-	if (!ssh_channel_is_open(channel)) {
+	/*if (!ssh_channel_is_open(channel)) {
 		rc = ssh_channel_open_session(channel);
 		rc = ssh_channel_request_shell(channel);
 		if (rc) {
 			printf("cannot request shell: %s\n", ssh_get_error(g_ssh->ssh));
 		}
-	}
-	rc = ssh_channel_is_eof(channel);
-
+	}*/
+	
 	char newcmd[COMMAND_SIZE];
 	strcpy(newcmd, cmd);
 	strcat(newcmd, ";echo RCODE=$?\n");
 	size_t len = strlen(newcmd);
 
+	
 	rc = ssh_channel_write(channel, newcmd, (uint32_t)len);
 
 	if (rc == len) {
 		//rc = ssh_channel_is_open(channel);
 		//rc = ssh_channel_is_eof(channel);
-		while (ssh_channel_poll(channel, 0) == 0 && ssh_channel_poll(channel, 1) == 0) {
-			Sleep(10);
-		}
-		while (ssh_channel_poll(channel, 0) > 0) {
+		for (;;) {
 			rc = ssh_channel_read(
 				channel, buffer, sizeof(buffer), 0);
 			if (rc <= 0)
 				break;
 			memcpy(out + offset, buffer, rc);
 			offset += rc;
+			if (strstr(out, "RCODE="))
+				break;
 		}
 		char* ptr = strstr(out, "RCODE=");
 		if (ptr) {
@@ -1818,7 +1838,10 @@ int run_command_channel_exec(const char* cmd, char* out, char* err)
 			rcode = atoi(rcs);
 			free(rcs);
 			*ptr = '\0';
-			out[min(strcspn(out, "\r\n"), COMMAND_SIZE)] = '\0';
+			out[min(strcspn(out, "\n"), COMMAND_SIZE)] = '\0';
+		}
+		else {
+			log_error("error parsing command output\n");
 		}
 
 		if (err) {
@@ -1830,7 +1853,7 @@ int run_command_channel_exec(const char* cmd, char* out, char* err)
 				memcpy(err + offset, buffer, rc);
 				offset += rc;
 			}
-			err[min(strcspn(err, "\r\n"), COMMAND_SIZE)] = '\0';
+			err[min(strcspn(err, "\n"), COMMAND_SIZE)] = '\0';
 		}
 	}
 
@@ -1842,26 +1865,23 @@ int run_command_channel_exec(const char* cmd, char* out, char* err)
 	// TODO
 	LIBSSH2_CHANNEL* channel = g_ssh->channel;
 	char* errmsg;
-	char buffer[0x4000];
+	char buffer[COMMAND_SIZE];
+	memset(buffer, 0, COMMAND_SIZE);
+
 	if (!channel) {
 		rc = libssh2_session_last_error(g_ssh->ssh, &errmsg, NULL, 0);
 		log_error("ERROR: invalid channel to run commands, rc=%d, %s\n", rc, errmsg);
 		return rc;
 	}
-	while ((rc = libssh2_channel_shell(channel)) ==
-		LIBSSH2_ERROR_EAGAIN)
-		Sleep(10);
-	if (rc) {
-		rc = libssh2_session_last_error(g_ssh->ssh, &errmsg, NULL, 0);
-		gd_log("cannot request shell: [rc=%d, %s]\n", rc, errmsg);
-		return 0;
-	}
-
-
+	
 	char newcmd[COMMAND_SIZE];
 	strcpy(newcmd, cmd);
 	strcat(newcmd, ";echo RCODE=$?\n");
 	size_t len = strlen(newcmd);
+
+	while ((rc = libssh2_channel_flush_ex(channel, LIBSSH2_CHANNEL_FLUSH_ALL)) ==
+		LIBSSH2_ERROR_EAGAIN)
+		Sleep(10);
 
 	while ((rc = (int)libssh2_channel_write(channel, newcmd, len)) ==
 		LIBSSH2_ERROR_EAGAIN) {
@@ -1872,27 +1892,60 @@ int run_command_channel_exec(const char* cmd, char* out, char* err)
 	if (rc == len) {
 		for (;;) {
 			while ((rc = (int)libssh2_channel_read_ex(
-				channel, 0, buffer, sizeof(buffer))) ==
+				channel, 0, buffer, COMMAND_SIZE)) ==
 				LIBSSH2_ERROR_EAGAIN) {
 				waitsocket(g_ssh);
 				g_sftp_calls++;
 			}
+			if (rc <= 0)
+				break;
 			memcpy(out + offset, buffer, rc);
 			offset += rc;
-			char* ptr = strstr(out, "RCODE=");
-			if (ptr) {
-				char* rcs = str_ndup(ptr + 6, 10);
-				rcs[min(strcspn(rcs, "\n"), 10)] = '\0';
-				rcode = atoi(rcs);
-				free(rcs);
-				*ptr = '\0';
-				out[min(strcspn(out, "\r\n"), COMMAND_SIZE)] = '\0';
-			}
-			if (!libssh2_poll_channel_read(channel, 0))
+			if (libssh2_channel_eof(channel))
 				break;
-
+			//if (!libssh2_poll_channel_read(channel, 0))
+			//	break;
+			if (strstr(out, "RCODE="))
+				break;
 		}
+
+		char* ptr = strstr(out, "RCODE=");
+		if (ptr) {
+			char* rcs = str_ndup(ptr + 6, 10);
+			rcs[min(strcspn(rcs, "\n"), 10)] = '\0';
+			rcode = atoi(rcs);
+			free(rcs);
+			*ptr = '\0';
+			out[min(strcspn(out, "\n"), COMMAND_SIZE)] = '\0';
+		}
+
 		if (err && libssh2_poll_channel_read(channel, 1)) {
+			offset = 0;
+			for (;;) {
+				while ((rc = (int)libssh2_channel_read_ex(
+					channel, 1, buffer, sizeof(buffer))) ==
+					LIBSSH2_ERROR_EAGAIN) {
+					waitsocket(g_ssh);
+					g_sftp_calls++;
+				}
+				if (rc <= 0)
+					break;
+				memcpy(err + offset, buffer, rc);
+				offset += rc;
+				if (libssh2_channel_eof(channel))
+					break;
+				//if (!libssh2_poll_channel_read(channel,1))
+				//	break;
+				if(strstr(err, "\n"))
+					break;
+			}
+			err[min(strcspn(err, "\n"), COMMAND_SIZE)] = '\0';
+			//while ((rc = libssh2_channel_flush_stderr(channel)) ==
+			//	LIBSSH2_ERROR_EAGAIN)
+			//	Sleep(10);
+		}
+
+		/*if (err && libssh2_poll_channel_read(channel, 1)) {
 			offset = 0;
 			while ((rc = (int)libssh2_channel_read_ex(
 				channel, 1, buffer, sizeof(buffer))) ==
@@ -1902,11 +1955,12 @@ int run_command_channel_exec(const char* cmd, char* out, char* err)
 				if (libssh2_channel_eof(channel))
 					break;
 			}
-			memcpy(err + offset, buffer, rc);
+			memcpy(err, buffer, rc);
 			offset += rc;
 			err[min(strcspn(err, "\r\n"), COMMAND_SIZE)] = '\0';
-		}
+		}*/
 	}
+	
 #endif
 
 	//log_error("command executed: %s\n", cmd);
