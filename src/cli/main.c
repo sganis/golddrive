@@ -573,6 +573,7 @@ int main(int argc, char *argv[])
 	// defaults
 	g_fs.port = 22;
 	g_fs.buffer = BUFFER_SIZE;
+	g_fs.keeplink = 1;
 
 
 	rc = fuse_opt_parse(&args, &g_fs, fs_opts, fs_opt_proc);

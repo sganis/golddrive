@@ -16,9 +16,9 @@ set ZLIB_DIR="C:/zlib-x64"
 
 cmake .. ^
  -DCMAKE_INSTALL_PREFIX="C:/libssh2-x64"		^
- -DCMAKE_BUILD_TYPE=Debug 						^
+ -DCMAKE_BUILD_TYPE=Release						^
  -DCRYPTO_BACKEND=OpenSSL               		^
- -DBUILD_SHARED_LIBS=OFF                		^
+ -DBUILD_SHARED_LIBS=ON                 		^
  -DOPENSSL_ROOT_DIR=%OPENSSL_DIR% 				^
  -DOPENSSL_MSVC_STATIC_RT=TRUE 					^
  -DOPENSSL_USE_STATIC_LIBS=TRUE 				^
