@@ -70,12 +70,7 @@ GDSSH* gd_init_ssh(void)
 		WSACleanup();
 		return 0;
 	}
-
-
-	ssh_channel channel;
-	channel = ssh_channel_new(ssh);
-	ssh_channel_open_session(channel);
-
+	
 	sftp_session sftp;
 	sftp = sftp_new(ssh);
 	if (sftp == NULL) {
@@ -97,6 +92,10 @@ GDSSH* gd_init_ssh(void)
 			sftp_extensions_get_name(sftp, i),
 			sftp_extensions_get_data(sftp, i));
 	}
+
+	// command channel
+	ssh_channel channel;
+	channel = ssh_channel_new(ssh);
 
 	g_ssh = malloc(sizeof(GDSSH));
 	assert(g_ssh);
