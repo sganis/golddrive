@@ -11,7 +11,7 @@ set DIR=%DIR:~0,-1%
 mkdir build && cd build
 
 ::set OPENSSL_DIR=%DIR%\..\src\lib\openssl
-set OPENSSL_DIR=C:/Users/Sant/Documents/golddrive/src/lib/openssl
+set OPENSSL_DIR=C:/Users/Sant/Documents/golddrive/src/lib/openssl/lib/x64
 set ZLIB_DIR="C:/zlib-x64"
 
 cmake .. ^

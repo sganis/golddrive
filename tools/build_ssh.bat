@@ -6,7 +6,7 @@ set DIR=%DIR:~0,-1%
 
 mkdir build && cd build
 set "MSVC=Visual Studio 16 2019"
-set OPENSSL_DIR=C:/Users/Sant/Documents/golddrive/src/lib/openssl
+set OPENSSL_DIR=C:/Users/Sant/Documents/golddrive/src/lib/openssl/lib/x64
 
 ECHO "Building with platform %MSVC%"
 cmake .. 								^
@@ -21,10 +21,9 @@ cmake .. 								^
  -DWITH_ZLIB=OFF ^
  -DWITH_SERVER=OFF ^
  -DWITH_EXAMPLES=OFF ^
-:: -DWITH_DEBUG_CALLTRACE=OFF ^
-:: -DWITH_SYMBOL_VERSIONING=OFF ^
  -DCMAKE_BUILD_TYPE=Release
- 
+:: -DWITH_DEBUG_CALLTRACE=OFF ^
+:: -DWITH_SYMBOL_VERSIONING=OFF ^ 
 :: -DZLIB_LIBRARY="C:\zlib\lib"              
 :: -DZLIB_INCLUDE_DIR="C:\zlib\include"              
 
