@@ -26,7 +26,7 @@ cmake .. ^
  -DBUILD_TESTING=OFF 							^
  -DBUILD_EXAMPLES=OFF 							^
  -DENABLE_CRYPT_NONE=ON							
- 
+
  rem -DOPENSSL_MSVC_STATIC_RT=TRUE 					^
  rem -DOPENSSL_USE_STATIC_LIBS=TRUE 
  rem ::-DZLIB_LIBRARY=%ZLIB_DIR%/lib/zlibstatic.lib   ^
