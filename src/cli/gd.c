@@ -20,10 +20,15 @@ GDSSH* gd_init_ssh(void)
 	ssh_options_set(ssh, SSH_OPTIONS_COMPRESSION, g_fs.compress ? "yes" : "no");
 	ssh_options_set(ssh, SSH_OPTIONS_STRICTHOSTKEYCHECK, 0);
 	ssh_options_set(ssh, SSH_OPTIONS_KNOWNHOSTS, "/dev/null");
-	if (g_fs.cipher)
-		ssh_options_set(ssh, SSH_OPTIONS_CIPHERS_C_S, g_fs.cipher);
+	if (g_fs.cipher) {
+		rc = ssh_options_set(ssh, SSH_OPTIONS_CIPHERS_C_S, g_fs.cipher);
+		rc = ssh_options_set(ssh, SSH_OPTIONS_CIPHERS_S_C, g_fs.cipher);
+	}
 	//int verbosity = SSH_LOG_FUNCTIONS;
 	//ssh_options_set(ssh, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
+
+
+
 
 	WSADATA wsadata;
 	int err;
@@ -1018,9 +1023,9 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	// sync
 	//size_t bsize;
 	//do {
-	//	bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
+	//	//bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
 	//	//rc = (int)sftp_read(handle, pos, bsize);
-	//	rc = (int)sftp_read(handle, pos, bsize);
+	//	rc = (int)sftp_read(handle, pos, chunk);
 	//	g_sftp_calls++;
 	//	if (rc <= 0)
 	//		break;
