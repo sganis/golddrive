@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 #ifdef USE_LIBSSH
+//#define LIBSSH_STATIC 1
 #include <libssh/libssh.h>
 #include <libssh/sftp.h>
 #else

@@ -10,8 +10,12 @@ set DIR=%DIR:~0,-1%
 
 mkdir build
 cd build
-perl ..\Configure no-shared VC-WIN64A ^
-	--prefix=C:\Openssl --openssldir=C:\Openssl
+
+perl ..\Configure 			^
+	no-shared   			^
+	VC-WIN64A 				^
+	--prefix=C:\Openssl 	^
+	--openssldir=C:\Openssl
 nmake build_libs
 nmake install_dev
 
