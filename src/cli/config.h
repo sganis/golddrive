@@ -19,13 +19,13 @@
 
 #define BUFFER_SIZE						256000
 #define COMMAND_SIZE					1024
+
 /* logging */
 #define ERROR							0
 #define WARN							1
 #define INFO							2
 #define DEBUG							3
 #define LOGLEVEL						ERROR
-
 
 extern size_t g_sftp_calls;
 extern char* g_logfile;
@@ -53,7 +53,6 @@ extern char* g_logfile;
 #else
 #define PLATFORM_BITS 32
 #endif
-
 
 #define log_message(level, format, ...) {								\
 	int thread = GetCurrentThreadId();									\
