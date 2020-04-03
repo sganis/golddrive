@@ -62,6 +62,7 @@ for:
         - image: Visual Studio 2019
           configuration: Release222
           platform: x64
+
     before_build:
       # uninstall and setup my own wsl
       - wslconfig /u Ubuntu-18.04
