@@ -8,10 +8,14 @@ setlocal EnableDelayedExpansion
 set DIR=%~dp0
 set DIR=%DIR:~0,-1%
 
-perl Configure no-shared no-comp no-engine no-hw no-ssl2 no-ssl3 no-zlib no-sock VC-WIN64A ^
+mkdir build
+cd build
+perl ..\Configure no-shared VC-WIN64A ^
 	--prefix=C:\Openssl --openssldir=C:\Openssl
 nmake build_libs
 nmake install_dev
+
+cd ..
 
 rem call ms\do_win64a
 rem nmake -f ms\nt.mak clean
