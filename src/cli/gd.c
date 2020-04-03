@@ -22,7 +22,8 @@ GDSSH* gd_init_ssh(void)
 	ssh_options_set(ssh, SSH_OPTIONS_KNOWNHOSTS, "/dev/null");
 	if (g_fs.cipher) {
 		rc = ssh_options_set(ssh, SSH_OPTIONS_CIPHERS_C_S, g_fs.cipher);
-		rc = ssh_options_set(ssh, SSH_OPTIONS_CIPHERS_S_C, g_fs.cipher);
+		rc -= ssh_options_set(ssh, SSH_OPTIONS_CIPHERS_S_C, g_fs.cipher);
+		
 	}
 	//int verbosity = SSH_LOG_FUNCTIONS;
 	//ssh_options_set(ssh, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
