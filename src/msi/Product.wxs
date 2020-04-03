@@ -163,9 +163,9 @@
           <Component Id="C.ssh.dll">
             <File Name="ssh.dll" KeyPath="yes" />
           </Component>
-          <Component Id="C.libssh2.dll">
+          <!--<Component Id="C.libssh2.dll">
             <File Name="libssh2.dll" KeyPath="yes" />
-          </Component>
+          </Component>-->
           <!--<Component Id="C.zlib1.dll">
             <File Name="zlib1.dll" KeyPath="yes" />
           </Component>
@@ -214,7 +214,7 @@
             <ComponentRef Id="C.ssh.dll" />
             <!--<ComponentRef Id="C.libcrypto_1_1_x64.dll" />-->
             <!--<ComponentRef Id="C.zlib1.dll" />-->
-            <ComponentRef Id="C.libssh2.dll" />
+            <!--<ComponentRef Id="C.libssh2.dll" />-->
         </ComponentGroup>
 
         <!--<Feature
