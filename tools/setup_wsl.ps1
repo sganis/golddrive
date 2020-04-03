@@ -9,7 +9,7 @@
 #
 # Uninstall:
 # wslconfig /u Ubuntu-18.04
-# rd /s /q C:\WSL\Ubuntu1804
+# rd /s /q C:\MyWSL\Ubuntu1804
 
 Write-host "Checking if WSL feature is installed..."
 $installed = (Get-WindowsOptionalFeature -FeatureName Microsoft-Windows-Subsystem-Linux -Online).State -eq 'Enabled'
@@ -20,12 +20,12 @@ if ($installed) {
     Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
 }
 
-$exe = "C:\WSL\Ubuntu1804\ubuntu1804.exe"
+$exe = "C:\MyWSL\Ubuntu1804\ubuntu1804.exe"
 $zip = "C:\cache\wsl-ubuntu-1804.zip"
 $tar = "C:\cache\ubuntu1804.tar"
 
-# New-Item -ItemType Directory -Force -Path C:\cache
-# New-Item -ItemType Directory -Force -Path C:\WSL
+New-Item -ItemType Directory -Force -Path C:\cache
+New-Item -ItemType Directory -Force -Path C:\MyWSL
 
 if (!(Test-Path $tar)) {
     if (!(Test-Path $exe)) {
@@ -38,7 +38,7 @@ if (!(Test-Path $tar)) {
             Write-host "Downloaded already, found in cache..."
         }
         Write-host "Installing..."
-        Expand-Archive -Path "$zip" -DestinationPath "C:\WSL\Ubuntu1804" -Force
+        Expand-Archive -Path "$zip" -DestinationPath "C:\MyWSL\Ubuntu1804" -Force
         # Remove-Item "$env:TEMP\wsl-ubuntu-1804.zip"
         . $exe install --root
     }
@@ -65,6 +65,6 @@ if (!(Test-Path $tar)) {
     # wsl --export Ubuntu-18.04 $tar
 } else {
     # Write-host "Found in cache, importing image..."
-    # wsl --import Ubuntu-18.04 C:\WSL $tar
+    # wsl --import Ubuntu-18.04 C:\MyWSL $tar
 }
 
