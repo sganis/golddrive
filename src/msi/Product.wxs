@@ -177,7 +177,7 @@
         <DirectoryRef Id="INSTALLDIR" FileSource="..\..\tools\openssh">
             <Component Id="C.ssh.exe"><File Name="ssh.exe" KeyPath="yes" /></Component>
             <Component Id="C.ssh_keygen.exe"><File Name="ssh-keygen.exe" KeyPath="yes" /></Component>
-            <Component Id="C.sftp.exe"><File Name="sftp.exe" KeyPath="yes" /></Component>
+            <!--<Component Id="C.sftp.exe"><File Name="sftp.exe" KeyPath="yes" /></Component>-->
             <Component Id="C.libcrypto.dll"><File Name="libcrypto.dll" KeyPath="yes" /></Component>
         </DirectoryRef>
       
@@ -208,7 +208,7 @@
         
         <ComponentGroup Id="C.ssh">
             <ComponentRef Id="C.ssh.exe" />
-            <ComponentRef Id="C.sftp.exe" />
+            <!--<ComponentRef Id="C.sftp.exe" />-->
             <ComponentRef Id="C.ssh_keygen.exe" />
             <ComponentRef Id="C.libcrypto.dll" />
             <ComponentRef Id="C.ssh.dll" />
