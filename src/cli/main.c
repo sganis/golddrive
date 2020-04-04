@@ -611,8 +611,8 @@ int main(int argc, char *argv[])
 	if (!g_fs.pkey) {
 		char* profile = getenv("USERPROFILE");
 		g_fs.pkey = malloc(MAX_PATH);
-		//sprintf_s(g_fs.pkey, MAX_PATH, "%s\\.ssh\\id_rsa-%s-golddrive", profile, g_fs.user);
-		sprintf_s(g_fs.pkey, MAX_PATH, "%s\\.ssh\\id_rsa", profile);
+		sprintf_s(g_fs.pkey, MAX_PATH, "%s\\.ssh\\id_golddrive_%s", profile, g_fs.user);
+		//sprintf_s(g_fs.pkey, MAX_PATH, "%s\\.ssh\\id_rsa", profile);
 	}
 	if (!file_exists(g_fs.pkey)) {
 		fprintf(stderr, "error: cannot read private key: %s\n", g_fs.pkey);

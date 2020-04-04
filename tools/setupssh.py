@@ -150,9 +150,9 @@ def testssh(userhost, port=22):
 	
 	client = paramiko.SSHClient()
 	client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-	
+	k = paramiko.RSAKey.from_private_key_file(seckey)
 	try:
-		client.connect(hostname=host, username=user, port=port, timeout=10, look_for_keys=True)
+		client.connect(hostname=host, username=user, port=port, timeout=10, pkey=k)
 		rb.returncode = ReturnCode.OK
 	except (paramiko.ssh_exception.AuthenticationException,
 		paramiko.ssh_exception.BadAuthenticationType,
