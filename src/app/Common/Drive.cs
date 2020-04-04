@@ -128,8 +128,8 @@ namespace golddrive
         }
         public string AppKey
         {
-            // get { return $@"{UserProfile}\.ssh\id_rsa-{User}-golddrive"; }
-            get { return $@"{UserProfile}\.ssh\id_rsa"; }
+            get { return $@"{UserProfile}\.ssh\id_golddrive_{User}"; }
+            //get { return $@"{UserProfile}\.ssh\id_rsa"; }
         }
         //public string UserKey
         //{

@@ -69,8 +69,8 @@ def run(cmd, capture=False, detach=False, shell=True, timeout=30):
 		r.stderr = r.stderr.strip()
 	return r
 	
-def get_app_key():
-	return f'{ os.path.expandvars("%USERPROFILE%") }\\.ssh\\id_rsa'
+def get_app_key(user):
+	return f'{ os.path.expandvars("%USERPROFILE%") }\\.ssh\\id_golddrive_{user}'
 	
 def testhost(userhost, port=22):
 	'''
@@ -130,7 +130,8 @@ def testssh(userhost, port=22):
 	'''
 	Test ssh key authentication
 	'''
-	seckey = get_app_key()
+	user, host = userhost.split('@')
+	seckey = get_app_key(user)
 	logger.debug(f'Testing ssh keys for {userhost} using key {seckey}...')
 	
 	rb = testhost(userhost, port)
@@ -146,7 +147,7 @@ def testssh(userhost, port=22):
 
 	logger.debug(f'Logging in with keys for {userhost}...')
 	rb = ReturnBox()
-	user, host = userhost.split('@')
+	
 	client = paramiko.SSHClient()
 	client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 	
@@ -168,7 +169,8 @@ def testssh(userhost, port=22):
 
 def generate_keys(userhost):
 	logger.debug('Generating new ssh keys...')
-	seckey = get_app_key()
+	user, host = userhost.split('@')
+	seckey = get_app_key(user)
 	pubkey = f'{seckey}.pub'
 	now = time.time()
 	if os.path.exists(seckey):
@@ -212,8 +214,9 @@ def generate_keys(userhost):
 	rb.output = pubkey
 	return rb
 
-def has_app_keys():
-	seckey = get_app_key()
+def has_app_keys(user):
+	logger.debug('checking if user has keys...')
+	seckey = get_app_key(user)
 	pubkey = f'{seckey}.pub'
 	output = ''
 	if os.path.exists(seckey):
@@ -228,13 +231,14 @@ def has_app_keys():
 					logger.error(output)
 					logger.error(output2)
 					output = ''
+				logger.debug('current keys are ok')
 		except Exception as ex:
 			logger.error(ex)
 	return output and output.startswith('ssh-rsa')
 
 def set_key_permissions(user):
 	logger.debug('setting ssh key permissions...')
-	seckey = get_app_key()
+	seckey = get_app_key(user)
 	ssh_folder = os.path.dirname(seckey)
 	run(fr'icacls {seckey} /c /t /inheritance:d', capture=True)
 	run(fr'icacls {seckey} /c /t /grant { os.environ["USERNAME"] }:F', capture=True)
@@ -248,9 +252,9 @@ def main(userhost, password, port=22):
 	logger.debug(f'Setting up ssh keys for {userhost}...')
 	rb = ReturnBox()
 	user, host = userhost.split('@')
-	seckey = get_app_key()	
+	seckey = get_app_key(user)	
 	pubkey = ''
-	if has_app_keys():
+	if has_app_keys(user):
 		logger.debug('Private key already exists.')
 		sk = paramiko.RSAKey.from_private_key_file(seckey)
 		pubkey = f'ssh-rsa {sk.get_base64()} {userhost}'
@@ -349,7 +353,8 @@ if __name__ == '__main__':
 	logging.basicConfig(level=logging.INFO)
 	# logging.basicConfig(level=logging.DEBUG)
 
-	if has_app_keys() and testssh(userhost, port).returncode == ReturnCode.OK:
+	user, host = userhost.split('@')
+	if has_app_keys(user) and testssh(userhost, port).returncode == ReturnCode.OK:
 		logger.info('SSH authentication is OK, no need to setup.')
 	else:
 		main(userhost, password, port)
