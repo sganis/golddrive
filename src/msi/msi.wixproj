@@ -17,21 +17,21 @@
     <SuppressValidation>True</SuppressValidation>
     <SuppressAllWarnings>False</SuppressAllWarnings>
     <Pedantic>True</Pedantic>
-    <OutputName>golddrive-$(MyVersion)-$(Platform)</OutputName>
+    <OutputName>golddrive-$(MyVersion)-$(Platform)-$(Configuration)</OutputName>
     <OutputPath>$(SolutionDir)build\$(Configuration)\$(Platform)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <SuppressSpecificWarnings>
     </SuppressSpecificWarnings>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
-    <OutputName>golddrive-$(MyVersion)-$(Platform)</OutputName>
+    <OutputName>golddrive-$(MyVersion)-$(Platform)-$(Configuration)</OutputName>
     <OutputPath>$(SolutionDir)build\$(Configuration)\$(Platform)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <DefineConstants>MyProductName=$(MyProductName);MyProductFullName=$(MyProductFullName);MyDescription=$(MyDescription);MyCompanyName=$(MyCompanyName);MyCopyright=$(MyCopyright);MyProductVersion=$(MyProductVersion);MyProductStage=$(MyProductStage);MyVersion=$(MyVersion);MyFullVersion=$(MyFullVersion)</DefineConstants>
     <SuppressValidation>False</SuppressValidation>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release2|x64' ">
-    <OutputName>golddrive-$(MyVersion)-$(Platform)</OutputName>
+    <OutputName>golddrive-$(MyVersion)-$(Platform)-$(Configuration)</OutputName>
     <OutputPath>$(SolutionDir)build\$(Configuration)\$(Platform)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <DefineConstants>MyProductName=$(MyProductName);MyProductFullName=$(MyProductFullName);MyDescription=$(MyDescription);MyCompanyName=$(MyCompanyName);MyCopyright=$(MyCopyright);MyProductVersion=$(MyProductVersion);MyProductStage=$(MyProductStage);MyVersion=$(MyVersion);MyFullVersion=$(MyFullVersion)</DefineConstants>
@@ -42,7 +42,7 @@
     <SuppressValidation>True</SuppressValidation>
     <SuppressAllWarnings>False</SuppressAllWarnings>
     <Pedantic>True</Pedantic>
-    <OutputName>golddrive-$(MyVersion)-$(Platform)</OutputName>
+    <OutputName>golddrive-$(MyVersion)-$(Platform)-$(Configuration)</OutputName>
     <OutputPath>$(SolutionDir)build\$(Configuration)\$(Platform)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <SuppressSpecificWarnings>
@@ -53,14 +53,14 @@
     <SuppressValidation>True</SuppressValidation>
     <SuppressAllWarnings>False</SuppressAllWarnings>
     <Pedantic>True</Pedantic>
-    <OutputName>golddrive-$(MyVersion)-$(Platform)</OutputName>
+    <OutputName>golddrive-$(MyVersion)-$(Platform)-$(Configuration)</OutputName>
     <OutputPath>$(SolutionDir)build\$(Configuration)\$(Platform)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <SuppressSpecificWarnings>
     </SuppressSpecificWarnings>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <OutputName>golddrive-$(MyVersion)-$(Platform)</OutputName>
+    <OutputName>golddrive-$(MyVersion)-$(Platform)-$(Configuration)</OutputName>
     <OutputPath>$(SolutionDir)build\$(Configuration)\$(Platform)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <DefineConstants>MyProductName=$(MyProductName);MyProductFullName=$(MyProductFullName);MyDescription=$(MyDescription);MyCompanyName=$(MyCompanyName);MyCopyright=$(MyCopyright);MyProductVersion=$(MyProductVersion);MyProductStage=$(MyProductStage);MyVersion=$(MyVersion);MyFullVersion=$(MyFullVersion)</DefineConstants>
@@ -71,21 +71,21 @@
     <SuppressValidation>True</SuppressValidation>
     <SuppressAllWarnings>False</SuppressAllWarnings>
     <Pedantic>True</Pedantic>
-    <OutputName>golddrive-$(MyVersion)-$(Platform)</OutputName>
+    <OutputName>golddrive-$(MyVersion)-$(Platform)-$(Configuration)</OutputName>
     <OutputPath>$(SolutionDir)build\$(Configuration)\$(Platform)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <SuppressSpecificWarnings>
     </SuppressSpecificWarnings>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release2|x86' ">
-    <OutputName>golddrive-$(MyVersion)-$(Platform)</OutputName>
+    <OutputName>golddrive-$(MyVersion)-$(Platform)-$(Configuration)</OutputName>
     <OutputPath>$(SolutionDir)build\$(Configuration)\$(Platform)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <DefineConstants>MyProductName=$(MyProductName);MyProductFullName=$(MyProductFullName);MyDescription=$(MyDescription);MyCompanyName=$(MyCompanyName);MyCopyright=$(MyCopyright);MyProductVersion=$(MyProductVersion);MyProductStage=$(MyProductStage);MyVersion=$(MyVersion);MyFullVersion=$(MyFullVersion)</DefineConstants>
     <SuppressValidation>False</SuppressValidation>
   </PropertyGroup>
- <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release222|x64' ">
-    <OutputName>golddrive-$(MyVersion)-$(Platform)</OutputName>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release222|x64' ">
+    <OutputName>golddrive-$(MyVersion)-$(Platform)-$(Configuration)</OutputName>
     <OutputPath>$(SolutionDir)build\$(Configuration)\$(Platform)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <DefineConstants>MyProductName=$(MyProductName);MyProductFullName=$(MyProductFullName);MyDescription=$(MyDescription);MyCompanyName=$(MyCompanyName);MyCopyright=$(MyCopyright);MyProductVersion=$(MyProductVersion);MyProductStage=$(MyProductStage);MyVersion=$(MyVersion);MyFullVersion=$(MyFullVersion)</DefineConstants>
