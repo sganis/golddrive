@@ -60,6 +60,18 @@ extern "C" {
 #ifndef OPENSSL_NO_DEVCRYPTOENG
 # define OPENSSL_NO_DEVCRYPTOENG
 #endif
+#ifndef OPENSSL_NO_DGRAM
+# define OPENSSL_NO_DGRAM
+#endif
+#ifndef OPENSSL_NO_DTLS
+# define OPENSSL_NO_DTLS
+#endif
+#ifndef OPENSSL_NO_DTLS1
+# define OPENSSL_NO_DTLS1
+#endif
+#ifndef OPENSSL_NO_DTLS1_2
+# define OPENSSL_NO_DTLS1_2
+#endif
 #ifndef OPENSSL_NO_EC_NISTP_64_GCC_128
 # define OPENSSL_NO_EC_NISTP_64_GCC_128
 #endif
@@ -83,6 +95,9 @@ extern "C" {
 #endif
 #ifndef OPENSSL_NO_SCTP
 # define OPENSSL_NO_SCTP
+#endif
+#ifndef OPENSSL_NO_SOCK
+# define OPENSSL_NO_SOCK
 #endif
 #ifndef OPENSSL_NO_SSL_TRACE
 # define OPENSSL_NO_SSL_TRACE

@@ -839,7 +839,7 @@ namespace golddrive
             return r;
         }
          string GenerateKeys(Drive drive)
-        {
+         {
             string pubkey = "";
             try
             {
