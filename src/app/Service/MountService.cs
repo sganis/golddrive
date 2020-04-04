@@ -759,53 +759,30 @@ namespace golddrive
                 {
                     r.MountStatus = MountStatus.BAD_KEY;
                 }
-                else if (ex is SocketException)
+                else if (ex is SocketException ||
+                    ex is SshConnectionException ||
+                    ex is InvalidOperationException ||
+                    ex.Message.Contains("milliseconds"))
                 {
-                    if (ex.Message.Contains("actively refused it"))
+                    r.Error = "Host does not respond";
+                    r.MountStatus = MountStatus.BAD_HOST;
+                }
+                else if (ex.Message.Contains("OPENSSH"))
+                {
+                    // openssh keys not supported by ssh.net yet
+                    string cmd = $"ssh.exe -i \"{drive.AppKey}\" -p {drive.Port} -oPasswordAuthentication=no -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oBatchMode=yes { drive.User}@{drive.Host} \"echo ok\"";
+                    var r1 = RunLocal(cmd);
+                    var ok = r1.Output.Trim() == "ok";
+                    if (ok)
+                    {
+                        r.MountStatus = MountStatus.OK;
+                        r.Error = "";
+                        r.Success = true;
+                    }
+                    else
+                    {
                         r.MountStatus = MountStatus.BAD_KEY;
-                    else
-                    {
-                        r.MountStatus = MountStatus.BAD_HOST;
-                    }
-
-                }
-                else if (ex is SshConnectionException)
-                {
-                    r.MountStatus = MountStatus.BAD_HOST;
-                }
-                else if (ex is InvalidOperationException)
-                {
-                    r.MountStatus = MountStatus.BAD_HOST;
-                }
-                else
-                {
-                    if (ex.Message.Contains("milliseconds"))
-                    {
-                        r.Error = "Host does not respond";
-                        r.MountStatus = MountStatus.BAD_HOST;
-                    }
-                    else if (ex.Message.Contains("OPENSSH"))
-                    {
-                        // openssh keys not supported by ssh.net yet
-                        string cmd = $"ssh.exe -i \"{drive.AppKey}\" -p {drive.Port} -oPasswordAuthentication=no -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oBatchMode=yes { drive.User}@{drive.Host} \"echo ok\"";
-                        var r1 = RunLocal(cmd);
-                        var ok = r1.Output.Trim() == "ok";
-                        if (ok)
-                        {
-                            r.MountStatus = MountStatus.OK;
-                            r.Error = "";
-                            r.Success = true;
-                        }
-                        else
-                        {
-                            r.MountStatus = MountStatus.BAD_KEY;
-                            r.Error = r1.Error;
-                        }
-                    }
-                    else
-                    {
-                        r.MountStatus = MountStatus.UNKNOWN;
-
+                        r.Error = r1.Error;
                     }
                 }
             }
@@ -861,47 +838,7 @@ namespace golddrive
 
             return r;
         }
-        //public ReturnBox SetupSshWithUserKey(Drive drive, string userkey)
-        //{
-        //    ReturnBox r = new ReturnBox();
-        //    try
-        //    {
-        //        string pubkey = "";
-        //        if (File.Exists(drive.AppKey) && File.Exists(drive.AppPubKey))
-        //        {
-        //            pubkey = File.ReadAllText(drive.AppPubKey).Trim();
-        //        }
-        //        else
-        //        {
-        //            pubkey = GenerateKeys(drive);
-        //        }
-        //        var pk = new PrivateKeyFile(userkey);
-        //        var keyFiles = new[] { pk };
-        //        SshClient client = new SshClient(drive.Host, drive.Port, drive.User, keyFiles);
-        //        client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
-        //        client.Connect();
-        //        string cmd = "";
-        //        //bool linux = false;
-        //        //if(linux)
-        //        cmd = $"cd; umask 077; mkdir -p .ssh; echo '{pubkey}' >> .ssh/authorized_keys";
-        //        //else
-        //        //    cmd = $"mkdir %USERPROFILE%\\.ssh 2>NUL || echo {pubkey.Trim()} >> %USERPROFILE%\\.ssh\\authorized_keys";
-        //        SshCommand command = client.CreateCommand(cmd);
-        //        command.CommandTimeout = TimeSpan.FromSeconds(10);
-        //        r.Output = command.Execute();
-        //        r.Error = command.Error;
-        //        r.ExitCode = command.ExitStatus;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        r.Error = ex.Message;
-        //        return r;
-        //    }
-
-        //    return TestSsh(drive);
-        //}
-
-        string GenerateKeys(Drive drive)
+         string GenerateKeys(Drive drive)
         {
             string pubkey = "";
             try

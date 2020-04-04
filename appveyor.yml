@@ -1,3 +1,4 @@
+# golddrive
 version: 2.11.0.{build}
 image: 
   - Visual Studio 2019
@@ -12,7 +13,7 @@ configuration:
   - Release
   # - Debug
 cache:
-  - C:\cache
+  - C:\cache -> appveyor.yml
 matrix:
   fast_finish: true
   allow_failures:
@@ -32,7 +33,7 @@ matrix:
     - configuration: Debug
       image: Visual Studio 2013
 install:
-  - dir /b C:\cache || mkdir C:\cache
+  - dir C:\cache || mkdir C:\cache
   - set winfsp=winfsp-1.6.20027.msi
   - if not exist C:\cache\%winfsp% (   
       appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/%winfsp% -FileName C:\cache\%winfsp%
