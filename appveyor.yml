@@ -2,7 +2,7 @@
 version: 2.11.0.{build}
 image: 
   - Visual Studio 2019
-  # - Visual Studio 2017
+  - Visual Studio 2017
   # - Visual Studio 2015
   # - Visual Studio 2013
 platform: 
@@ -44,7 +44,7 @@ install:
 build_script:
   - msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -m:4 /verbosity:quiet /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - src\build\%CONFIGURATION%\%PLATFORM%\golddrive.exe --version
-  - start /wait msiexec /i src\build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%.msi /qn
+  - start /wait msiexec /i src\build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%-%CONFIGURATION%.msi /qn
   - if %PLATFORM% == x64 call "c:\Program Files\Golddrive\golddrive.exe" --version"
   - if %PLATFORM% == x86 call "c:\Program Files (x86)\Golddrive\golddrive.exe" --version"
 #  - reg query HKLM\Software\WOW6432Node\WinFsp\Services\golddrive /s
@@ -60,10 +60,6 @@ for:
         - image: Visual Studio 2019
           configuration: Release2
           platform: x64
-        - image: Visual Studio 2019
-          configuration: Release222
-          platform: x64
-
     before_build:
       # uninstall and setup my own wsl
       - wslconfig /u Ubuntu-18.04
@@ -96,8 +92,8 @@ for:
         - image: Visual Studio 2013
     build: off
     test_script:
-      - ps: Start-FileDownload "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/build/$env:CONFIGURATION/$env:PLATFORM/golddrive-$env:VERSION-$env:PLATFORM.msi?branch=master&job=Image%3A%20Visual%20Studio%202019%3B%20Configuration%3A%20Release%3B%20Platform%3A%20$env:PLATFORM"
-      - start /wait msiexec /i golddrive-%VERSION%-%PLATFORM%.msi /qn 
+      - ps: Start-FileDownload "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/build/$env:CONFIGURATION/$env:PLATFORM/golddrive-$env:VERSION-$env:PLATFORM-$env:CONFIGURATION.msi?branch=master&job=Image%3A%20Visual%20Studio%202019%3B%20Configuration%3A%20Release%3B%20Platform%3A%20$env:PLATFORM"
+      - start /wait msiexec /i golddrive-%VERSION%-%PLATFORM%-%CONFIGURATION%.msi /qn 
       - if %PLATFORM% == x64 call "c:\Program Files\Golddrive\golddrive.exe" --version"
       - if %PLATFORM% == x86 call "c:\Program Files (x86)\Golddrive\golddrive.exe" --version"
 
