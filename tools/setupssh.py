@@ -179,7 +179,10 @@ def generate_keys(userhost):
 	
 	# use ssh-keygen
 	# print(run('where ssh-keygen'))
-	cmd = f'echo y |ssh-keygen -q -N "" -f {seckey} -b 2048 -t rsa -m PEM'
+	# cmd = f'echo y |ssh-keygen -q -N "" -f {seckey} -b 2048 -t rsa -m PEM'
+	# ssh-keygen defaults to openssh rsa 3072 bits keys
+	# PEM format not supported by libssh2 openssl no-stdio
+	cmd = f'echo y |ssh-keygen -q -N "" -f {seckey}'
 	run(cmd)
 	with open(pubkey) as r:
 		pubkey = r.read()
