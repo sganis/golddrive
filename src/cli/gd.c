@@ -22,8 +22,14 @@ GDSSH* gd_init_ssh(void)
 	ssh_options_set(ssh, SSH_OPTIONS_KNOWNHOSTS, "/dev/null");
 	if (g_fs.cipher) {
 		rc = ssh_options_set(ssh, SSH_OPTIONS_CIPHERS_C_S, g_fs.cipher);
-		rc -= ssh_options_set(ssh, SSH_OPTIONS_CIPHERS_S_C, g_fs.cipher);
-		
+		rc = ssh_options_set(ssh, SSH_OPTIONS_CIPHERS_S_C, g_fs.cipher);
+		if (rc) {
+			fprintf(stderr, "%zd :ERROR: %s: %d: "
+				"failed to set cipher [rc=%d, %s]\n",
+				time_mu(), __func__, __LINE__, rc, ssh_get_error(ssh));
+			//LIBSSH2_ERROR_METHOD_NOT_SUPPORTED
+			return 0;
+		}
 	}
 	//int verbosity = SSH_LOG_FUNCTIONS;
 	//ssh_options_set(ssh, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
