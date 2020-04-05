@@ -4,13 +4,11 @@
 
 Map Windows drives to remote filesystems using SSH.
 
-
 Installation
 ------------
 
 Install the latest release of WinFsp from https://github.com/billziss-gh/winfsp/releases. Then, download and install the latest released msi installer from https://github.com/sganis/golddrive/releases. The latest development version is available at https://ci.appveyor.com/project/sganis/golddrive/build/artifacts. 
 The installation requires adminstatator priviledges.
-
 
 How to use
 ----------
@@ -29,12 +27,76 @@ If something goes wrong, test the ssh authentication with an ssh client. Go to H
 A successful login to the remote hostname without password should be the result.
 
 
-Build
------
+# Development
 
-See [development](https://github.com/sganis/golddrive/blob/master/development.md) document.
+## Dependencies
+
+- WinFsp: https://github.com/billziss-gh/winfsp/releases
+
+- In case of missing dll like: api-ms-win-crt-runtime-l1-1-0.dll, 
+  update the Universal C Runtime in Windows (KB2999226): 
+  https://support.microsoft.com/en-us/help/2999226/update-for-universal-c-runtime-in-windows
+
+- In case of error: Cannot create WinFsp-FUSE file system: unspecified error.
+  It is missing this Windows Update: Availability of SHA-2 Code Signing Support (KB3033929):
+  https://technet.microsoft.com/en-us/library/security/3033929.aspx
 
 
+## Development environment
 
+### Cygwin for sshfs-win
+
+Steps here: https://github.com/billziss-gh/sshfs-win/issues/41
+
+### Visual Studio
+
+There are scripts in the tools directory to build dependencies:
+
+- Build OpenSSL
+- Build libssh2
+- Build OpenSSH
+
+## Alternatives and Benchmarks
+
+  - NetDrive
+    * Commercial
+    * Performance not tested
+    * Qt app
+    * Requires cloud account
+
+  - ExpandDrive
+    * Commercial, 50 USD
+    * 3 MB/s.
+    * Electron app
+    * Drive mounted as exfs with 10 TB free
+    * Stable, no cmd line, cloud options.
+    * Apparently deletes files without permissions.
+
+  - SFTPNetDrive:
+    * Commercial, free for personal use
+    * 3 MB/s
+    * C++ app.
+    * Unstable, drive is disconnected on intensive i/o.
+    * Nsoftware, ipworks ssh .net company.
+
+  - Montain Duck
+    * Commercial
+    * 15 MB/s
+    * Mono/.Net app
+    * Drive mounted as ntfs without permissions
+    * Cannot mount root folder
+    * Unstable on intensive i/o, need to reconnect manually
+  
+  - SSHFS-Win
+    * Open Source, Windows build of sshfs from libfuse
+    * 50 MB/s
+    * Cygwin app
+    * Unstable on intensive i/o
+    * Problem with antivirus when copying large files
+
+## Ciphers
+
+- check server cipher support: `nmap --script ssh2-enum-algos -sV -p <port> <host>`
+- client: `ssh -Q cipher`
 
 
