@@ -12,7 +12,8 @@ mkdir build && cd build
 
 ::set OPENSSL_DIR=%DIR%\..\src\lib\openssl
 ::set OPENSSL_DIR=C:/Users/Sant/Documents/golddrive/src/lib/openssl/lib/x64
-set OPENSSL_DIR=C:/libre-x64
+rem set OPENSSL_DIR=C:/libre-x64
+set OPENSSL_DIR=C:/openssl
 rem set OPENSSL_DIR=C:/Users/Sant/Documents/winlibs/prefix/openssl-x64
 rem set OPENSSL_DIR=C:/Openssl
 set ZLIB_DIR="C:/zlib-x64"
@@ -22,7 +23,7 @@ cmake .. ^
  -DCMAKE_INSTALL_PREFIX="C:/libssh2-x64"		^
  -DCMAKE_BUILD_TYPE=Release						^
  -DCRYPTO_BACKEND=OpenSSL               		^
- -DBUILD_SHARED_LIBS=OFF                 		^
+ -DBUILD_SHARED_LIBS=ON                 		^
  -DOPENSSL_ROOT_DIR=%OPENSSL_DIR% 				^
  -DENABLE_ZLIB_COMPRESSION=OFF 					^
  -DBUILD_TESTING=OFF 							^

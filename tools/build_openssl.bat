@@ -8,33 +8,30 @@ setlocal EnableDelayedExpansion
 set DIR=%~dp0
 set DIR=%DIR:~0,-1%
 
-mkdir build
-cd build
 
-perl ..\Configure 			^
-	no-shared   			^
+
+perl Configure 				^
 	VC-WIN64A 				^
-	--prefix=C:\Openssl 	^
-	--openssldir=C:\Openssl
-nmake build_libs
-nmake install_dev
-
-cd ..
-
+	--prefix=C:\openssl 	^
+	--openssldir=C:\openssl
 rem call ms\do_win64a
-rem nmake -f ms\nt.mak clean
-rem nmake -f ms\nt.mak
-rem nmake -f ms\nt.mak install
+rem nmake -f ms\ntdll.mak
+rem nmake -f ms\ntdll.mak install
 
-::perl Configure VC-WIN32 --prefix=C:\Openssl32
 
-:: this command not need in v1.1+, just run nmake 
-::ms\do_win64a
-::ms\do_nasm.bat
-::nmake -f ms\nt.mak clean
-::nmake -f ms\nt.mak 
-::nmake -f ms\nt.mak test
-::nmake -f ms\nt.mak install
+rem 1.1.1e
+rem mkdir build
+rem cd build
+rem perl ..\Configure 			^
+rem 	no-shared   			^
+rem 	VC-WIN64A 				^
+rem 	--prefix=C:\openssl 	^
+rem 	--openssldir=C:\openssl
+rem nmake build_libs
+rem nmake install_dev
+rem cd ..
+
+
 ::copy inc32/include C:\Openssl\include
 ::copy out32/libeay32.lib C:\Openssl\lib
 ::copy out32/ssleay32.lib C:\Openssl\lib
