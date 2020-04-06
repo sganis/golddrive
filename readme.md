@@ -63,14 +63,18 @@ I replaced LibreSSL with the following steps. Only works with OpenSSL 1.0.x, not
 2. Remove config project
 3. Retarget solution to VS 2019
 4. Add these lines in the define section of posix_compat/inc/unistd.h:
-	`#pragma warning(disable: 4005 4030)`
-	`#define _CRT_INTERNAL_NONSTDC_NAMES 0`
+	```
+	#pragma warning(disable: 4005 4030)
+	#define _CRT_INTERNAL_NONSTDC_NAMES 0
+	```
 5. Change contrib/win32/openssh/paths.targets, replacing these xml elements by openssl and zlib path and the openssl lib name:
-    `<LibreSSL-Path>c:\openssl-x64\</LibreSSL-Path>
+    ```
+    <LibreSSL-Path>c:\openssl-x64\</LibreSSL-Path>
     <LibreSSL-x64-Path>c:\openssl-x64\lib\</LibreSSL-x64-Path>
     <ZLib-Path>c:\zlib-x64\include\</ZLib-Path>
     <ZLib-x64-Path>c:\zlib-x64\lib\</ZLib-x64-Path>
-    <SSLLib>libeay32.lib;</SSLLib>`
+    <SSLLib>libeay32.lib;</SSLLib>
+    ```
 
 ## Alternatives and Benchmarks
 
@@ -112,7 +116,13 @@ I replaced LibreSSL with the following steps. Only works with OpenSSL 1.0.x, not
 
 ## Ciphers
 
-- check server cipher support: `nmap --script ssh2-enum-algos -sV -p <port> <host>`
-- client: `ssh -Q cipher`
+- check server cipher support: 
+  ```
+  nmap --script ssh2-enum-algos -sV -p <port> <host>
+  ````
+- client: 
+  ```
+  ssh -Q cipher
+  ```
 
 
