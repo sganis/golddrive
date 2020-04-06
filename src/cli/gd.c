@@ -228,7 +228,7 @@ GDSSH* gd_init_ssh(void)
 	//libssh2_trace_sethandler(ssh, 0, libssh2_logger);
 
 	// compression
-	libssh2_session_flag(ssh, LIBSSH2_FLAG_COMPRESS, g_fs.compress);
+	//libssh2_session_flag(ssh, LIBSSH2_FLAG_COMPRESS, g_fs.compress);
 
 	// encryption
 	if (g_fs.cipher) {

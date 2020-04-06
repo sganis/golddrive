@@ -93,7 +93,7 @@ typedef struct GDCONFIG {
 	char* cipher;
 	int has_root;
 	int keeplink;
-	int compress;
+	//int compress;
 	int block;
 	char *mountpoint;
 	char letter;
