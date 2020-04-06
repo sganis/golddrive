@@ -176,9 +176,9 @@
           <Component Id="C.ssh_keygen.exe">
             <File Name="ssh-keygen.exe" KeyPath="yes" />
           </Component>
-          <Component Id="C.zlib1.dll">
+          <!--<Component Id="C.zlib1.dll">
             <File Name="zlib1.dll" KeyPath="yes" />
-          </Component>
+          </Component>-->
           <Component Id="C.libeay32.dll">
             <File Name="libeay32.dll" KeyPath="yes" />
           </Component>
@@ -215,7 +215,7 @@
             <ComponentRef Id="C.libeay32.dll" />
             <ComponentRef Id="C.libssh2.dll" />
             <ComponentRef Id="C.ssh.dll" />
-            <ComponentRef Id="C.zlib1.dll" />
+            <!--<ComponentRef Id="C.zlib1.dll" />-->
             <!--<ComponentRef Id="C.sftp.exe" />-->
             <!--<ComponentRef Id="C.libcrypto.dll" />-->
             <!--<ComponentRef Id="C.libcrypto_1_1_x64.dll" />-->
