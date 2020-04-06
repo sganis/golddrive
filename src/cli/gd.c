@@ -17,7 +17,7 @@ GDSSH* gd_init_ssh(void)
 	ssh_options_set(ssh, SSH_OPTIONS_HOST, g_fs.host);
 	ssh_options_set(ssh, SSH_OPTIONS_USER, g_fs.user);
 	ssh_options_set(ssh, SSH_OPTIONS_PORT, &g_fs.port);
-	ssh_options_set(ssh, SSH_OPTIONS_COMPRESSION, g_fs.compress ? "yes" : "no");
+	//ssh_options_set(ssh, SSH_OPTIONS_COMPRESSION, g_fs.compress ? "yes" : "no");
 	ssh_options_set(ssh, SSH_OPTIONS_STRICTHOSTKEYCHECK, 0);
 	ssh_options_set(ssh, SSH_OPTIONS_KNOWNHOSTS, "/dev/null");
 	if (g_fs.cipher) {
