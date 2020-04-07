@@ -57,11 +57,12 @@ for:
       - wslconfig /u Ubuntu-18.04
       #- rd /s /q C:\WSL\Ubuntu1804
       - ps: tools\setup_wsl.ps1
-      - if not exist C:\python (
-          choco install python -y -o -ia "'/qn /norestart ALLUSERS=1 TARGETDIR=c:\python'"
-          set PATH=C:\python;%PATH%
-          python -V
-        )      
+      - cmd: |
+          if not exist C:\python (
+            choco install python -y -o -ia "'/qn /norestart ALLUSERS=1 TARGETDIR=c:\python'"
+            set PATH=C:\python;%PATH%
+            python -V
+          )      
       - python -m pip install --disable-pip-version-check paramiko pyyaml psutil
       - python tools\setupssh.py support@localhost support
       # - C:\Python37\python -m pip install --disable-pip-version-check paramiko pyyaml psutil >NUL
