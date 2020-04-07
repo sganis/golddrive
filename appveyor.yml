@@ -54,9 +54,9 @@ for:
           platform: x64
     before_build:
       # uninstall and setup my own wsl
-      - wslconfig /u Ubuntu-18.04
+      # - wslconfig /u Ubuntu-18.04
       #- rd /s /q C:\WSL\Ubuntu1804
-      - ps: tools\setup_wsl.ps1
+      # - ps: tools\setup_wsl.ps1
       - cmd: |
           if not exist C:\python (
             choco install python -y -o -ia "'/qn /norestart ALLUSERS=1 TARGETDIR=c:\python'" &&
