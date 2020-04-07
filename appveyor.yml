@@ -58,10 +58,10 @@ for:
       #- rd /s /q C:\WSL\Ubuntu1804
       # - ps: tools\setup_wsl.ps1
       - cmd: |
-          if not exist C:\python (
-            choco install python -y -o -ia "'/qn /norestart ALLUSERS=1 TARGETDIR=c:\python'" &&
-            set PATH=C:\python;%PATH% &&
-            python -V &&
+          dir /b C:\python || (
+            choco install python -y -o -ia "'/qn /norestart ALLUSERS=1 TARGETDIR=c:\python'" &
+            set PATH=C:\python;%PATH% &
+            python -V &
             python -m pip install --disable-pip-version-check paramiko pyyaml
           ) 
       - python tools\setupssh.py support@localhost support
