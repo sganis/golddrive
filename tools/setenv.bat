@@ -8,6 +8,7 @@ set DIR=%DIR:~0,-1%
 
 SET "PATH=C:\Windows\System32;C:\Windows;C:\Windows\System32\wbem;%PATH%"
 SET "PATH=C:\Program Files (x86)\WinFsp\bin;%PATH%"
+SET "PATH=C:\Python37;C:\Python37\Scripts;%PATH%"
 SET "PATH=C:\Python38;C:\Python38\Scripts;%PATH%"
 SET "PATH=C:\Program Files (x86)\WinFsp\bin;%PATH%"
 SET "PATH=C:\Program Files\Git\bin;%PATH%"

@@ -342,7 +342,7 @@ if __name__ == '__main__':
 	import os
 	import getpass
 	assert (len(sys.argv) > 2 and '@' in sys.argv[1]) # usage: prog user@host pass
-	os.environ['PATH'] = f'{DIR};{DIR}\\openssh;{os.environ["PATH"]}'
+	os.environ['PATH'] = f'{DIR};{DIR}\\..\\vendor\\openssh;{os.environ["PATH"]}'
 	userhost = sys.argv[1]
 	password = sys.argv[2]
 	port=22
