@@ -1,5 +1,5 @@
 # golddrive
-version: 2.13.0.{build}
+version: 2.14.0.{build}
 image: 
   - Visual Studio 2019
   - Visual Studio 2017
@@ -11,7 +11,6 @@ platform:
 configuration: 
   - Release2
   # - Release
-  # - Debug
 cache:
   - C:\cache -> appveyor.yml
 matrix:
@@ -19,19 +18,11 @@ matrix:
   allow_failures:
     - platform: x86
     - configuration: Debug
-    - configuration: Release2
     - image: Visual Studio 2017
     - image: Visual Studio 2015
     - image: Visual Studio 2013
   exclude:
-    - configuration: Debug
       platform: x86
-    - configuration: Debug
-      image: Visual Studio 2017
-    - configuration: Debug
-      image: Visual Studio 2015
-    - configuration: Debug
-      image: Visual Studio 2013
 install:
   - dir C:\cache || mkdir C:\cache
   - set winfsp=winfsp-1.6.20027.msi
