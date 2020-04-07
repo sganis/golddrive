@@ -12,8 +12,7 @@ configuration:
   - Release2
   # - Release
 cache:
-  - C:\cache
-  - C:\python
+  - C:\cache -> appveyor.yml
 matrix:
   fast_finish: true
   allow_failures:
@@ -54,21 +53,11 @@ for:
           platform: x64
     before_build:
       # uninstall and setup my own wsl
-      # - wslconfig /u Ubuntu-18.04
+      - wslconfig /u Ubuntu-18.04
       #- rd /s /q C:\WSL\Ubuntu1804
-      # - ps: tools\setup_wsl.ps1
-      - cmd: |
-          set nopy=0
-          dir /b C:\python || set nopy=1
-          if %nopy% equ 1 (
-            choco install python -y -o -ia "'/qn /norestart ALLUSERS=1 TARGETDIR=c:\python'" &
-            set PATH=C:\python;%PATH% &
-            python -V &
-            python -m pip install --disable-pip-version-check paramiko pyyaml
-          ) 
-      - python tools\setupssh.py support@localhost support
-      # - C:\Python37\python -m pip install --disable-pip-version-check paramiko pyyaml psutil >NUL
-      # - C:\Python37\python tools\setupssh.py support@localhost support
+      - ps: tools\setup_wsl.ps1
+      - C:\Python37\python -m pip install --disable-pip-version-check paramiko pyyaml psutil >NUL
+      - C:\Python37\python tools\setupssh.py support@localhost support
     test: 
       categories:
         only:
@@ -83,7 +72,7 @@ for:
           C:\projects\golddrive\vendor\fstools\fsbench-x64.exe --files=100 -rdwr_cc_* -mmap_* -file_attr* -file_list_single* -file_list_none* -rdwr_nc_*
           C:\projects\golddrive\vendor\iozone\iozone.exe -i0 -i1 -s100m -r2m -r4m -r8m
           $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
-#      - ps: get-content -tail 30 $env:LOCALAPPDATA\golddrive\golddrive.log
+      # - ps: get-content -tail 30 $env:LOCALAPPDATA\golddrive\golddrive.log
       - ps: |
           C:; net use Z: /d
   -
