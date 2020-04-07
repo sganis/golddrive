@@ -78,9 +78,9 @@
             <Component Id="C.golddrive.exe">
                 <File Name="golddrive.exe" KeyPath="yes" />
             </Component>
-            <Component Id="C.golddrive.pdb">
+            <!--<Component Id="C.golddrive.pdb">
                 <File Name="golddrive.pdb" KeyPath="yes" />
-            </Component>
+            </Component>-->
           
             <Component Id="C.golddrive.reg" Guid="{CEAAD2C6-3373-43F6-8E1E-A7C6A2691AEC}">
                 <RegistryKey
@@ -163,9 +163,9 @@
           <!--<Component Id="C.ssh.dll">
             <File Name="ssh.dll" KeyPath="yes" />
           </Component>-->
-          <Component Id="C.libssh2.dll">
+          <!--<Component Id="C.libssh2.dll">
             <File Name="libssh2.dll" KeyPath="yes" />
-          </Component>
+          </Component>-->
           
         </DirectoryRef>
 
@@ -179,9 +179,9 @@
           <!--<Component Id="C.zlib1.dll">
             <File Name="zlib1.dll" KeyPath="yes" />
           </Component>-->
-          <Component Id="C.libeay32.dll">
+          <!--<Component Id="C.libeay32.dll">
             <File Name="libeay32.dll" KeyPath="yes" />
-          </Component>
+          </Component>-->
         </DirectoryRef>
       
          <DirectoryRef Id="INSTALLDIR" FileSource="C:\Windows\System32">
@@ -190,7 +190,7 @@
       
         <ComponentGroup Id="C.cli">
             <ComponentRef Id="C.golddrive.exe" />
-            <ComponentRef Id="C.golddrive.pdb" />
+            <!--<ComponentRef Id="C.golddrive.pdb" />-->
             <ComponentRef Id="C.golddrive.reg" />
             <ComponentRef Id="C.vcruntime140.dll" />
         </ComponentGroup>
@@ -212,8 +212,8 @@
         <ComponentGroup Id="C.ssh">
             <ComponentRef Id="C.ssh.exe" />
             <ComponentRef Id="C.ssh_keygen.exe" />
-            <ComponentRef Id="C.libeay32.dll" />
-            <ComponentRef Id="C.libssh2.dll" />
+            <!--<ComponentRef Id="C.libeay32.dll" />-->
+            <!--<ComponentRef Id="C.libssh2.dll" />-->
             <!--<ComponentRef Id="C.ssh.dll" />-->
             <!--<ComponentRef Id="C.zlib1.dll" />-->
             <!--<ComponentRef Id="C.sftp.exe" />-->

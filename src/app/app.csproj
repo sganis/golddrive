@@ -279,8 +279,8 @@
   <PropertyGroup>
     <PostBuildEvent>xcopy /y $(ProjectDir)golddrive.ico $(OutDir)
 xcopy /y $(ProjectDir)..\..\vendor\openssh\* $(OutDir)
-xcopy /y $(ProjectDir)..\..\vendor\libssh2\lib\$(Platform)\*.dll $(OutDir)
-xcopy /y $(ProjectDir)..\..\vendor\libssh\lib\$(Platform)\*.dll $(OutDir)
+rem xcopy /y $(ProjectDir)..\..\vendor\libssh2\lib\$(Platform)\*.dll $(OutDir)
+rem xcopy /y $(ProjectDir)..\..\vendor\libssh\lib\$(Platform)\*.dll $(OutDir)
 rem xcopy /y $(ProjectDir)..\..\vendor\openssl\lib\$(Platform)\libcrypto-1_1-x64.dll $(OutDir)
 </PostBuildEvent>
   </PropertyGroup>
