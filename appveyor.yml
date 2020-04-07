@@ -22,7 +22,7 @@ matrix:
     - image: Visual Studio 2015
     - image: Visual Studio 2013
   exclude:
-      platform: x86
+    - platform: x86
 install:
   - dir C:\cache || mkdir C:\cache
   - set winfsp=winfsp-1.6.20027.msi
