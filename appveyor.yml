@@ -10,7 +10,7 @@ platform:
   # - x86
 configuration: 
   - Release2
-  - Release
+  # - Release
   # - Debug
 cache:
   - C:\cache -> appveyor.yml
