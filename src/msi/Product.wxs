@@ -169,7 +169,7 @@
           
         </DirectoryRef>
 
-        <DirectoryRef Id="INSTALLDIR" FileSource="..\..\tools\openssh">
+        <DirectoryRef Id="INSTALLDIR" FileSource="..\..\vendor\openssh">
           <Component Id="C.ssh.exe">
             <File Name="ssh.exe" KeyPath="yes" />
           </Component>
