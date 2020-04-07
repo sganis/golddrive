@@ -12,7 +12,8 @@ configuration:
   - Release2
   # - Release
 cache:
-  - C:\cache -> appveyor.yml
+  - C:\cache
+  - C:\python
 matrix:
   fast_finish: true
   allow_failures:
