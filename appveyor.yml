@@ -59,7 +59,7 @@ for:
       # - ps: tools\setup_wsl.ps1
       - cmd: |
           set nopy=0
-          dir /b C:\python || nopy=1
+          dir /b C:\python || set nopy=1
           if %nopy% equ 1 (
             choco install python -y -o -ia "'/qn /norestart ALLUSERS=1 TARGETDIR=c:\python'" &
             set PATH=C:\python;%PATH% &
