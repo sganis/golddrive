@@ -179,9 +179,12 @@
           <!--<Component Id="C.zlib1.dll">
             <File Name="zlib1.dll" KeyPath="yes" />
           </Component>-->
-          <Component Id="C.libeay32.dll">
-            <File Name="libeay32.dll" KeyPath="yes" />
+          <Component Id="C.crypto_45.dll">
+            <File Name="crypto-45.dll" KeyPath="yes" />
           </Component>
+          <!--<Component Id="C.libeay32.dll">
+            <File Name="libeay32.dll" KeyPath="yes" />
+          </Component>-->
         </DirectoryRef>
       
          <DirectoryRef Id="INSTALLDIR" FileSource="C:\Windows\System32">
@@ -212,7 +215,8 @@
         <ComponentGroup Id="C.ssh">
             <ComponentRef Id="C.ssh.exe" />
             <ComponentRef Id="C.ssh_keygen.exe" />
-            <ComponentRef Id="C.libeay32.dll" />
+            <ComponentRef Id="C.crypto_45.dll" />
+            <!--<ComponentRef Id="C.libeay32.dll" />-->
             <!--<ComponentRef Id="C.libssh2.dll" />-->
             <!--<ComponentRef Id="C.ssh.dll" />-->
             <!--<ComponentRef Id="C.zlib1.dll" />-->
