@@ -1,19 +1,22 @@
 #include "util.h"
 #include "gd.h"
-#include <direct.h>
-#include <openssl/opensslv.h>
-#include <Shlwapi.h> /* PathRemoveFileSpecA */
-#pragma comment(lib, "shlwapi.lib")
+#include <direct.h>						/* _mkdir */
+#include <openssl/opensslv.h>			/* to get version only */
+//#include <Shlwapi.h>					/* PathRemoveFileSpecA */
+//#pragma comment(lib, "shlwapi.lib")
 
 /* global variables */
-size_t		g_sftp_calls;
-GDSSH     * g_ssh;
-SRWLOCK		g_ssh_lock;
-CRITICAL_SECTION g_critical_section;
-GDCONFIG	g_fs;
-char*		g_logfile;
+GDSSH*				g_ssh;
+size_t				g_sftp_calls;
+SRWLOCK				g_ssh_lock;
+SRWLOCK				g_log_lock;
+CRITICAL_SECTION	g_critical_section;
+GDCONFIG			g_conf;
+char*				g_logfile;
+char*				g_logurl;
 
-static void* f_init(struct fuse_conn_info* conn, struct fuse_config* conf)
+static void* f_init(struct fuse_conn_info* conn, 
+	struct fuse_config* conf)
 {
 #if defined(FUSE_CAP_READDIRPLUS)
 	conn->want |= (conn->capable & FUSE_CAP_READDIRPLUS);
@@ -31,7 +34,8 @@ static int f_statfs(const char* path, struct fuse_statvfs* stbuf)
 	return -1 != gd_statvfs(path, stbuf) ? 0 : -errno;
 }
 
-static int f_getattr(const char* path, struct fuse_stat* stbuf, struct fuse_file_info* fi)
+static int f_getattr(const char* path, struct fuse_stat* stbuf, 
+	struct fuse_file_info* fi)
 {
 	int rc;
 	if (0 == fi)
@@ -77,7 +81,8 @@ static int f_unlink(const char* path)
 
 
 
-static int f_create(const char* path, fuse_mode_t mode, struct fuse_file_info* fi)
+static int f_create(const char* path, fuse_mode_t mode, 
+	struct fuse_file_info* fi)
 {
 	// printf("f_create: %s, mode=%d, flags=%d\n", path, mode, fi->flags);
 
@@ -86,11 +91,13 @@ static int f_create(const char* path, fuse_mode_t mode, struct fuse_file_info* f
 	// remove execution bit in files
 	// fuse_mode_t mod = mode & 0666; // int 438 
 	fuse_mode_t mod = mode;
-	int rc = -1 != (fd = gd_open(path, fi->flags, mod)) ? (fi_setfd(fi, fd), 0) : -errno;
+	int rc = -1 != (fd = gd_open(path, fi->flags, mod)) ? 
+		(fi_setfd(fi, fd), 0) : -errno;
 	return rc;
 }
 
-static int f_truncate(const char* path, fuse_off_t size, struct fuse_file_info* fi)
+static int f_truncate(const char* path, fuse_off_t size, 
+	struct fuse_file_info* fi)
 {
 	if (0 == fi)
 	{
@@ -110,14 +117,16 @@ static int f_open(const char* path, struct fuse_file_info* fi)
 
 	realpath(path);
 	intptr_t fd;
-	int rc = -1 != (fd = gd_open(path, fi->flags, 0)) ? (fi_setfd(fi, fd), 0) : -errno;
+	int rc = -1 != (fd = gd_open(path, fi->flags, 0)) ? 
+		(fi_setfd(fi, fd), 0) : -errno;
 	/*if (rc != 0) {
 		printf("error: f_open: %s, flags=%d\n", path, fi->flags);
 	}*/
 	return rc;
 }
 
-static int f_read(const char* path, char* buf, size_t size, fuse_off_t off, struct fuse_file_info* fi)
+static int f_read(const char* path, char* buf, size_t size, 
+	fuse_off_t off, struct fuse_file_info* fi)
 {
 	intptr_t fd = fi_fd(fi);
 	int nb;
@@ -127,7 +136,8 @@ static int f_read(const char* path, char* buf, size_t size, fuse_off_t off, stru
 
 }
 
-static int f_write(const char* path, const char* buf, size_t size, fuse_off_t off, struct fuse_file_info* fi)
+static int f_write(const char* path, const char* buf, 
+	size_t size, fuse_off_t off, struct fuse_file_info* fi)
 {
 	int rc = 0;
 	intptr_t fd = fi_fd(fi);
@@ -147,7 +157,8 @@ static int f_release(const char* path, struct fuse_file_info* fi)
 	return gd_close(fd);
 }
 
-static int f_rename(const char* oldpath, const char* newpath, unsigned int flags)
+static int f_rename(const char* oldpath, const char* newpath, 
+	unsigned int flags)
 {
 	realpath(newpath);
 	realpath(oldpath);
@@ -162,10 +173,13 @@ static int f_opendir(const char* path, struct fuse_file_info* fi)
 {
 	realpath(path);
 	GDDIR* dirp;
-	return 0 != (dirp = gd_opendir(path)) ? (fi_setdirp(fi, dirp), 0) : -errno;
+	return 0 != (dirp = gd_opendir(path)) ? 
+		(fi_setdirp(fi, dirp), 0) : 
+		-errno;
 }
 
-static int f_readdir(const char* path, void* buf, fuse_fill_dir_t filler, fuse_off_t off,
+static int f_readdir(const char* path, void* buf, 
+	fuse_fill_dir_t filler, fuse_off_t off,
 	struct fuse_file_info* fi, enum fuse_readdir_flags flags)
 {
 	GDDIR* dirp = fi_dirp(fi);
@@ -179,14 +193,16 @@ static int f_readdir(const char* path, void* buf, fuse_fill_dir_t filler, fuse_o
 		if (de == 0)
 			break;
 
-		if (0 != filler(buf, de->d_name, &de->d_stat, 0, FUSE_FILL_DIR_PLUS))
+		if (0 != filler(buf, de->d_name, &de->d_stat, 
+			0, FUSE_FILL_DIR_PLUS))
 			return -ENOMEM;
 	}
 
 	return -errno;
 }
 
-static int f_releasedir(const char* path, struct fuse_file_info* fi)
+static int f_releasedir(const char* path, 
+	struct fuse_file_info* fi)
 {
 	GDDIR* dirp = fi_dirp(fi);
 	return gd_closedir(dirp);
@@ -219,13 +235,16 @@ static int f_rmdir(const char* path)
 }
 
 
-static int f_utimens(const char* path, const struct fuse_timespec tv[2], struct fuse_file_info* fi)
+static int f_utimens(const char* path, 
+	const struct fuse_timespec tv[2], 
+	struct fuse_file_info* fi)
 {
 	realpath(path);
 	return -1 != gd_utimens(path, tv, fi) ? 0 : -errno;
 }
 
-static int f_fsync(const char* path, int datasync, struct fuse_file_info* fi)
+static int f_fsync(const char* path, 
+	int datasync, struct fuse_file_info* fi)
 {
 	intptr_t fd = fi_fd(fi);
 	return -1 != gd_fsync(fd) ? 0 : -errno;
@@ -351,7 +370,9 @@ static struct fuse_opt fs_opts[] = {
 	FUSE_OPT_END
 };
 
-static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *outargs)
+static int fs_opt_proc(
+	void *data, const char *arg, 
+	int key, struct fuse_args *outargs)
 {
 	char exepath[MAX_PATH];
 	char version[100];
@@ -360,12 +381,12 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 
 	switch (key) {
 	case FUSE_OPT_KEY_NONOPT:
-		if (!g_fs.drive) {
-			g_fs.drive = strdup(arg);
+		if (!g_conf.drive) {
+			g_conf.drive = strdup(arg);
 			return 0;
 		}
-		if (!g_fs.remote) {
-			g_fs.remote = strdup(arg);
+		if (!g_conf.remote) {
+			g_conf.remote = strdup(arg);
 			return 0;
 		}
 		fprintf(stderr, "golddrive: invalid argument '%s'\n", arg);
@@ -428,8 +449,12 @@ static int fs_opt_proc(void *data, const char *arg, int key, struct fuse_args *o
 
 static int parse_remote(GDCONFIG* fs)
 {
-	char *npath, *locuser, *user, *host, *port, *p;
 	
+	if (!fs->remote)
+		return -1;
+
+	char* npath, * locuser, * user, * host, * port, * p;
+
 	/* translate backslash to forward slash */
 	for (p = fs->remote; *p; p++)
 		if ('\\' == *p)
@@ -445,7 +470,9 @@ static int parse_remote(GDCONFIG* fs)
 	}
 
 	if (strncmp(fs->remote, "/golddrive/", 11) != 0) {
-		gd_log("Invalid service name, only '\\\\golddrive' is supported: %s\n", fs->remote);
+		gd_log("Invalid service name, "
+			"only '\\\\golddrive' is supported: %s\n", 
+			fs->remote);
 		return -1;
 	}
 
@@ -499,9 +526,10 @@ static int parse_remote(GDCONFIG* fs)
 	
 	fs->root = strdup(p);	
 	fs->has_root = 0;
-	/* mount root by default, prepend a slash before path if needed in remote linux file system
+	/* mount root by default, prepend a slash before path 
+	 * if needed in remote linux file system
 	 * not in windows */
-	if (*p != '/') {
+	if (p && *p != '/') {
 		char s[MAX_PATH];
 		strcpy(s, "/");
 		strcat(s, p);
@@ -526,152 +554,160 @@ static int load_config_file(GDCONFIG* fs)
 	//	rc = load_json(fs);
 	//return rc;
 	char* appdata = getenv("LOCALAPPDATA");
-	char jsonfile[PATH_MAX];
-	sprintf_s(jsonfile, MAX_PATH, "%s\\golddrive\\config.json", appdata);
+	char jsonfile[MAX_PATH];
+	sprintf_s(jsonfile, MAX_PATH, 
+		"%s\\Golddrive\\config.json", appdata);
 	fs->json = strdup(jsonfile);
 	rc = load_json(fs);
 	return rc;
 		
 }
 
-static void init_logging()
+static void init_logging(GDCONFIG* fs)
 {
-	char* appdata = getenv("LOCALAPPDATA");
-	char logfolder[PATH_MAX];
-	sprintf_s(logfolder, MAX_PATH, "%s\\golddrive", appdata);
-	
-	if (!directory_exists(logfolder)) 
-		_mkdir(logfolder);
-	if (directory_exists(logfolder)) {
-		g_logfile = malloc(PATH_MAX);
-		sprintf_s(g_logfile, MAX_PATH, "%s\\golddrive.log", logfolder);
+	g_logfile = fs->logfile;
+
+	if (!g_logfile) {
+		char* appdata = getenv("LOCALAPPDATA");
+		char f[MAX_PATH];
+		sprintf_s(f, MAX_PATH, "%s\\Golddrive", appdata);	
+		g_logfile = malloc(MAX_PATH);
+		sprintf_s(g_logfile, MAX_PATH, "%s\\golddrive.log", f);
+		if (!directory_exists(f))
+			_mkdir(f);		
+	}
+	// touch file
+	FILE* log = fopen(g_logfile, "a");
+	if (log != NULL) {
+		//fprintf(log, "starting logging to file %s\n", g_logfile);
+		fclose(log);
 	}
 	else {
-		g_logfile = 0;	
+		fprintf(stderr, "cannot initialize logging file %s\n", g_logfile);
+		free(g_logfile);
+		g_logfile = 0;
 	}
 }
 
 int main(int argc, char *argv[])
 {
-	
-
 	// load fuse driver
 	if (FspLoad(0) != STATUS_SUCCESS) {
-		fprintf(stderr, "failed to load winfsp driver, either dll not present or wrong version\n");
+		fprintf(stderr,
+			"failed to load winfsp driver, "
+			"either dll not present or wrong version\n");
 		return -1;
 	}
-
-	// logging
-	init_logging();
 
 	// parameters
 	int rc;
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
-	memset(&g_fs, 0, sizeof(g_fs));
-	
-	// defaults
-	g_fs.port = 22;
-	g_fs.buffer = BUFFER_SIZE;
-	//g_fs.keeplink = 1;
-
-
-	rc = fuse_opt_parse(&args, &g_fs, fs_opts, fs_opt_proc);
-	if (rc) {
-		gd_log("bad arguments, try --help\n");
+	memset(&g_conf, 0, sizeof(g_conf));
+	rc = fuse_opt_parse(&args, &g_conf, fs_opts, fs_opt_proc);
+	if (rc || argc < 2 || 
+		!g_conf.drive || strlen(g_conf.drive) < 2) {
+		fprintf(stderr, "bad arguments, try --help\n");
 		return 1;
 	}
 
-	if (!g_fs.drive || strlen(g_fs.drive) < 2 || argc < 2) {
-		fuse_opt_add_arg(&args, "--help");
-		fuse_opt_parse(&args, &g_fs, fs_opts, fs_opt_proc);
-		return 1;
-	}
-	
-	// load missing arguments from config file
-	g_fs.drive[0] = toupper(g_fs.drive[0]);
-	g_fs.letter = g_fs.drive[0];
-	load_config_file(&g_fs);
+	// load arguments from config file
+	load_config_file(&g_conf);
+
+	// logging
+	init_logging(&g_conf);
+
+	// set arguments
+	g_conf.port = 22;
+	g_conf.buffer = BUFFER_SIZE;
+	g_conf.drive[0] = toupper(g_conf.drive[0]);
+	g_conf.letter = g_conf.drive[0];
 
 	// parse network path
-	if (g_fs.remote) {
-		if (parse_remote(&g_fs))
-			return 1;
-	}
-
-	// finally setup missing arguments with defaults
-	// user
-	if (!g_fs.user) {
-		g_fs.user = getenv("USERNAME");
-		// lower case
-		char* u = g_fs.user;
-		for (; *u; ++u) * u = tolower(*u);
-	}
+	if (parse_remote(&g_conf))
+		return 1;
+	
 	// private key
-	if (!g_fs.pkey) {
+	if (!g_conf.pkey) {
 		char* profile = getenv("USERPROFILE");
-		g_fs.pkey = malloc(MAX_PATH);
-		sprintf_s(g_fs.pkey, MAX_PATH, "%s\\.ssh\\id_golddrive_%s", profile, g_fs.user);
+		g_conf.pkey = malloc(MAX_PATH);
+		sprintf_s(g_conf.pkey, MAX_PATH, 
+			"%s\\.ssh\\id_golddrive_%s", 
+			profile, g_conf.user);
 		//sprintf_s(g_fs.pkey, MAX_PATH, "%s\\.ssh\\id_rsa", profile);
 	}
-	if (!file_exists(g_fs.pkey)) {
-		fprintf(stderr, "error: cannot read private key: %s\n", g_fs.pkey);
-		return 1;
-	}
+
+	// user in lower case
+	if (!g_conf.user) 
+		g_conf.user = getenv("USERNAME");	
+	char* u = g_conf.user;
+	for (; *u; ++u)
+		*u = tolower(*u);
+
 	// show parameters
 	gd_log("Arguments:\n");
-	gd_log("drive    = %s\n", g_fs.drive);
-	gd_log("remote   = %s\n", g_fs.remote);
-	gd_log("mountp   = %s\n", g_fs.mountpoint);
-	gd_log("user     = %s\n", g_fs.user);
-	gd_log("host     = %s\n", g_fs.host);
-	gd_log("port     = %d\n", g_fs.port);
-	gd_log("root     = %s\n", g_fs.root);
-	gd_log("pkey     = %s\n", g_fs.pkey);
-
+	gd_log("drive    = %s\n", g_conf.drive);
+	gd_log("remote   = %s\n", g_conf.remote);
+	gd_log("mountp   = %s\n", g_conf.mountpoint);
+	gd_log("user     = %s\n", g_conf.user);
+	gd_log("host     = %s\n", g_conf.host);
+	gd_log("port     = %d\n", g_conf.port);
+	gd_log("root     = %s\n", g_conf.root);
+	gd_log("pkey     = %s\n", g_conf.pkey);
 
 	// winfsp arguments
 	char volprefix[256], volname[256], prefix[256];
-	strcpy(prefix, g_fs.remote);
-	if (str_contains(g_fs.remote, ":"))
-		str_replace(g_fs.remote, ":", "", prefix);
-	sprintf_s(volprefix, sizeof(volprefix), "-oVolumePrefix=%s", prefix);
-	sprintf_s(volname, sizeof(volname), "-ovolname=%s", g_fs.mountpoint);
+	strcpy(prefix, g_conf.remote);
+	if (str_contains(g_conf.remote, ":"))
+		str_replace(g_conf.remote, ":", "", prefix);
+	sprintf_s(volprefix, sizeof(volprefix), 
+		"-oVolumePrefix=%s", prefix);
+	sprintf_s(volname, sizeof(volname), 
+		"-ovolname=%s", g_conf.mountpoint);
 	//gd_log("Prefix   = %s\n", volprefix);
 
 	int pos = 1;
 	fuse_opt_insert_arg(&args, pos++, volprefix);
 	fuse_opt_insert_arg(&args, pos++, volname);
-	fuse_opt_insert_arg(&args, pos++, "-oFileSystemName=Golddrive");
-	fuse_opt_insert_arg(&args, pos++, "-oFileInfoTimeout=5000,DirInfoTimeout=5000,VolumeInfoTimeout=5000");
-	fuse_opt_insert_arg(&args, pos++, "-orellinks,dothidden,uid=-1,gid=-1,umask=000,create_umask=000");
+	fuse_opt_insert_arg(&args, pos++, 
+		"-oFileSystemName=Golddrive");
+	fuse_opt_insert_arg(&args, pos++, 
+		"-oFileInfoTimeout=5000,DirInfoTimeout=5000,VolumeInfoTimeout=5000");
+	fuse_opt_insert_arg(&args, pos++, 
+		"-orellinks,dothidden,uid=-1,gid=-1,umask=000,create_umask=000");
 	
 	// config file arguments
-	if (g_fs.args && strcmp(g_fs.args, "") != 0) {
-		fuse_opt_insert_arg(&args, pos++, g_fs.args);
+	if (g_conf.args && strcmp(g_conf.args, "") != 0) {
+		fuse_opt_insert_arg(&args, pos++, g_conf.args);
 	}
 	
 	// drive must be the last argument for winfsp
-	rc = fuse_opt_parse(&args, &g_fs, fs_opts, fs_opt_proc);
-	fuse_opt_add_arg(&args, g_fs.drive);
+	rc = fuse_opt_parse(&args, &g_conf, fs_opts, fs_opt_proc);
+	fuse_opt_add_arg(&args, g_conf.drive);
 
 	// print arguments
-	gd_log("buffer   = %u\n", g_fs.buffer);
-	gd_log("keeplink = %u\n", g_fs.keeplink);
+	gd_log("buffer   = %u\n", g_conf.buffer);
+	gd_log("keeplink = %u\n", g_conf.keeplink);
 	//gd_log("compress = %u\n", g_fs.compress);
-	gd_log("block    = %u\n", g_fs.block);
-	if (g_fs.cipher)
-		gd_log("cipher   = %s\n", g_fs.cipher);
+	gd_log("block    = %u\n", g_conf.block);
+	if (g_conf.cipher)
+		gd_log("cipher   = %s\n", g_conf.cipher);
 
-	gd_log("\nWinFsp arguments:\n");
+	gd_log("WinFsp arguments:\n");
 	for (int i = 1; i < args.argc; i++)
 		gd_log("arg %d    = %s\n", i, args.argv[i]);
-
-	// initiaize small read/write lock
-	InitializeSRWLock(&g_ssh_lock);
-	//InitializeCriticalSectionAndSpinCount(&g_critical_section, 0x00000400);
-
-	g_sftp_calls = 0;
 	
+	// check existance of private key before trying to ssh
+	if (!file_exists(g_conf.pkey)) {
+		gd_log("cannot read private key: %s\n", g_conf.pkey);
+		return 1;
+	}
+
+	// initialize thread locks
+	InitializeSRWLock(&g_ssh_lock);
+	InitializeSRWLock(&g_log_lock);
+
+	// initialize ssh
+	g_sftp_calls = 0;
 	g_ssh = gd_init_ssh();
 	if (!g_ssh)
 		return 1;
@@ -682,7 +718,7 @@ int main(int argc, char *argv[])
 	//rc = run_command_channel_exec(cmd, out, err);
 
 	//snprintf(cmd, sizeof(cmd), "id -u %s", g_fs.user);
-	snprintf(cmd, sizeof(cmd), "id -u %s", g_fs.user);
+	snprintf(cmd, sizeof(cmd), "id -u %s", g_conf.user);
 
 	// bencharmk commands
 	//LARGE_INTEGER frequency, start, end;
@@ -706,25 +742,37 @@ int main(int argc, char *argv[])
 	gd_unlock();
 
 	if (rc == 0) {
-		g_fs.remote_uid = atoi(out);
-		gd_log("uid      = %d\n", g_fs.remote_uid);
+		g_conf.remote_uid = atoi(out);
+		gd_log("uid      = %d\n", g_conf.remote_uid);
 	}
 	gd_lock();
 	rc = run_command_channel_exec("echo $HOME", out, err);
 	gd_unlock();
 	if (rc == 0) {
-		g_fs.home = malloc(sizeof out);
-		strcpy_s(g_fs.home, sizeof out, out);
-		gd_log("home     = %s\n", g_fs.home);
+		g_conf.home = malloc(sizeof out);
+		strcpy_s(g_conf.home, sizeof out, out);
+		gd_log("home     = %s\n", g_conf.home);
 	}
 
 	// number of threads
 	//printf("Threads = %d\n", gd_threads(5, get_number_of_processors()));
 
+	// usage
+	HANDLE* uh = gd_usage("connected");
 
+	// mount
 	rc = fuse_main(args.argc, args.argv, &fs_ops, NULL);
 	
 	// cleanup
+	if (uh) {
+		WaitForSingleObject(uh, 5000);
+		CloseHandle(uh);
+	}
+	uh = gd_usage("disconnected");
+	if (uh) {
+		WaitForSingleObject(uh, 5000);
+		CloseHandle(uh);
+	}
 	gd_finalize();
 	return rc;
 }

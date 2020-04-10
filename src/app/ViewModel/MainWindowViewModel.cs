@@ -572,13 +572,10 @@ namespace golddrive
         }
         private void Closing(object obj)
         {
+            Settings settings = _mountService.LoadSettings();
             if (GoldDrives != null)
             {
-                Settings settings = new Settings
-                {
-                    //Args = GlobalArgs,
-                    Selected = Selected,
-                };
+                settings.Selected = Selected;
                 settings.AddDrives(GoldDrives.ToList());
                 _mountService.SaveSettings(settings);
             }

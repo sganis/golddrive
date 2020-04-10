@@ -2,7 +2,9 @@
 #include "config.h"
 #include "util.h"
 #include "gd.h"
+#include <Winhttp.h>
 
+#pragma comment(lib, "winhttp.lib")
 
 GDSSH* gd_init_ssh(void)
 {
@@ -231,11 +233,11 @@ GDSSH* gd_init_ssh(void)
 	//libssh2_session_flag(ssh, LIBSSH2_FLAG_COMPRESS, g_fs.compress);
 
 	// encryption
-	if (g_fs.cipher) {
+	if (g_conf.cipher) {
 		rc = libssh2_session_method_pref(ssh, 
-			LIBSSH2_METHOD_CRYPT_CS, g_fs.cipher);
+			LIBSSH2_METHOD_CRYPT_CS, g_conf.cipher);
 		rc = libssh2_session_method_pref(ssh, 
-			LIBSSH2_METHOD_CRYPT_SC, g_fs.cipher);
+			LIBSSH2_METHOD_CRYPT_SC, g_conf.cipher);
 			//while (libssh2_session_method_pref(ssh, LIBSSH2_METHOD_CRYPT_CS,
 		//	g_fs.cipher) == LIBSSH2_ERROR_EAGAIN);
 		//while (libssh2_session_method_pref(ssh, LIBSSH2_METHOD_MAC_CS,
@@ -255,18 +257,18 @@ GDSSH* gd_init_ssh(void)
 
 	// non-blocking mode by 
 	//g_fs.block = 1;
-	libssh2_session_set_blocking(ssh, g_fs.block);
+	libssh2_session_set_blocking(ssh, g_conf.block);
 
 	/* create socket  */
-	he = gethostbyname(g_fs.host);
+	he = gethostbyname(g_conf.host);
 	if (!he) {
 		gd_log("%zd: %d :ERROR: %s: %d: host not found: %s\n",
-			time_mu(), thread, __func__, __LINE__, g_fs.host);
+			time_mu(), thread, __func__, __LINE__, g_conf.host);
 		return 0;
 	}
 	sin.sin_addr.s_addr = **(int**)he->h_addr_list;
 	sin.sin_family = AF_INET;
-	sin.sin_port = htons((u_short)g_fs.port);
+	sin.sin_port = htons((u_short)g_conf.port);
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 	rc = connect(sock, (SOCKADDR*)(&sin), sizeof(SOCKADDR_IN));
 	if (rc) {
@@ -328,10 +330,10 @@ GDSSH* gd_init_ssh(void)
 
 	 // authenticate with keys
 	char pubkey[1000];
-	strcpy(pubkey, g_fs.pkey);
+	strcpy(pubkey, g_conf.pkey);
 	strcat(pubkey, ".pub");
 	while ((rc = libssh2_userauth_publickey_fromfile(
-		ssh, g_fs.user, pubkey, g_fs.pkey, NULL)) ==
+		ssh, g_conf.user, pubkey, g_conf.pkey, NULL)) ==
 		LIBSSH2_ERROR_EAGAIN)
 		Sleep(10);
 	
@@ -568,7 +570,7 @@ int gd_readlink(const char* path, char* buf, size_t size)
 	log_debug("rc=%d, %s\n", rc, path);
 	if (rc < 0) {
 		free(target);
-		if (strcmp(path, g_fs.root) != 0) {
+		if (strcmp(path, g_conf.root) != 0) {
 			gd_error(path);
 			return error();
 		}
@@ -726,8 +728,8 @@ int gd_rename(const char* from, const char* to)
 
 	if (rc) {
 
-		if (tolen + 8 < PATH_MAX) {
-			char totmp[PATH_MAX];
+		if (tolen + 8 < MAX_PATH) {
+			char totmp[MAX_PATH];
 			strcpy(totmp, to);
 			gd_random_string(totmp + tolen, 8);
 			rc = _gd_rename(to, totmp);
@@ -924,7 +926,7 @@ intptr_t gd_open(const char* path, int flags, unsigned int mode)
 	sh->flags = pflags;
 
 	// check if file has hard links
-	if (g_fs.keeplink == 0) {
+	if (g_conf.keeplink == 0) {
 		struct fuse_stat stbuf;
 		if (!gd_stat(path, &stbuf)) {
 			if (sh->flags == LIBSSH2_FXF_WRITE
@@ -1060,7 +1062,7 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 
 	size_t bsize;
 	do {
-		bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
+		bsize = chunk < g_conf.buffer ? chunk : g_conf.buffer;
 		while ((rc = (int)libssh2_sftp_read(handle, pos, bsize)) ==
 			LIBSSH2_ERROR_EAGAIN) {
 			waitsocket(g_ssh);
@@ -1140,7 +1142,7 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 
 	size_t bsize;
 	do {
-		bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
+		bsize = chunk < g_conf.buffer ? chunk : g_conf.buffer;
 		while ((rc = (int)libssh2_sftp_write(handle, pos, bsize)) ==
 			LIBSSH2_ERROR_EAGAIN) {
 			waitsocket(g_ssh);
@@ -1480,7 +1482,7 @@ int gd_check_hlink(const char* path)
 		//	"number of links: %d\n", path, hlinks);
 
 		// backup file
-		char backup[PATH_MAX];
+		char backup[MAX_PATH];
 		sprintf_s(backup, sizeof backup, "%s.%zu.hlink", path, time_mu());
 		rc = gd_rename(path, backup);
 
@@ -2304,31 +2306,44 @@ int load_json(GDCONFIG* fs)
 	fclose(fp);
 
 	int i, r;
-	jsmn_parser p;
-	jsmntok_t t[1024]; /* We expect no more than 128 tokens */
-	jsmntok_t* tok;
 	char* val;
+	jsmn_parser p;
+	jsmntok_t* tok;
+	/* We expect no more than 1024 tokens */
+	//jsmntok_t t[1000];
+	//int num_tokens = sizeof(t) / sizeof(t[0]);
+	int num_tokens = 1024;
+	jsmntok_t* t = malloc(num_tokens * sizeof(jsmntok_t)); 
 
 	jsmn_init(&p);
-	r = jsmn_parse(&p, JSON_STRING, strlen(JSON_STRING), t, sizeof(t) / sizeof(t[0]));
+	r = jsmn_parse(&p, JSON_STRING, strlen(JSON_STRING), 
+		t, num_tokens);
 	if (r < 0) {
 		fprintf(stderr, "Failed to parse JSON: %d\n", r);
+		free(t);
 		return 1;
 	}
 
 	/* Assume the top-level element is an object */
 	if (r < 1 || t[0].type != JSMN_OBJECT) {
 		fprintf(stderr, "Object expected, json type=%d\n", t[0].type);
+		free(t);
 		return 1;
 	}
 
 	/* Loop over all keys of the root object */
 	for (i = 1; i < r; i++) {
-		/* only interested in drives key */
-		if (jsoneq(JSON_STRING, &t[i], "Args") == 0) {
+		if (jsoneq(JSON_STRING, &t[i], "LogFile") == 0) {
 			tok = &t[i + 1];
 			val = str_ndup(JSON_STRING + tok->start, tok->end - tok->start);
-			fs->args = strdup(val);
+			fs->logfile = strdup(val);
+			free(val);
+			i++;
+		}
+		else if (jsoneq(JSON_STRING, &t[i], "UsageUrl") == 0) {
+			tok = &t[i + 1];
+			val = str_ndup(JSON_STRING + tok->start, tok->end - tok->start);
+			fs->usageurl = strdup(val);
 			free(val);
 			i++;
 		}
@@ -2398,6 +2413,7 @@ int load_json(GDCONFIG* fs)
 		}
 	}
 	free(JSON_STRING);
+	free(t);
 	//printf("Hosts:\n");
 	//i = 0;
 	//while (json->hosts[i])
@@ -2408,21 +2424,202 @@ int load_json(GDCONFIG* fs)
 	return 0;
 }
 
+int _post(const char* url, const char* data)
+{
+	wchar_t wurl[MAX_PATH];
+	mbstowcs_s(0, wurl, strlen(url) + 1, url, MAX_PATH);
+	URL_COMPONENTS urlComp;
+	ZeroMemory(&urlComp, sizeof(urlComp));
+	urlComp.dwStructSize = sizeof(urlComp);
+	urlComp.dwSchemeLength = (DWORD)-1;
+	urlComp.dwHostNameLength = (DWORD)-1;
+	urlComp.dwUrlPathLength = (DWORD)-1;
+	urlComp.dwExtraInfoLength = (DWORD)-1;
+
+	BOOL success = WinHttpCrackUrl(wurl, (DWORD)wcslen(wurl), 0, &urlComp);
+	if (!success) {
+		int error = GetLastError();
+		return 1;
+	}
+	wchar_t wschema[6];
+	wchar_t whost[100];
+	wchar_t wpath[100];
+	ZeroMemory(wschema, sizeof(wschema));
+	ZeroMemory(whost, sizeof(whost));
+	ZeroMemory(wpath, sizeof(wpath));
+	wcsncpy_s(wschema, 6,
+		urlComp.lpszScheme, (rsize_t)urlComp.dwSchemeLength);
+	wcsncpy_s(whost, 100,
+		urlComp.lpszHostName, (rsize_t)urlComp.dwHostNameLength);
+	wcsncpy_s(wpath, 100,
+		urlComp.lpszUrlPath, (rsize_t)urlComp.dwUrlPathLength);
+	//wcsncpy_s(wpath, sizeof(wpath), urlComp.lpszUrlPath, urlComp.dwUrlPathLength);
+	int port = urlComp.nPort;
+
+
+	DWORD datalen = (DWORD)strlen(data);
+	//wchar_t* wpath = L"/";
+	// convert char* to LPWSTR
+	//wchar_t whost[MAX_PATH];
+	//wchar_t wpath[MAX_PATH];
+	//mbstowcs_s(0, whost, strlen(host) + 1, host, MAX_PATH);
+	//mbstowcs_s(0, wpath, strlen(page), page, sizeof(wchar_t) * 100);
+	//wpath[strlen(page)] = 0;
+	printf("schema: %ls\n", wschema);
+	printf("host: %ls\n", whost);
+	printf("port: %d\n", port);
+	printf("path: %ls\n", wpath);
+
+	LPWSTR phost = whost;
+	LPWSTR ppath = wpath;
+	LPCWSTR additionalHeaders = L"Content-Type: application/x-www-form-urlencoded\r\n";
+	BOOL  bResults = FALSE;
+	HINTERNET  hSession = NULL;
+	HINTERNET  hConnect = NULL;
+	HINTERNET  hRequest = NULL;
+
+	hSession = WinHttpOpen(L"HTTP Logger/1.0",
+		WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+		WINHTTP_NO_PROXY_NAME,
+		WINHTTP_NO_PROXY_BYPASS, 0);
+
+	if (hSession) {
+		if (!WinHttpSetTimeouts(hSession, 4000, 4000, 2000, 10000)) {
+			printf("Error %u in WinHttpSetTimeouts.\n", GetLastError());
+			return 1;
+		}
+		hConnect = WinHttpConnect(hSession, phost, port, 0);
+	}
+	//int secflag = https ? WINHTTP_FLAG_SECURE : 0;
+	int secflag = WINHTTP_FLAG_SECURE;
+	if (hConnect)
+		hRequest = WinHttpOpenRequest(hConnect, L"POST", ppath,
+			NULL, WINHTTP_NO_REFERER,
+			WINHTTP_DEFAULT_ACCEPT_TYPES,
+			secflag); //WINHTTP_FLAG_SECURE
+	DWORD headersLength = -1;
+
+
+	//bResults = WinHttpSendRequest(hRequest,
+	//     additionalHeaders, headersLength, (LPVOID)data,
+	//     datalen, datalen, 0);
+
+	int retry = 0;
+	int optionset = 0;
+	int retries = 0;
+	int maxretries = 2;
+	do {
+		retry = 0;
+
+		int result = NO_ERROR;
+		// no retry on success, possible retry on failure
+		bResults = WinHttpSendRequest(hRequest,
+			additionalHeaders, headersLength, (LPVOID)data,
+			datalen, datalen, 0);
+
+		if (bResults == FALSE) {
+
+
+			result = GetLastError();
+
+			// (1) If you want to allow SSL certificate errors and continue
+			// with the connection, you must allow and initial failure and then
+			// reset the security flags. From: "HOWTO: Handle Invalid Certificate
+			// Authority Error with WinInet"
+			// http://support.microsoft.com/default.aspx?scid=kb;EN-US;182888
+			if (result == ERROR_WINHTTP_SECURE_FAILURE) {
+				DWORD dwFlags =
+					SECURITY_FLAG_IGNORE_UNKNOWN_CA |
+					SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE |
+					SECURITY_FLAG_IGNORE_CERT_CN_INVALID |
+					SECURITY_FLAG_IGNORE_CERT_DATE_INVALID;
+
+				if (optionset)
+					break;
+
+				if (WinHttpSetOption(
+					hRequest,
+					WINHTTP_OPTION_SECURITY_FLAGS,
+					&dwFlags,
+					sizeof(dwFlags))) {
+					retry = 1;
+					optionset = 1;
+				}
+			}
+			// (2) Negotiate authorization handshakes may return this error
+			// and require multiple attempts
+			// http://msdn.microsoft.com/en-us/library/windows/desktop/aa383144%28v=vs.85%29.aspx
+			else if (result == ERROR_WINHTTP_RESEND_REQUEST) {
+				retry = 1;
+				retries++;
+				if (retries > maxretries)
+					break;
+			}
+		}
+	} while (retry);
+
+	if (!bResults) {
+		int err = GetLastError();
+		printf("Error %d has occurred.\n", err);
+		return 1;
+	}
+	if (hRequest)
+		WinHttpCloseHandle(hRequest);
+	if (hConnect)
+		WinHttpCloseHandle(hConnect);
+	if (hSession)
+		WinHttpCloseHandle(hSession);
+	return 0;
+}
+
+DWORD WINAPI _post_background(LPVOID data)
+{
+	usagedata* d = (usagedata*)data;
+	int rc = 0;
+	rc = _post(d->url, d->data);
+	free(d);
+	return rc;	
+}
+HANDLE* gd_usage(const char* message)
+{
+	if (!g_conf.usageurl)
+		return 0;
+
+	usagedata* d = malloc(sizeof(usagedata));
+	strcpy_s(d->url, MAX_PATH, g_conf.usageurl);
+	strcpy_s(d->data, 1024, "user=");
+	strcat_s(d->data, 1024, g_conf.user);
+	strcat_s(d->data, 1024, "&host=");
+	strcat_s(d->data, 1024, g_conf.host);
+	strcat_s(d->data, 1024, "&message=");
+	strcat_s(d->data, 1024, message);
+
+	HANDLE* thread = CreateThread(NULL, 0, _post_background, d, 0, NULL);
+	return thread;
+	// this must be at the end of main
+	//WaitForSingleObject(thread, 5000);
+	//CloseHandle(thread);
+}
+
 void gd_log(const char* fmt, ...)
 {
+	AcquireSRWLockExclusive(&g_log_lock);
 	char message[1000];
-	//memset(message, 0, 1000);
+	memset(message, 0, 1000);
 	va_list args;
 	va_start(args, fmt);
 	vsprintf(message, fmt, args);
 	va_end(args);
 	printf("%s", message);
+
 	if (g_logfile) {
+		
 		FILE* f = fopen(g_logfile, "a");
 		if (f != NULL)
 			fprintf(f, "golddrive: %s", message);
 		fclose(f);
 	}
+	ReleaseSRWLockExclusive(&g_log_lock);
 }
 
 //#if defined(FSP_FUSE_USE_STAT_EX)

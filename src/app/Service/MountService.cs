@@ -95,7 +95,9 @@ namespace golddrive
 
         public Settings LoadSettings()
         {
-            Settings settings = new Settings { Filename = LocalAppData + "\\config.json" };
+            Settings settings = new Settings() {
+                Filename = LocalAppData + "\\config.json" 
+            };
             settings.Load();
             return settings;
         }
@@ -105,12 +107,16 @@ namespace golddrive
             try
             {
                 settings.Filename = LocalAppData + "\\config.json";
+                
                 using (var file = File.CreateText(settings.Filename))
                 {
                     var json = JsonConvert.SerializeObject(
                         settings,
                         Newtonsoft.Json.Formatting.Indented,
-                        new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+                        new JsonSerializerSettings
+                        {
+                            NullValueHandling = NullValueHandling.Ignore
+                        });
                     file.Write(json);
                 }
             }

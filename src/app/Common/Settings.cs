@@ -11,6 +11,8 @@ namespace golddrive
     public class Settings
     {
         //public string Args { get; set; }
+        //public string LogFile { get; set; }
+        public string UsageUrl { get; set; }
         public string Selected { get; set; }
         public Dictionary<string, Drive> Drives { get; set; }
 
@@ -35,7 +37,6 @@ namespace golddrive
             }
         }
 
-
         [JsonIgnore]
         public Drive SelectedDrive { get; set; }
 
@@ -58,6 +59,13 @@ namespace golddrive
                 var json = JsonConvert.DeserializeObject<Dictionary<string, object>>(File.ReadAllText(Filename));
                 //if (json.ContainsKey("Args"))
                 //    Args = json["Args"].ToString();
+                //LogFile = "C:\\Users\\Sant\\Desktop\\golddrive.log";
+                //UsageUrl = "https://192.168.100.201:5000";
+
+                //if (json.ContainsKey("LogFile"))
+                //    LogFile = json["LogFile"].ToString();
+                if (json.ContainsKey("UsageUrl"))
+                    UsageUrl = json["UsageUrl"].ToString();
                 if (json.ContainsKey("Selected"))
                     Selected = json["Selected"].ToString();
                 if (!json.ContainsKey("Drives"))
@@ -73,13 +81,13 @@ namespace golddrive
                         Args = args
                     };
                     var data = JsonConvert.DeserializeObject<Dictionary<string, object>>(_drives[_d].ToString());
-                    if (data.ContainsKey("Args"))
+                    if (data.ContainsKey("Args") && data["Args"] != null)
                         d.Args = data["Args"].ToString();
-                    if (data.ContainsKey("Label"))
+                    if (data.ContainsKey("Label") && data["Label"] != null)
                         d.Label = data["Label"].ToString();
-                    if (data.ContainsKey("MountPoint"))
+                    if (data.ContainsKey("MountPoint") && data["MountPoint"] != null)
                         d.MountPoint = data["MountPoint"].ToString();
-                    if (data.ContainsKey("Hosts"))
+                    if (data.ContainsKey("Hosts") && data["Hosts"] != null)
                         d.Hosts = JsonConvert.DeserializeObject<List<string>>(data["Hosts"].ToString());
                     Drives[d.Name] = d;
                 }

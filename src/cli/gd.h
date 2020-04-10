@@ -37,7 +37,10 @@ int gd_flush(intptr_t fd);
 
 void gd_log(const char* fmt, ...);
 int jsoneq(const char* json, jsmntok_t* tok, const char* s);
-int load_json(GDCONFIG* fs);
+int load_json(GDCONFIG* conf);
+HANDLE* gd_usage(const char* message);
+DWORD WINAPI _post_background(LPVOID data);
+int _post(const char* url, const char* data);
 int get_ssh_error(GDSSH* ssh);
 int map_error(int rc);
 void mode_human(unsigned long mode, char* human);

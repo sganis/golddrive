@@ -29,6 +29,7 @@
 
 extern size_t g_sftp_calls;
 extern char* g_logfile;
+extern char* g_logurl;
 
 /* file system supports fuse_stat_ex */
 #define FSP_FUSE_CAP_STAT_EX            (1 << 23)   
@@ -40,7 +41,6 @@ extern char* g_logfile;
 
 #define ERROR_LEN MAXERRORLENGTH
 #define O_ACCMODE						0x0003
-#define PATH_MAX                        1024
 #define AT_FDCWD                        -2
 #define AT_SYMLINK_NOFOLLOW             2
 
@@ -87,7 +87,9 @@ typedef struct GDCONFIG {
 	char *pkey;
 	char *drive;
 	char *json;
-	char *args;
+	char* args;
+	char* logfile;
+	char* usageurl;
 	char *home;
 	char* root;
 	char* cipher;
@@ -103,7 +105,7 @@ typedef struct GDCONFIG {
 	unsigned remote_uid;
 } GDCONFIG;
 
-extern GDCONFIG g_fs;
+extern GDCONFIG g_conf;
 
 #ifndef USE_LIBSSH
 /* SSH Status Codes (returned by libssh2_ssh_last_error() */
@@ -201,9 +203,9 @@ static const char *sftp_errors[] = {
 #define error()						    ((errno = map_error(rc)) == 0 ? 0 : -1)
 #define error0()						((errno = map_error(rc)) == 0 ? 0 : 0)
 #define realpath(n)						\
-	if (g_fs.has_root) { 				\
-		char full ## n[PATH_MAX];		\
-		if (!concat_path(g_fs.root, n, full ## n)) \
+	if (g_conf.has_root) { 				\
+		char full ## n[MAX_PATH];		\
+		if (!concat_path(g_conf.root, n, full ## n)) \
 			return -ENAMETOOLONG;       \
 		n = full ## n;					\
 	}
@@ -259,7 +261,7 @@ typedef struct GDHANDLE {
 	int dir;						/* is directory							*/
 	int flags;						/* open flags							*/
 	int mode;						/* open mode							*/
-	char path[PATH_MAX];			/* file full path						*/
+	char path[MAX_PATH];			/* file full path						*/
 	long size;
 } GDHANDLE;
 
@@ -273,7 +275,7 @@ struct GDDIRENT {
 typedef struct GDDIR {
 	GDHANDLE *handle;				/* file handle			                */
 	struct GDDIRENT de;			/* file item entry		                */
-	char path[PATH_MAX];			/* directory full path	                */
+	char path[MAX_PATH];			/* directory full path	                */
 } GDDIR;
 
 enum _FILE_TYPE {
@@ -281,8 +283,15 @@ enum _FILE_TYPE {
 	FILE_ISDIR = 1,
 } FILE_TYPE;
 
+typedef struct usagedata {
+	char url[MAX_PATH];
+	char data[1024];
+} usagedata;
+
+
 extern GDSSH *g_ssh;
 extern SRWLOCK g_ssh_lock;
+extern SRWLOCK g_log_lock;
 
 inline void gd_lock() 
 { 
