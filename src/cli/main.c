@@ -768,11 +768,11 @@ int main(int argc, char *argv[])
 		WaitForSingleObject(uh, 10000);
 		CloseHandle(uh);
 	}
-	uh = gd_usage("disconnected");
-	if (uh) {
-		WaitForSingleObject(uh, 10000);
-		CloseHandle(uh);
-	}
+	//uh = gd_usage("disconnected");
+	////if (uh) {
+	//	WaitForSingleObject(uh, 10000);
+	//	CloseHandle(uh);
+	//}
 	gd_finalize();
 	return rc;
 }
