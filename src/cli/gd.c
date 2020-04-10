@@ -2484,7 +2484,7 @@ int _post(const char* url, const char* data)
 		WINHTTP_NO_PROXY_BYPASS, 0);
 
 	if (hSession) {
-		if (!WinHttpSetTimeouts(hSession, 4000, 4000, 2000, 10000)) {
+		if (!WinHttpSetTimeouts(hSession, 3000, 4000, 2000, 1000)) {
 			printf("Error %u in WinHttpSetTimeouts.\n", GetLastError());
 			return 1;
 		}

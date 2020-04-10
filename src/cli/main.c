@@ -765,12 +765,12 @@ int main(int argc, char *argv[])
 	
 	// cleanup
 	if (uh) {
-		WaitForSingleObject(uh, 5000);
+		WaitForSingleObject(uh, 10000);
 		CloseHandle(uh);
 	}
 	uh = gd_usage("disconnected");
 	if (uh) {
-		WaitForSingleObject(uh, 5000);
+		WaitForSingleObject(uh, 10000);
 		CloseHandle(uh);
 	}
 	gd_finalize();

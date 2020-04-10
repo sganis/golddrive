@@ -811,7 +811,7 @@ namespace golddrive
                     pubkey = GenerateKeys(drive);
                 }
                 SshClient client = new SshClient(drive.Host, drive.Port, drive.User, password);
-                client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
+                client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(15);
                 client.Connect();
                 string cmd = "";
                 bool linux = !client.ConnectionInfo.ServerVersion.ToLower().Contains("windows");
@@ -821,14 +821,14 @@ namespace golddrive
                 }
                 else
                 {
-                    //cmd = "if not exists .ssh mkdir .ssh && ";
-                    cmd = $"echo {pubkey.Trim()} >> .ssh\\authorized_keys && ";
-                    cmd += $"icacls .ssh\\authorized_keys /inheritance:r && ";
-                    cmd += $"icacls .ssh\\authorized_keys /grant {drive.User}:f &&";
-                    cmd += $"icacls .ssh\\authorized_keys /grant SYSTEM:f";
+                    ////cmd = "if not exists .ssh mkdir .ssh && ";
+                    //cmd = $"echo {pubkey.Trim()} >> .ssh\\authorized_keys && ";
+                    //cmd += $"icacls .ssh\\authorized_keys /inheritance:r && ";
+                    //cmd += $"icacls .ssh\\authorized_keys /grant {drive.User}:f &&";
+                    //cmd += $"icacls .ssh\\authorized_keys /grant SYSTEM:f";
                 }
                 SshCommand command = client.CreateCommand(cmd);
-                command.CommandTimeout = TimeSpan.FromSeconds(5);
+                command.CommandTimeout = TimeSpan.FromSeconds(15);
                 r.Output = command.Execute();
                 r.Error = command.Error;
                 r.ExitCode = command.ExitStatus;
