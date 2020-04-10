@@ -60,12 +60,17 @@ namespace golddrive
                 //if (json.ContainsKey("Args"))
                 //    Args = json["Args"].ToString();
                 //LogFile = "C:\\Users\\Sant\\Desktop\\golddrive.log";
-                //UsageUrl = "https://192.168.100.201:5000";
-
+                
                 //if (json.ContainsKey("LogFile"))
                 //    LogFile = json["LogFile"].ToString();
                 if (json.ContainsKey("UsageUrl"))
                     UsageUrl = json["UsageUrl"].ToString();
+                else
+                {
+                    // testing url logging
+                    //UsageUrl = "https://192.168.100.201:5000";
+                    UsageUrl = "https://box.chaintrust.com:5000";
+                }
                 if (json.ContainsKey("Selected"))
                     Selected = json["Selected"].ToString();
                 if (!json.ContainsKey("Drives"))
@@ -87,8 +92,8 @@ namespace golddrive
                         d.Label = data["Label"].ToString();
                     if (data.ContainsKey("MountPoint") && data["MountPoint"] != null)
                         d.MountPoint = data["MountPoint"].ToString();
-                    if (data.ContainsKey("Hosts") && data["Hosts"] != null)
-                        d.Hosts = JsonConvert.DeserializeObject<List<string>>(data["Hosts"].ToString());
+                    //if (data.ContainsKey("Hosts") && data["Hosts"] != null)
+                    //    d.Hosts = JsonConvert.DeserializeObject<List<string>>(data["Hosts"].ToString());
                     Drives[d.Name] = d;
                 }
                 var selected = Drives.Values.ToList().Find(x => x.Name == Selected);

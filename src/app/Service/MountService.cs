@@ -234,7 +234,8 @@ namespace golddrive
             return RunLocal("cmd.exe", "/C " + cmd);
         }
 
-        public ReturnBox RunLocal(string cmd, string args, int timeout_secs = 30)
+        public ReturnBox RunLocal(string cmd, string args, 
+            int timeout_secs = 30)
         {
             Logger.Log($"Running local command: {cmd} {args}");
             ReturnBox r = new ReturnBox();
@@ -255,7 +256,7 @@ namespace golddrive
             r.Output = process.StandardOutput.ReadToEnd();
             r.Error = process.StandardError.ReadToEnd();
             r.ExitCode = process.ExitCode;
-            r.Success = r.ExitCode == 0 && String.IsNullOrEmpty(r.Error);
+            r.Success = r.ExitCode == 0;
             return r;
         }
 
@@ -738,6 +739,7 @@ namespace golddrive
             //r = TestHost(drive);
             //if (r.MountStatus == MountStatus.BAD_HOST)
             //    return r;
+            int timeout = 15; // secs
 
             if (!File.Exists(drive.AppKey))
             {
@@ -752,7 +754,7 @@ namespace golddrive
                 var pk = new PrivateKeyFile(drive.AppKey);
                 var keyFiles = new[] { pk };
                 SshClient client = new SshClient(drive.Host, drive.Port, drive.User, keyFiles);
-                client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(15);
+                client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(timeout);
                 client.Connect();
                 client.Disconnect();
                 r.MountStatus = MountStatus.OK;
@@ -776,8 +778,8 @@ namespace golddrive
                 else if (ex.Message.Contains("OPENSSH"))
                 {
                     // openssh keys not supported by ssh.net yet
-                    string cmd = $"ssh.exe -i \"{drive.AppKey}\" -p {drive.Port} -oPasswordAuthentication=no -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oBatchMode=yes { drive.User}@{drive.Host} \"echo ok\"";
-                    var r1 = RunLocal(cmd);
+                    string args = $"-i \"{drive.AppKey}\" -p {drive.Port} -oPasswordAuthentication=no -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oBatchMode=yes -oConnectTimeout=10 { drive.User}@{drive.Host} \"echo ok\"";
+                    var r1 = RunLocal("ssh.exe", args, timeout);
                     var ok = r1.Output.Trim() == "ok";
                     if (ok)
                     {
