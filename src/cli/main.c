@@ -712,6 +712,9 @@ int main(int argc, char *argv[])
 	if (!g_ssh)
 		return 1;
 
+	// usage
+	HANDLE* uh = gd_usage("connected");
+
 	// get uid
 	char cmd[COMMAND_SIZE], out[COMMAND_SIZE], err[COMMAND_SIZE];
 	//snprintf(cmd, sizeof(cmd), "hostname", g_fs.user);
@@ -757,8 +760,6 @@ int main(int argc, char *argv[])
 	// number of threads
 	//printf("Threads = %d\n", gd_threads(5, get_number_of_processors()));
 
-	// usage
-	HANDLE* uh = gd_usage("connected");
 
 	// mount
 	rc = fuse_main(args.argc, args.argv, &fs_ops, NULL);
@@ -768,6 +769,7 @@ int main(int argc, char *argv[])
 		WaitForSingleObject(uh, 10000);
 		CloseHandle(uh);
 	}
+	// this prouces disconnection delays
 	//uh = gd_usage("disconnected");
 	////if (uh) {
 	//	WaitForSingleObject(uh, 10000);
