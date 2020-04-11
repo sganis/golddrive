@@ -4,7 +4,6 @@
 #include "gd.h"
 #include <Winhttp.h>
 
-#pragma comment(lib, "winhttp.lib")
 
 GDSSH* gd_init_ssh(void)
 {
@@ -2465,10 +2464,10 @@ int _post(const char* url, const char* data)
 	//mbstowcs_s(0, whost, strlen(host) + 1, host, MAX_PATH);
 	//mbstowcs_s(0, wpath, strlen(page), page, sizeof(wchar_t) * 100);
 	//wpath[strlen(page)] = 0;
-	printf("schema: %ls\n", wschema);
-	printf("host: %ls\n", whost);
-	printf("port: %d\n", port);
-	printf("path: %ls\n", wpath);
+	//printf("schema: %ls\n", wschema);
+	//printf("host: %ls\n", whost);
+	//printf("port: %d\n", port);
+	//printf("path: %ls\n", wpath);
 
 	LPWSTR phost = whost;
 	LPWSTR ppath = wpath;

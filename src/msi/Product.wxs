@@ -3,15 +3,15 @@
 <?define UpgradeCode64="EFCA9EFA-7F65-4C74-A65D-88092D67F41A"?>
 <?define UpgradeCode32="E760F080-251E-4D00-A45E-8F7AA0F7E7C4"?>
 <?if $(var.Platform) = x64?>
-<?define UpgradeCode="$(var.UpgradeCode64)"?>
-<?define OtherUpgradeCode="$(var.UpgradeCode32)"?>
-<?define ProgramFilesFolder="ProgramFiles64Folder"?>
-<?define LauncherRegistryKey="Software\WOW6432Node\WinFsp\Services"?>
+  <?define UpgradeCode="$(var.UpgradeCode64)"?>
+  <?define OtherUpgradeCode="$(var.UpgradeCode32)"?>
+  <?define ProgramFilesFolder="ProgramFiles64Folder"?>
+  <?define LauncherRegistryKey="Software\WOW6432Node\WinFsp\Services"?>
 <?else?>
-<?define UpgradeCode="$(var.UpgradeCode32)"?>
-<?define OtherUpgradeCode="$(var.UpgradeCode64)"?>
-<?define ProgramFilesFolder="ProgramFilesFolder"?>
-<?define LauncherRegistryKey="Software\WinFsp\Services"?>
+  <?define UpgradeCode="$(var.UpgradeCode32)"?>
+  <?define OtherUpgradeCode="$(var.UpgradeCode64)"?>
+  <?define ProgramFilesFolder="ProgramFilesFolder"?>
+  <?define LauncherRegistryKey="Software\WinFsp\Services"?>
 <?endif?>
 
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">

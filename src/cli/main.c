@@ -678,6 +678,7 @@ int main(int argc, char *argv[])
 	// config file arguments
 	if (g_conf.args && strcmp(g_conf.args, "") != 0) {
 		fuse_opt_insert_arg(&args, pos++, g_conf.args);
+		gd_log("args     = %s\n", g_conf.args);
 	}
 	
 	// drive must be the last argument for winfsp
@@ -691,6 +692,9 @@ int main(int argc, char *argv[])
 	gd_log("block    = %u\n", g_conf.block);
 	if (g_conf.cipher)
 		gd_log("cipher   = %s\n", g_conf.cipher);
+
+	if (g_conf.usageurl) 
+		gd_log("usage    = %s\n", g_conf.usageurl);
 
 	gd_log("WinFsp arguments:\n");
 	for (int i = 1; i < args.argc; i++)

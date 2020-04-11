@@ -7,7 +7,7 @@ image:
   - Visual Studio 2013
 platform: 
   - x64
-  # - x86
+  - x86
 configuration: 
   - Release2
   # - Release
@@ -21,8 +21,8 @@ matrix:
     - image: Visual Studio 2017
     - image: Visual Studio 2015
     - image: Visual Studio 2013
-  exclude:
-    - platform: x86
+  # exclude:
+  #   - platform: x86
 install:
   - dir C:\cache || mkdir C:\cache
   - set winfsp=winfsp-1.6.20027.msi
@@ -50,7 +50,7 @@ for:
           platform: x64
         - image: Visual Studio 2019
           configuration: Release2
-          platform: x64
+          # platform: x64
     before_build:
       # uninstall and setup my own wsl
       - wslconfig /u Ubuntu-18.04
