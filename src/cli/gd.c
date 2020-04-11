@@ -16,15 +16,15 @@ GDSSH* gd_init_ssh(void)
 	if (ssh == NULL)
 		exit(-1);
 
-	ssh_options_set(ssh, SSH_OPTIONS_HOST, g_fs.host);
-	ssh_options_set(ssh, SSH_OPTIONS_USER, g_fs.user);
-	ssh_options_set(ssh, SSH_OPTIONS_PORT, &g_fs.port);
-	//ssh_options_set(ssh, SSH_OPTIONS_COMPRESSION, g_fs.compress ? "yes" : "no");
+	ssh_options_set(ssh, SSH_OPTIONS_HOST, g_conf.host);
+	ssh_options_set(ssh, SSH_OPTIONS_USER, g_conf.user);
+	ssh_options_set(ssh, SSH_OPTIONS_PORT, &g_conf.port);
+	//ssh_options_set(ssh, SSH_OPTIONS_COMPRESSION, g_conf.compress ? "yes" : "no");
 	ssh_options_set(ssh, SSH_OPTIONS_STRICTHOSTKEYCHECK, 0);
 	ssh_options_set(ssh, SSH_OPTIONS_KNOWNHOSTS, "/dev/null");
-	if (g_fs.cipher) {
-		rc = ssh_options_set(ssh, SSH_OPTIONS_CIPHERS_C_S, g_fs.cipher);
-		rc = ssh_options_set(ssh, SSH_OPTIONS_CIPHERS_S_C, g_fs.cipher);
+	if (g_conf.cipher) {
+		rc = ssh_options_set(ssh, SSH_OPTIONS_CIPHERS_C_S, g_conf.cipher);
+		rc = ssh_options_set(ssh, SSH_OPTIONS_CIPHERS_S_C, g_conf.cipher);
 		if (rc) {
 			fprintf(stderr, "%zd :ERROR: %s: %d: "
 				"failed to set cipher [rc=%d, %s]\n",
@@ -68,7 +68,7 @@ GDSSH* gd_init_ssh(void)
 	// Give password here
 
 	ssh_key pk;
-	rc = ssh_pki_import_privkey_file(g_fs.pkey, "", NULL, NULL, &pk);
+	rc = ssh_pki_import_privkey_file(g_conf.pkey, "", NULL, NULL, &pk);
 	if (rc != SSH_OK) {
 		fprintf(stderr, "Cannot read private key\n");
 		ssh_disconnect(ssh);
@@ -76,7 +76,7 @@ GDSSH* gd_init_ssh(void)
 		WSACleanup();
 		return 0;
 	}
-	rc = ssh_userauth_publickey(ssh, g_fs.user, pk);
+	rc = ssh_userauth_publickey(ssh, g_conf.user, pk);
 	if (rc != SSH_AUTH_SUCCESS) {
 		fprintf(stderr, "Key authentication wrong\n");
 		ssh_disconnect(ssh);
@@ -230,7 +230,7 @@ GDSSH* gd_init_ssh(void)
 	//libssh2_trace_sethandler(ssh, 0, libssh2_logger);
 
 	// compression
-	//libssh2_session_flag(ssh, LIBSSH2_FLAG_COMPRESS, g_fs.compress);
+	//libssh2_session_flag(ssh, LIBSSH2_FLAG_COMPRESS, g_conf.compress);
 
 	// encryption
 	if (g_conf.cipher) {
@@ -239,11 +239,11 @@ GDSSH* gd_init_ssh(void)
 		rc = libssh2_session_method_pref(ssh, 
 			LIBSSH2_METHOD_CRYPT_SC, g_conf.cipher);
 			//while (libssh2_session_method_pref(ssh, LIBSSH2_METHOD_CRYPT_CS,
-		//	g_fs.cipher) == LIBSSH2_ERROR_EAGAIN);
+		//	g_conf.cipher) == LIBSSH2_ERROR_EAGAIN);
 		//while (libssh2_session_method_pref(ssh, LIBSSH2_METHOD_MAC_CS,
-		//	g_fs.cipher) == LIBSSH2_ERROR_EAGAIN);
+		//	g_conf.cipher) == LIBSSH2_ERROR_EAGAIN);
 		//while (libssh2_session_method_pref(ssh, LIBSSH2_METHOD_MAC_SC,
-		//	g_fs.cipher) == LIBSSH2_ERROR_EAGAIN);
+		//	g_conf.cipher) == LIBSSH2_ERROR_EAGAIN);
 
 		if (rc) {
 			rc = libssh2_session_last_error(ssh, &errmsg, &errlen, 0);
@@ -256,7 +256,7 @@ GDSSH* gd_init_ssh(void)
 	}
 
 	// non-blocking mode by 
-	//g_fs.block = 1;
+	//g_conf.block = 1;
 	libssh2_session_set_blocking(ssh, g_conf.block);
 
 	/* create socket  */
@@ -317,7 +317,7 @@ GDSSH* gd_init_ssh(void)
 	//char* userauthlist = NULL;
 	//do {
 	//	userauthlist = libssh2_userauth_list(
-	//		ssh, g_fs.user, (unsigned int)strlen(g_fs.user));
+	//		ssh, g_conf.user, (unsigned int)strlen(g_conf.user));
 	//} while (!userauthlist && libssh2_session_last_errno(ssh) == 
 	//	LIBSSH2_ERROR_EAGAIN);
 	//
@@ -339,7 +339,7 @@ GDSSH* gd_init_ssh(void)
 	
 	// or password
 	//while ((rc = libssh2_userauth_password(
-	//	ssh, g_fs.user, "support")) ==
+	//	ssh, g_conf.user, "support")) ==
 	//	LIBSSH2_ERROR_EAGAIN);
 
 	if (rc) {
@@ -868,7 +868,7 @@ intptr_t gd_open(const char* path, int flags, unsigned int mode)
 
 	//printf("%d flags=%u %s\n", GetCurrentThreadId(), flags, path);
 	// check if file has hard links
-	if (g_fs.keeplink == 0) {
+	if (g_conf.keeplink == 0) {
 		if ((flags & O_ACCMODE) == O_WRONLY || (flags & O_ACCMODE) == O_RDWR) {
 			struct fuse_stat stbuf;
 			if (!gd_stat(path, &stbuf)) {
@@ -979,7 +979,7 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	// async
 	sftp_file_set_nonblocking(handle);
 	//size_t bsize;
-	//bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
+	//bsize = chunk < g_conf.buffer ? chunk : g_conf.buffer;
 	int async_request = sftp_async_read_begin(handle, (uint32_t)chunk);
 	//Sleep(1);
 	if (async_request >= 0) {
@@ -1000,7 +1000,7 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 
 	while ((rc > 0 || rc == SSH_AGAIN) && chunk) {
 		if (rc > 0) {
-			//bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
+			//bsize = chunk < g_conf.buffer ? chunk : g_conf.buffer;
 			async_request = sftp_async_read_begin(handle, (uint32_t)chunk);
 		}
 		if (async_request >= 0) {
@@ -1032,7 +1032,7 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	// sync
 	//size_t bsize;
 	//do {
-	//	//bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
+	//	//bsize = chunk < g_conf.buffer ? chunk : g_conf.buffer;
 	//	//rc = (int)sftp_read(handle, pos, bsize);
 	//	rc = (int)sftp_read(handle, pos, chunk);
 	//	g_sftp_calls++;
@@ -1115,7 +1115,7 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 
 	size_t bsize;
 	do {
-		bsize = chunk < g_fs.buffer ? chunk : g_fs.buffer;
+		bsize = chunk < g_conf.buffer ? chunk : g_conf.buffer;
 		rc = (int)sftp_write(handle, pos, bsize);
 		g_sftp_calls++;
 		if (rc <= 0)
@@ -1718,7 +1718,7 @@ int run_command(const char* cmd, char* out, char* err)
 		return 1;
 	}
 
-	/*libssh2_channel_set_blocking(channel, g_fs.block);*/
+	/*libssh2_channel_set_blocking(channel, g_conf.block);*/
 	//g_sftp_calls++;
 
 	while ((rc = libssh2_channel_exec(channel, cmd))
