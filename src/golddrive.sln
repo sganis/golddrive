@@ -86,6 +86,7 @@ Global
 		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.Release2|x64.ActiveCfg = Release2|x64
 		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.Release2|x64.Build.0 = Release2|x64
 		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.Release2|x86.ActiveCfg = Release2|x86
+		{DF1247C6-970E-4B88-9965-FB29C2AD4301}.Release2|x86.Build.0 = Release2|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
