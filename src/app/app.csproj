@@ -280,7 +280,7 @@
     <PostBuildEvent>xcopy /y $(ProjectDir)golddrive.ico $(OutDir)
 xcopy /y $(ProjectDir)..\..\vendor\openssh\$(Platform)\* $(OutDir)
 rem xcopy /y $(ProjectDir)..\..\vendor\libssh2\lib\$(Platform)\*.dll $(OutDir)
-rem xcopy /y $(ProjectDir)..\..\vendor\libssh\lib\$(Platform)\*.dll $(OutDir)
+xcopy /y $(ProjectDir)..\..\vendor\libssh\lib\$(Platform)\*.dll $(OutDir)
 </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

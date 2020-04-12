@@ -1,6 +1,10 @@
 #pragma once
-
+#ifndef _WIN64
+#pragma warning(disable: 4244 4142)
+#endif
+#pragma warning(disable: 4099)
 //#define USE_LIBSSH
+
 // windows file attributes
 //#define FSP_FUSE_USE_STAT_EX
 

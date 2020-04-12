@@ -60,8 +60,8 @@ void copy_attributes(struct fuse_stat* stbuf, sftp_attributes attrs);
 void libssh2_logger(LIBSSH2_SESSION* session, void* context,
 	const char* data, size_t length);
 void copy_attributes(struct fuse_stat* stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs);
-void print_permissions(const char* path, LIBSSH2_SFTP_ATTRIBUTES* attrs);
-void print_stat(const char* path, LIBSSH2_SFTP_ATTRIBUTES* attrs);
-void print_statvfs(const char* path, LIBSSH2_SFTP_STATVFS* st);
+//void print_permissions(const char* path, LIBSSH2_SFTP_ATTRIBUTES* attrs);
+//void print_stat(const char* path, LIBSSH2_SFTP_ATTRIBUTES* attrs);
+//void print_statvfs(const char* path, LIBSSH2_SFTP_STATVFS* st);
 #endif
 

@@ -2139,43 +2139,43 @@ void mode_human(unsigned long mode, char* human)
 
 
 
-void print_permissions(const char* path, LIBSSH2_SFTP_ATTRIBUTES* attrs)
-{
-	char perm[10];
-	char ftype[4];
-	mode_human(attrs->permissions, perm);
-	get_filetype(attrs->permissions, ftype);
-	printf("%s %s %d %d %s\n", perm, ftype, attrs->uid, attrs->gid, path);
-}
+//void print_permissions(const char* path, LIBSSH2_SFTP_ATTRIBUTES* attrs)
+//{
+//	char perm[10];
+//	char ftype[4];
+//	mode_human(attrs->permissions, perm);
+//	get_filetype(attrs->permissions, ftype);
+//	printf("%s %s %d %d %s\n", perm, ftype, attrs->uid, attrs->gid, path);
+//}
 
-void print_stat(const char* path, LIBSSH2_SFTP_ATTRIBUTES* attrs)
-{
-	printf("path:  %s\n", path);
-	printf("flags: %ld\n", attrs->flags);
-	printf("size:  %zd\n", attrs->filesize);
-	printf("uid:   %ld\n", attrs->uid);
-	printf("gid:   %ld\n", attrs->gid);
-	printf("mode:  %ld\n", attrs->permissions);
-	printf("atime: %ld\n", attrs->atime);
-	printf("mtime: %ld\n", attrs->mtime);
-}
+//void print_stat(const char* path, LIBSSH2_SFTP_ATTRIBUTES* attrs)
+//{
+//	printf("path:  %s\n", path);
+//	printf("flags: %ld\n", attrs->flags);
+//	printf("size:  %zd\n", attrs->filesize);
+//	printf("uid:   %ld\n", attrs->uid);
+//	printf("gid:   %ld\n", attrs->gid);
+//	printf("mode:  %ld\n", attrs->permissions);
+//	printf("atime: %ld\n", attrs->atime);
+//	printf("mtime: %ld\n", attrs->mtime);
+//}
 
-void print_statvfs(const char* path, LIBSSH2_SFTP_STATVFS* st)
-{
-	printf("path:    %s\n", path);
-	printf("bsize:   %zd\n", st->f_bsize);    	/* file system block size */
-	printf("frsize:  %zd\n", st->f_frsize);   	/* fragment size */
-	printf("blocks:  %zd\n", st->f_blocks);   	/* size of fs in f_frsize units */
-	printf("bfree:   %zd\n", st->f_bfree);    	/* # free blocks */
-	printf("bavail:  %zd\n", st->f_bavail);   	/* # free blocks for non-root */
-	printf("files:   %zd\n", st->f_files);    	/* # inodes */
-	printf("ffree:   %zd\n", st->f_ffree);    	/* # free inodes */
-	printf("favail:  %zd\n", st->f_favail);   	/* # free inodes for non-root */
-	printf("fsid:    %zd\n", st->f_fsid);     	/* file system ID */
-	printf("flag:    %zd\n", st->f_flag);     	/* mount flags */
-	printf("namemax: %zd\n", st->f_namemax);  	/* maximum filename length */
-
-}
+//void print_statvfs(const char* path, LIBSSH2_SFTP_STATVFS* st)
+//{
+//	printf("path:    %s\n", path);
+//	printf("bsize:   %zd\n", st->f_bsize);    	/* file system block size */
+//	printf("frsize:  %zd\n", st->f_frsize);   	/* fragment size */
+//	printf("blocks:  %zd\n", st->f_blocks);   	/* size of fs in f_frsize units */
+//	printf("bfree:   %zd\n", st->f_bfree);    	/* # free blocks */
+//	printf("bavail:  %zd\n", st->f_bavail);   	/* # free blocks for non-root */
+//	printf("files:   %zd\n", st->f_files);    	/* # inodes */
+//	printf("ffree:   %zd\n", st->f_ffree);    	/* # free inodes */
+//	printf("favail:  %zd\n", st->f_favail);   	/* # free inodes for non-root */
+//	printf("fsid:    %zd\n", st->f_fsid);     	/* file system ID */
+//	printf("flag:    %zd\n", st->f_flag);     	/* mount flags */
+//	printf("namemax: %zd\n", st->f_namemax);  	/* maximum filename length */
+//
+//}
 
 
 int waitsocket(GDSSH* ssh)
