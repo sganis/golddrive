@@ -49,39 +49,47 @@ I replaced LibreSSL with the following steps. Only works with OpenSSL 1.0.x, not
 
 ## Alternatives and Benchmarks
 
-  - NetDrive
+  - NetDrive 3.8
     * Commercial
     * Performance not tested
     * Qt app
-    * Requires cloud account
+    * Requires cloud account, not clear if sftp is supported without account.
 
-  - ExpandDrive
-    * Commercial, 50 USD
-    * 3 MB/s.
-    * Electron app
-    * Drive mounted as exfs with 10 TB free
-    * Stable, no cmd line, cloud options.
-    * Apparently deletes files without permissions.
-
-  - SFTPNetDrive:
+  - WebDrive 19
+    * Commercial
+    * Good speed, popup of upload/download progress while windows progress
+    * C++ app
+    * Unstable command line on intensive i/o
+    * No public key authentication
+    
+  - SFTPNetDrive v2:
     * Commercial, free for personal use
-    * 3 MB/s
-    * C++ app.
-    * Unstable, drive is disconnected on intensive i/o.
+    * 25 MB/s, much better than previous v1
+    * .Net app using cbfsconnet from callback-tech., nsofware spin-off
     * Nsoftware, ipworks ssh .net company.
 
-  - Montain Duck
+  - ExpanDrive 7
+    * Commercial, 50 USD
+    * 25 MB/s
+    * Electron app using cbfsconnet
+    * Unstable command line on intensive i/o
+
+  - Montain Duck 3.3.6
     * Commercial
-    * 15 MB/s
-    * Mono/.Net app
-    * Drive mounted as ntfs without permissions
-    * Cannot mount root folder
-    * Unstable on intensive i/o, need to reconnect manually
+    * 50 MB/s
+    * Mono/.Net app using cbfsconnect
+    * Unstable command line on intensive i/o
+  
+  - Raidrive 2020.2.12
+    * Free and Commercial options
+    * 50 MB/s
+    * .Net app with all static
+    * Unstable command line on intensive i/o
   
   - SSHFS-Win
     * Open Source, Windows build of sshfs from libfuse
     * 50 MB/s
-    * Cygwin app
+    * Cygwin app using winfsp
     * Unstable on intensive i/o
     * Problem with antivirus when copying large files
 
