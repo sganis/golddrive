@@ -23,7 +23,7 @@ matrix:
     - image: Visual Studio 2013
   # exclude:
   #   - platform: x86
-shallow_clone: true
+clone_depth: 1
 install:
   - dir C:\cache || mkdir C:\cache
   - set winfsp=winfsp-1.6.20027.msi
