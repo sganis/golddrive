@@ -626,6 +626,13 @@ int main(int argc, char *argv[])
 	if (parse_remote(&g_conf))
 		return 1;
 	
+	// user in lower case
+	if (!g_conf.user)
+		g_conf.user = getenv("USERNAME");
+	char* u = g_conf.user;
+	for (; *u; ++u)
+		*u = tolower(*u);
+
 	// private key
 	if (!g_conf.pkey) {
 		char* profile = getenv("USERPROFILE");
@@ -636,12 +643,6 @@ int main(int argc, char *argv[])
 		//sprintf_s(g_fs.pkey, MAX_PATH, "%s\\.ssh\\id_rsa", profile);
 	}
 
-	// user in lower case
-	if (!g_conf.user) 
-		g_conf.user = getenv("USERNAME");	
-	char* u = g_conf.user;
-	for (; *u; ++u)
-		*u = tolower(*u);
 
 	// show parameters
 	gd_log("Arguments:\n");

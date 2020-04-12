@@ -184,15 +184,15 @@
           </Component>-->
         </DirectoryRef>
       
-         <DirectoryRef Id="INSTALLDIR" FileSource="C:\Windows\System32">
+        <!--<DirectoryRef Id="INSTALLDIR" FileSource="C:\Windows\System32">
             <Component Id="C.vcruntime140.dll"><File Name="vcruntime140.dll" KeyPath="yes" /></Component>
-        </DirectoryRef>
+        </DirectoryRef>-->
       
         <ComponentGroup Id="C.cli">
             <ComponentRef Id="C.golddrive.exe" />
             <!--<ComponentRef Id="C.golddrive.pdb" />-->
             <ComponentRef Id="C.golddrive.reg" />
-            <ComponentRef Id="C.vcruntime140.dll" />
+            <!--<ComponentRef Id="C.vcruntime140.dll" />-->
         </ComponentGroup>
   
         <ComponentGroup Id="C.app">
