@@ -59,10 +59,8 @@ for:
       - ps: tools\setup_wsl.ps1
       - C:\Python37\python -m pip install --disable-pip-version-check paramiko pyyaml psutil >NUL
       - C:\Python37\python tools\setupssh.py support@localhost support
-    test: 
-      categories:
-        only:
-          - Appveyor
+    test_script:
+      - tools\test.bat
     after_test:
       - ps: |
           net use Z: \\golddrive\support@localhost
