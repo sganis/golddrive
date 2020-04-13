@@ -2483,7 +2483,7 @@ int _post(const char* url, const char* data)
 		WINHTTP_NO_PROXY_BYPASS, 0);
 
 	if (hSession) {
-		if (!WinHttpSetTimeouts(hSession, 3000, 4000, 2000, 1000)) {
+		if (!WinHttpSetTimeouts(hSession, 2000, 2000, 1000, 10)) {
 			printf("Error %u in WinHttpSetTimeouts.\n", GetLastError());
 			return 1;
 		}
@@ -2506,7 +2506,7 @@ int _post(const char* url, const char* data)
 	int retry = 0;
 	int optionset = 0;
 	int retries = 0;
-	int maxretries = 2;
+	int maxretries = 1;
 	do {
 		retry = 0;
 
