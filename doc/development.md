@@ -49,34 +49,27 @@ I replaced LibreSSL with the following steps. Only works with OpenSSL 1.0.x, not
 
 ## Alternatives and Benchmarks
 
-  - NetDrive 3.8
-    * Commercial
-    * Performance not tested
-    * Qt app
-    * Requires cloud account, not clear if sftp is supported without account.
-
   - WebDrive 19
-    * Commercial
-    * Good speed, popup of upload/download progress while windows progress
-    * C++ app
-    * Unstable command line on intensive i/o
+    * Commercial, 40 usd, South River Technologies
+    * Copy to buffer, popup upload/download progress
     * No public key authentication
+    * Unstable command line on intensive i/o
     
-  - SFTPNetDrive v2:
-    * Commercial, free for personal use
-    * 25 MB/s, much better than previous v1
-    * .Net app using cbfsconnet from callback-tech., nsofware spin-off
-    * Nsoftware, ipworks ssh .net company.
-
+  - SFTP Drive v2:
+    * Commercial, free for personal use, N/Software ipworks ssh
+    * 15 MB/s
+    * .Net app using cbfsconnet from callback tech. former eldos, nsofware spin-off
+    * Stable
+    
   - ExpanDrive 7
-    * Commercial, 50 USD
+    * Commercial, 50 usd
     * 25 MB/s
     * Electron app using cbfsconnet
     * Unstable command line on intensive i/o
 
   - Montain Duck 3.3.6
-    * Commercial
-    * 50 MB/s
+    * Commercial, 39 usd
+    * 15/30 MB/s in online mode
     * Mono/.Net app using cbfsconnect
     * Unstable command line on intensive i/o
   
@@ -92,6 +85,7 @@ I replaced LibreSSL with the following steps. Only works with OpenSSL 1.0.x, not
     * Cygwin app using winfsp
     * Unstable on intensive i/o
     * Problem with antivirus when copying large files
+
 
 ## Ciphers
 
