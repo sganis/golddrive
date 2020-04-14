@@ -21,7 +21,8 @@ if !ERRORLEVEL! neq 0 goto fail
  -file_attr* -file_list_single* -file_list_none* -rdwr_nc_*
 if !ERRORLEVEL! neq 0 goto fail
 
-%DIR%\..\vendor\iozone\iozone.exe -i0 -i1 -i2 -s 1m -s10m -s100m -r1m
+rem %DIR%\..\vendor\iozone\iozone.exe -i0 -i1 -i2 -s 1m -s10m -s100m -r1m
+%DIR%\..\vendor\iozone\iozone.exe -a -i0 -i1 -s100m -s1g -r2m -r4m -r8m
 if !ERRORLEVEL! neq 0 goto fail
 
 
