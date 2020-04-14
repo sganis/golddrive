@@ -24,22 +24,6 @@ matrix:
   # exclude:
   #   - platform: x86
 clone_depth: 1
-install:
-  - dir C:\cache || mkdir C:\cache
-  - set winfsp=winfsp-1.7.20038.msi
-  # - if not exist C:\cache\%winfsp% appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/%winfsp% -FileName C:\cache\%winfsp%
-  # - start /wait msiexec /i C:\cache\%winfsp% /qn ADDLOCAL=ALL
-  - start /wait msiexec /i vendor\winfsp\%winfsp% /qn ADDLOCAL=ALL
-  - ps: $env:VERSION = C:\Python37\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
-  - echo Version=%VERSION% Configuration=%CONFIGURATION% Platform=%PLATFORM%
-build_script:
-  - msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -m:4 /verbosity:quiet /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-  - src\build\%CONFIGURATION%\%PLATFORM%\golddrive.exe --version
-  - start /wait msiexec /i src\build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%.msi /qn
-  - if %PLATFORM% == x64 call "c:\Program Files\Golddrive\golddrive.exe" --version
-  - if %PLATFORM% == x86 call "c:\Program Files (x86)\Golddrive\golddrive.exe" --version
-  #  - reg query HKLM\Software\WOW6432Node\WinFsp\Services\golddrive /s
-test: off
 
 for:
   -
@@ -47,16 +31,27 @@ for:
       only:
         - image: Visual Studio 2019
           configuration: Release2
-    before_build:
-      # uninstall and setup my own wsl
+    install:
+      - dir C:\cache || mkdir C:\cache
+      - set winfsp=winfsp-1.7.20038.msi
+      # - if not exist C:\cache\%winfsp% appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/%winfsp% -FileName C:\cache\%winfsp%
+      # - start /wait msiexec /i C:\cache\%winfsp% /qn ADDLOCAL=ALL
+      - start /wait msiexec /i vendor\winfsp\%winfsp% /qn ADDLOCAL=ALL
+      - ps: $env:VERSION = C:\Python37\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
+      - echo Version=%VERSION% Configuration=%CONFIGURATION% Platform=%PLATFORM%
       - wslconfig /u Ubuntu-18.04
-      #- rd /s /q C:\WSL\Ubuntu1804
       - ps: tools\setup_wsl.ps1
       - C:\Python37\python -m pip install --disable-pip-version-check paramiko >NUL
       - C:\Python37\python tools\setupssh.py support@localhost support
+    build_script:
+      - msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -m:4 /verbosity:quiet /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+      - src\build\%CONFIGURATION%\%PLATFORM%\golddrive.exe --version
+      - start /wait msiexec /i src\build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%.msi /qn
+      - if %PLATFORM% == x64 call "c:\Program Files\Golddrive\golddrive.exe" --version
+      - if %PLATFORM% == x86 call "c:\Program Files (x86)\Golddrive\golddrive.exe" --version
+      #  - reg query HKLM\Software\WOW6432Node\WinFsp\Services\golddrive /s
     test_script:
       - tools\test.bat
-    after_test:
       - ps: |
           net use Z: \\golddrive\support@localhost
           Z:; cd Z:\tmp; echo hello > test.txt; cd
@@ -66,7 +61,7 @@ for:
           C:\projects\golddrive\vendor\fstools\fsbench-x64.exe --files=100 -rdwr_cc_* -mmap_* -file_attr* -file_list_single* -file_list_none* -rdwr_nc_*
           C:\projects\golddrive\vendor\iozone\iozone.exe -i0 -i1 -s100m -r2m -r4m -r8m
           $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
-# - ps: get-content -tail 30 $env:LOCALAPPDATA\golddrive\golddrive.log
+      # - ps: get-content -tail 30 $env:LOCALAPPDATA\golddrive\golddrive.log
       - ps: |
           C:; net use Z: /d
   -
@@ -75,14 +70,13 @@ for:
         - image: Visual Studio 2017
         - image: Visual Studio 2015
         - image: Visual Studio 2013
-    build: off
-    test_script:
-# - ps: Start-FileDownload "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/build/$env:CONFIGURATION/$env:PLATFORM/golddrive-$env:VERSION-$env:PLATFORM-$env:CONFIGURATION.msi?branch=master&job=Image%3A%20Visual%20Studio%202019%3B%20Configuration%3A%20Release%3B%20Platform%3A%20$env:PLATFORM"
-# - ps: Write-host "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/build/$env:CONFIGURATION/$env:PLATFORM/golddrive-$env:VERSION-$env:PLATFORM-$env:CONFIGURATION.msi?branch=master&job=Image%3A%20Visual%20Studio%202019%3B%20Configuration%3A%20$env:CONFIGURATION"
-# - ps: Start-FileDownload "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/build/$env:CONFIGURATION/$env:PLATFORM/golddrive-$env:VERSION-$env:PLATFORM-$env:CONFIGURATION.msi?branch=master&job=Image%3A%20Visual%20Studio%202019%3B%20Configuration%3A%20$env:CONFIGURATION"
-# - ps: Write-host "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/build/$env:CONFIGURATION/$env:PLATFORM/golddrive-$env:VERSION-$env:PLATFORM.msi?branch=master&job=Image%3A%20Visual%20Studio%202019"
-      - ps: Start-FileDownload "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/build/$env:CONFIGURATION/$env:PLATFORM/golddrive-$env:VERSION-$env:PLATFORM.msi?branch=master&job=Image%3A%20Visual%20Studio%202019"
-      - start /wait msiexec /i golddrive-%VERSION%-%PLATFORM%.msi /qn 
+    build_script:
+      # - ps: Start-FileDownload "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/build/$env:CONFIGURATION/$env:PLATFORM/golddrive-$env:VERSION-$env:PLATFORM-$env:CONFIGURATION.msi?branch=master&job=Image%3A%20Visual%20Studio%202019%3B%20Configuration%3A%20Release%3B%20Platform%3A%20$env:PLATFORM"
+      # - ps: Write-host "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/build/$env:CONFIGURATION/$env:PLATFORM/golddrive-$env:VERSION-$env:PLATFORM-$env:CONFIGURATION.msi?branch=master&job=Image%3A%20Visual%20Studio%202019%3B%20Configuration%3A%20$env:CONFIGURATION"
+      # - ps: Start-FileDownload "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/build/$env:CONFIGURATION/$env:PLATFORM/golddrive-$env:VERSION-$env:PLATFORM-$env:CONFIGURATION.msi?branch=master&job=Image%3A%20Visual%20Studio%202019%3B%20Configuration%3A%20$env:CONFIGURATION"
+      # - ps: Write-host "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/build/$env:CONFIGURATION/$env:PLATFORM/golddrive-$env:VERSION-$env:PLATFORM.msi?branch=master&job=Image%3A%20Visual%20Studio%202019"
+      - ps: Start-FileDownload "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/build/$env:CONFIGURATION/$env:PLATFORM/golddrive-$env:VERSION-$env:PLATFORM.exe?branch=master&job=Image%3A%20Visual%20Studio%202019"
+      - start /wait msiexec /i golddrive-%VERSION%-%PLATFORM%.exe /qn 
       - if %PLATFORM% == x64 call "c:\Program Files\Golddrive\golddrive.exe" --version"
       - if %PLATFORM% == x86 call "c:\Program Files (x86)\Golddrive\golddrive.exe" --version"
 
