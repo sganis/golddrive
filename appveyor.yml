@@ -85,4 +85,4 @@ for:
       - start /wait golddrive-%VERSION%-%PLATFORM%.exe /s /qn 
       - if %PLATFORM% == x64 call "c:\Program Files\Golddrive\golddrive.exe" --version"
       - if %PLATFORM% == x86 call "c:\Program Files (x86)\Golddrive\golddrive.exe" --version"
-
+    test: off
