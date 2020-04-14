@@ -11,6 +11,7 @@ platform:
 configuration: 
   - Release2
   # - Release
+clone_depth: 1
 cache:
   - C:\cache -> appveyor.yml
 matrix:
@@ -21,9 +22,6 @@ matrix:
     - image: Visual Studio 2017
     - image: Visual Studio 2015
     - image: Visual Studio 2013
-  # exclude:
-  #   - platform: x86
-clone_depth: 1
 
 for:
   -
@@ -44,7 +42,7 @@ for:
       - C:\Python37\python -m pip install --disable-pip-version-check paramiko >NUL
       - C:\Python37\python tools\setupssh.py support@localhost support
     build_script:
-      - msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -m:4 /verbosity:quiet /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+      - msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -m /verbosity:quiet /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
       - src\build\%CONFIGURATION%\%PLATFORM%\golddrive.exe --version
       - start /wait msiexec /i src\build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%.msi /qn
       - if %PLATFORM% == x64 call "c:\Program Files\Golddrive\golddrive.exe" --version
