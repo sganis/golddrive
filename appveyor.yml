@@ -23,20 +23,22 @@ matrix:
     - image: Visual Studio 2015
     - image: Visual Studio 2013
 
+install:
+  - ps: $env:VERSION = C:\Python37\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
+  - echo Version=%VERSION% Configuration=%CONFIGURATION% Platform=%PLATFORM%
+    
 for:
   -
     matrix:
       only:
         - image: Visual Studio 2019
           configuration: Release2
-    install:
-      - dir C:\cache || mkdir C:\cache
-      - set winfsp=winfsp-1.7.20038.msi
+    before_build:
+      # - dir C:\cache || mkdir C:\cache
+      # - set winfsp=winfsp-1.7.20038.msi
       # - if not exist C:\cache\%winfsp% appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/%winfsp% -FileName C:\cache\%winfsp%
       # - start /wait msiexec /i C:\cache\%winfsp% /qn ADDLOCAL=ALL
-      - start /wait msiexec /i vendor\winfsp\%winfsp% /qn ADDLOCAL=ALL
-      - ps: $env:VERSION = C:\Python37\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
-      - echo Version=%VERSION% Configuration=%CONFIGURATION% Platform=%PLATFORM%
+      - start /wait msiexec /i vendor\winfsp\winfsp-1.7.20038.msi /qn ADDLOCAL=ALL
       - wslconfig /u Ubuntu-18.04
       - ps: tools\setup_wsl.ps1
       - C:\Python37\python -m pip install --disable-pip-version-check paramiko >NUL
@@ -67,6 +69,7 @@ for:
         name: msi
       - path: src\build\$(configuration)\$(platform)\golddrive-*-$(platform).exe
         name: exe
+  
   -
     matrix:
       only:
