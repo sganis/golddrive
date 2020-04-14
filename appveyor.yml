@@ -89,3 +89,5 @@ for:
 artifacts:
   - path: src\build\$(configuration)\$(platform)\golddrive-*.msi
     name: Golddrive
+  - path: src\build\$(configuration)\$(platform)\golddrive-*.exe
+    name: GolddriveBundle

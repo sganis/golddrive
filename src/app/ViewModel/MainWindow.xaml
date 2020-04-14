@@ -19,20 +19,20 @@
     WindowStartupLocation="CenterScreen"
     Title="Golddrive"
     MaxWidth="700"
-    MinWidth="400"
-    MinHeight="500"
-    Width="500"
+    MinWidth="450"
+    MinHeight="600"
+    Width="450"
+    Height="600"
     ResizeMode="CanResizeWithGrip"
-    d:DesignWidth="503.2"
-    d:DesignHeight="594"
     ShowMaxRestoreButton="False"
     GlowBrush="{DynamicResource AccentColorBrush}"
     BorderThickness="1"
     TitleCaps="False"
     WindowTransitionsEnabled="False"
     
-    Icon="/golddrive-app;component/golddrive.ico">
-    
+    Icon="/golddrive-app;component/golddrive.ico" 
+    >
+
     <Controls:MetroWindow.IconTemplate>
         <DataTemplate>
             <materialDesign:PackIcon
@@ -44,9 +44,9 @@
                 Padding="4" />
         </DataTemplate>
     </Controls:MetroWindow.IconTemplate>
-    
+
     <Window.Resources>
-        
+
     </Window.Resources>
     <!--Events-->
     <i:Interaction.Triggers>
@@ -65,7 +65,7 @@
             <RowDefinition
                 Height="56" />
         </Grid.RowDefinitions>
-        
+
         <materialDesign:ColorZone
             Mode="Standard"
             Height="50">
@@ -104,7 +104,7 @@
                             Converter={local:PageToVis}, 
                             ConverterParameter={x:Static local:Page.Main}}">
                 <local:DriveControl />
-                
+
             </Grid>
             <!-- Host page-->
             <StackPanel

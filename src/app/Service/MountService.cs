@@ -736,9 +736,7 @@ namespace golddrive
         {
             ReturnBox r = new ReturnBox();
 
-            //r = TestHost(drive);
-            //if (r.MountStatus == MountStatus.BAD_HOST)
-            //    return r;
+ 
             int timeout = 15; // secs
 
             if (!File.Exists(drive.AppKey))
@@ -901,6 +899,11 @@ namespace golddrive
                 r.MountStatus = MountStatus.BAD_DRIVE;
                 return r;
             }
+
+            r = TestHost(drive);
+            if (r.MountStatus != MountStatus.OK)
+                return r;
+
             r = TestSsh(drive);
             if (r.MountStatus != MountStatus.OK)
                 return r;

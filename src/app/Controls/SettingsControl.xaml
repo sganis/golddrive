@@ -107,7 +107,7 @@
                     FontSize="20"
                     Margin="0 0 0 30" />
                 <TextBlock
-                    Text="Label"
+                    Text="Nickname"
                     Style="{StaticResource Title}" />
                 <TextBox
                     Text="{Binding SelectedFreeDrive.Label}"
@@ -148,7 +148,7 @@
                     FontSize="20"
                     Margin="0 0 0 30" />
                 <TextBlock
-                    Text="Label"
+                    Text="Nickname"
                     Style="{StaticResource Title}" />
                 <TextBox
                     Text="{Binding SelectedDrive.Label}"
