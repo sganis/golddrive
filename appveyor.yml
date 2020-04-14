@@ -65,7 +65,7 @@ for:
     artifacts:
       - path: src\build\$(configuration)\$(platform)\golddrive-*.msi
         name: msi
-      - path: src\build\$(configuration)\$(platform)\golddrive-*.exe
+      - path: src\build\$(configuration)\$(platform)\golddrive-*-$(platform).exe
         name: exe
   -
     matrix:
