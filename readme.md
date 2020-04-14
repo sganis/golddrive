@@ -13,12 +13,12 @@ The installation requires adminstatator priviledges.
 How to use
 ----------
 
-Run the app, choose a free drive and set the mount point as [user@]hostname[!port]. User and port are optional. The current windows user and port 22 are the defaults.
-The first time after a successful login, the app will generate ssh keys to mount drives. Golddrive only supports ssh keys authentication at the moment.
+Run the app, choose a free drive and set the mount point as [user@]hostname[!port]. User and port are optional, the current windows user and port 22 are the defaults. Hostname can be any machine name, domain name or IP address.
+The first time after a successful login, the app will generate ssh keys to mount drives. Golddrive only supports key authentication at the moment.
 
 Once ssh keys are generated, it is also possible to mount drives using Windows `net use` command or Windows Explorer Map Drive feature. The command line must be like this:
 
-    > net use drive \\golddrive\[user@]hostname[!port]
+    > net use Z: \\golddrive\[user@]hostname[!port]
 
 If something goes wrong, test the ssh authentication with an ssh client. Go to Help -> Open Terminal, and run:
 
