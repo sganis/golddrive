@@ -2,7 +2,7 @@
 
 # Golddrive
 
-Map Windows drives to remote filesystems using SSH.
+SSHFS for Windows - Map drives to remote filesystems using SSH.
 
 Installation
 ------------
