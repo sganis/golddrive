@@ -64,6 +64,11 @@ for:
       # - ps: get-content -tail 30 $env:LOCALAPPDATA\golddrive\golddrive.log
       - ps: |
           C:; net use Z: /d
+    artifacts:
+      - path: src\build\$(configuration)\$(platform)\golddrive-*.msi
+        name: msi
+      - path: src\build\$(configuration)\$(platform)\golddrive-*.exe
+        name: exe
   -
     matrix:
       only:
@@ -80,8 +85,3 @@ for:
       - if %PLATFORM% == x64 call "c:\Program Files\Golddrive\golddrive.exe" --version"
       - if %PLATFORM% == x86 call "c:\Program Files (x86)\Golddrive\golddrive.exe" --version"
 
-artifacts:
-  - path: src\build\$(configuration)\$(platform)\golddrive-*.msi
-    name: Golddrive
-  - path: src\build\$(configuration)\$(platform)\golddrive-*.exe
-    name: GolddriveBundle
