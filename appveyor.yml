@@ -13,7 +13,7 @@ configuration:
   # - Release
 clone_depth: 1
 cache:
-  - C:\cache -> appveyor.yml
+  - C:\cache
 matrix:
   fast_finish: true
   allow_failures:
@@ -34,7 +34,7 @@ for:
         - image: Visual Studio 2019
           configuration: Release2
     before_build:
-      # - dir C:\cache || mkdir C:\cache
+      - dir C:\cache || mkdir C:\cache
       # - set winfsp=winfsp-1.7.20038.msi
       # - if not exist C:\cache\%winfsp% appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/%winfsp% -FileName C:\cache\%winfsp%
       # - start /wait msiexec /i C:\cache\%winfsp% /qn ADDLOCAL=ALL
