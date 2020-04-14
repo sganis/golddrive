@@ -7,13 +7,12 @@ SSHFS for Windows - Map drives to remote filesystems using SSH.
 Installation
 ------------
 
-Install the latest release of WinFsp from https://github.com/billziss-gh/winfsp/releases. Then, download and install the latest released msi installer from https://github.com/sganis/golddrive/releases. The latest development version is available at https://ci.appveyor.com/project/sganis/golddrive/build/artifacts. 
-The installation requires adminstatator priviledges.
+Install WinFsp from https://github.com/billziss-gh/winfsp/releases, then install Golddrive from https://github.com/sganis/golddrive/releases. The installation requires admin priviledges.
 
 How to use
 ----------
 
-Run the app, choose a free drive and set the mount point as [user@]hostname[!port]. User and port are optional, the current windows user and port 22 are the defaults. Hostname can be any machine name, domain name or IP address.
+Run the app, choose a free drive and set the mount point as [user@]hostname[!port]. User and port are optional, the current windows user and port 22 are the defaults. Hostname can be a machine name, domain name or IP address.
 The first time after a successful login, the app will generate ssh keys to mount drives. Golddrive only supports key authentication at the moment.
 
 Once ssh keys are generated, it is also possible to mount drives using Windows `net use` command or Windows Explorer Map Drive feature. The command line must be like this:
