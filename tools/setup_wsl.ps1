@@ -24,7 +24,6 @@ $exe = "C:\MyWSL\Ubuntu1804\ubuntu1804.exe"
 $zip = "C:\cache\wsl-ubuntu-1804.zip"
 $tar = "C:\cache\ubuntu1804.tar"
 
-New-Item -ItemType Directory -Force -Path C:\cache
 New-Item -ItemType Directory -Force -Path C:\MyWSL
 
 if (!(Test-Path $tar)) {
