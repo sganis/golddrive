@@ -24,7 +24,7 @@ matrix:
     - image: Visual Studio 2013
 
 install:
-  - dir C:\cache || mkdir C:\cache
+  - dir C:\cache >nul 2>&1 || mkdir C:\cache
   - ps: $env:VERSION = C:\Python37\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
   - echo Version=%VERSION% Configuration=%CONFIGURATION% Platform=%PLATFORM%
     
