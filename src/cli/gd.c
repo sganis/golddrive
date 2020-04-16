@@ -255,7 +255,7 @@ GDSSH* gd_init_ssh(void)
 	}
 
 	// non-blocking mode by 
-	g_conf.block = 1;
+	// g_conf.block = 1;
 	libssh2_session_set_blocking(ssh, g_conf.block);
 
 	/* create socket  */
