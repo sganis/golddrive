@@ -72,7 +72,7 @@ namespace golddrive.Tests
             }
         }
         [TestMethod, TestCategory("Appveyor")]
-        public void SetGetDrivelLabelTest()
+        public void DrivelLabelTest()
         {
             string current_label = _drive.Label;
             Mount();
@@ -87,7 +87,7 @@ namespace golddrive.Tests
 
 
         [TestMethod, TestCategory("Appveyor")]
-        public void LoadSaveSettingsDrivesTest()
+        public void SettingsDrivesTest()
         {
             if (!Directory.Exists(_mountService.LocalAppData))
                 Directory.CreateDirectory(_mountService.LocalAppData);
