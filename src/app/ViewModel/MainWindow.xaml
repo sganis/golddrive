@@ -13,7 +13,7 @@
     MaxWidth="700"
     MinWidth="450"
     MinHeight="600"
-    Width="600"
+    Width="450"
     Height="600"
     Icon="/golddrive-app;component/golddrive.ico" 
     TextElement.Foreground="{DynamicResource MaterialDesignBody}"
@@ -120,7 +120,7 @@
         </materialDesign:ColorZone>
         <Grid
             Grid.Row="1"
-            Margin="60,20">
+            Margin="30,20">
 
             <!-- Drive page-->
             <Grid

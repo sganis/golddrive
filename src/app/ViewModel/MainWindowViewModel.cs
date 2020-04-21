@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -6,24 +7,14 @@ using System.Windows.Media;
 
 namespace golddrive
 {
-    public class MainWindowViewModel : Observable
+    public class MainWindowViewModel : Observable, IRequestFocus
     {
+        public event EventHandler<FocusRequestedEventArgs> FocusRequested;
+
         #region Properties
 
         private MountService _mountService;
-        //private int _selecteTabIndex;
-        //public int SelectedTabIndex
-        //{
-        //    get { return _selecteTabIndex; }
-        //    set
-        //    {
-        //        _selecteTabIndex = value;
-        //        NotifyPropertyChanged();
-        //        NotifyPropertyChanged("IsDrivesTabSelected");
-        //    }
-        //}
-        //public bool IsDrivesTabSelected => SelectedTabIndex == 0;
-
+        
         private string _version;
 
         public string Version
@@ -41,9 +32,10 @@ namespace golddrive
                 _isDriveNew = value;
                 NotifyPropertyChanged();
                 NotifyPropertyChanged("SettingsOkButtonText");
+                
             }
         }
-
+        
         private Page _currentPage;
         public Page CurrentPage
         {
@@ -51,13 +43,6 @@ namespace golddrive
             set { _currentPage = value; NotifyPropertyChanged(); }
         }
 
-        //private string _globalArgs;
-
-        //public string GlobalArgs
-        //{
-        //    get { return _globalArgs; }
-        //    set { _globalArgs = value; NotifyPropertyChanged(); }
-        //}
         public ObservableCollection<Drive> GoldDrives { get; set; } = new ObservableCollection<Drive>();
         public ObservableCollection<Drive> FreeDrives { get; set; } = new ObservableCollection<Drive>();
 
@@ -140,8 +125,8 @@ namespace golddrive
         {
             get
             {
-                //return Brushes.Black;
-                return MountStatus == MountStatus.OK ? Brushes.Black : Brushes.Red;
+                return Brushes.Black;
+                //return MountStatus == MountStatus.OK ? Brushes.Black : Brushes.Red;
             }
         }
         private string password;
@@ -163,12 +148,7 @@ namespace golddrive
             get { return _host; }
             set { _host = value; NotifyPropertyChanged(); }
         }
-        private bool _hostIsFocused;
-        public bool HostIsFocused
-        {
-            get { return _hostIsFocused; }
-            set { _hostIsFocused = value; NotifyPropertyChanged(); }
-        }
+        
         private string _user;
         public string User
         {
@@ -193,8 +173,22 @@ namespace golddrive
         }
 
         public bool IsDriveSelected { get { return SelectedDrive != null; } }
-
-        public string SettingsOkButtonText { get { return IsDriveNew ? "Save" : "Back"; } }
+        public bool IsSettingsDirty
+        {
+            get
+            {
+                return CurrentPage == Page.Settings &&
+                    (IsDriveNew || SelectedDrive.IsDirty || SelectedFreeDrive.IsDirty);
+                    
+            }
+        }
+        public string SettingsOkButtonText 
+        { 
+            get 
+            { 
+                return IsSettingsDirty ? "Save" : "Ok"; 
+            }
+        }
 
 
         #endregion
@@ -247,11 +241,12 @@ namespace golddrive
                     break;
                 case MountStatus.BAD_HOST:
                     CurrentPage = Page.Host;
-                    HostIsFocused = true;
+                    OnFocusRequested(nameof(Host));
                     break;
                 case MountStatus.BAD_PASSWORD:
                 case MountStatus.BAD_KEY:
-                    CurrentPage = Page.Password;                    
+                    CurrentPage = Page.Password;
+                    OnFocusRequested(nameof(Password));
                     break;
                 case MountStatus.OK:
                     CurrentPage = Page.Main;
@@ -285,6 +280,8 @@ namespace golddrive
             if (GoldDrives.Count == 0)
             {
                 CurrentPage = Page.Host;
+                OnFocusRequested(nameof(Host));
+                //HostIsFocused = true;
                 WorkDone();
             }
             else
@@ -318,10 +315,16 @@ namespace golddrive
 
         }
 
+        void ReportStatus(string message)
+        {
+            Message = message;
+        }
+
         private async void ConnectAsync(Drive drive)
         {
             WorkStart("Connecting...");
-            ReturnBox r = await Task.Run(() => _mountService.Connect(drive));
+            var status = new Progress<string>(ReportStatus);
+            ReturnBox r = await Task.Run(() => _mountService.Connect(drive, status));
             WorkDone(r);
         }
 
@@ -381,6 +384,9 @@ namespace golddrive
         {
             if (IsWorking)
                 return;
+            
+            Message = "";
+
             if (GoldDrives.Count == 0 || string.IsNullOrEmpty(SelectedDrive.Host))
             {
                 if (SelectedDrive != null)
@@ -421,7 +427,7 @@ namespace golddrive
             if (HasDrive)
             {
                 SelectedDrive.Host = Host;
-                SelectedDrive.Port = int.Parse("0" + Port);
+                SelectedDrive.Port = Port;
                 SelectedDrive.User = User;
                 SelectedDrive.Label = Label;
                 d = SelectedDrive;
@@ -429,7 +435,7 @@ namespace golddrive
             else
             {
                 SelectedFreeDrive.Host = Host;
-                SelectedFreeDrive.Port = int.Parse("0" + Port);
+                SelectedFreeDrive.Port = Port;
                 SelectedFreeDrive.User = User;
                 SelectedFreeDrive.Label = Label;
                 d = SelectedFreeDrive;
@@ -437,6 +443,7 @@ namespace golddrive
             if (string.IsNullOrEmpty(d.Host))
             {
                 Message = "Server is required";
+                OnFocusRequested(nameof(Host));
                 return;
             }
             ConnectAsync(d);
@@ -472,9 +479,10 @@ namespace golddrive
             {
                 d = SelectedFreeDrive;
             }
-            CurrentPage = Page.Main;
+            //CurrentPage = Page.Main;
             WorkStart("Connecting...");
-            ReturnBox r = await Task.Run(() => _mountService.ConnectPassword(d, password));
+            var status = new Progress<string>(ReportStatus);
+            ReturnBox r = await Task.Run(() => _mountService.ConnectPassword(d, password, status));
             WorkDone(r);
         }
 
@@ -513,6 +521,12 @@ namespace golddrive
             if (IsDriveNew)
             {
                 Drive d = SelectedFreeDrive;
+                if (string.IsNullOrEmpty(d.Host))
+                {
+                    Message = "Server is required";
+                    OnFocusRequested("SelectedFreeDrive.Host");
+                    return;
+                }
                 await Task.Run(() =>
                 {
                     Settings settings = _mountService.LoadSettings();
@@ -520,14 +534,22 @@ namespace golddrive
                     settings.AddDrive(d);
                     _mountService.SaveSettings(settings);
                     _mountService.UpdateDrives(settings);
+                    Message = "";
                 });
                 UpdateObservableDrives(d);
                 IsDriveNew = false;
             }
             else
             {
-                CurrentPage = Page.Main;
+                //
                 Drive d = SelectedDrive;
+                if (string.IsNullOrEmpty(d.Host))
+                {
+                    Message = "Server is required";
+                    OnFocusRequested("SelectedDrive.Host");
+                    return;
+                }
+                CurrentPage = Page.Main;
                 await Task.Run(() =>
                 {
                     Settings settings = _mountService.LoadSettings();
@@ -566,6 +588,7 @@ namespace golddrive
         }
         private void OnSettingsCancel(object obj)
         {
+            Message = "";
             IsDriveNew = false;
         }
 
@@ -647,6 +670,9 @@ namespace golddrive
             }
         }
         private ICommand _openLogsFolderCommand;
+
+        
+
         public ICommand OpenLogsFolderCommand
         {
             get
@@ -656,6 +682,16 @@ namespace golddrive
                         url => System.Diagnostics.Process.Start("explorer.exe", _mountService.LocalAppData)));
             }
         }
+        #endregion
+
+        #region events
+
+        
+        protected virtual void OnFocusRequested(string propertyName)
+        {
+            FocusRequested?.Invoke(this, new FocusRequestedEventArgs(propertyName));
+        }
+
         #endregion
 
     }

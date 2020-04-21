@@ -1,12 +1,18 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace golddrive
 {
     [JsonObject(MemberSerialization.OptIn)]
     public class Drive : Observable
     {
+        //private void DriveChanged(object o, PropertyChangedEventArgs e)
+        //{
+
+        //}
+
         public DriveStatus Status { get; set; }
 
         public bool? IsGoldDrive { get; set; }
@@ -15,8 +21,30 @@ namespace golddrive
 
         public string Path { get; set; }
 
-        public string Host { get; set; }
-
+        private bool _isDirty;
+        public bool IsDirty
+        {
+            get { return _isDirty; }
+            set
+            {
+                _isDirty = value;
+                NotifyPropertyChanged();
+                NotifyPropertyChanged("IsSettingsDirty");
+            }
+        }
+        private string _host;
+        public string Host
+        {
+            get { return _host; }
+            set
+            {
+                if (_host != value)
+                    IsDirty = true;
+                _host = value;
+                NotifyPropertyChanged();                
+                
+            }
+        }
         public string Letter { get; set; }
 
         public string Name { get { return $"{ Letter }:"; } }
@@ -69,7 +97,7 @@ namespace golddrive
                 string s = Host;
                 if (string.IsNullOrEmpty(s))
                     return s;
-                if (Port != 22)
+                if (Port != "22")
                     s = string.Format($"{Host}!{Port}");
                 if (User != Environment.UserName)
                     s = string.Format($"{User}@{s}");
@@ -97,7 +125,7 @@ namespace golddrive
                     Host = s.Split('!')[0];
                     int.TryParse(s.Split('!')[1], out int p);
                     if (p > 0)
-                        Port = p;
+                        Port = p.ToString();
                     s = Host;
                     NotifyPropertyChanged("Port");
                 }
@@ -120,10 +148,10 @@ namespace golddrive
             set { user = value; }
         }
 
-        private int port;
-        public int Port
+        private string port;
+        public string Port
         {
-            get { return port == 0 ? 22 : port; }
+            get { return port == null ? "22" : port; }
             set { port = value; }
         }
 

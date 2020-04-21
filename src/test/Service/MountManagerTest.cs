@@ -41,7 +41,8 @@ namespace golddrive.Tests
         }
         public void Mount()
         {
-            var r = _mountService.Connect(_drive);
+
+            var r = _mountService.Connect(_drive, null);
             if (r.DriveStatus != DriveStatus.CONNECTED)
                 Console.WriteLine($"ERROR: {r.Error}");
             Assert.AreEqual(r.DriveStatus, DriveStatus.CONNECTED);
@@ -265,8 +266,8 @@ namespace golddrive.Tests
         [TestMethod(), TestCategory("Appveyor")]
         public void TestHostTest()
         {
-            Drive nohost = new Drive { Host = "nohost", Port = 22 };
-            Drive noport = new Drive { Host = "localhost", Port = 222 };
+            Drive nohost = new Drive { Host = "nohost", Port = "22" };
+            Drive noport = new Drive { Host = "localhost", Port = "222" };
             var r = _mountService.TestHost(nohost);
             Assert.IsTrue(r.MountStatus == MountStatus.BAD_HOST);
             r = _mountService.TestHost(noport);

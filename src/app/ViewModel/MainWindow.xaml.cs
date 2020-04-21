@@ -7,5 +7,6 @@
             InitializeComponent();
             DataContext = new MainWindowViewModel(rb, drive);
         }
+
     }
 }

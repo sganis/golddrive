@@ -161,7 +161,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Common\FocusExtension.cs" />
+    <Compile Include="Common\IRequestFocus.cs" />
     <Compile Include="Common\RelayCommand.cs" />
     <Compile Include="Common\Converters.cs" />
     <Compile Include="Common\EnterKeyHelper.cs" />

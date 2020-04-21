@@ -670,7 +670,8 @@ namespace golddrive
 
                 using (var client = new TcpClient())
                 {
-                    var result = client.BeginConnect(drive.Host, drive.Port, null, null);
+                    int port = int.Parse(drive.Port);
+                    var result = client.BeginConnect(drive.Host, port, null, null);
                     var success = result.AsyncWaitHandle.WaitOne(5000);
                     if (!success)
                     {
@@ -707,7 +708,8 @@ namespace golddrive
             }
             try
             {
-                SshClient client = new SshClient(drive.Host, drive.Port, drive.User, password);
+                int port = int.Parse(drive.Port);
+                SshClient client = new SshClient(drive.Host, port, drive.User, password);
                 client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(15);
                 client.Connect();
                 client.Disconnect();
@@ -751,7 +753,8 @@ namespace golddrive
 
                 var pk = new PrivateKeyFile(drive.AppKey);
                 var keyFiles = new[] { pk };
-                SshClient client = new SshClient(drive.Host, drive.Port, drive.User, keyFiles);
+                int port = int.Parse(drive.Port);
+                SshClient client = new SshClient(drive.Host, port, drive.User, keyFiles);
                 client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(timeout);
                 client.Connect();
                 client.Disconnect();
@@ -808,7 +811,8 @@ namespace golddrive
                 {
                     pubkey = GenerateKeys(drive);
                 }
-                SshClient client = new SshClient(drive.Host, drive.Port, drive.User, password);
+                int port = int.Parse(drive.Port);
+                SshClient client = new SshClient(drive.Host, port, drive.User, password);
                 client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(15);
                 client.Connect();
                 string cmd = "";
@@ -878,7 +882,7 @@ namespace golddrive
 
         #region Mount Management
 
-        public ReturnBox Connect(Drive drive)
+        public ReturnBox Connect(Drive drive, IProgress<string> status)
         {
             ReturnBox r = new ReturnBox();
             if (!IsWinfspInstalled())
@@ -899,27 +903,27 @@ namespace golddrive
                 r.MountStatus = MountStatus.BAD_DRIVE;
                 return r;
             }
-
+            status?.Report("Connecting...");
             r = TestHost(drive);
             if (r.MountStatus != MountStatus.OK)
                 return r;
-
             r = TestSsh(drive);
             if (r.MountStatus != MountStatus.OK)
                 return r;
-
+            status?.Report("Mounting drive...");
             return Mount(drive);
         }
-        public ReturnBox ConnectPassword(Drive drive, string password)
+        public ReturnBox ConnectPassword(Drive drive, string password, IProgress<string> status)
         {
+            status?.Report("Connecting...");
             ReturnBox r = TestPassword(drive, password);
             if (r.MountStatus != MountStatus.OK)
                 return r;
-
+            status?.Report("Generating ssh keys...");
             r = SetupSsh(drive, password);
             if (r.MountStatus != MountStatus.OK)
                 return r;
-
+            status?.Report("Mouting drive...");
             return Mount(drive);
         }
         private bool IsWinfspInstalled()
