@@ -5,7 +5,7 @@ temp/
 build/
 ipch/
 obj/
-packages/
+#packages/
 *.VC.db
 *.VC.opendb
 *.log
