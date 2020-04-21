@@ -137,12 +137,12 @@
             <Component Id="C.golddrive.ico">
                 <File Name="golddrive.ico" KeyPath="yes" />
             </Component>            
-            <Component Id="C.ControlzEx.dll">
+            <!--<Component Id="C.ControlzEx.dll">
                 <File Name="ControlzEx.dll" KeyPath="yes" />
             </Component>            
             <Component Id="C.MahApps.Metro.dll">
                 <File Name="MahApps.Metro.dll" KeyPath="yes" />
-            </Component>            
+            </Component>-->            
             <Component Id="C.MaterialDesignColors.dll">
                 <File Name="MaterialDesignColors.dll" KeyPath="yes" />
             </Component>            
@@ -155,11 +155,15 @@
             <Component Id="C.NLog.dll">
                 <File Name="NLog.dll" KeyPath="yes" />
             </Component>
-            <Component Id="C.NLog.config"><File Name="NLog.config" KeyPath="yes" /></Component>            
-            <Component Id="C.Renci.SshNet.dll"><File Name="Renci.SshNet.dll" KeyPath="yes" /></Component>
-          <Component Id="C.System.Windows.Interactivity.dll">
+            <Component Id="C.NLog.config">
+              <File Name="NLog.config" KeyPath="yes" />
+            </Component>            
+            <Component Id="C.Renci.SshNet.dll">
+              <File Name="Renci.SshNet.dll" KeyPath="yes" />
+            </Component>
+          <!--<Component Id="C.System.Windows.Interactivity.dll">
             <File Name="System.Windows.Interactivity.dll" KeyPath="yes" />
-          </Component>
+          </Component>-->
           <!--<Component Id="C.ssh.dll">
             <File Name="ssh.dll" KeyPath="yes" />
           </Component>-->
@@ -198,15 +202,15 @@
         <ComponentGroup Id="C.app">
             <ComponentRef Id="C.app.exe" />
             <ComponentRef Id="C.golddrive.ico" />
-            <ComponentRef Id="C.ControlzEx.dll" />
-            <ComponentRef Id="C.MahApps.Metro.dll" />
+            <!--<ComponentRef Id="C.ControlzEx.dll" />
+            <ComponentRef Id="C.MahApps.Metro.dll" />-->
             <ComponentRef Id="C.MaterialDesignColors.dll" />
             <ComponentRef Id="C.MaterialDesignThemes.Wpf.dll" />
             <ComponentRef Id="C.Newtonsoft.Json.dll" />
             <ComponentRef Id="C.NLog.dll" />
             <ComponentRef Id="C.NLog.config" />
             <ComponentRef Id="C.Renci.SshNet.dll" />
-            <ComponentRef Id="C.System.Windows.Interactivity.dll" />
+            <!--<ComponentRef Id="C.System.Windows.Interactivity.dll" />-->
         </ComponentGroup>
         
         <ComponentGroup Id="C.ssh">
