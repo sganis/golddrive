@@ -45,8 +45,8 @@ for:
       - C:\Python37\python tools\setupssh.py support@localhost support
     build_script:
       - msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -m /verbosity:quiet /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-      - src\build\%CONFIGURATION%\%PLATFORM%\golddrive.exe --version
-      - start /wait msiexec /i src\build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%.msi /qn
+      - src\.build\%CONFIGURATION%\%PLATFORM%\golddrive.exe --version
+      - start /wait msiexec /i src\.build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%.msi /qn
       - if %PLATFORM% == x64 call "c:\Program Files\Golddrive\golddrive.exe" --version
       - if %PLATFORM% == x86 call "c:\Program Files (x86)\Golddrive\golddrive.exe" --version
       #  - reg query HKLM\Software\WOW6432Node\WinFsp\Services\golddrive /s
@@ -65,9 +65,9 @@ for:
       - ps: |
           C:; net use Z: /d
     artifacts:
-      - path: src\build\$(configuration)\$(platform)\golddrive-*.msi
+      - path: src\.build\$(configuration)\$(platform)\golddrive-*.msi
         name: msi
-      - path: src\build\$(configuration)\$(platform)\golddrive-*-$(platform).exe
+      - path: src\.build\$(configuration)\$(platform)\golddrive-*-$(platform).exe
         name: exe
   
   -
