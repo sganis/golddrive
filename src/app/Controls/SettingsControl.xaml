@@ -35,7 +35,7 @@
                         Text="Nickname"
                         Style="{StaticResource Title}" />
                     <TextBox
-                        Text="{Binding SelectedFreeDrive.Label}"
+                        Text="{Binding SelectedFreeDrive.Label, UpdateSourceTrigger=PropertyChanged}"
                         local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
                         Height="35"
                         FontSize="20" />
@@ -53,8 +53,7 @@
                         Style="{StaticResource Title}" />
                     <TextBox
                         Name="txtSettingsSelectedFreeDriveHost"
-                        Text="{Binding SelectedFreeDrive.Host,
-                            UpdateSourceTrigger=PropertyChanged}"
+                        Text="{Binding SelectedFreeDrive.Host, UpdateSourceTrigger=PropertyChanged}"
                         local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
                         FontSize="20" />
                 </StackPanel>
@@ -63,7 +62,7 @@
                         Text="Port"
                         Style="{StaticResource Title}" />
                     <TextBox
-                        Text="{Binding SelectedFreeDrive.Port}"
+                        Text="{Binding SelectedFreeDrive.Port, UpdateSourceTrigger=PropertyChanged}"
                         local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
                         materialDesign:HintAssist.Hint="22"
                         FontSize="20" />
@@ -73,7 +72,7 @@
                 Text="Username"
                 Style="{StaticResource Title}" />
             <TextBox
-                Text="{Binding SelectedFreeDrive.User}"
+                Text="{Binding SelectedFreeDrive.User, UpdateSourceTrigger=PropertyChanged}"
                 local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
                 materialDesign:HintAssist.Hint="{Binding CurrentUser}"
                 Margin="0,0,0,30"
@@ -82,7 +81,7 @@
                 Text="Optional Arguments"
                 Style="{StaticResource Title}" />
             <TextBox
-                Text="{Binding SelectedFreeDrive.Args}"
+                Text="{Binding SelectedFreeDrive.Args, UpdateSourceTrigger=PropertyChanged}"
                 local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
                 materialDesign:HintAssist.Hint="-oarg1,arg2,..."
                 materialDesign:HintAssist.HintOpacity=".25"
@@ -150,7 +149,7 @@
                         Text="Nickname"
                         Style="{StaticResource Title}" />
                     <TextBox
-                        Text="{Binding SelectedDrive.Label}"
+                        Text="{Binding SelectedDrive.Label, UpdateSourceTrigger=PropertyChanged}"
                         local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
                         Height="35"
                         FontSize="20" />
@@ -179,7 +178,7 @@
                         Text="Port"
                         Style="{StaticResource Title}" />
                     <TextBox
-                        Text="{Binding SelectedDrive.Port}"
+                        Text="{Binding SelectedDrive.Port, UpdateSourceTrigger=PropertyChanged}"
                         local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
                         materialDesign:HintAssist.Hint="22"
                         FontSize="20" />
@@ -189,7 +188,7 @@
                 Text="Username"
                 Style="{StaticResource Title}" />
             <TextBox
-                Text="{Binding SelectedDrive.User}"
+                Text="{Binding SelectedDrive.User, UpdateSourceTrigger=PropertyChanged}"
                 local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
                 materialDesign:HintAssist.Hint="{Binding CurrentUser}"
                 Margin="0,0,0,30"
@@ -198,7 +197,7 @@
                 Text="Optional Arguments"
                 Style="{StaticResource Title}" />
             <TextBox
-                Text="{Binding SelectedDrive.Args}"
+                Text="{Binding SelectedDrive.Args, UpdateSourceTrigger=PropertyChanged}"
                 local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
                 materialDesign:HintAssist.Hint="-oarg1,arg2,..."
                 materialDesign:HintAssist.HintOpacity=".25"

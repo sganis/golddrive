@@ -54,6 +54,11 @@ namespace golddrive
             set
             {
                 _selectedDrive = value;
+                if(_selectedDrive != null)
+                {
+                    _selectedDrive.PropertyChanged -= SelectedDrive_PropertyChanged;
+                    _selectedDrive.PropertyChanged += SelectedDrive_PropertyChanged;
+                }
                 NotifyPropertyChanged();
                 NotifyPropertyChanged("HasDrive");
                 NotifyPropertyChanged("HasDrives");
@@ -207,7 +212,11 @@ namespace golddrive
             GetVersionsAsync();
             if (rb != null)
                 Message = rb.Error;
+
+            
         }
+
+        
 
         #endregion
 
@@ -691,7 +700,11 @@ namespace golddrive
         {
             FocusRequested?.Invoke(this, new FocusRequestedEventArgs(propertyName));
         }
-
+        private void SelectedDrive_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            NotifyPropertyChanged("IsSettingsDirty");
+            NotifyPropertyChanged("SettingsOkButtonText");
+        }
         #endregion
 
     }

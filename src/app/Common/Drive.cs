@@ -8,10 +8,6 @@ namespace golddrive
     [JsonObject(MemberSerialization.OptIn)]
     public class Drive : Observable
     {
-        //private void DriveChanged(object o, PropertyChangedEventArgs e)
-        //{
-
-        //}
 
         public DriveStatus Status { get; set; }
 
@@ -39,9 +35,11 @@ namespace golddrive
             set
             {
                 if (_host != value)
+                {
                     IsDirty = true;
-                _host = value;
-                NotifyPropertyChanged();                
+                    _host = value;
+                    NotifyPropertyChanged();
+                }
                 
             }
         }
@@ -57,8 +55,12 @@ namespace golddrive
             get { return string.IsNullOrEmpty(_args) ? null : _args; }
             set
             {
-                _args = value;
-                NotifyPropertyChanged();
+                if (_args != value)
+                {
+                    IsDirty = true;
+                    _args = value;
+                    NotifyPropertyChanged();
+                }
             }
         }
 
@@ -83,9 +85,14 @@ namespace golddrive
             get { return _label; }
             set
             {
-                _label = value;
-                NotifyPropertyChanged();
-                NotifyPropertyChanged("ComboDisplay");
+                if (_label != value)
+                {
+                    IsDirty = true;
+                    _label = value;
+
+                    NotifyPropertyChanged();
+                    NotifyPropertyChanged("ComboDisplay");
+                }
             }
         }
 
@@ -145,14 +152,30 @@ namespace golddrive
         public string User
         {
             get { return user == null ? Environment.UserName.ToLower() : user; }
-            set { user = value; }
+            set {
+
+                if (user != value)
+                {
+                    IsDirty = true;
+                    user = value;
+                    NotifyPropertyChanged();
+                }
+            }
         }
 
         private string port;
         public string Port
         {
             get { return port == null ? "22" : port; }
-            set { port = value; }
+            set {
+                if (port != value)
+                {
+                    IsDirty = true;
+                    port = value;
+                    NotifyPropertyChanged();
+                }
+
+            }
         }
 
         public string UserProfile
