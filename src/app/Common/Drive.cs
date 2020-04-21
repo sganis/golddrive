@@ -61,19 +61,30 @@ namespace golddrive
             }
         }
 
-        private string _mountpoint;
         [JsonProperty]
         public string MountPoint
         {
-            get { return _mountpoint ?? (_mountpoint = ""); }
+            get 
+            {
+                string s = Host;
+                if (string.IsNullOrEmpty(s))
+                    return s;
+                if (Port != 22)
+                    s = string.Format($"{Host}!{Port}");
+                if (User != Environment.UserName)
+                    s = string.Format($"{User}@{s}");
+                if (!string.IsNullOrEmpty(Path))
+                    s = string.Format($"{s}{Path}");
+                return s;  
+            }
             set
             {
-                _mountpoint = value;
-                Host = _mountpoint;
-                if (string.IsNullOrEmpty(_mountpoint))
+                string s = value;
+                Host = s;
+                if (string.IsNullOrEmpty(s))
                     return;
 
-                string s = _mountpoint;
+                
                 if (s.Contains("\\"))
                 {
                     Host = s.Split('\\')[0];

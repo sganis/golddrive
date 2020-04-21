@@ -715,7 +715,7 @@ namespace golddrive
             }
             catch (Exception ex)
             {
-                r.Error = ex.Message;
+                r.Error = String.Format($"Failed to connect to { drive.User}@{drive.Host}:{drive.Port}.\nError: {ex.Message}" );
                 if (ex is SshAuthenticationException)
                 {
                     r.MountStatus = MountStatus.BAD_PASSWORD;
@@ -742,7 +742,7 @@ namespace golddrive
             if (!File.Exists(drive.AppKey))
             {
                 r.MountStatus = MountStatus.BAD_KEY;
-                r.Error = "No ssh key";
+                r.Error = String.Format($"Password is required to connnect to {drive.User}@{drive.Host}:{drive.Port}.\nSSH keys will be generated and used in future conections.");
                 return r;
             }
             try

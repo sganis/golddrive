@@ -31,13 +31,13 @@
                 materialDesign:HintAssist.FloatingScale="0.50"
                 Style="{StaticResource MaterialDesignFloatingHintComboBox}"
                 FontSize="24">
-                <i:Interaction.Triggers>
+                <!--<i:Interaction.Triggers>
                     <i:EventTrigger
                         EventName="SelectionChanged">
                         <i:InvokeCommandAction
                             Command="{Binding SelectedDriveChangedCommand}" />
                     </i:EventTrigger>
-                </i:Interaction.Triggers>
+                </i:Interaction.Triggers>-->
             </ComboBox>
 
             <TextBlock

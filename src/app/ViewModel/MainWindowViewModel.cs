@@ -150,13 +150,47 @@ namespace golddrive
             get { return password; }
             set { password = value; NotifyPropertyChanged(); }
         }
-        private string _newMountPoint;
-        public string NewMountPoint
-        {
-            get { return _newMountPoint; }
-            set { _newMountPoint = value; NotifyPropertyChanged(); }
-        }
+        //private string _newMountPoint;
+        //public string NewMountPoint
+        //{
+        //    get { return _newMountPoint; }
+        //    set { _newMountPoint = value; NotifyPropertyChanged(); }
+        //}
 
+        private string _host;
+        public string Host
+        {
+            get { return _host; }
+            set { _host = value; NotifyPropertyChanged(); }
+        }
+        private bool _hostIsFocused;
+        public bool HostIsFocused
+        {
+            get { return _hostIsFocused; }
+            set { _hostIsFocused = value; NotifyPropertyChanged(); }
+        }
+        private string _user;
+        public string User
+        {
+            get { return _user; }
+            set { _user = value; NotifyPropertyChanged(); }
+        }
+        public string CurrentUser
+        {
+            get { return System.Environment.UserName; }
+        }
+        private string _port;
+        public string Port
+        {
+            get { return _port; }
+            set { _port = value; NotifyPropertyChanged(); }
+        }
+        private string _label;
+        public string Label
+        {
+            get { return _label; }
+            set { _label = value; NotifyPropertyChanged(); }
+        }
 
         public bool IsDriveSelected { get { return SelectedDrive != null; } }
 
@@ -171,6 +205,8 @@ namespace golddrive
         {
             _mountService = new MountService();
             SelectedDrive = drive;
+            //_port = 22;
+           // _user = System.Environment.UserName;
             //Messenger.Default.Register<string>(this, OnShowView);
             CurrentPage = Page.Main;
             LoadDrivesAsync(drive);
@@ -211,10 +247,11 @@ namespace golddrive
                     break;
                 case MountStatus.BAD_HOST:
                     CurrentPage = Page.Host;
+                    HostIsFocused = true;
                     break;
                 case MountStatus.BAD_PASSWORD:
                 case MountStatus.BAD_KEY:
-                    CurrentPage = Page.Password;
+                    CurrentPage = Page.Password;                    
                     break;
                 case MountStatus.OK:
                     CurrentPage = Page.Main;
@@ -383,17 +420,23 @@ namespace golddrive
             Drive d;
             if (HasDrive)
             {
-                SelectedDrive.MountPoint = NewMountPoint;
+                SelectedDrive.Host = Host;
+                SelectedDrive.Port = int.Parse("0" + Port);
+                SelectedDrive.User = User;
+                SelectedDrive.Label = Label;
                 d = SelectedDrive;
             }
             else
             {
-                SelectedFreeDrive.MountPoint = NewMountPoint;
+                SelectedFreeDrive.Host = Host;
+                SelectedFreeDrive.Port = int.Parse("0" + Port);
+                SelectedFreeDrive.User = User;
+                SelectedFreeDrive.Label = Label;
                 d = SelectedFreeDrive;
             }
             if (string.IsNullOrEmpty(d.Host))
             {
-                Message = "Host is required";
+                Message = "Server is required";
                 return;
             }
             ConnectAsync(d);
@@ -408,6 +451,7 @@ namespace golddrive
                         x =>
                         {
                             CurrentPage = (Page)x;
+                            Message = "";
                         }
                         ));
             }

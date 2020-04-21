@@ -4,37 +4,16 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:local="clr-namespace:golddrive"
-    mc:Ignorable="d"
-    d:DesignHeight="300"
-    d:DesignWidth="300">
+    mc:Ignorable="d">
+    
     <StackPanel
+        Orientation="Vertical"
         IsEnabled="{Binding IsWorking, Converter={local:NegateBoolConverter}}"
         Margin="50 0">
-        <TextBlock
-            Text="Drive"
-            Style="{StaticResource Title}" />
-        <ComboBox
-            Visibility="{Binding HasDrive, Converter={local:BoolToVis Negate=True}}"
-            ItemsSource="{Binding FreeDrives}"
-            SelectedItem="{Binding SelectedFreeDrive}"
-            DisplayMemberPath="ComboDisplay"
-            materialDesign:HintAssist.Hint="Drive"
-            VerticalAlignment="Bottom"
-            Margin="0,0,0,30"
-            FontSize="20" />
-        <ComboBox
-            Visibility="{Binding HasDrive, Converter={local:BoolToVis}}"
-            ItemsSource="{Binding GoldDrives}"
-            SelectedItem="{Binding SelectedDrive}"
-            DisplayMemberPath="ComboDisplay"
-            materialDesign:HintAssist.Hint="Drive"
-            VerticalAlignment="Bottom"
-            Margin="0,0,0,30"
-            FontSize="20" />
-        <TextBlock
+
+         <!--<TextBlock
             Text="Mount Point"
             Style="{StaticResource Title}" />
         <TextBox
@@ -42,8 +21,84 @@
             materialDesign:HintAssist.Hint="Host or user@host!22"
             local:EnterKeyHelper.EnterKeyCommand="{Binding ConnectHostCommand}"
             Margin="0,0,0,30"
-            FontSize="20" />
+            FontSize="20" />-->
 
+        <Grid Margin="0,0,0,30">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock
+                    Text="Server"
+                    Style="{StaticResource Title}" />
+                <TextBox
+                    Text="{Binding Host}"
+                    local:FocusExtension.IsFocused="true"
+                    local:EnterKeyHelper.EnterKeyCommand="{Binding ConnectHostCommand}"
+                    FontSize="20" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Margin="20,0,0,0" Width="50">
+                <TextBlock
+                    Text="Port"
+                    Style="{StaticResource Title}" />
+                <TextBox
+                    Text="{Binding Port}"
+                    materialDesign:HintAssist.Hint="22"
+                    FontSize="20" />
+            </StackPanel>
+        </Grid>
+        
+        <TextBlock
+            Text="Username"
+            Style="{StaticResource Title}" />
+        <TextBox
+            Text="{Binding User}"
+            materialDesign:HintAssist.Hint="{Binding CurrentUser}"
+            local:EnterKeyHelper.EnterKeyCommand="{Binding ConnectHostCommand}"
+            Margin="0,0,0,30"
+            FontSize="20" />
+        
+        <Grid Margin="0,0,0,30">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Width="50">
+                <TextBlock
+                    Text="Drive"
+                    Style="{StaticResource Title}" />
+                <ComboBox
+                    Visibility="{Binding HasDrive, Converter={local:BoolToVis Negate=True}}"
+                    ItemsSource="{Binding FreeDrives}"
+                    SelectedItem="{Binding SelectedFreeDrive}"
+                    DisplayMemberPath="ComboDisplay"
+                    materialDesign:HintAssist.Hint="Drive"
+                    VerticalAlignment="Bottom"
+                    FontSize="20" />
+                <ComboBox
+                    Visibility="{Binding HasDrive, Converter={local:BoolToVis}}"
+                    ItemsSource="{Binding GoldDrives}"
+                    SelectedItem="{Binding SelectedDrive}"
+                    DisplayMemberPath="ComboDisplay"
+                    materialDesign:HintAssist.Hint="Drive"
+                    VerticalAlignment="Bottom"
+                    Height="35"
+                    FontSize="20" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Margin="20,0,0,0">
+                <TextBlock
+                    Text="Nickname"
+                    Style="{StaticResource Title}" />
+                <TextBox
+                    Text="{Binding Label}"
+                    local:EnterKeyHelper.EnterKeyCommand="{Binding ConnectHostCommand}"
+                    Height="35"
+                    FontSize="20" />
+            </StackPanel>
+        </Grid>
+
+        
         <StackPanel
             Orientation="Horizontal"
             HorizontalAlignment="Right">
