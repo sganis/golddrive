@@ -17,5 +17,5 @@ set DIR=%DIR:~0,-1%
 
 
 vstest.console ^
-	%DIR%\..\src\build\Release2\x64\golddrive-test.dll ^
+	%DIR%\..\src\.build\Release2\x64\golddrive-test.dll ^
 	/Settings:%DIR%\..\src\test\test.runsettings
