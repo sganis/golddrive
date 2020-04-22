@@ -331,7 +331,8 @@ namespace golddrive
         #region Local Drive Management
 
 
-        public void UpdateDrives(Settings settings) {
+        public void UpdateDrives(Settings settings) 
+        {
             string GOLDLETTERS = "GHIJKLMNOPQRSTUVWXYZ";
             List<char> letters = GOLDLETTERS.ToCharArray().ToList();
 
@@ -1023,6 +1024,7 @@ namespace golddrive
             Settings settings = LoadSettings();
             SaveSettings(settings);
             UpdateDrives(settings);
+            drive.Status = DriveStatus.DISCONNECTED;
             r.MountStatus = MountStatus.OK;
             r.DriveStatus = DriveStatus.DISCONNECTED;
             r.Drive = drive;
@@ -1030,13 +1032,7 @@ namespace golddrive
 
         }
 
-        public ReturnBox UnmountAll()
-        {
-            ReturnBox rb = new ReturnBox();
-
-            return rb;
-
-        }
+        
 
         #endregion
 

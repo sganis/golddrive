@@ -8,7 +8,23 @@ namespace golddrive
     [JsonObject(MemberSerialization.OptIn)]
     public class Drive : Observable
     {
+        public Drive()
+        {
 
+        }
+        public Drive(Drive d)
+        {
+            Clone(d);
+        }
+        public void Clone(Drive d)
+        {
+            Host = d.Host;
+            Port = d.Port;
+            User = d.User;
+            Letter = d.Letter;
+            Label = d.Label;
+            Args = d.Args;
+        }
         public DriveStatus Status { get; set; }
 
         public bool? IsGoldDrive { get; set; }
@@ -23,9 +39,11 @@ namespace golddrive
             get { return _isDirty; }
             set
             {
-                _isDirty = value;
-                NotifyPropertyChanged();
-                NotifyPropertyChanged("IsSettingsDirty");
+                if (_isDirty != value)
+                {
+                    _isDirty = value;
+                    NotifyPropertyChanged();
+                }
             }
         }
         private string _host;
@@ -64,19 +82,19 @@ namespace golddrive
             }
         }
 
-        private List<string> _hosts;
-        [JsonProperty]
-        public List<string> Hosts
-        {
-            get
-            {
-                return _hosts ?? new List<string>();
-            }
-            set
-            {
-                _hosts = value;
-            }
-        }
+        //private List<string> _hosts;
+        //[JsonProperty]
+        //public List<string> Hosts
+        //{
+        //    get
+        //    {
+        //        return _hosts ?? new List<string>();
+        //    }
+        //    set
+        //    {
+        //        _hosts = value;
+        //    }
+        //}
 
         private string _label;
         [JsonProperty]
@@ -224,6 +242,20 @@ namespace golddrive
                 //    s = "..." + s.Substring(s.Length - maxLengh);
                 //return $"{ Letter }: {s}";
             }
+        }
+
+        public void Trim()
+        {
+            Host = Host?.Trim();
+            Port = Port?.Trim();
+            Label = Label?.Trim();
+            User = User?.Trim();
+            User = User?.ToLower();
+            Args = Args?.Trim();
+            if (Port == "22")
+                Port = "";
+            if (User == Environment.UserName.ToLower())
+                User = "";
         }
 
         public override string ToString()

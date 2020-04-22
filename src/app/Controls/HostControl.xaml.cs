@@ -23,7 +23,7 @@ namespace golddrive
 
             switch(e.PropertyName)
             {
-                case nameof(viewModel.Host):
+                case nameof(viewModel.SelectedDrive.Host):
                     Dispatcher.BeginInvoke((ThreadStart)delegate
                     {
                         txtHost.Focus();

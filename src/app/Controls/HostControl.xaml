@@ -24,20 +24,18 @@
                     Text="Drive"
                     Style="{StaticResource Title}" />
                 <ComboBox
-                    Visibility="{Binding HasDrive, Converter={local:BoolToVis Negate=True}}"
-                    ItemsSource="{Binding FreeDrives}"
-                    SelectedItem="{Binding SelectedFreeDrive}"
-                    DisplayMemberPath="ComboDisplay"
-                    materialDesign:HintAssist.Hint="Drive"
-                    VerticalAlignment="Bottom"
-                    FontSize="20" />
-                <ComboBox
-                    Visibility="{Binding HasDrive, Converter={local:BoolToVis}}"
-                    ItemsSource="{Binding GoldDrives}"
+                    Visibility="{Binding IsDriveNew, Converter={local:BoolToVis}}"
+                    ItemsSource="{Binding FreeDriveList}"
                     SelectedItem="{Binding SelectedDrive}"
-                    DisplayMemberPath="ComboDisplay"
-                    materialDesign:HintAssist.Hint="Drive"
-                    VerticalAlignment="Bottom"
+                    DisplayMemberPath="Name"
+                    Height="35"
+                    FontSize="20" />
+                <!---->
+                <ComboBox       
+                   Visibility="{Binding IsDriveNew, Converter={local:BoolToVis Negate=True}}"
+                    ItemsSource="{Binding GoldDriveList}"
+                    SelectedItem="{Binding SelectedDrive}"
+                    DisplayMemberPath="Name"
                     Height="35"
                     FontSize="20" />
             </StackPanel>
@@ -46,24 +44,14 @@
                     Text="Nickname"
                     Style="{StaticResource Title}" />
                 <TextBox
-                    Text="{Binding Label}"
+                    Text="{Binding SelectedDrive.Label}"
                     local:EnterKeyHelper.EnterKeyCommand="{Binding ConnectHostCommand}"
                     Height="35"
                     FontSize="20" />
             </StackPanel>
         </Grid>
-
-
+        
         <Grid Margin="0,0,0,30">
-            <!--<Grid.Style>
-                <Style>
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding HostIsFocused}" Value="True">
-                            <Setter Property="FocusManager.FocusedElement" Value="{Binding ElementName=txtHost}" />
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </Grid.Style>-->
             <Grid.ColumnDefinitions>
                 <ColumnDefinition/>
                 <ColumnDefinition Width="Auto"/>
@@ -74,7 +62,7 @@
                     Style="{StaticResource Title}" />
                 <TextBox
                     Name="txtHost"
-                    Text="{Binding Host}"                       
+                    Text="{Binding SelectedDrive.Host}"                       
                     local:EnterKeyHelper.EnterKeyCommand="{Binding ConnectHostCommand}"
                     FontSize="20" />
             </StackPanel>
@@ -83,7 +71,8 @@
                     Text="Port"
                     Style="{StaticResource Title}" />
                 <TextBox
-                    Text="{Binding Port}"
+                    Text="{Binding SelectedDrive.Port}"
+                    local:EnterKeyHelper.EnterKeyCommand="{Binding ConnectHostCommand}"
                     materialDesign:HintAssist.Hint="22"
                     FontSize="20" />
             </StackPanel>
@@ -93,7 +82,7 @@
             Text="Username"
             Style="{StaticResource Title}" />
         <TextBox
-            Text="{Binding User}"
+            Text="{Binding SelectedDrive.User}"
             materialDesign:HintAssist.Hint="{Binding CurrentUser}"
             local:EnterKeyHelper.EnterKeyCommand="{Binding ConnectHostCommand}"
             Margin="0,0,0,30"

@@ -28,7 +28,7 @@ namespace golddrive
                 case "SelectedFreeDrive.Host":
                     Dispatcher.BeginInvoke((ThreadStart)delegate
                     {
-                        txtSettingsSelectedFreeDriveHost.Focus();
+                        //txtSettingsSelectedFreeDriveHost.Focus();
                     });
                     break;
                 case "SelectedDrive.Host":
