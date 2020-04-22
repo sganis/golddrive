@@ -122,9 +122,9 @@ namespace golddrive
                 string s = Host;
                 if (string.IsNullOrEmpty(s))
                     return s;
-                if (Port != "22")
+                if (!string.IsNullOrEmpty(Port) && Port != "22")
                     s = string.Format($"{Host}!{Port}");
-                if (User != Environment.UserName)
+                if (User != Environment.UserName.ToLower())
                     s = string.Format($"{User}@{s}");
                 if (!string.IsNullOrEmpty(Path))
                     s = string.Format($"{s}{Path}");
@@ -132,6 +132,15 @@ namespace golddrive
             }
             set
             {
+                User = "";
+                Host = "";
+                Port = "";
+                Path = "";
+                NotifyPropertyChanged("User");
+                NotifyPropertyChanged("Host");
+                NotifyPropertyChanged("Port");
+                NotifyPropertyChanged("Path");
+
                 string s = value;
                 Host = s;
                 if (string.IsNullOrEmpty(s))
@@ -184,7 +193,7 @@ namespace golddrive
         private string port;
         public string Port
         {
-            get { return port == null ? "22" : port; }
+            get { return string.IsNullOrEmpty(port) ? "22" : port; }
             set {
                 if (port != value)
                 {

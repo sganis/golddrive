@@ -13,119 +13,6 @@
     >
 
     <StackPanel Margin="50 0">
-        <!--<StackPanel
-            Visibility="{Binding IsDriveNew, Converter={local:BoolToVis}}">
-            <Grid Margin="0,0,0,30">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition/>
-                </Grid.ColumnDefinitions>
-                <StackPanel Width="80">
-                    <TextBlock
-                        Text="New Drive"
-                        Style="{StaticResource Title}" />
-                    <ComboBox
-                        ItemsSource="{Binding FreeDrives}"
-                        SelectedItem="{Binding SelectedFreeDrive}"
-                        DisplayMemberPath="ComboDisplay"
-                        FontSize="20" />
-                </StackPanel>
-                <StackPanel Grid.Column="1" Margin="20,0,0,0">
-                    <TextBlock
-                        Text="Nickname"
-                        Style="{StaticResource Title}" />
-                    <TextBox
-                        Text="{Binding SelectedFreeDrive.Label, UpdateSourceTrigger=PropertyChanged}"
-                        local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
-                        Height="35"
-                        FontSize="20" />
-                </StackPanel>
-            </Grid>
-
-            <Grid Margin="0,0,0,30">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <StackPanel>
-                    <TextBlock
-                        Text="Server"
-                        Style="{StaticResource Title}" />
-                    <TextBox
-                        Name="txtSettingsSelectedFreeDriveHost"
-                        Text="{Binding SelectedFreeDrive.Host, UpdateSourceTrigger=PropertyChanged}"
-                        local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
-                        FontSize="20" />
-                </StackPanel>
-                <StackPanel Grid.Column="1" Margin="20,0,0,0" Width="80">
-                    <TextBlock
-                        Text="Port"
-                        Style="{StaticResource Title}" />
-                    <TextBox
-                        Text="{Binding SelectedFreeDrive.Port, UpdateSourceTrigger=PropertyChanged}"
-                        local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
-                        materialDesign:HintAssist.Hint="22"
-                        FontSize="20" />
-                </StackPanel>
-            </Grid>
-            <TextBlock
-                Text="Username"
-                Style="{StaticResource Title}" />
-            <TextBox
-                Text="{Binding SelectedFreeDrive.User, UpdateSourceTrigger=PropertyChanged}"
-                local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
-                materialDesign:HintAssist.Hint="{Binding CurrentUser}"
-                Margin="0,0,0,30"
-                FontSize="20" />
-            <TextBlock
-                Text="Optional Arguments"
-                Style="{StaticResource Title}" />
-            <TextBox
-                Text="{Binding SelectedFreeDrive.Args, UpdateSourceTrigger=PropertyChanged}"
-                local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
-                materialDesign:HintAssist.Hint="-o arg1,arg2=val,..."
-                materialDesign:HintAssist.HintOpacity=".25"
-                FontSize="20"
-                Margin="0 0 0 30" />
-            --><!--<TextBlock
-                Text="New Drive"
-                Style="{StaticResource Title}" />
-            <ComboBox
-                ItemsSource="{Binding FreeDrives}"
-                SelectedItem="{Binding SelectedFreeDrive}"
-                materialDesign:HintAssist.Hint="Select Drive"
-                materialDesign:HintAssist.HintOpacity=".25"
-                DisplayMemberPath="ComboDisplay"
-                FontSize="20"
-                Margin="0 0 0 30" />
-            <TextBlock
-                Text="Mount Point"
-                Style="{StaticResource Title}" />
-            <TextBox
-                Text="{Binding SelectedFreeDrive.MountPoint}"
-                materialDesign:HintAssist.Hint="Host or user@host!22"
-                materialDesign:HintAssist.HintOpacity=".25"
-                FontSize="20"
-                Margin="0 0 0 30" />
-            <TextBlock
-                Text="Nickname"
-                Style="{StaticResource Title}" />
-            <TextBox
-                Text="{Binding SelectedFreeDrive.Label}"
-                materialDesign:HintAssist.Hint="ex: Golddrive"
-                materialDesign:HintAssist.HintOpacity=".25"
-                FontSize="20"
-                Margin="0 0 0 30" />
-            <TextBlock
-                Text="Optional Arguments"
-                Style="{StaticResource Title}" />
-            <TextBox
-                Text="{Binding SelectedFreeDrive.Args}"
-                materialDesign:HintAssist.Hint="-oarg1,arg2,..."
-                materialDesign:HintAssist.HintOpacity=".25"
-                FontSize="20"
-                Margin="0 0 0 30" />--><!--
-        </StackPanel>-->
         <StackPanel>
             <Grid Margin="0,0,0,30">
                 <Grid.ColumnDefinitions>
@@ -155,7 +42,6 @@
                         Text="Nickname"
                         Style="{StaticResource Title}" />
                     <TextBox
-                        IsEnabled="{Binding CanEdit}"
                         Text="{Binding SelectedDrive.Label, UpdateSourceTrigger=PropertyChanged}"
                         local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
                         Height="35"
@@ -173,7 +59,6 @@
                     <TextBlock Text="Server"  
                                Style="{StaticResource Title}" />
                     <TextBox Name="txtSettingsSelectedDriveHost"   
-                             IsEnabled="{Binding CanEdit}"
                              local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
                              Text="{Binding SelectedDrive.Host, UpdateSourceTrigger=PropertyChanged}"
                              FontSize="20" />
@@ -181,8 +66,7 @@
                 <StackPanel Grid.Column="1" Margin="20,0,0,0" Width="80">
                     <TextBlock Text="Port" 
                                Style="{StaticResource Title}" />
-                    <TextBox IsEnabled="{Binding CanEdit}"
-                             Text="{Binding SelectedDrive.Port, UpdateSourceTrigger=PropertyChanged}"
+                    <TextBox Text="{Binding SelectedDrive.Port, UpdateSourceTrigger=PropertyChanged}"
                              local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
                              materialDesign:HintAssist.Hint="22"
                              FontSize="20" />
@@ -191,7 +75,6 @@
             <TextBlock Text="Username"
                        Style="{StaticResource Title}" />
             <TextBox Text="{Binding SelectedDrive.User, UpdateSourceTrigger=PropertyChanged}"
-                     IsEnabled="{Binding CanEdit}"                        
                      local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
                      materialDesign:HintAssist.Hint="{Binding CurrentUser}"
                      Margin="0,0,0,30"
@@ -199,7 +82,6 @@
             <TextBlock Text="Optional Arguments"
                        Style="{StaticResource Title}" />
             <TextBox Text="{Binding SelectedDrive.Args, UpdateSourceTrigger=PropertyChanged}"
-                     IsEnabled="{Binding CanEdit}"                       
                      local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
                      materialDesign:HintAssist.Hint="-o arg1,arg2=val,..."
                      materialDesign:HintAssist.HintOpacity=".25"
