@@ -62,7 +62,7 @@
                 </materialDesign:PopupBox>
                 <Grid Visibility="{Binding HasBack, Converter={local:BoolToVis}}">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="60" />
+                        <ColumnDefinition Width="55" />
                         <ColumnDefinition />
                     </Grid.ColumnDefinitions>
                     <Button

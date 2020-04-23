@@ -29,8 +29,6 @@ namespace golddrive
 
         public bool? IsGoldDrive { get; set; }
 
-        public string ServerOS { get; set; }
-
         public string Path { get; set; }
 
         private bool _isDirty;
@@ -82,20 +80,7 @@ namespace golddrive
             }
         }
 
-        //private List<string> _hosts;
-        //[JsonProperty]
-        //public List<string> Hosts
-        //{
-        //    get
-        //    {
-        //        return _hosts ?? new List<string>();
-        //    }
-        //    set
-        //    {
-        //        _hosts = value;
-        //    }
-        //}
-
+        
         private string _label;
         [JsonProperty]
         public string Label
@@ -124,7 +109,7 @@ namespace golddrive
                     return s;
                 if (!string.IsNullOrEmpty(Port) && Port != "22")
                     s = string.Format($"{Host}!{Port}");
-                if (User != Environment.UserName.ToLower())
+                if (!string.IsNullOrEmpty(Port) && User != EnvironmentUser)
                     s = string.Format($"{User}@{s}");
                 if (!string.IsNullOrEmpty(Path))
                     s = string.Format($"{s}{Path}");
@@ -178,7 +163,7 @@ namespace golddrive
         private string user;
         public string User
         {
-            get { return string.IsNullOrEmpty(user) ? Environment.UserName.ToLower() : user; }
+            get { return user; }
             set {
 
                 if (user != value)
@@ -189,11 +174,22 @@ namespace golddrive
                 }
             }
         }
+        public string CurrentUser
+        {
+            get
+            {
+                return string.IsNullOrEmpty(User) ? EnvironmentUser : User;
+            }
+        }
+        public string EnvironmentUser
+        {
+            get { return Environment.UserName.ToLower(); }
+        }
 
         private string port;
         public string Port
         {
-            get { return string.IsNullOrEmpty(port) ? "22" : port; }
+            get { return port; }
             set {
                 if (port != value)
                 {
@@ -203,6 +199,16 @@ namespace golddrive
                 }
 
             }
+        }
+        public int CurrentPort
+        {
+            get 
+            {   
+                int port = int.Parse("0" + Port);
+                if (port == 0)
+                    port = 22;
+                return port;
+            } 
         }
 
         public string UserProfile
@@ -217,13 +223,9 @@ namespace golddrive
         }
         public string AppKey
         {
-            get { return $@"{UserProfile}\.ssh\id_golddrive_{User}"; }
+            get { return $@"{UserProfile}\.ssh\id_golddrive_{CurrentUser}"; }
             //get { return $@"{UserProfile}\.ssh\id_rsa"; }
         }
-        //public string UserKey
-        //{
-        //    get { return $@"{UserProfile}\.ssh\id_rsa"; }
-        //}
         public string AppPubKey
         {
             get { return $@"{AppKey}.pub"; }
@@ -263,7 +265,7 @@ namespace golddrive
             Args = Args?.Trim();
             if (Port == "22")
                 Port = "";
-            if (User == Environment.UserName.ToLower())
+            if (User == EnvironmentUser)
                 User = "";
         }
 

@@ -671,8 +671,8 @@ namespace golddrive
 
                 using (var client = new TcpClient())
                 {
-                    int port = int.Parse(drive.Port);
-                    var result = client.BeginConnect(drive.Host, port, null, null);
+                    var result = client.BeginConnect(drive.Host, 
+                        drive.CurrentPort, null, null);
                     var success = result.AsyncWaitHandle.WaitOne(5000);
                     if (!success)
                     {
@@ -710,7 +710,7 @@ namespace golddrive
             try
             {
                 int port = int.Parse(drive.Port);
-                SshClient client = new SshClient(drive.Host, port, drive.User, password);
+                SshClient client = new SshClient(drive.Host, port, drive.CurrentUser, password);
                 client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(15);
                 client.Connect();
                 client.Disconnect();
@@ -718,7 +718,7 @@ namespace golddrive
             }
             catch (Exception ex)
             {
-                r.Error = String.Format($"Failed to connect to { drive.User}@{drive.Host}:{drive.Port}.\nError: {ex.Message}" );
+                r.Error = String.Format($"Failed to connect to { drive.CurrentUser}@{drive.Host}:{drive.Port}.\nError: {ex.Message}" );
                 if (ex is SshAuthenticationException)
                 {
                     r.MountStatus = MountStatus.BAD_PASSWORD;
@@ -745,7 +745,7 @@ namespace golddrive
             if (!File.Exists(drive.AppKey))
             {
                 r.MountStatus = MountStatus.BAD_KEY;
-                r.Error = String.Format($"Password is required to connnect to {drive.User}@{drive.Host}:{drive.Port}.\nSSH keys will be generated and used in future conections.");
+                r.Error = String.Format($"Password is required to connnect to {drive.CurrentUser}@{drive.Host}:{drive.Port}.\nSSH keys will be generated and used in future conections.");
                 return r;
             }
             try
@@ -754,8 +754,7 @@ namespace golddrive
 
                 var pk = new PrivateKeyFile(drive.AppKey);
                 var keyFiles = new[] { pk };
-                int port = int.Parse(drive.Port);
-                SshClient client = new SshClient(drive.Host, port, drive.User, keyFiles);
+                SshClient client = new SshClient(drive.Host, drive.CurrentPort, drive.CurrentUser, keyFiles);
                 client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(timeout);
                 client.Connect();
                 client.Disconnect();
@@ -780,7 +779,7 @@ namespace golddrive
                 else if (ex.Message.Contains("OPENSSH"))
                 {
                     // openssh keys not supported by ssh.net yet
-                    string args = $"-i \"{drive.AppKey}\" -p {drive.Port} -oPasswordAuthentication=no -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oBatchMode=yes -oConnectTimeout=10 { drive.User}@{drive.Host} \"echo ok\"";
+                    string args = $"-i \"{drive.AppKey}\" -p {drive.CurrentPort} -oPasswordAuthentication=no -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oBatchMode=yes -oConnectTimeout=10 { drive.CurrentUser}@{drive.Host} \"echo ok\"";
                     var r1 = RunLocal("ssh.exe", args, timeout);
                     var ok = r1.Output.Trim() == "ok";
                     if (ok)
@@ -812,8 +811,8 @@ namespace golddrive
                 {
                     pubkey = GenerateKeys(drive);
                 }
-                int port = int.Parse(drive.Port);
-                SshClient client = new SshClient(drive.Host, port, drive.User, password);
+                
+                SshClient client = new SshClient(drive.Host, drive.CurrentPort, drive.CurrentUser, password);
                 client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(15);
                 client.Connect();
                 string cmd = "";
