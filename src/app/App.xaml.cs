@@ -12,7 +12,7 @@ namespace golddrive
             //string appdir = System.IO.Path.GetDirectoryName(apppath);
             //string args = "";
             bool ok = false;
-            Drive drive = null;
+            //Drive drive = null;
             ReturnBox rb = null;
             //MountService ms = new MountService();
 
@@ -57,7 +57,7 @@ namespace golddrive
 
             if (!ok)
             {
-                new MainWindow(rb, drive).ShowDialog();
+                new MainWindow(rb).ShowDialog();
             }
 
             this.Shutdown();

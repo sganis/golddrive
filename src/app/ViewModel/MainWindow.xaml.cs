@@ -2,11 +2,16 @@
 {
     public partial class MainWindow
     {
-        public MainWindow(ReturnBox rb, Drive drive)
+        public MainWindow(ReturnBox rb)
         {
             InitializeComponent();
-            DataContext = new MainWindowViewModel(rb, drive);
+            DataContext = new MainWindowViewModel(rb);
         }
 
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            var vm = (MainWindowViewModel)DataContext;
+            vm.Closing(null);
+        }
     }
 }

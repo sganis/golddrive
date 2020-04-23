@@ -8,5 +8,11 @@ namespace golddrive
         {
             InitializeComponent();
         }
+
+        private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var vm = (MainWindowViewModel)DataContext;
+            vm.OnComboChanged();
+        }
     }
 }

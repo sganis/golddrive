@@ -10,89 +10,35 @@
     TextElement.FontSize="14"
     WindowStartupLocation="CenterScreen"
     Title="Golddrive"
-    MaxWidth="700"
+    MaxWidth="800"
     MinWidth="450"
     MinHeight="600"
-    Width="450"
-    Height="600"
+    Width="550"
+    Height="700"
     Icon="/golddrive-app;component/golddrive.ico" 
     TextElement.Foreground="{DynamicResource MaterialDesignBody}"
     TextOptions.TextFormattingMode="Ideal"
     TextOptions.TextRenderingMode="Auto"
     Background="{DynamicResource MaterialDesignPaper}"
     FontFamily="{DynamicResource MaterialDesignFont}"
+    Closing="Window_Closing"
     >
-    <!--<Controls:MetroWindow
-    x:Class="golddrive.MainWindow"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
-    xmlns:Controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
-    xmlns:local="clr-namespace:golddrive"
-    mc:Ignorable="d"
-    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-    TextElement.Foreground="{DynamicResource MaterialDesignBody}"
-    TextOptions.TextFormattingMode="Ideal"
-    TextOptions.TextRenderingMode="Auto"
-    Background="{DynamicResource MaterialDesignPaper}"
-    TextElement.FontWeight="Medium"
-    TextElement.FontSize="14"
-    FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto"
-    WindowStartupLocation="CenterScreen"
-    Title="Golddrive"
-    MaxWidth="700"
-    MinWidth="450"
-    MinHeight="600"
-    Width="600"
-    Height="600"
-    ResizeMode="CanResizeWithGrip"
-    ShowMaxRestoreButton="False"
-    GlowBrush="{DynamicResource AccentColorBrush}"
-    BorderThickness="1"
-    TitleCaps="False"
-    WindowTransitionsEnabled="False"
-    
-    Icon="/golddrive-app;component/golddrive.ico" 
-    >-->
-
-    <!--<Window.IconTemplate>
-        <DataTemplate>
-            <materialDesign:PackIcon
-                Kind="Database"
-                Foreground="GhostWhite"
-                Width="22"
-                Height="22"
-                Margin="5"
-                Padding="4" />
-        </DataTemplate>
-    </Window.IconTemplate>-->
-
     <Window.Resources>
 
     </Window.Resources>
-    <!--Events-->
-    <!--<i:Interaction.Triggers>
-        <i:EventTrigger
-            EventName="Closing">
-            <i:InvokeCommandAction
-                Command="{Binding ClosingCommand}" />
-        </i:EventTrigger>
-    </i:Interaction.Triggers>-->
-    <!--View-->
+ 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition
-                Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition />
-            <RowDefinition
-                Height="56" />
+            <RowDefinition Height="56" />
         </Grid.RowDefinitions>
 
         <materialDesign:ColorZone
-            Mode="Standard"
-            Height="50">
+            Mode="PrimaryMid"
+            Height="60" 
+            Padding="5">
+            
             <DockPanel>
                 <materialDesign:PopupBox
                     DockPanel.Dock="Right"
@@ -114,8 +60,29 @@
                             CommandParameter="{x:Static local:Page.About}" />
                     </StackPanel>
                 </materialDesign:PopupBox>
-                <StackPanel
-                    Orientation="Horizontal" />
+                <Grid Visibility="{Binding HasBack, Converter={local:BoolToVis}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="60" />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+                    <Button
+                        Width="40"
+                        Height="40"
+                        Padding="0"
+                        Margin="15,0,0,0"
+                        Command="{Binding ShowPageCommand}"
+                        CommandParameter="{x:Static local:Page.Main}"
+                        Style="{StaticResource MaterialDesignFlatMidBgButton}">
+                        <materialDesign:PackIcon 
+                            Kind="ArrowBack" Width="30" Height="30" />
+                    </Button>
+                    <TextBlock
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        FontSize="20"
+                        Margin="16 0 0 0" 
+                        Text="{Binding Title}" />
+                </Grid>
             </DockPanel>
         </materialDesign:ColorZone>
         <Grid
@@ -160,13 +127,5 @@
                 <local:AboutControl />
             </StackPanel>
         </Grid>
-        <!--ProgressBar
-            Grid.Row="2"
-            Width="200"
-            Visibility="{Binding IsWorking, 
-                         Converter={StaticResource BooleanToVisibilityConverter}}"
-            VerticalAlignment="Top"
-            IsIndeterminate="True" /-->
-
     </Grid>
 </Window>

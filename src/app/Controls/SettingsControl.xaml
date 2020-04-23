@@ -113,14 +113,17 @@
                 </Button>
             </StackPanel>
             <StackPanel Orientation="Horizontal"  Grid.Column="1">
-                <Button Content="Cancel"  
-                        Visibility="{Binding IsSettingsDirty, Converter={local:BoolToVis}}"
+                <Button 
+                    Content="Cancel"  
+                    Visibility="{Binding IsSettingsDirty, Converter={local:BoolToVis}}"
                     Command="{Binding SettingsCancelCommand}"
                     Style="{StaticResource MaterialDesignFlatButton}"
-                    Width="80"
-                    Margin="5 0" />
-                <Button Content="{Binding SettingsOkButtonText}"  Command="{Binding SettingsOkCommand}"
-                        Width="80" />
+                    Width="80"  Margin="5 0" />
+                <Button 
+                    Content="{Binding SettingsOkButtonText}"  
+                    Visibility="{Binding IsSettingsDirty, Converter={local:BoolToVis}}"
+                    Command="{Binding SettingsOkCommand}"                    
+                    Width="80" />
             </StackPanel>
         </Grid>
         <TextBlock  Text="{Binding Message}"

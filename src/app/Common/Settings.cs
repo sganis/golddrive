@@ -16,7 +16,7 @@ namespace golddrive
         public string Selected { get; set; }
         public Dictionary<string, Drive> Drives { get; set; }
 
-        public void AddDrives(List<Drive> drives)
+        public void AddDrives(IEnumerable<Drive> drives)
         {
             Drives.Clear();
             foreach (var d in drives)
@@ -28,8 +28,9 @@ namespace golddrive
             {
                 var d = Drives[drive.Name];
                 d.MountPoint = drive.MountPoint;
+                d.Label = drive.Label;
+                d.Args = drive.Args;
                 d.Status = drive.Status;
-
             }
             else
             {

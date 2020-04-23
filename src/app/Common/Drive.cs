@@ -178,7 +178,7 @@ namespace golddrive
         private string user;
         public string User
         {
-            get { return user == null ? Environment.UserName.ToLower() : user; }
+            get { return string.IsNullOrEmpty(user) ? Environment.UserName.ToLower() : user; }
             set {
 
                 if (user != value)
@@ -259,7 +259,7 @@ namespace golddrive
             Port = Port?.Trim();
             Label = Label?.Trim();
             User = User?.Trim();
-            User = User?.ToLower();
+            User = User?.Trim().ToLower();
             Args = Args?.Trim();
             if (Port == "22")
                 Port = "";

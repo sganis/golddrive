@@ -33,6 +33,7 @@
                 </Hyperlink>
             </TextBlock>
             <Button
+                Visibility="Collapsed"
                 Content="Ok"
                 Command="{Binding ShowPageCommand}"
                 CommandParameter="{x:Static local:Page.Main}"
