@@ -109,8 +109,8 @@ namespace golddrive
                     return s;
                 if (!string.IsNullOrEmpty(Port) && Port != "22")
                     s = string.Format($"{Host}!{Port}");
-                if (!string.IsNullOrEmpty(Port) && User != EnvironmentUser)
-                    s = string.Format($"{User}@{s}");
+                if (!string.IsNullOrEmpty(User) && User != EnvironmentUser)
+                    s = string.Format($"{CurrentUser}@{s}");
                 if (!string.IsNullOrEmpty(Path))
                     s = string.Format($"{s}{Path}");
                 return s;  
