@@ -560,7 +560,7 @@ int gd_readlink(const char* path, char* buf, size_t size)
 	while ((rc = libssh2_sftp_symlink_ex(
 		g_ssh->sftp, path, (int)strlen(path),
 		target, MAX_PATH, LIBSSH2_SFTP_READLINK)) ==
-		LIBSSH2_ERROR_EAGAIN) {
+			LIBSSH2_ERROR_EAGAIN) {
 		waitsocket(g_ssh);
 		g_sftp_calls++;
 	}
@@ -577,11 +577,30 @@ int gd_readlink(const char* path, char* buf, size_t size)
 
 	}
 	assert(rc < size);
-	strncpy(buf, target, rc);
+
+	// replace double slashes
+	char* output = malloc(MAX_PATH);	
+	char c = 0;
+	char* t = target;
+	char* o = output;
+	for (int i = 0; *t != '\0'; i++) {
+		if (t[0] == '/' && c == '/') {
+			rc--;
+		}
+		else {
+			c = t[0];
+			*o++ = c;
+		}
+		t++;	
+	}
+
+
+	strncpy(buf, output, rc);
 	buf[rc] = '\0';
 #endif
 
 	free(target);
+	free(output);
 	return 0;
 }
 
