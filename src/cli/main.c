@@ -435,12 +435,12 @@ static int fs_opt_proc(
 		get_file_version(exepath, version);
 		fprintf(stderr, "Golddrive %s %d-bit %s\n", 
 			version, PLATFORM_BITS, __DATE__);
-		fprintf(stderr, "%s\n", OPENSSL_VERSION_TEXT);
 #ifdef USE_LIBSSH
 		fprintf(stderr, "LibSSH %s\n", ssh_version(0));
 #else
 		fprintf(stderr, "Libssh2 %s\n", libssh2_version(0));
 #endif
+		fprintf(stderr, "%s\n", OPENSSL_VERSION_TEXT);
 		fprintf(stderr, "FUSE %s\n", fuse_pkgversion());
 		exit(0);
 	}
