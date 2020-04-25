@@ -65,3 +65,15 @@ void copy_attributes(struct fuse_stat* stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs);
 //void print_statvfs(const char* path, LIBSSH2_SFTP_STATVFS* st);
 #endif
 
+// message queue
+typedef struct GDQUEUE {
+	int front, rear, size;
+	unsigned capacity;
+	char** data;
+} GDQUEUE;
+
+GDQUEUE* gd_create_queue(unsigned capacity);
+int gd_queue_is_full(GDQUEUE* queue);
+int gd_queue_is_empty(GDQUEUE* queue);
+void gd_enqueue(GDQUEUE* queue, char* item);
+char* gd_dequeue(GDQUEUE* queue);

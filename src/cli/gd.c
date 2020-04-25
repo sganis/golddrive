@@ -2640,6 +2640,90 @@ void gd_log(const char* fmt, ...)
 	ReleaseSRWLockExclusive(&g_log_lock);
 }
 
+// function to create a queue of given capacity. 
+// It initializes size of queue as 0 
+GDQUEUE* gd_create_queue(unsigned capacity)
+{
+	GDQUEUE* queue = (GDQUEUE*) malloc(sizeof(GDQUEUE));
+	queue->capacity = capacity;
+	queue->front = queue->size = 0;
+	queue->rear = capacity - 1; // This is important, see the enqueue 
+	queue->data = (char**)malloc(queue->capacity);
+	return queue;
+}
+
+// Queue is full when size becomes equal to the capacity 
+int gd_queue_is_full(GDQUEUE* queue)
+{
+	return (queue->size == queue->capacity);
+}
+
+// Queue is empty when size is 0 
+int gd_queue_is_empty(GDQUEUE* queue)
+{
+	return (queue->size == 0);
+}
+
+// Function to add an item to the queue. 
+// It changes rear and size 
+void gd_enqueue(GDQUEUE* queue, char* item)
+{
+	if (gd_queue_is_full(queue))
+		return;
+	queue->rear = (queue->rear + 1) % queue->capacity;
+	queue->data[queue->rear] = item;
+	queue->size = queue->size + 1;
+	printf("data enqueued: %s\n", item);
+}
+
+// Function to remove an item from queue. 
+// It changes front and size 
+char* gd_dequeue(GDQUEUE* queue)
+{
+	if (gd_queue_is_empty(queue))
+		return 0;
+	char* item = queue->data[queue->front];
+	queue->front = (queue->front + 1) % queue->capacity;
+	queue->size = queue->size - 1;
+	return item;
+}
+
+// Function to get front of queue 
+//int gd_queue_front(struct Queue* queue)
+//{
+//	if (gd_queue_is_empty(queue))
+//		return INT_MIN;
+//	return queue->array[queue->front];
+//}
+//
+//// Function to get rear of queue 
+//int gd_queue_rear(struct Queue* queue)
+//{
+//	if (gd_queue_is_empty(queue))
+//		return INT_MIN;
+//	return queue->array[queue->rear];
+//}
+//
+//// Driver program to test above functions./ 
+//int main()
+//{
+//	struct Queue* queue = createQueue(1000);
+//
+//	enqueue(queue, 10);
+//	enqueue(queue, 20);
+//	enqueue(queue, 30);
+//	enqueue(queue, 40);
+//
+//	printf("%d dequeued from queue\n\n", dequeue(queue));
+//
+//	printf("Front item is %d\n", front(queue));
+//	printf("Rear item is %d\n", rear(queue));
+//
+//	return 0;
+//}
+
+
+
 //#if defined(FSP_FUSE_USE_STAT_EX)
 //static inline uint32_t MapFileAttributesToFlags(UINT32 FileAttributes)
 //{
