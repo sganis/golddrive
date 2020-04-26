@@ -989,6 +989,11 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	size_t chunk = size;
 	char* pos = buf;
 
+	if (g_conf.audit && offset == 0 && size > 0) {
+		// log read event
+		gd_log("%s: READ: %s\n", g_conf.user, sh->path);
+	}
+
 #ifdef USE_LIBSSH
 	sftp_file handle = sh->file_handle;
 	gd_lock();
@@ -1124,6 +1129,12 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	size_t chunk = size;
 	const char* pos = buf;
 	//log_error("WRITING HANDLE: %zu size: %zu\n", (size_t)sh, size);
+
+	if (g_conf.audit && offset == 0 && size > 0) {
+		// log read event
+		gd_log("%s: WRITE: %s\n", g_conf.user, sh->path);
+	}
+
 
 #ifdef USE_LIBSSH
 
@@ -2633,8 +2644,11 @@ void gd_log(const char* fmt, ...)
 	if (g_logfile) {
 		
 		FILE* f = fopen(g_logfile, "a");
-		if (f != NULL)
-			fprintf(f, "golddrive: %s", message);
+		if (f != NULL) {
+			char time_s[TIME_SIZE];
+			int ok = time_str(time_mu(), &time_s);
+			fprintf(f, "%s: golddrive: %s", time_s, message);
+		}
 		fclose(f);
 	}
 	ReleaseSRWLockExclusive(&g_log_lock);

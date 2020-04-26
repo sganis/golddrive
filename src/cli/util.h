@@ -2,9 +2,10 @@
 //#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <stdio.h>
 
+#define TIME_SIZE 100
 int get_number_of_processors(void);
 size_t time_mu(void);
-int time_str(size_t time_ms, char *time_string);
+int time_str(size_t time_mu, char *time_string);
 int file_exists(const char* path);
 void gd_random_string(char *s, const int len);
 int directory_exists(const char* path);

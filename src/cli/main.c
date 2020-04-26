@@ -360,7 +360,7 @@ static struct fuse_opt fs_opts[] = {
 	fs_OPT("-k %s",             pkey, 0),
 	fs_OPT("-k=%s",             pkey, 0),
 	fs_OPT("keeplink",          keeplink, 1),
-	//fs_OPT("compress",          compress, 1),
+	fs_OPT("audit",             audit, 1),
 	fs_OPT("block",             block, 1),
 	fs_OPT("buffer=%u",         buffer, 0),
 	fs_OPT("cipher=%s",         cipher, 0),
@@ -409,6 +409,7 @@ static int fs_opt_proc(
 			"    -k PKEY, -o pkey=PKEY      private key, default: %%USERPROFILE%%\\.ssh\\id_rsa\n"
 			"    -p PORT, -o port=PORT      server port, default: 22\n"
 			"    -o keeplink                hard links are not removed before overwriting data\n"
+			"    -o audit                   enable auditing by logging read and write events\n"
 			"    -o block                   disable non-blocking protocol mode\n"
 			"    -o cipher                  cipher for symetric encryption, comma-separated list\n"
 			"    -o buffer=BYTES            read/write block size in bytes, default: 65535\n"
@@ -689,7 +690,7 @@ int main(int argc, char *argv[])
 	// print arguments
 	gd_log("buffer   = %u\n", g_conf.buffer);
 	gd_log("keeplink = %u\n", g_conf.keeplink);
-	//gd_log("compress = %u\n", g_fs.compress);
+	gd_log("audit    = %u\n", g_conf.audit);
 	gd_log("block    = %u\n", g_conf.block);
 	if (g_conf.cipher)
 		gd_log("cipher   = %s\n", g_conf.cipher);

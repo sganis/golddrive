@@ -93,6 +93,7 @@ typedef struct GDCONFIG {
 	char *json;
 	char* args;
 	char* logfile;
+	char* audit;
 	char* usageurl;
 	char *home;
 	char* root;
