@@ -673,10 +673,10 @@ namespace golddrive
                 {
                     var result = client.BeginConnect(drive.Host, 
                         drive.CurrentPort, null, null);
-                    var success = result.AsyncWaitHandle.WaitOne(5000);
+                    var success = result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(3));
                     if (!success)
                     {
-                        r.MountStatus = MountStatus.BAD_HOST;
+                        throw new Exception("Timeout. Server unknown or does not respond.");
                     }
                     else
                     {
@@ -903,10 +903,11 @@ namespace golddrive
                 r.MountStatus = MountStatus.BAD_DRIVE;
                 return r;
             }
-            status?.Report("Connecting...");
+            status?.Report("Checking server...");
             r = TestHost(drive);
             if (r.MountStatus != MountStatus.OK)
                 return r;
+            status?.Report("Authenticating...");
             r = TestSsh(drive);
             if (r.MountStatus != MountStatus.OK)
                 return r;

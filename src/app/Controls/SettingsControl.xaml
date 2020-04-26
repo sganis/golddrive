@@ -111,6 +111,15 @@
                     Height="30">
                     <materialDesign:PackIcon Kind="Minus" Width="20"  Height="20" />
                 </Button>
+                <Button IsEnabled="{Binding IsSettingsDirty, Converter={local:NegateBoolConverter}}"
+                    Command="{Binding SettingsEditCommand}"
+                    Style="{StaticResource MaterialDesignFloatingActionMiniLightButton}"
+                    ToolTip="Edit current drive"
+                    Margin="10,0,0,0"
+                    Width="30"
+                    Height="30">
+                    <materialDesign:PackIcon Kind="Edit" Width="20"  Height="20" />
+                </Button>
             </StackPanel>
             <StackPanel Orientation="Horizontal"  Grid.Column="1">
                 <Button 
@@ -120,7 +129,7 @@
                     Style="{StaticResource MaterialDesignFlatButton}"
                     Width="80"  Margin="5 0" />
                 <Button 
-                    Content="{Binding SettingsOkButtonText}"  
+                    Content="Save"  
                     Visibility="{Binding IsSettingsDirty, Converter={local:BoolToVis}}"
                     Command="{Binding SettingsOkCommand}"                    
                     Width="80" />
