@@ -170,11 +170,11 @@ namespace golddrive.Tests
         public void MakeDirManyTest()
         {
             Mount();
-            Parallel.ForEach(Enumerable.Range(1, 100), f =>
+            Parallel.ForEach(Enumerable.Range(1, 20), f =>
             {
                 CreateDir(f);
             });
-            Parallel.ForEach(Enumerable.Range(1, 100), f =>
+            Parallel.ForEach(Enumerable.Range(1, 20), f =>
             {
                 DeleteDir(f);
             });
@@ -194,11 +194,11 @@ namespace golddrive.Tests
         {
             Mount();
 
-            Parallel.ForEach(Enumerable.Range(1, 100), f =>
+            Parallel.ForEach(Enumerable.Range(1, 20), f =>
             {
                 CreateFile(f);
             });
-            Parallel.ForEach(Enumerable.Range(1, 100), f =>
+            Parallel.ForEach(Enumerable.Range(1, 20), f =>
             {
                 DeleteFile(f);
             });
