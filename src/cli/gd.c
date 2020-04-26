@@ -641,6 +641,7 @@ int gd_unlink(const char* path)
 {
 	int rc = 0;
 	log_info("%s\n", path);
+
 #ifdef USE_LIBSSH
 	gd_lock();
 	rc = sftp_unlink(g_ssh->sftp, path);
@@ -666,6 +667,11 @@ int gd_unlink(const char* path)
 		rc = error();
 	}
 #endif
+
+	if (g_conf.audit) {
+		gd_log("%s: DELETE: %s\n", g_conf.user, path);
+	}
+
 	return rc;
 }
 
@@ -699,6 +705,11 @@ int gd_rmdir(const char* path)
 		rc = error();
 	}
 #endif
+
+	//if (g_conf.audit) {
+	//	gd_log("%s: RMDIR: %s\n", g_conf.user, path);
+	//}
+
 	return rc;
 }
 
@@ -723,6 +734,11 @@ static int _gd_rename(const char* from, const char* to)
 		rc = error();
 	}
 #endif	
+
+	if (g_conf.audit) {
+		gd_log("%s: RENAME: %s -> %s\n", g_conf.user, from, to);
+	}
+
 	return rc;
 }
 
