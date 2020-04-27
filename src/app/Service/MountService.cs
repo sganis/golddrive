@@ -709,16 +709,15 @@ namespace golddrive
             }
             try
             {
-                int port = int.Parse(drive.Port);
-                SshClient client = new SshClient(drive.Host, port, drive.CurrentUser, password);
-                client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(15);
+                SshClient client = new SshClient(drive.Host, drive.CurrentPort, drive.CurrentUser, password);
+                client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
                 client.Connect();
                 client.Disconnect();
                 r.MountStatus = MountStatus.OK;
             }
             catch (Exception ex)
             {
-                r.Error = String.Format($"Failed to connect to { drive.CurrentUser}@{drive.Host}:{drive.Port}.\nError: {ex.Message}" );
+                r.Error = String.Format($"Failed to connect to { drive.CurrentUser}@{drive.Host}:{drive.CurrentPort}.\nError: {ex.Message}" );
                 if (ex is SshAuthenticationException)
                 {
                     r.MountStatus = MountStatus.BAD_PASSWORD;
@@ -745,7 +744,7 @@ namespace golddrive
             if (!File.Exists(drive.AppKey))
             {
                 r.MountStatus = MountStatus.BAD_KEY;
-                r.Error = String.Format($"Password is required to connnect to {drive.CurrentUser}@{drive.Host}:{drive.Port}.\nSSH keys will be generated and used in future conections.");
+                r.Error = String.Format($"Password is required to connnect to {drive.CurrentUser}@{drive.Host}:{drive.CurrentPort}.\nSSH keys will be generated and used in future conections.");
                 return r;
             }
             try

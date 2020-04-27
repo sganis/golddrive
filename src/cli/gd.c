@@ -2662,8 +2662,8 @@ void gd_log(const char* fmt, ...)
 		FILE* f = fopen(g_logfile, "a");
 		if (f != NULL) {
 			char time_s[TIME_SIZE];
-			int ok = time_str(time_mu(), &time_s);
-			fprintf(f, "%s: golddrive: %s", time_s, message);
+			int ok = time_str(time_mu(), time_s);
+			fprintf(f, "%s: CLI: %d: %s", time_s, GetCurrentThreadId(), message);
 		}
 		fclose(f);
 	}

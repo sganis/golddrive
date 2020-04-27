@@ -31,7 +31,7 @@
                         FontSize="20" />
                     <ComboBox 
                         Visibility="{Binding IsDriveNew, Converter={local:BoolToVis Negate=True}}"
-                        IsEnabled="{Binding IsSettingsDirty, Converter={local:NegateBoolConverter}}"
+                        IsEnabled="{Binding IsEditMode, Converter={local:NegateBoolConverter}}"
                         ItemsSource="{Binding GoldDriveList}"
                         SelectedItem="{Binding SelectedDrive}"
                         DisplayMemberPath="Name"
@@ -43,6 +43,7 @@
                         Style="{StaticResource Title}" />
                     <TextBox
                         Text="{Binding SelectedDrive.Label, UpdateSourceTrigger=PropertyChanged}"
+                        IsReadOnly="{Binding IsEditMode, Converter={local:NegateBoolConverter}}"
                         local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
                         Height="35"
                         FontSize="20" />
@@ -59,6 +60,7 @@
                     <TextBlock Text="Server"  
                                Style="{StaticResource Title}" />
                     <TextBox Name="txtSettingsSelectedDriveHost"   
+                             IsReadOnly="{Binding IsEditMode, Converter={local:NegateBoolConverter}}"
                              local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
                              Text="{Binding SelectedDrive.Host, UpdateSourceTrigger=PropertyChanged}"
                              FontSize="20" />
@@ -67,6 +69,7 @@
                     <TextBlock Text="Port" 
                                Style="{StaticResource Title}" />
                     <TextBox Text="{Binding SelectedDrive.Port, UpdateSourceTrigger=PropertyChanged}"
+                             IsReadOnly="{Binding IsEditMode, Converter={local:NegateBoolConverter}}"
                              local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
                              materialDesign:HintAssist.Hint="22"
                              FontSize="20" />
@@ -75,6 +78,7 @@
             <TextBlock Text="Username"
                        Style="{StaticResource Title}" />
             <TextBox Text="{Binding SelectedDrive.User, UpdateSourceTrigger=PropertyChanged}"
+                     IsReadOnly="{Binding IsEditMode, Converter={local:NegateBoolConverter}}"
                      local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
                      materialDesign:HintAssist.Hint="{Binding SelectedDrive.EnvironmentUser}"
                      Margin="0,0,0,30"
@@ -82,6 +86,7 @@
             <TextBlock Text="Optional Arguments"
                        Style="{StaticResource Title}" />
             <TextBox Text="{Binding SelectedDrive.Args, UpdateSourceTrigger=PropertyChanged}"
+                     IsReadOnly="{Binding IsEditMode, Converter={local:NegateBoolConverter}}"
                      local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
                      materialDesign:HintAssist.Hint="-o arg1,arg2=val,..."
                      materialDesign:HintAssist.HintOpacity=".25"
@@ -94,7 +99,7 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                <Button IsEnabled="{Binding IsSettingsDirty, Converter={local:NegateBoolConverter}}"
+                <Button IsEnabled="{Binding IsEditMode, Converter={local:NegateBoolConverter}}"
                     Command="{Binding SettingsNewCommand}"
                     Style="{StaticResource MaterialDesignFloatingActionMiniLightButton}"
                     ToolTip="Add new drive"
@@ -102,7 +107,7 @@
                     Height="30">
                     <materialDesign:PackIcon Kind="Add"  Height="20"  Width="20" />
                 </Button>
-                <Button IsEnabled="{Binding IsSettingsDirty, Converter={local:NegateBoolConverter}}"
+                <Button IsEnabled="{Binding IsEditMode, Converter={local:NegateBoolConverter}}"
                     Command="{Binding SettingsDeleteCommand}"
                     Style="{StaticResource MaterialDesignFloatingActionMiniLightButton}"
                     ToolTip="Delete current drive"
@@ -111,7 +116,7 @@
                     Height="30">
                     <materialDesign:PackIcon Kind="Minus" Width="20"  Height="20" />
                 </Button>
-                <Button IsEnabled="{Binding IsSettingsDirty, Converter={local:NegateBoolConverter}}"
+                <Button IsEnabled="{Binding IsEditMode, Converter={local:NegateBoolConverter}}"
                     Command="{Binding SettingsEditCommand}"
                     Style="{StaticResource MaterialDesignFloatingActionMiniLightButton}"
                     ToolTip="Edit current drive"
@@ -124,13 +129,13 @@
             <StackPanel Orientation="Horizontal"  Grid.Column="1">
                 <Button 
                     Content="Cancel"  
-                    Visibility="{Binding IsSettingsDirty, Converter={local:BoolToVis}}"
+                    Visibility="{Binding IsEditMode, Converter={local:BoolToVis}}"
                     Command="{Binding SettingsCancelCommand}"
                     Style="{StaticResource MaterialDesignFlatButton}"
                     Width="80"  Margin="5 0" />
                 <Button 
                     Content="Save"  
-                    Visibility="{Binding IsSettingsDirty, Converter={local:BoolToVis}}"
+                    Visibility="{Binding IsEditMode, Converter={local:BoolToVis}}"
                     Command="{Binding SettingsOkCommand}"                    
                     Width="80" />
             </StackPanel>

@@ -27,6 +27,7 @@ namespace golddrive
             get { return _version; }
             set { _version = value; NotifyPropertyChanged(); }
         }
+        public bool IsEditMode { get { return IsDriveNew || IsDriveEdit;  } }
 
         private bool _isDriveNew;
         public bool IsDriveNew
@@ -38,7 +39,7 @@ namespace golddrive
                 {
                     _isDriveNew = value;
                     NotifyPropertyChanged();
-                    NotifyPropertyChanged("IsSettingsDirty");
+                    NotifyPropertyChanged("IsEditMode");
                 }
             }
         }
@@ -52,7 +53,7 @@ namespace golddrive
                 {
                     _isDriveEdit = value;
                     NotifyPropertyChanged();
-                    NotifyPropertyChanged("IsSettingsDirty");
+                    NotifyPropertyChanged("IsEditMode");
                 }
             }
         }
@@ -74,8 +75,7 @@ namespace golddrive
         
         public ObservableCollection<Drive> FreeDriveList { get; set; } = new ObservableCollection<Drive>();
         public ObservableCollection<Drive> GoldDriveList { get; set; } = new ObservableCollection<Drive>();
-        //public string Selected => SelectedDrive != null ? SelectedDrive.Name : "";
-
+        
         public Drive OriginalDrive { get; set; }
 
         private Drive _selectedDrive;
@@ -83,23 +83,14 @@ namespace golddrive
         {
             get { return _selectedDrive; }
             set
-            {
-                               
+            {                  
                 if (_selectedDrive != value)
                 {
-                    if(_selectedDrive != null)
-                        OriginalDrive = new Drive(_selectedDrive);
                     _selectedDrive = value;
-                    //_selectedDrive.PropertyChanged -= SelectedDrive_PropertyChanged;
-                    //_selectedDrive.PropertyChanged += SelectedDrive_PropertyChanged;
-                    
                     NotifyPropertyChanged();
-                    NotifyPropertyChanged("HasDrives");
-                    
+                    NotifyPropertyChanged("HasDrives");                    
                 }
-
-            }
-            
+            }            
         }
 
         public bool HasDrives 
@@ -176,19 +167,6 @@ namespace golddrive
             set { password = value; NotifyPropertyChanged(); }
         }
         
-        public bool IsDriveSelected { get { return SelectedDrive != null; } }
-        public bool IsSettingsDirty
-        {
-            get
-            {
-                if (SelectedDrive == null)
-                    return false;
-                return CurrentPage == Page.Settings &&
-                        (IsDriveNew || (IsDriveEdit && SelectedDrive.IsDirty));
-            }
-        }
-
-
         #endregion
 
         #region Constructor
@@ -202,9 +180,7 @@ namespace golddrive
             LoadDrivesAsync();
             GetVersionsAsync();
             if (rb != null)
-                Message = rb.Error;
-
-            
+                Message = rb.Error;           
         }
 
         
@@ -252,7 +228,6 @@ namespace golddrive
                 case MountStatus.OK:
                     CurrentPage = Page.Main;
                     Message = r.DriveStatus.ToString();
-                    //SelectedDrive = r.Drive;
                     NotifyPropertyChanged("HasDrives");
                     break;
                 default:
@@ -410,12 +385,7 @@ namespace golddrive
         
         private void OnSettingsShow(object obj)
         {
-            //Settings = _mountService.LoadSettings();
-            //NotifyPropertyChanged("CanEdit");
-            SelectedDrive.IsDirty = false;
             IsDriveNew = false;
-            
-            
         }
         private async void OnSettingsSave(object obj)
         {
@@ -444,7 +414,6 @@ namespace golddrive
             });
 
             UpdateObservableDrives(SelectedDrive);
-            SelectedDrive.IsDirty = false;
             Message = "";
             IsDriveNew = false;
             IsDriveEdit = false;
@@ -452,23 +421,17 @@ namespace golddrive
         }
         private void OnSettingsCancel(object obj)
         {
-            if (!IsDriveNew)
-            {
-                SelectedDrive.Clone(OriginalDrive);
-            }
-
+            SelectedDrive.Clone(OriginalDrive);
             Message = "";
             IsDriveNew = false;
-            IsDriveEdit = false;
-            SelectedDrive.IsDirty = false;
-            NotifyPropertyChanged("IsSettingsDirty");
-
+            IsDriveEdit = false;            
         }
 
         private void OnSettingsNew(object obj)
         {
-            IsDriveNew = true;
+            OriginalDrive = new Drive(SelectedDrive);
             SelectedDrive = FreeDriveList.First();
+            IsDriveNew = true;            
         }
         
         private async void OnSettingsDelete(object obj)
@@ -488,12 +451,11 @@ namespace golddrive
             UpdateObservableDrives(SelectedDrive);
             if(GoldDriveList.Count == 0)
                 IsDriveNew = true;
-            if(SelectedDrive != null)
-                SelectedDrive.IsDirty = false;
-
+    
         }
         private void OnSettingsEdit(object obj)
         {
+            OriginalDrive = new Drive(SelectedDrive);
             IsDriveEdit = true;
         }
         public void Closing(object obj)
@@ -512,27 +474,6 @@ namespace golddrive
 
         #region Commands
 
-        //private ICommand _selectedDriveChangedCommand;
-        //public ICommand SelectedDriveChangedCommand
-        //{
-        //    get
-        //    {
-        //        return _selectedDriveChangedCommand ?? (_selectedDriveChangedCommand = new RelayCommand(
-        //           // action
-        //           x =>
-        //           {
-        //               if (CurrentPage != Page.Main)
-        //                   return;
-        //               if (OldSelectedDrive == null)
-        //                   OldSelectedDrive = SelectedDrive;
-        //               if (SelectedDrive != OldSelectedDrive)
-        //               {
-        //                   OldSelectedDrive = SelectedDrive;
-        //                   CheckDriveStatusAsync();
-        //               }
-        //           }));
-        //    }
-        //}
         private ICommand _connectCommand;
         public ICommand ConnectCommand
         {
@@ -563,8 +504,6 @@ namespace golddrive
                             Message = "";                            
                             CurrentPage = (Page)x;
                             
-                            if(SelectedDrive != null)
-                                SelectedDrive.IsDirty = false;
                             if (CurrentPage == Page.Settings)
                             {
                                 OnSettingsShow(x);
@@ -715,29 +654,16 @@ namespace golddrive
         {
             FocusRequested?.Invoke(this, new FocusRequestedEventArgs(propertyName));
         }
-        private void SelectedDrive_PropertyChanged(object sender,  System.ComponentModel.PropertyChangedEventArgs e)
-        {
-            // this will be trigger when any property in SelectedDrive changes
-            if (CurrentPage == Page.Settings)
-            {
-                NotifyPropertyChanged("IsSettingsDirty");
-            }
-        }
         
-
         public void OnComboChanged()
-        {
-            
+        {            
             if (!Loaded)
                 return;
             if (SkipComboChanged)
                 return;
             if (CurrentPage == Page.Settings)
-            {
-                NotifyPropertyChanged("IsSettingsDirty");
                 return;
-            }
-
+            
             CheckDriveStatusAsync();
         }
 
