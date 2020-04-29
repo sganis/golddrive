@@ -12,8 +12,8 @@ Install WinFsp from https://github.com/billziss-gh/winfsp/releases, then install
 How to use
 ----------
 
-Run the app, choose a free drive and set the mount point as [user@]hostname[!port]. User and port are optional, the current windows user and port 22 are the defaults. Hostname can be a machine name, domain name or IP address.
-The first time after a successful login, the app will generate ssh keys to mount drives. Golddrive only supports key authentication at the moment.
+Run the Golddrive app available in the start menu, choose a free drive and connect to your remote ssh server. User and port are optional, they default to the current windows user and port 22. Hostname can be a machine name, domain name or IP address.
+The first time after a successful login, the app will generate ssh keys to mount drives. Golddrive only supports key authentication at this moment.
 
 Once ssh keys are generated, it is also possible to mount drives using Windows `net use` command or Windows Explorer Map Drive feature. The command line must be like this:
 
