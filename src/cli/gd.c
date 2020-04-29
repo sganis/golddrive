@@ -1514,6 +1514,8 @@ int gd_check_hlink(const char* path)
 	int rc = 0;
 	char cmd[COMMAND_SIZE];
 	char out[COMMAND_SIZE];
+
+	// FIXME: we will call stat cmd until we get hlinks from sftp v6
 	sprintf_s(cmd, sizeof cmd, "/usr/bin/stat -c%%h \"%s\"", path);
 	gd_lock();
 	rc = run_command_channel_exec(cmd, out, 0);
@@ -1544,7 +1546,8 @@ int gd_check_hlink(const char* path)
 		//printf("   Ext: %s\n", ext);
 
 		// backup file		
-		rc = sprintf_s(backup, sizeof backup, "%s.%s.%s.%zu.hlink", 
+		rc = sprintf_s(backup, sizeof backup, 
+			"%s.%s.%s.%zu.hlink", 
 			dir, fname, ext, time_mu());
 
 		rc = gd_rename(path, backup);
