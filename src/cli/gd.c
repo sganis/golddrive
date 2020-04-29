@@ -1498,10 +1498,28 @@ int gd_check_hlink(const char* path)
 	if (hlinks > 1) {
 		//error("opening for writing hard linked file: %s\n"
 		//	"number of links: %d\n", path, hlinks);
-
-		// backup file
 		char backup[MAX_PATH];
-		sprintf_s(backup, sizeof backup, "%s.%zu.hlink", path, time_mu());
+		char drive[_MAX_DRIVE];
+		char dir[_MAX_DIR];
+		char fname[_MAX_FNAME];
+		char ext[_MAX_EXT];
+		rc = _splitpath_s(path, drive, _MAX_DRIVE, dir, _MAX_DIR, fname,
+				_MAX_FNAME, ext, _MAX_EXT);
+		if (rc != 0) {
+			gd_error(path);
+			rc = error();
+			return rc;
+		}
+		//printf("Path extracted with _splitpath_s:\n");
+		//printf("   Drive: %s\n", drive);
+		//printf("   Dir: %s\n", dir);
+		//printf("   Filename: %s\n", fname);
+		//printf("   Ext: %s\n", ext);
+
+		// backup file		
+		rc = sprintf_s(backup, sizeof backup, "%s.%s.%s.%zu.hlink", 
+			dir, fname, ext, time_mu());
+
 		rc = gd_rename(path, backup);
 
 		if (rc) {
