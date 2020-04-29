@@ -31,19 +31,19 @@ namespace golddrive
 
         public string Path { get; set; }
 
-        private bool _isDirty;
-        public bool IsDirty
-        {
-            get { return _isDirty; }
-            set
-            {
-                if (_isDirty != value)
-                {
-                    _isDirty = value;
-                    NotifyPropertyChanged();
-                }
-            }
-        }
+        //private bool _isDirty;
+        //public bool IsDirty
+        //{
+        //    get { return _isDirty; }
+        //    set
+        //    {
+        //        if (_isDirty != value)
+        //        {
+        //            _isDirty = value;
+        //            NotifyPropertyChanged();
+        //        }
+        //    }
+        //}
         private string _host;
         public string Host
         {
@@ -52,7 +52,6 @@ namespace golddrive
             {
                 if (_host != value)
                 {
-                    IsDirty = true;
                     _host = value;
                     NotifyPropertyChanged();
                 }
@@ -73,7 +72,6 @@ namespace golddrive
             {
                 if (_args != value)
                 {
-                    IsDirty = true;
                     _args = value;
                     NotifyPropertyChanged();
                 }
@@ -90,7 +88,6 @@ namespace golddrive
             {
                 if (_label != value)
                 {
-                    IsDirty = true;
                     _label = value;
 
                     NotifyPropertyChanged();
@@ -168,7 +165,6 @@ namespace golddrive
 
                 if (user != value)
                 {
-                    IsDirty = true;
                     user = value;
                     NotifyPropertyChanged();
                 }
@@ -193,7 +189,6 @@ namespace golddrive
             set {
                 if (port != value)
                 {
-                    IsDirty = true;
                     port = value;
                     NotifyPropertyChanged();
                 }

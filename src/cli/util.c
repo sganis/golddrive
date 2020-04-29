@@ -16,22 +16,14 @@ char *str_ndup(char *str, int chars)
 	return buffer;
 }
 
-int time_str(size_t time_ms, char *time_string)
+int time_str(size_t time_mu, char *time_string)
 {
 	time_t current_time;
-	char* c_time_string;
-	current_time = time_ms / 1000;
-	if (current_time == ((time_t)-1)) {
-		(void)fprintf(stderr, "Failure to obtain the current time.\n");
-		return -1;
-	}
-	c_time_string = ctime(&current_time);
-	if (c_time_string == NULL) {
-		(void)fprintf(stderr, "Failure to convert the current time.\n");
-		return -1;
-	}
-	strcpy(time_string, c_time_string);
-	free(c_time_string);
+	current_time = time_mu / 1000000;
+	struct tm  ts;
+	// 2020-04-26 13:59:09
+	ts = *localtime(&current_time);
+	strftime(time_string, TIME_SIZE, "%Y-%m-%d %H:%M:%S", &ts);
 	return 0;
 }
 
@@ -47,7 +39,7 @@ size_t time_mu(void)
 	long long ret = li.QuadPart;
 	ret -= 116444736000000000LL; /* Convert from file time to UNIX epoch time. */
 	//ret /= 10000; /* From 100 nano seconds (10^-7) to 1 millisecond (10^-3) intervals */
-	ret /= 10; /* From 100 nano seconds (10^-7) to 1 microsecond (10^-6) intervals */
+	ret /= 10; /* From 100 nano seconds (10^-7) to 1 microsecond (10^-) intervals */
 	return (size_t)ret;
 }
 
