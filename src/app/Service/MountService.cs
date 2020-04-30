@@ -20,6 +20,7 @@ namespace golddrive
     {
         #region Properties
 
+        const int TIMEOUT = 20; // secs
         public SshClient Ssh { get; set; }
         public SftpClient Sftp { get; set; }
         public string Error { get; set; }
@@ -673,7 +674,7 @@ namespace golddrive
                 {
                     var result = client.BeginConnect(drive.Host, 
                         drive.CurrentPort, null, null);
-                    var success = result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(3));
+                    var success = result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(5));
                     if (!success)
                     {
                         throw new Exception("Timeout. Server unknown or does not respond.");
@@ -739,7 +740,7 @@ namespace golddrive
             ReturnBox r = new ReturnBox();
 
  
-            int timeout = 15; // secs
+            
 
             if (!File.Exists(drive.AppKey))
             {
@@ -754,7 +755,7 @@ namespace golddrive
                 var pk = new PrivateKeyFile(drive.AppKey);
                 var keyFiles = new[] { pk };
                 SshClient client = new SshClient(drive.Host, drive.CurrentPort, drive.CurrentUser, keyFiles);
-                client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(timeout);
+                client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(TIMEOUT);
                 client.Connect();
                 client.Disconnect();
                 r.MountStatus = MountStatus.OK;
@@ -778,8 +779,8 @@ namespace golddrive
                 else if (ex.Message.Contains("OPENSSH"))
                 {
                     // openssh keys not supported by ssh.net yet
-                    string args = $"-i \"{drive.AppKey}\" -p {drive.CurrentPort} -oPasswordAuthentication=no -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oBatchMode=yes -oConnectTimeout=10 { drive.CurrentUser}@{drive.Host} \"echo ok\"";
-                    var r1 = RunLocal("ssh.exe", args, timeout);
+                    string args = $"-i \"{drive.AppKey}\" -p {drive.CurrentPort} -oPasswordAuthentication=no -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oBatchMode=yes -oConnectTimeout={TIMEOUT} { drive.CurrentUser}@{drive.Host} \"echo ok\"";
+                    var r1 = RunLocal("ssh.exe", args, TIMEOUT);
                     var ok = r1.Output.Trim() == "ok";
                     if (ok)
                     {
@@ -812,7 +813,7 @@ namespace golddrive
                 }
                 
                 SshClient client = new SshClient(drive.Host, drive.CurrentPort, drive.CurrentUser, password);
-                client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(15);
+                client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(TIMEOUT);
                 client.Connect();
                 string cmd = "";
                 bool linux = !client.ConnectionInfo.ServerVersion.ToLower().Contains("windows");
@@ -829,7 +830,7 @@ namespace golddrive
                     //cmd += $"icacls .ssh\\authorized_keys /grant SYSTEM:f";
                 }
                 SshCommand command = client.CreateCommand(cmd);
-                command.CommandTimeout = TimeSpan.FromSeconds(15);
+                command.CommandTimeout = TimeSpan.FromSeconds(TIMEOUT);
                 r.Output = command.Execute();
                 r.Error = command.Error;
                 r.ExitCode = command.ExitStatus;
