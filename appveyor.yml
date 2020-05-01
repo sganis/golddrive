@@ -82,7 +82,7 @@ for:
       # - ps: Start-FileDownload "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/.build/$env:CONFIGURATION/$env:PLATFORM/golddrive-$env:VERSION-$env:PLATFORM-$env:CONFIGURATION.msi?branch=master&job=Image%3A%20Visual%20Studio%202019%3B%20Configuration%3A%20$env:CONFIGURATION"
       # - ps: Write-host "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/.build/$env:CONFIGURATION/$env:PLATFORM/golddrive-$env:VERSION-$env:PLATFORM.msi?branch=master&job=Image%3A%20Visual%20Studio%202019"
       - ps: Start-FileDownload "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/.build/$env:CONFIGURATION/$env:PLATFORM/golddrive-$env:VERSION-$env:PLATFORM.exe?branch=master&job=Image%3A%20Visual%20Studio%202019"
-      - start /wait golddrive-%VERSION%-%PLATFORM%.exe /s /qn 
+      - if exist golddrive-%VERSION%-%PLATFORM%.exe start /wait golddrive-%VERSION%-%PLATFORM%.exe /s /qn 
       - if %PLATFORM% == x64 call "c:\Program Files\Golddrive\golddrive.exe" --version"
       - if %PLATFORM% == x86 call "c:\Program Files (x86)\Golddrive\golddrive.exe" --version"
     test: off
