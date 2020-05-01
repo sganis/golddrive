@@ -711,14 +711,14 @@ namespace golddrive
             try
             {
                 SshClient client = new SshClient(drive.Host, drive.CurrentPort, drive.CurrentUser, password);
-                client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
+                client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(TIMEOUT);
                 client.Connect();
                 client.Disconnect();
                 r.MountStatus = MountStatus.OK;
             }
             catch (Exception ex)
             {
-                r.Error = String.Format($"Failed to connect to { drive.CurrentUser}@{drive.Host}:{drive.CurrentPort}.\nError: {ex.Message}" );
+                r.Error = string.Format($"Failed to connect to { drive.CurrentUser}@{drive.Host}:{drive.CurrentPort}.\nError: {ex.Message}" );
                 if (ex is SshAuthenticationException)
                 {
                     r.MountStatus = MountStatus.BAD_PASSWORD;

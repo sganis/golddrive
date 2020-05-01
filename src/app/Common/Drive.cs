@@ -18,6 +18,8 @@ namespace golddrive
         }
         public void Clone(Drive d)
         {
+            if (d == null)
+                return;
             Host = d.Host;
             Port = d.Port;
             User = d.User;

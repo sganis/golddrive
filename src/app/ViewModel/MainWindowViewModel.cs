@@ -28,7 +28,7 @@ namespace golddrive
             set { _version = value; NotifyPropertyChanged(); }
         }
         public bool IsEditMode { get { return IsDriveNew || IsDriveEdit;  } }
-
+        
         private bool _isDriveNew;
         public bool IsDriveNew
         {
@@ -249,7 +249,7 @@ namespace golddrive
                 _mountService.UpdateDrives(settings);
             });
             
-            UpdateObservableDrives(SelectedDrive);
+            UpdateObservableDrives();
 
             if (_mountService.GoldDrives.Count == 0)
             {
@@ -267,18 +267,24 @@ namespace golddrive
 
         }
 
-        private void UpdateObservableDrives(Drive selected)
-        {            
+        private void UpdateObservableDrives()
+        {
+            Drive old = null;
+            if (SelectedDrive != null)
+                old = SelectedDrive;
             GoldDriveList.Clear();
             FreeDriveList.Clear();
             _mountService.GoldDrives.ForEach(GoldDriveList.Add);
             _mountService.FreeDrives.ForEach(FreeDriveList.Add);
+            if (old != null && SelectedDrive == null)
+                SelectedDrive = old;
 
-            if (selected != null)
+            if (SelectedDrive != null)
             {
-                var d1 = _mountService.GoldDrives.ToList().Find(x => x.Name == selected.Name);
+                var d1 = _mountService.GoldDrives.ToList().Find(x => x.Name == SelectedDrive.Name);
                 if (d1 != null)
                 {
+                    d1.Clone(SelectedDrive);
                     SelectedDrive = d1;
                 }
             }
@@ -309,7 +315,7 @@ namespace golddrive
             var status = new Progress<string>(ReportStatus);
             ReturnBox r = await Task.Run(() => _mountService.Connect(drive, status));
             SkipComboChanged = true;
-            UpdateObservableDrives(SelectedDrive);
+            UpdateObservableDrives();
             SkipComboChanged = false;
             WorkDone(r);
         }
@@ -360,6 +366,12 @@ namespace golddrive
 
         private void OnConnectHost(object obj)
         {
+            if (SelectedDrive == null)
+            {
+                Message = "Invalid drive";
+                return;                
+            }
+
             if (string.IsNullOrEmpty(SelectedDrive.Host))
             {
                 Message = "Server is required";
@@ -371,15 +383,18 @@ namespace golddrive
 
         private async void OnConnectPassword(object obj)
         {
-            Drive d = SelectedDrive;
-            //if (!HasDrive)
-            //{
-            //    d = SelectedFreeDrive;
-            //}
-            //CurrentPage = Page.Main;
+            if (SelectedDrive == null)
+            {
+                Message = "Invalid drive";
+                return;
+            }
+
             WorkStart("Connecting...");
             var status = new Progress<string>(ReportStatus);
-            ReturnBox r = await Task.Run(() => _mountService.ConnectPassword(d, password, status));
+            ReturnBox r = await Task.Run(() => _mountService.ConnectPassword(SelectedDrive, password, status));
+            SkipComboChanged = true;
+            UpdateObservableDrives();
+            SkipComboChanged = false;
             WorkDone(r);
         }
         
@@ -389,6 +404,12 @@ namespace golddrive
         }
         private async void OnSettingsSave(object obj)
         {
+            if (SelectedDrive == null)
+            {
+                Message = "Invalid drive";
+                return;
+            }
+
             SelectedDrive.Trim();
             if (string.IsNullOrEmpty(SelectedDrive.Host))
             {
@@ -413,7 +434,7 @@ namespace golddrive
                 _mountService.UpdateDrives(settings);
             });
 
-            UpdateObservableDrives(SelectedDrive);
+            UpdateObservableDrives();
             Message = "";
             IsDriveNew = false;
             IsDriveEdit = false;
@@ -421,6 +442,12 @@ namespace golddrive
         }
         private void OnSettingsCancel(object obj)
         {
+            if (SelectedDrive == null)
+            {
+                Message = "Invalid drive";
+                return;
+            }
+
             SelectedDrive.Clone(OriginalDrive);
             Message = "";
             IsDriveNew = false;
@@ -436,6 +463,12 @@ namespace golddrive
         
         private async void OnSettingsDelete(object obj)
         {
+            if (SelectedDrive == null)
+            {
+                Message = "Invalid drive";
+                return;
+            }
+
             Drive d = SelectedDrive;
             if (GoldDriveList.Contains(d))
                 GoldDriveList.Remove(d);
@@ -448,7 +481,7 @@ namespace golddrive
                 _mountService.SaveSettings(settings);
                 _mountService.UpdateDrives(settings);
             });
-            UpdateObservableDrives(SelectedDrive);
+            UpdateObservableDrives();
             if(GoldDriveList.Count == 0)
                 IsDriveNew = true;
     

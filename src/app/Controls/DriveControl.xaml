@@ -19,7 +19,6 @@
         </Grid.RowDefinitions>
         <StackPanel
             IsEnabled="{Binding IsWorking, Converter={local:NegateBoolConverter}}"
-            Visibility="{Binding HasDrives, Converter={local:BoolToVis}}"
             Margin="50 0">
 
             <ComboBox

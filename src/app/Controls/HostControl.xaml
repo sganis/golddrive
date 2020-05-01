@@ -87,9 +87,7 @@
             local:EnterKeyHelper.EnterKeyCommand="{Binding ConnectHostCommand}"
             Margin="0,0,0,30"
             FontSize="20" />
-        
- 
-        
+               
         <StackPanel
             Orientation="Horizontal"
             HorizontalAlignment="Right">
@@ -105,11 +103,18 @@
                 Command="{Binding ConnectHostCommand}"
                 Width="90" />
         </StackPanel>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="50" />
+            </Grid.RowDefinitions>
+            <ProgressBar 
+                Visibility="{Binding IsWorking, Converter={local:BoolToVis}}"                    
+                IsIndeterminate="True"/>
+        </Grid>
         <TextBlock
             TextWrapping="Wrap"
             Text="{Binding Message}"
             Foreground="{Binding MessageColor}"
-            VerticalAlignment="Top"
-            Margin="0 30"/>
+            VerticalAlignment="Top"/>
     </StackPanel>
 </UserControl>
