@@ -13,7 +13,7 @@ Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "msi", "msi\msi.wixproj", "{
 EndProject
 Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "bundle", "bundle\bundle.wixproj", "{6004D72E-B0B7-46F3-A1FB-954B18A476C2}"
 EndProject
-Global
+Global 
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
