@@ -691,14 +691,47 @@ int gd_rmdir(const char* path)
 	}
 	gd_unlock();
 #else
-	gd_lock();
-	while ((rc = libssh2_sftp_rmdir_ex(
-		g_ssh->sftp, path, (int)strlen(path))) ==
-		LIBSSH2_ERROR_EAGAIN) {
-		waitsocket(g_ssh);
-		g_sftp_calls++;
+	if (g_conf.fastrm) {
+		// rename dir/folder -> dir/.deleted_folder
+		// call rm -rf dir/.deleted_folder
+		//char deleted[MAX_PATH];
+		//char drive[_MAX_DRIVE];
+		//char dir[_MAX_DIR];
+		//char fname[_MAX_FNAME];
+		//char ext[_MAX_EXT];
+		//rc = _splitpath_s(path, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, ext, _MAX_EXT);
+		//if (rc != 0) {
+		//	gd_error(path);
+		//	rc = error();
+		//	return rc;
+		//}
+		//// rename		
+		//rc = sprintf_s(deleted, sizeof deleted, "%s.deleted_%s_%s", dir, fname, ext);
+		//rc = gd_rename(path, deleted);
+
+		//if (rc) {
+		//	gd_error(path);
+		//	rc = error();
+		//}
+
+		//char cmd[COMMAND_SIZE];
+		//char out[COMMAND_SIZE];
+		//// FIXME: do not hard-code stat path, find it using which cmd after login
+		//sprintf_s(cmd, sizeof cmd, "/bin/rm -rf \"%s.deleted_%s_%s\"", dir, fname, ext);
+		//gd_lock();
+		//rc = run_command_channel_exec(cmd, out, 0);
+		//gd_unlock();
 	}
-	gd_unlock();
+	else {
+		gd_lock();
+		while ((rc = libssh2_sftp_rmdir_ex(
+			g_ssh->sftp, path, (int)strlen(path))) ==
+			LIBSSH2_ERROR_EAGAIN) {
+			waitsocket(g_ssh);
+			g_sftp_calls++;
+		}
+		gd_unlock();
+	}
 
 	if (rc < 0) {
 		gd_error(path);
@@ -1354,7 +1387,8 @@ GDDIR* gd_opendir(const char* path)
 	LIBSSH2_SFTP_HANDLE* handle;
 	gd_lock();
 	do {
-		handle = libssh2_sftp_open_ex(g_ssh->sftp, path, (int)strlen(path), 0, 0, LIBSSH2_SFTP_OPENDIR);
+		handle = libssh2_sftp_open_ex(g_ssh->sftp, path, 
+			(int)strlen(path), 0, 0, LIBSSH2_SFTP_OPENDIR);
 		g_sftp_calls++;
 		if (!handle && libssh2_session_last_errno(g_ssh->ssh) !=
 			LIBSSH2_ERROR_EAGAIN)
@@ -1515,7 +1549,8 @@ int gd_check_hlink(const char* path)
 	char cmd[COMMAND_SIZE];
 	char out[COMMAND_SIZE];
 
-	// FIXME: we will call stat cmd until we get hlinks from sftp v6
+	// FIXME: use stat cmd until we get hlinks from sftp v6
+	// FIXME: do not hard-code stat path, find it using which cmd after login
 	sprintf_s(cmd, sizeof cmd, "/usr/bin/stat -c%%h \"%s\"", path);
 	gd_lock();
 	rc = run_command_channel_exec(cmd, out, 0);
@@ -1546,9 +1581,7 @@ int gd_check_hlink(const char* path)
 		//printf("   Ext: %s\n", ext);
 
 		// backup file		
-		rc = sprintf_s(backup, sizeof backup, 
-			"%s.%s.%s.%zu.hlink", 
-			dir, fname, ext, time_mu());
+		rc = sprintf_s(backup, sizeof backup, "%s.%s_%s_%zu.hlink",	dir, fname, ext, time_mu());
 
 		rc = gd_rename(path, backup);
 
