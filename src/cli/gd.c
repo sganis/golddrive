@@ -2583,7 +2583,7 @@ int _post(const char* url, const char* data)
 		WINHTTP_NO_PROXY_BYPASS, 0);
 
 	if (hSession) {
-		if (!WinHttpSetTimeouts(hSession, 2000, 2000, 1000, 10)) {
+		if (!WinHttpSetTimeouts(hSession, 4000, 4000, 2000, 10)) {
 			printf("Error %u in WinHttpSetTimeouts.\n", GetLastError());
 			return 1;
 		}
@@ -2593,11 +2593,10 @@ int _post(const char* url, const char* data)
 	int secflag = WINHTTP_FLAG_SECURE;
 	if (hConnect)
 		hRequest = WinHttpOpenRequest(hConnect, L"POST", ppath,
-			NULL, WINHTTP_NO_REFERER,
-			WINHTTP_DEFAULT_ACCEPT_TYPES,
-			secflag); //WINHTTP_FLAG_SECURE
-	DWORD headersLength = -1;
-
+			NULL, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES,	secflag); 
+    
+    // to be calculated if additionalHeaders is a null terminated string
+	DWORD headersLength = -1; 
 
 	//bResults = WinHttpSendRequest(hRequest,
 	//     additionalHeaders, headersLength, (LPVOID)data,
@@ -2659,9 +2658,12 @@ int _post(const char* url, const char* data)
 
 	if (!bResults) {
 		int err = GetLastError();
-		printf("Error %d has occurred.\n", err);
+		gd_log("Usage: error %d has occurred.\n", err);
 		return 1;
 	}
+
+	gd_log("Usage: log sent.\n");
+
 	if (hRequest)
 		WinHttpCloseHandle(hRequest);
 	if (hConnect)
@@ -2683,6 +2685,8 @@ HANDLE* gd_usage(const char* message)
 {
 	if (!g_conf.usageurl)
 		return 0;
+	
+	gd_log("Usage: sending %s %s %s\n", g_conf.user, g_conf.host, message);
 
 	usagedata* d = malloc(sizeof(usagedata));
 	strcpy_s(d->url, MAX_PATH, g_conf.usageurl);
