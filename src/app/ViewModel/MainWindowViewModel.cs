@@ -348,6 +348,8 @@ namespace golddrive
 
             if (GoldDriveList.Count == 0 || string.IsNullOrEmpty(SelectedDrive.Host))
             {
+                IsDriveNew = true;
+                SelectedDrive = FreeDriveList.First();
                 CurrentPage = Page.Host;
                 return;
             }
@@ -401,6 +403,10 @@ namespace golddrive
         private void OnSettingsShow(object obj)
         {
             IsDriveNew = false;
+            if(GoldDriveList.Count == 0)
+            {
+                IsDriveNew = true;
+            }
         }
         private async void OnSettingsSave(object obj)
         {
