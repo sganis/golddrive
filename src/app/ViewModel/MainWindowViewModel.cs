@@ -287,6 +287,15 @@ namespace golddrive
                     d1.Clone(SelectedDrive);
                     SelectedDrive = d1;
                 }
+                else
+                {
+                    var d2 = _mountService.FreeDrives.ToList().Find(x => x.Name == SelectedDrive.Name);
+                    if (d2 != null)
+                    {
+                        d2.Clone(SelectedDrive);
+                        SelectedDrive = d2;
+                    }
+                }
             }
             else
             {
