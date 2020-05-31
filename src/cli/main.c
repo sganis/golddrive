@@ -620,10 +620,12 @@ int main(int argc, char *argv[])
 	init_logging(&g_conf);
 
 	// set arguments
-	g_conf.port = 22;
-	g_conf.buffer = BUFFER_SIZE;
 	g_conf.drive[0] = toupper(g_conf.drive[0]);
 	g_conf.letter = g_conf.drive[0];
+	if (!g_conf.port)
+		g_conf.port = 22;
+	if (!g_conf.buffer)
+		g_conf.buffer = BUFFER_SIZE;
 
 	// parse network path
 	if (parse_remote(&g_conf))

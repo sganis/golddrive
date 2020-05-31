@@ -597,10 +597,10 @@ int gd_readlink(const char* path, char* buf, size_t size)
 
 	strncpy(buf, output, rc);
 	buf[rc] = '\0';
+	free(output);
 #endif
 
-	free(target);
-	free(output);
+	free(target);	
 	return 0;
 }
 
