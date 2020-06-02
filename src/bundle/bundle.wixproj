@@ -33,26 +33,6 @@
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <DefineConstants>MyVersion=$(MyVersion)</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug2|x86' ">
-    <OutputPath>$(SolutionDir).build\$(Configuration)\$(Platform)\</OutputPath>
-    <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>Debug;MyVersion=$(MyVersion)</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release2|x86' ">
-    <OutputPath>$(SolutionDir).build\$(Configuration)\$(Platform)\</OutputPath>
-    <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>MyVersion=$(MyVersion)</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug2|x64' ">
-    <DefineConstants>Debug;MyVersion=$(MyVersion)</DefineConstants>
-    <OutputPath>$(SolutionDir).build\$(Configuration)\$(Platform)\</OutputPath>
-    <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release2|x64' ">
-    <OutputPath>$(SolutionDir).build\$(Configuration)\$(Platform)\</OutputPath>
-    <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>MyVersion=$(MyVersion)</DefineConstants>
-  </PropertyGroup>
   <ItemGroup>
     <Compile Include="Bundle.wxs" />
   </ItemGroup>

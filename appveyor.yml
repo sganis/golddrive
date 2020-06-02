@@ -9,8 +9,7 @@ platform:
   - x64
   # - x86
 configuration: 
-  - Release2
-  # - Release
+  - Release
 clone_depth: 1
 cache:
   - C:\cache
@@ -33,7 +32,7 @@ for:
     matrix:
       only:
         - image: Visual Studio 2019
-          configuration: Release2
+          configuration: Release
     before_build:
       # - set winfsp=winfsp-1.7.20038.msi
       # - if not exist C:\cache\%winfsp% appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/%winfsp% -FileName C:\cache\%winfsp%

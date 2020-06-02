@@ -53,17 +53,12 @@ int run_command(const char* cmd, char* out, char* err);
 int run_command_channel_exec(const char* cmd, char* out, char* err);
 int waitsocket(GDSSH* sanssh);
 
-#ifdef USE_LIBSSH
-void copy_attributes(struct fuse_stat* stbuf, sftp_attributes attrs);
-
-#else
 void libssh2_logger(LIBSSH2_SESSION* session, void* context,
 	const char* data, size_t length);
 void copy_attributes(struct fuse_stat* stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs);
 //void print_permissions(const char* path, LIBSSH2_SFTP_ATTRIBUTES* attrs);
 //void print_stat(const char* path, LIBSSH2_SFTP_ATTRIBUTES* attrs);
 //void print_statvfs(const char* path, LIBSSH2_SFTP_STATVFS* st);
-#endif
 
 // message queue
 typedef struct GDQUEUE {
