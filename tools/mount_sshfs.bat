@@ -45,6 +45,7 @@ sshfs.exe %USERHOST%:../.. %DRIVE%  ^
    -o rellinks ^
    -o dothidden ^
    -o reconnect ^
+   -o dir_cache=no ^
    -f
 
 goto :eof
