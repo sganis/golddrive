@@ -21,8 +21,10 @@
 #include <winfsp/winfsp.h>
 #include <fuse.h>
 
-#define BUFFER_SIZE						256000
+#define BUFFER_SIZE						65536
 #define COMMAND_SIZE					1024
+//#define USE_CACHE						
+#define CACHE_TTL						20 * 1000 /* millisecs */
 
 /* logging */
 #define ERROR							0
@@ -48,9 +50,6 @@ extern char* g_logurl;
 #define AT_FDCWD                        -2
 #define AT_SYMLINK_NOFOLLOW             2
 
-//#define STATS		0
-//#define USE_CACHE	0
-//#define CACHE_TTL	1000 /* millisecs */
 
 #ifdef _WIN64
 #define PLATFORM_BITS 64

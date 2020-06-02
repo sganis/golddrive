@@ -9,17 +9,23 @@ typedef struct {
 	LIBSSH2_SFTP_ATTRIBUTES attrs;	/* stats */
 	size_t expiry;					/* expiration in microsecons */
 	UT_hash_handle hh;				/* makes this structure hashable */
-} CACHE_ATTRIBUTES;
+} CACHE_STAT;
 
-extern CACHE_ATTRIBUTES *g_attributes_ht;
-extern CRITICAL_SECTION g_attributes_lock;
+extern CACHE_STAT * g_cache_stat_ht;
+extern SRWLOCK g_cache_stat_lock;
+extern size_t g_cache_calls;
 
-void ht_attributes_add(CACHE_ATTRIBUTES *value);
-CACHE_ATTRIBUTES * ht_attributes_find(const char* name);
-inline void ht_attributes_lock(int lock) {
-	lock ? EnterCriticalSection(&g_attributes_lock) : 
-		LeaveCriticalSection(&g_attributes_lock);
+CACHE_STAT* cache_stat_find(const char* name);
+void cache_stat_add(CACHE_STAT* value);
+
+
+inline void cache_stat_lock() {
+	AcquireSRWLockExclusive(&g_cache_stat_lock);
 }
+inline void cache_stat_unlock() {
+	ReleaseSRWLockExclusive(&g_cache_stat_lock);
+}
+
 
 // cache function
 // function fetch(key, ttl) {

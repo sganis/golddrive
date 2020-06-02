@@ -2,6 +2,7 @@
 #include "config.h"
 #include "util.h"
 #include "gd.h"
+#include "cache.h"
 #include <Winhttp.h>
 
 
@@ -429,7 +430,8 @@ int gd_finalize(void)
 
 #endif
 	free(g_ssh);
-	printf("ssh operations: %zu\n", g_sftp_calls);
+	printf("sftp calls: %zu\n", g_sftp_calls);
+	printf("cache hits: %zu\n", g_cache_calls);
 
 	return 0;
 }
@@ -458,6 +460,17 @@ int gd_stat(const char* path, struct fuse_stat* stbuf)
 
 #else
 
+	
+#ifdef USE_CACHE
+	CACHE_STAT* cstat = cache_stat_find(path);
+	if (cstat) {
+		copy_attributes(stbuf, &cstat->attrs);
+		cache_stat_lock();
+		g_cache_calls++;
+		cache_stat_unlock();
+		return 0;
+	} 
+#endif
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
 	gd_lock();
 	while ((rc = libssh2_sftp_stat_ex(
@@ -475,6 +488,16 @@ int gd_stat(const char* path, struct fuse_stat* stbuf)
 		rc = error();
 	}
 	copy_attributes(stbuf, &attrs);
+
+#ifdef USE_CACHE
+	cstat = malloc(sizeof * cstat);
+	cstat->attrs = attrs;
+	strcpy_s(cstat->path, MAX_PATH, path);
+	cache_stat_add(cstat);
+#endif 
+
+
+
 #endif
 	return rc;
 
