@@ -11,11 +11,11 @@ set DIR=%DIR:~0,-1%
 echo current dir:
 cd
 
-rem %DIR%\..\vendor\fstools\fsx.exe -N 5000 test xxxxxx
+%DIR%\..\vendor\fstools\fsx.exe -N 5000 test xxxxxx
 rem %DIR%\..\vendor\fstools\fsx.exe -N 5000 -L test xxxxxx
 rem del test test.*
 rem echo error: !ERRORLEVEL!
-rem if !ERRORLEVEL! neq 0 goto fail
+if !ERRORLEVEL! neq 0 goto fail
 
 %DIR%\..\vendor\fstools\fsbench-x64.exe -rdwr_cc_* -mmap_* ^
  -file_attr* -file_list_single* -file_list_none* -rdwr_nc_*

@@ -351,29 +351,31 @@ int gd_fstat(intptr_t fd, struct fuse_stat* stbuf)
 	int rc = 0;
 	GDHANDLE* sh = (GDHANDLE*)fd;
 
-	LIBSSH2_SFTP_HANDLE* handle = sh->file_handle;
-	assert(handle);
+	return gd_stat(sh->path, stbuf);
 
-	LIBSSH2_SFTP_ATTRIBUTES attrs;
+	//LIBSSH2_SFTP_HANDLE* handle = sh->file_handle;
+	//assert(handle);
 
-	gd_lock();
-	while ((rc = libssh2_sftp_fstat_ex(handle, &attrs, 0)) ==
-		LIBSSH2_ERROR_EAGAIN) {
-		waitsocket(g_ssh);
-		g_sftp_calls++;
-	}
-	gd_unlock();
+	//LIBSSH2_SFTP_ATTRIBUTES attrs;
 
-	log_debug("rc=%d, %s\n", rc, sh->path);
-	if (rc < 0) {
-		gd_error(sh->path);
-		rc = error();
-	}
-	// debugging libssh2 write issue
-	//sh->size = attrs.filesize;
-	copy_attributes(stbuf, &attrs);
-	//log_info("%zu, size=%zu\n", (size_t)handle, attrs.filesize);
-	return rc;
+	//gd_lock();
+	//while ((rc = libssh2_sftp_fstat_ex(handle, &attrs, 0)) ==
+	//	LIBSSH2_ERROR_EAGAIN) {
+	//	waitsocket(g_ssh);
+	//	g_sftp_calls++;
+	//}
+	//gd_unlock();
+
+	//log_debug("rc=%d, %s\n", rc, sh->path);
+	//if (rc < 0) {
+	//	gd_error(sh->path);
+	//	rc = error();
+	//}
+	//// debugging libssh2 write issue
+	////sh->size = attrs.filesize;
+	//copy_attributes(stbuf, &attrs);
+	////log_info("%zu, size=%zu\n", (size_t)handle, attrs.filesize);
+	//return rc;
 }
 
 int gd_readlink(const char* path, char* buf, size_t size)

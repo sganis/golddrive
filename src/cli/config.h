@@ -3,21 +3,14 @@
 #pragma warning(disable: 4244 4142)
 #endif
 #pragma warning(disable: 4099)
-//#define USE_LIBSSH
 
 // windows file attributes
 //#define FSP_FUSE_USE_STAT_EX
 
 #include <stdio.h>
 #include <fcntl.h>
-#ifdef USE_LIBSSH
-//#define LIBSSH_STATIC 1
-#include <libssh/libssh.h>
-#include <libssh/sftp.h>
-#else
 #include <libssh2.h>
 #include <libssh2_sftp.h>
-#endif
 #include <winfsp/winfsp.h>
 #include <fuse.h>
 
