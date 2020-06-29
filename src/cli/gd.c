@@ -276,7 +276,7 @@ GDSSH* gd_init_ssh(void)
 	return g_ssh;
 }
 
-int gd_finalize(void)
+int gd_finalize(int error)
 {
 	log_info("FINALIZE\n");
 
@@ -299,7 +299,7 @@ int gd_finalize(void)
 	printf("sftp calls: %zu\n", g_sftp_calls);
 	printf("cache hits: %zu\n", g_cache_calls);
 
-	return 0;
+	return error;
 }
 
 int gd_stat(const char* path, struct fuse_stat* stbuf)
@@ -332,6 +332,13 @@ int gd_stat(const char* path, struct fuse_stat* stbuf)
 	if (rc < 0) {
 		gd_error(path);
 		rc = error();
+
+		if (errno == EIO) {
+			// terminate
+			//gd_finalize(EIO);
+			gd_log("Program terminated after I/O error.");
+			exit(EIO);
+		}
 	}
 	copy_attributes(stbuf, &attrs);
 

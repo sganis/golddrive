@@ -207,27 +207,16 @@ static const char *sftp_errors[] = {
 		n = full ## n;					\
 	}
 
-#ifdef USE_LIBSSH
-#define gd_error(path) {															\
+#define gd_error(path) {													\
     rc = get_ssh_error(g_ssh);												\
-	/* skip errors 2, 3 */ \
-	if (2 < rc && rc > 3) { \
-		const char* msg = ssh_get_error(g_ssh->ssh);				\
-		gd_log("%zu: %d :ERROR: %s: %d: [rc=%d: %s], path: %s\n",					\
-			time_mu(), GetCurrentThreadId(), __func__, __LINE__, rc, msg, path);	\
-	} \
+	/* skip errors 2, 3 */                                                  \
+	if (rc < 2 || rc > 3) {                                                 \
+		const char* msg = rc < 0 ? ssh_errors[-rc] : sftp_errors[rc];		\
+		gd_log("ERROR: %s[%d] [rc=%d, %s], path, %s\n",					\
+			 __func__, __LINE__, rc, msg, path);	                        \
+	}                                                                       \
 }
-#else
-#define gd_error(path) {															\
-    rc = get_ssh_error(g_ssh);												\
-	/* skip errors 2, 3 */ \
-	if (2 < rc && rc > 3) { \
-		const char* msg = rc < 0 ? ssh_errors[-rc] : sftp_errors[rc];				\
-		gd_log("%zd: %d :ERROR: %s: %d: [rc=%d: %s], path: %s\n",					\
-			time_mu(), GetCurrentThreadId(), __func__, __LINE__, rc, msg, path);	\
-	} \
-}
-#endif
+
 /* count the number of threads in this app */
 /* n is the -o ThreadCount=n arg, c is number of cores*/
 int gd_threads(int n, int c);
