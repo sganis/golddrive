@@ -46,7 +46,9 @@ GDSSH* gd_init_ssh(void)
 			time_mu(), thread, __func__, __LINE__);
 		return 0;
 	}
-
+	
+	/*libssh2_keepalive_config(ssh, 1, 2);
+	libssh2_keepalive_send(ssh, 1);*/
 
 	/* supported symetric algorithms */
 	//const char** algorithms;
@@ -1105,20 +1107,10 @@ int gd_utimens(const char* path, const struct fuse_timespec tv[2], struct fuse_f
 	log_info("%s\n", path);
 	int rc = 0;
 
-	UINT64 LastAccessTime, LastWriteTime;
-	if (0 == tv) {
-		FILETIME FileTime;
-		GetSystemTimeAsFileTime(&FileTime);
-		LastAccessTime = LastWriteTime = *(PUINT64)&FileTime;
-	}
-	else {
-		FspPosixUnixTimeToFileTime((void*)&tv[0], &LastAccessTime);
-		FspPosixUnixTimeToFileTime((void*)&tv[1], &LastWriteTime);
-	}
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
 	attrs.flags = LIBSSH2_SFTP_ATTR_ACMODTIME;
-	attrs.atime = (unsigned long)LastAccessTime;
-	attrs.mtime = (unsigned long)LastWriteTime;
+	attrs.atime = (unsigned long)tv->tv_sec;
+	attrs.mtime = (unsigned long)tv->tv_sec;
 	gd_lock();
 	while ((rc = libssh2_sftp_stat_ex(
 		g_ssh->sftp, path, (int)strlen(path),
