@@ -648,10 +648,7 @@ int main(int argc, char *argv[])
 	if (!g_conf.pkey) {
 		char* profile = getenv("USERPROFILE");
 		g_conf.pkey = malloc(MAX_PATH);
-		sprintf_s(g_conf.pkey, MAX_PATH, 
-			"%s\\.ssh\\id_golddrive_%s", 
-			profile, g_conf.user);
-		//sprintf_s(g_fs.pkey, MAX_PATH, "%s\\.ssh\\id_rsa", profile);
+		sprintf_s(g_conf.pkey, MAX_PATH, "%s\\.ssh\\id_rsa", profile);
 	}
 
 

@@ -209,9 +209,9 @@ GDSSH* gd_init_ssh(void)
 	 // authenticate with keys
 	char pubkey[1000];
 	strcpy(pubkey, g_conf.pkey);
-	strcat(pubkey, ".pub");
+	//strcat(pubkey, ".pub");
 	while ((rc = libssh2_userauth_publickey_fromfile(
-		ssh, g_conf.user, pubkey, g_conf.pkey, NULL)) ==
+		ssh, g_conf.user, NULL, g_conf.pkey, NULL)) ==
 		LIBSSH2_ERROR_EAGAIN)
 		Sleep(10);
 	
