@@ -192,9 +192,9 @@ def has_app_keys(user):
 	output = ''
 	if os.path.exists(seckey):
 		try:
-			if os.path.exists(pubkey):
-				sk = paramiko.RSAKey.from_private_key_file(seckey)
-				output = f'ssh-rsa {sk.get_base64()}'
+			sk = paramiko.RSAKey.from_private_key_file(seckey)
+			output = f'ssh-rsa {sk.get_base64()}'
+			if os.path.exists(pubkey):				
 				with open(pubkey) as r:
 					output2 = r.read()
 				if output.split()[1] != output2.split()[1]:
@@ -325,7 +325,7 @@ if __name__ == '__main__':
 	if ':' in userhost:
 		userhost, port = userhost.split(':')                             
 
-	logging.basicConfig(level=logging.INFO)
+	logging.basicConfig(level=logging.DEBUG)
 	# logging.basicConfig(level=logging.DEBUG)
 
 	user, host = userhost.split('@')
