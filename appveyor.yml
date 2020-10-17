@@ -1,5 +1,5 @@
 # golddrive
-version: 2.16.0.{build}
+version: 2.20.0.{build}
 image: 
   - Visual Studio 2019
   - Visual Studio 2017
@@ -14,7 +14,7 @@ clone_depth: 1
 cache:
   - C:\cache
 matrix:
-  fast_finish: true
+  # fast_finish: true
   allow_failures:
     - platform: x86
     - configuration: Debug
