@@ -249,7 +249,16 @@ int path_concat(const char *s1, const char *s2, char *s3)
 	strcat_s(s3, MAX_PATH, s2);
 	return 0;
 }
-
+unsigned long hash_path(const char* path)
+{
+	unsigned long hash = 5381;
+	int c;
+	const char* p = path;
+	while (c = *p++)
+		hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+	// printf("hash %lu : %s\n", hash, path);
+	return hash;
+}
 //void ShowLastError()
 //{
 //	// Retrieve the system error message for the last-error code

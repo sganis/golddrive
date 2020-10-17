@@ -17,7 +17,8 @@
 #define BUFFER_SIZE						65536
 #define COMMAND_SIZE					1024
 //#define USE_CACHE						
-#define CACHE_TTL						20 * 1000 /* millisecs */
+#define CACHE_INODE_TTL					24 * 3600 * 1000 /* 24hs in millisecs */
+#define CACHE_STAT_TTL					20 * 1000 /* millisecs */
 
 /* logging */
 #define ERROR							0

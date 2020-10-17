@@ -10,9 +10,11 @@
 GDSSH*				g_ssh;
 size_t				g_sftp_calls;
 size_t				g_cache_calls;
-CACHE_STAT*			g_cache_stat_ht;
+CACHE_INODE* g_cache_inode_ht;
+CACHE_STAT* g_cache_stat_ht;
 SRWLOCK				g_ssh_lock;
 SRWLOCK				g_log_lock;
+SRWLOCK				g_cache_inode_lock;
 SRWLOCK				g_cache_stat_lock;
 GDCONFIG			g_conf;
 char*				g_logfile;
@@ -606,6 +608,7 @@ int main(int argc, char *argv[])
 	}
 
 	// init cache table
+	g_cache_inode_ht = NULL;
 	g_cache_stat_ht = NULL;
 
 	// parameters
@@ -716,6 +719,7 @@ int main(int argc, char *argv[])
 	// initialize thread locks
 	InitializeSRWLock(&g_ssh_lock);
 	InitializeSRWLock(&g_log_lock);
+	InitializeSRWLock(&g_cache_inode_lock);
 	InitializeSRWLock(&g_cache_stat_lock);
 	g_cache_calls = 0;
 	g_sftp_calls = 0;

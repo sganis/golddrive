@@ -344,6 +344,19 @@ int gd_stat(const char* path, struct fuse_stat* stbuf)
 	}
 	copy_attributes(stbuf, &attrs);
 
+	// generate inode
+	CACHE_INODE* inode_hash = cache_inode_find(path);
+	if (!inode_hash) {
+		inode_hash = malloc(sizeof * inode_hash);
+		inode_hash->inode = hash_path(path);
+		strcpy_s(inode_hash->path, MAX_PATH, path);
+		cache_inode_add(inode_hash);
+	}
+	else {
+		stbuf->st_ino = inode_hash->inode;
+	}
+
+	
 #ifdef USE_CACHE
 	cstat = malloc(sizeof * cstat);
 	cstat->attrs = attrs;
@@ -446,6 +459,24 @@ int gd_mkdir(const char* path, fuse_mode_t mode)
 {
 	int rc = 0;
 	log_info("%s, mode=%u\n", path, mode);
+
+	// check if file already exists
+	LIBSSH2_SFTP_ATTRIBUTES attrs;
+	gd_lock();
+	while ((rc = libssh2_sftp_stat_ex(
+		g_ssh->sftp, path, (int)strlen(path),
+		LIBSSH2_SFTP_LSTAT, &attrs)) ==
+		LIBSSH2_ERROR_EAGAIN) {
+		waitsocket(g_ssh);
+		g_sftp_calls++;
+	}
+	gd_unlock();
+	if (rc == 0) {
+		errno = EEXIST;
+		return -1;
+	}
+
+
 	gd_lock();
 	while ((rc = libssh2_sftp_mkdir_ex(
 		g_ssh->sftp, path, (int)strlen(path), mode)) ==
@@ -1426,6 +1457,7 @@ void copy_attributes(struct fuse_stat* stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs)
 	stbuf->st_mtim.tv_sec = attrs->mtime;
 	stbuf->st_ctim.tv_sec = attrs->mtime;
 	stbuf->st_nlink = 1;
+	
 	/*if (LIBSSH2_SFTP_S_ISLNK(attrs->permissions)) {
 		int a = attrs->permissions;
 	}*/
