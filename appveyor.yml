@@ -37,7 +37,7 @@ for:
       # - set winfsp=winfsp-1.7.20038.msi
       # - if not exist C:\cache\%winfsp% appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/%winfsp% -FileName C:\cache\%winfsp%
       # - start /wait msiexec /i C:\cache\%winfsp% /qn ADDLOCAL=ALL
-      - start /wait msiexec /i vendor\winfsp\winfsp-1.7.20038.msi /qn ADDLOCAL=ALL
+      - start /wait msiexec /i vendor\winfsp\winfsp-1.8.20276.msi /qn ADDLOCAL=ALL
       - wslconfig /u Ubuntu-18.04
       - ps: tools\setup_wsl.ps1
       - C:\Python37\python -m pip install --disable-pip-version-check paramiko >NUL
