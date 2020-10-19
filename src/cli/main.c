@@ -730,7 +730,7 @@ int main(int argc, char *argv[])
 		return 1;
 
 	// usage
-	HANDLE* uh = gd_usage("connected");
+	HANDLE* uh = gd_usage("CONNECTED", "");
 
 	// get uid
 	char cmd[COMMAND_SIZE], out[COMMAND_SIZE], err[COMMAND_SIZE];

@@ -1782,186 +1782,6 @@ int load_json(GDCONFIG* fs)
 	return 0;
 }
 
-int _post(const char* url, const char* data)
-{
-	wchar_t wurl[MAX_PATH];
-	mbstowcs_s(0, wurl, strlen(url) + 1, url, MAX_PATH);
-	URL_COMPONENTS urlComp;
-	ZeroMemory(&urlComp, sizeof(urlComp));
-	urlComp.dwStructSize = sizeof(urlComp);
-	urlComp.dwSchemeLength = (DWORD)-1;
-	urlComp.dwHostNameLength = (DWORD)-1;
-	urlComp.dwUrlPathLength = (DWORD)-1;
-	urlComp.dwExtraInfoLength = (DWORD)-1;
-
-	BOOL success = WinHttpCrackUrl(wurl, (DWORD)wcslen(wurl), 0, &urlComp);
-	if (!success) {
-		int error = GetLastError();
-		return 1;
-	}
-	wchar_t wschema[6];
-	wchar_t whost[100];
-	wchar_t wpath[100];
-	ZeroMemory(wschema, sizeof(wschema));
-	ZeroMemory(whost, sizeof(whost));
-	ZeroMemory(wpath, sizeof(wpath));
-	wcsncpy_s(wschema, 6,
-		urlComp.lpszScheme, (rsize_t)urlComp.dwSchemeLength);
-	wcsncpy_s(whost, 100,
-		urlComp.lpszHostName, (rsize_t)urlComp.dwHostNameLength);
-	wcsncpy_s(wpath, 100,
-		urlComp.lpszUrlPath, (rsize_t)urlComp.dwUrlPathLength);
-	//wcsncpy_s(wpath, sizeof(wpath), urlComp.lpszUrlPath, urlComp.dwUrlPathLength);
-	int port = urlComp.nPort;
-
-
-	DWORD datalen = (DWORD)strlen(data);
-	//wchar_t* wpath = L"/";
-	// convert char* to LPWSTR
-	//wchar_t whost[MAX_PATH];
-	//wchar_t wpath[MAX_PATH];
-	//mbstowcs_s(0, whost, strlen(host) + 1, host, MAX_PATH);
-	//mbstowcs_s(0, wpath, strlen(page), page, sizeof(wchar_t) * 100);
-	//wpath[strlen(page)] = 0;
-	//printf("schema: %ls\n", wschema);
-	//printf("host: %ls\n", whost);
-	//printf("port: %d\n", port);
-	//printf("path: %ls\n", wpath);
-
-	LPWSTR phost = whost;
-	LPWSTR ppath = wpath;
-	LPCWSTR additionalHeaders = L"Content-Type: application/x-www-form-urlencoded\r\n";
-	BOOL  bResults = FALSE;
-	HINTERNET  hSession = NULL;
-	HINTERNET  hConnect = NULL;
-	HINTERNET  hRequest = NULL;
-
-	hSession = WinHttpOpen(L"HTTP Logger/1.0",
-		WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-		WINHTTP_NO_PROXY_NAME,
-		WINHTTP_NO_PROXY_BYPASS, 0);
-
-	if (hSession) {
-		if (!WinHttpSetTimeouts(hSession, 4000, 4000, 2000, 10)) {
-			printf("Error %u in WinHttpSetTimeouts.\n", GetLastError());
-			return 1;
-		}
-		hConnect = WinHttpConnect(hSession, phost, port, 0);
-	}
-	//int secflag = https ? WINHTTP_FLAG_SECURE : 0;
-	int secflag = WINHTTP_FLAG_SECURE;
-	if (hConnect)
-		hRequest = WinHttpOpenRequest(hConnect, L"POST", ppath,
-			NULL, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES,	secflag); 
-    
-    // to be calculated if additionalHeaders is a null terminated string
-	DWORD headersLength = -1; 
-
-	//bResults = WinHttpSendRequest(hRequest,
-	//     additionalHeaders, headersLength, (LPVOID)data,
-	//     datalen, datalen, 0);
-
-	int retry = 0;
-	int optionset = 0;
-	int retries = 0;
-	int maxretries = 1;
-	do {
-		retry = 0;
-
-		int result = NO_ERROR;
-		// no retry on success, possible retry on failure
-		bResults = WinHttpSendRequest(hRequest,
-			additionalHeaders, headersLength, (LPVOID)data,
-			datalen, datalen, 0);
-
-		if (bResults == FALSE) {
-
-
-			result = GetLastError();
-
-			// (1) If you want to allow SSL certificate errors and continue
-			// with the connection, you must allow and initial failure and then
-			// reset the security flags. From: "HOWTO: Handle Invalid Certificate
-			// Authority Error with WinInet"
-			// http://support.microsoft.com/default.aspx?scid=kb;EN-US;182888
-			if (result == ERROR_WINHTTP_SECURE_FAILURE) {
-				DWORD dwFlags =
-					SECURITY_FLAG_IGNORE_UNKNOWN_CA |
-					SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE |
-					SECURITY_FLAG_IGNORE_CERT_CN_INVALID |
-					SECURITY_FLAG_IGNORE_CERT_DATE_INVALID;
-
-				if (optionset)
-					break;
-
-				if (WinHttpSetOption(
-					hRequest,
-					WINHTTP_OPTION_SECURITY_FLAGS,
-					&dwFlags,
-					sizeof(dwFlags))) {
-					retry = 1;
-					optionset = 1;
-				}
-			}
-			// (2) Negotiate authorization handshakes may return this error
-			// and require multiple attempts
-			// http://msdn.microsoft.com/en-us/library/windows/desktop/aa383144%28v=vs.85%29.aspx
-			else if (result == ERROR_WINHTTP_RESEND_REQUEST) {
-				retry = 1;
-				retries++;
-				if (retries > maxretries)
-					break;
-			}
-		}
-	} while (retry);
-
-	if (!bResults) {
-		int err = GetLastError();
-		gd_log("Usage: error %d has occurred.\n", err);
-		return 1;
-	}
-
-	gd_log("Usage: log sent.\n");
-
-	if (hRequest)
-		WinHttpCloseHandle(hRequest);
-	if (hConnect)
-		WinHttpCloseHandle(hConnect);
-	if (hSession)
-		WinHttpCloseHandle(hSession);
-	return 0;
-}
-
-DWORD WINAPI _post_background(LPVOID data)
-{
-	usagedata* d = (usagedata*)data;
-	int rc = 0;
-	rc = _post(d->url, d->data);
-	free(d);
-	return rc;	
-}
-HANDLE* gd_usage(const char* message)
-{
-	if (!g_conf.usageurl)
-		return 0;
-	
-	gd_log("Usage: sending %s %s %s\n", g_conf.user, g_conf.host, message);
-
-	usagedata* d = malloc(sizeof(usagedata));
-	strcpy_s(d->url, MAX_PATH, g_conf.usageurl);
-	strcpy_s(d->data, 1024, "user=");
-	strcat_s(d->data, 1024, g_conf.user);
-	strcat_s(d->data, 1024, "&host=");
-	strcat_s(d->data, 1024, g_conf.host);
-	strcat_s(d->data, 1024, "&message=");
-	strcat_s(d->data, 1024, message);
-
-	HANDLE* thread = CreateThread(NULL, 0, _post_background, d, 0, NULL);
-	return thread;
-	// this must be at the end of main
-	//WaitForSingleObject(thread, 5000);
-	//CloseHandle(thread);
-}
 
 void gd_log(const char* fmt, ...)
 {
@@ -2070,195 +1890,179 @@ char* gd_dequeue(GDQUEUE* queue)
 //}
 
 
+int _post(const char* url, const char* data)
+{
+	wchar_t wurl[MAX_PATH];
+	mbstowcs_s(0, wurl, strlen(url) + 1, url, MAX_PATH);
+	URL_COMPONENTS urlComp;
+	ZeroMemory(&urlComp, sizeof(urlComp));
+	urlComp.dwStructSize = sizeof(urlComp);
+	urlComp.dwSchemeLength = (DWORD)-1;
+	urlComp.dwHostNameLength = (DWORD)-1;
+	urlComp.dwUrlPathLength = (DWORD)-1;
+	urlComp.dwExtraInfoLength = (DWORD)-1;
 
-//#if defined(FSP_FUSE_USE_STAT_EX)
-//static inline uint32_t MapFileAttributesToFlags(UINT32 FileAttributes)
-//{
-//	uint32_t flags = 0;
-//
-//	if (FileAttributes & FILE_ATTRIBUTE_READONLY)
-//		flags |= FSP_FUSE_UF_READONLY;
-//	if (FileAttributes & FILE_ATTRIBUTE_HIDDEN)
-//		flags |= FSP_FUSE_UF_HIDDEN;
-//	if (FileAttributes & FILE_ATTRIBUTE_SYSTEM)
-//		flags |= FSP_FUSE_UF_SYSTEM;
-//	if (FileAttributes & FILE_ATTRIBUTE_ARCHIVE)
-//		flags |= FSP_FUSE_UF_ARCHIVE;
-//
-//	return flags;
-//}
-//
-//static inline UINT32 MapFlagsToFileAttributes(uint32_t flags)
-//{
-//	UINT32 FileAttributes = 0;
-//
-//	if (flags & FSP_FUSE_UF_READONLY)
-//		FileAttributes |= FILE_ATTRIBUTE_READONLY;
-//	if (flags & FSP_FUSE_UF_HIDDEN)
-//		FileAttributes |= FILE_ATTRIBUTE_HIDDEN;
-//	if (flags & FSP_FUSE_UF_SYSTEM)
-//		FileAttributes |= FILE_ATTRIBUTE_SYSTEM;
-//	if (flags & FSP_FUSE_UF_ARCHIVE)
-//		FileAttributes |= FILE_ATTRIBUTE_ARCHIVE;
-//
-//	return FileAttributes;
-//}
-//#endif
+	BOOL success = WinHttpCrackUrl(wurl, (DWORD)wcslen(wurl), 0, &urlComp);
+	if (!success) {
+		int error = GetLastError();
+		return 1;
+	}
+	wchar_t wschema[6];
+	wchar_t whost[100];
+	wchar_t wpath[100];
+	ZeroMemory(wschema, sizeof(wschema));
+	ZeroMemory(whost, sizeof(whost));
+	ZeroMemory(wpath, sizeof(wpath));
+	wcsncpy_s(wschema, 6,
+		urlComp.lpszScheme, (rsize_t)urlComp.dwSchemeLength);
+	wcsncpy_s(whost, 100,
+		urlComp.lpszHostName, (rsize_t)urlComp.dwHostNameLength);
+	wcsncpy_s(wpath, 100,
+		urlComp.lpszUrlPath, (rsize_t)urlComp.dwUrlPathLength);
+	//wcsncpy_s(wpath, sizeof(wpath), urlComp.lpszUrlPath, urlComp.dwUrlPathLength);
+	int port = urlComp.nPort;
 
 
-//#include <windows.h>
-//#include <stdio.h>
-//
-//#define THREADCOUNT 4 
-//
-//HANDLE ghWriteEvent;
-//HANDLE ghThreads[THREADCOUNT];
-//
-//DWORD WINAPI ThreadProc(LPVOID);
-//
-//void CreateEventsAndThreads(void)
-//{
-//	int i;
-//	DWORD dwThreadID;
-//
-//	// Create a manual-reset event object. The write thread sets this
-//	// object to the signaled state when it finishes writing to a 
-//	// shared buffer. 
-//
-//	ghWriteEvent = CreateEvent(
-//		NULL,               // default security attributes
-//		TRUE,               // manual-reset event
-//		FALSE,              // initial state is nonsignaled
-//		TEXT("WriteEvent")  // object name
-//	);
-//
-//	if (ghWriteEvent == NULL) {
-//		printf("CreateEvent failed (%d)\n", GetLastError());
-//		return;
-//	}
-//
-//	// Create multiple threads to read from the buffer.
-//
-//	for (i = 0; i < THREADCOUNT; i++) {
-//		// TODO: More complex scenarios may require use of a parameter
-//		//   to the thread procedure, such as an event per thread to  
-//		//   be used for synchronization.
-//		ghThreads[i] = CreateThread(
-//			NULL,              // default security
-//			0,                 // default stack size
-//			ThreadProc,        // name of the thread function
-//			NULL,              // no thread parameters
-//			0,                 // default startup flags
-//			&dwThreadID);
-//
-//		if (ghThreads[i] == NULL) {
-//			printf("CreateThread failed (%d)\n", GetLastError());
-//			return;
-//		}
-//	}
-//}
-//
-//void WriteToBuffer(VOID)
-//{
-//	// TODO: Write to the shared buffer.
-//
-//	printf("Main thread writing to the shared buffer...\n");
-//
-//	// Set ghWriteEvent to signaled
-//
-//	if (!SetEvent(ghWriteEvent)) {
-//		printf("SetEvent failed (%d)\n", GetLastError());
-//		return;
-//	}
-//}
-//
-//void CloseEvents()
-//{
-//	// Close all event handles (currently, only one global handle).
-//
-//	CloseHandle(ghWriteEvent);
-//}
-//
-//int main(void)
-//{
-//	DWORD dwWaitResult;
-//
-//	// TODO: Create the shared buffer
-//
-//	// Create events and THREADCOUNT threads to read from the buffer
-//
-//	CreateEventsAndThreads();
-//
-//	// At this point, the reader threads have started and are most
-//	// likely waiting for the global event to be signaled. However, 
-//	// it is safe to write to the buffer because the event is a 
-//	// manual-reset event.
-//
-//	WriteToBuffer();
-//
-//	printf("Main thread waiting for threads to exit...\n");
-//
-//	// The handle for each thread is signaled when the thread is
-//	// terminated.
-//	dwWaitResult = WaitForMultipleObjects(
-//		THREADCOUNT,   // number of handles in array
-//		ghThreads,     // array of thread handles
-//		TRUE,          // wait until all are signaled
-//		INFINITE);
-//
-//	switch (dwWaitResult) {
-//		// All thread objects were signaled
-//	case WAIT_OBJECT_0:
-//		printf("All threads ended, cleaning up for application exit...\n");
-//		break;
-//
-//		// An error occurred
-//	default:
-//		printf("WaitForMultipleObjects failed (%d)\n", GetLastError());
-//		return 1;
-//	}
-//
-//	// Close the events to clean up
-//
-//	CloseEvents();
-//
-//	return 0;
-//}
-//
-//DWORD WINAPI ThreadProc(LPVOID lpParam)
-//{
-//	// lpParam not used in this example.
-//	UNREFERENCED_PARAMETER(lpParam);
-//
-//	DWORD dwWaitResult;
-//
-//	printf("Thread %d waiting for write event...\n", GetCurrentThreadId());
-//
-//	dwWaitResult = WaitForSingleObject(
-//		ghWriteEvent, // event handle
-//		INFINITE);    // indefinite wait
-//
-//	switch (dwWaitResult) {
-//		// Event object was signaled
-//	case WAIT_OBJECT_0:
-//		//
-//		// TODO: Read from the shared buffer
-//		//
-//		printf("Thread %d reading from buffer\n",
-//			GetCurrentThreadId());
-//		break;
-//
-//		// An error occurred
-//	default:
-//		printf("Wait error (%d)\n", GetLastError());
-//		return 0;
-//	}
-//
-//	// Now that we are done reading the buffer, we could use another
-//	// event to signal that this thread is no longer reading. This
-//	// example simply uses the thread handle for synchronization (the
-//	// handle is signaled when the thread terminates.)
-//
-//	printf("Thread %d exiting\n", GetCurrentThreadId());
-//	return 1;
-//}
+	DWORD datalen = (DWORD)strlen(data);
+
+	LPWSTR phost = whost;
+	LPWSTR ppath = wpath;
+	LPCWSTR additionalHeaders = L"Content-Type: application/x-www-form-urlencoded\r\n";
+	BOOL  bResults = FALSE;
+	HINTERNET  hSession = NULL;
+	HINTERNET  hConnect = NULL;
+	HINTERNET  hRequest = NULL;
+
+	hSession = WinHttpOpen(L"Golddrive-WinHttp/1.0",
+		WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+		WINHTTP_NO_PROXY_NAME,
+		WINHTTP_NO_PROXY_BYPASS, 0);
+
+	if (hSession) {
+		if (!WinHttpSetTimeouts(hSession, 2000, 2000, 1000, 10)) {
+			printf("Error %u in WinHttpSetTimeouts.\n", GetLastError());
+			return 1;
+		}
+		hConnect = WinHttpConnect(hSession, phost, port, 0);
+	}
+	int secflag = !wcscmp(wschema, L"https") ? WINHTTP_FLAG_SECURE : 0;
+	if (hConnect)
+		hRequest = WinHttpOpenRequest(hConnect, L"POST", ppath,
+			NULL, WINHTTP_NO_REFERER,
+			WINHTTP_DEFAULT_ACCEPT_TYPES,
+			secflag);
+	DWORD headersLength = -1;
+
+
+	//bResults = WinHttpSendRequest(hRequest,
+	//     additionalHeaders, headersLength, (LPVOID)data,
+	//     datalen, datalen, 0);
+
+	int retry = 0;
+	int optionset = 0;
+	int retries = 0;
+	int maxretries = 1;
+	do {
+		retry = 0;
+
+		int result = NO_ERROR;
+		// no retry on success, possible retry on failure
+		bResults = WinHttpSendRequest(hRequest,
+			additionalHeaders, headersLength, (LPVOID)data,
+			datalen, datalen, 0);
+
+		if (bResults == FALSE) {
+
+
+			result = GetLastError();
+
+			// (1) If you want to allow SSL certificate errors and continue
+			// with the connection, you must allow and initial failure and then
+			// reset the security flags. From: "HOWTO: Handle Invalid Certificate
+			// Authority Error with WinInet"
+			// http://support.microsoft.com/default.aspx?scid=kb;EN-US;182888
+			if (result == ERROR_WINHTTP_SECURE_FAILURE) {
+				DWORD dwFlags =
+					SECURITY_FLAG_IGNORE_UNKNOWN_CA |
+					SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE |
+					SECURITY_FLAG_IGNORE_CERT_CN_INVALID |
+					SECURITY_FLAG_IGNORE_CERT_DATE_INVALID;
+
+				if (optionset)
+					break;
+
+				if (WinHttpSetOption(
+					hRequest,
+					WINHTTP_OPTION_SECURITY_FLAGS,
+					&dwFlags,
+					sizeof(dwFlags))) {
+					retry = 1;
+					optionset = 1;
+				}
+			}
+			// (2) Negotiate authorization handshakes may return this error
+			// and require multiple attempts
+			// http://msdn.microsoft.com/en-us/library/windows/desktop/aa383144%28v=vs.85%29.aspx
+			else if (result == ERROR_WINHTTP_RESEND_REQUEST) {
+				retry = 1;
+				retries++;
+				if (retries > maxretries)
+					break;
+			}
+		}
+	} while (retry);
+
+	if (!bResults) {
+		int err = GetLastError();
+		printf("Error %d has occurred.\n", err);
+		return 1;
+	}
+	if (hRequest)
+		WinHttpCloseHandle(hRequest);
+	if (hConnect)
+		WinHttpCloseHandle(hConnect);
+	if (hSession)
+		WinHttpCloseHandle(hSession);
+	return 0;
+}
+
+DWORD WINAPI _post_background(LPVOID data)
+{
+	usagedata* d = (usagedata*)data;
+	int rc = 0;
+	rc = _post(d->url, d->data);
+	free(d);
+	return rc;
+}
+HANDLE* gd_usage(const char* action, const char* data)
+{
+	if (!g_conf.usageurl)
+		return 0;
+	// fixme: get client and version before and keep global
+	char hostname[50];
+	gethostname(hostname, 50);
+	char exepath[MAX_PATH];
+	char version[100] = { 0 };
+	GetModuleFileNameA(NULL, exepath, MAX_PATH);
+	get_file_version(exepath, version);
+
+	usagedata* d = malloc(sizeof(usagedata));
+	strcpy_s(d->url, MAX_PATH, g_conf.usageurl);
+	strcpy_s(d->data, 1024, "application=GOLDDRIVE");
+	strcat_s(d->data, 1024, "&version=");
+	strcat_s(d->data, 1024, version);
+	strcat_s(d->data, 1024, "&user=");
+	strcat_s(d->data, 1024, g_conf.user);
+	strcat_s(d->data, 1024, "&action=");
+	strcat_s(d->data, 1024, action);
+	strcat_s(d->data, 1024, "&client=");
+	strcat_s(d->data, 1024, hostname);
+	strcat_s(d->data, 1024, "&data=");
+	strcat_s(d->data, 1024, data);
+
+	HANDLE* thread = CreateThread(NULL, 0, _post_background, d, 0, NULL);
+	return thread;
+	// this must be at the end of main
+	//WaitForSingleObject(thread, 5000);
+	//CloseHandle(thread);
+}

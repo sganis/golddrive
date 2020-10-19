@@ -41,7 +41,7 @@ int load_json(GDCONFIG* conf);
 
 // Send message to UsageUrl in config.json
 // The http post also includes user and host 
-HANDLE* gd_usage(const char* message);
+HANDLE* gd_usage(const char* action, const char* data);
 
 DWORD WINAPI _post_background(LPVOID data);
 int _post(const char* url, const char* data);
