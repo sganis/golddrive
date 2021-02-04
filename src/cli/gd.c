@@ -446,7 +446,10 @@ int gd_readlink(const char* path, char* buf, size_t size)
 		}
 		t++;	
 	}
-
+	// remove trailing slash
+	c = output[rc-1];
+	if (c == '/' && rc > 1)
+		rc--;
 
 	strncpy(buf, output, rc);
 	buf[rc] = '\0';
