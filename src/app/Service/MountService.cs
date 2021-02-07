@@ -819,7 +819,7 @@ namespace golddrive
                 bool linux = !client.ConnectionInfo.ServerVersion.ToLower().Contains("windows");
                 if (linux)
                 {
-                    cmd = $"exec sh -c \"cd; mkdir -p .ssh; echo '{pubkey}' >> .ssh/authorized_keys; chmod 700 .ssh; chmod 644 .ssh/authorized_keys\"";
+                    cmd = $"exec sh -c \"cd; mkdir -p .ssh; chmod 700 .ssh; touch .ssh/authorized_keys; chmod 744 .ssh/authorized_keys; echo '{pubkey}' >> .ssh/authorized_keys; chmod 644 .ssh/authorized_keys\"";
                 }
                 else
                 {
@@ -869,6 +869,8 @@ namespace golddrive
                     ReturnBox r = RunLocal($@"""{AppPath}\ssh-keygen.exe""", $@"-y -f ""{drive.AppKey}""");
                     pubkey = r.Output;
                 }
+
+                // TODO: set permissons
             }
             catch (Exception ex)
             {
