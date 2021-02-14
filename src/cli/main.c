@@ -168,9 +168,6 @@ static int f_rename(const char* oldpath, const char* newpath,
 	realpath(newpath);
 	realpath(oldpath);
 	int rc = -1 != gd_rename(oldpath, newpath) ? 0 : -errno;
-	/*if (rc) {
-		int err = -errno;
-	}*/
 	return rc;
 }
 
@@ -685,7 +682,7 @@ int main(int argc, char *argv[])
 	fuse_opt_insert_arg(&args, pos++, volname);
 	fuse_opt_insert_arg(&args, pos++, "-oFileSystemName=Golddrive");
 	fuse_opt_insert_arg(&args, pos++, 
-		"-oFileInfoTimeout=5000,DirInfoTimeout=5000,VolumeInfoTimeout=5000");
+		"-oFileInfoTimeout=0,DirInfoTimeout=5000,VolumeInfoTimeout=5000");
 	fuse_opt_insert_arg(&args, pos++, 
 		"-orellinks,dothidden,uid=-1,gid=-1,umask=000,create_umask=000");
 	
