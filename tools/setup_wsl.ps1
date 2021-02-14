@@ -1,6 +1,6 @@
 # Golddrive
 # 04/03/2020, sganis
-# Install WSL with ubuntu1804, ssh server and support user
+# Install WSL with ubuntu2004, ssh server and support user
 # For testing purposes
 # It works for new development machines and also in Appveyor
 #
@@ -8,8 +8,8 @@
 # set-executionpolicy remotesigned
 #
 # Uninstall:
-# wslconfig /u Ubuntu-18.04
-# rd /s /q C:\MyWSL\Ubuntu1804
+# wslconfig /u Ubuntu-20.04
+# rd /s /q C:\MyWSL\ubuntu2004
 
 Write-host "Checking if WSL feature is installed..."
 $installed = (Get-WindowsOptionalFeature -FeatureName Microsoft-Windows-Subsystem-Linux -Online).State -eq 'Enabled'
@@ -20,25 +20,25 @@ if ($installed) {
     Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
 }
 
-$exe = "C:\MyWSL\Ubuntu1804\ubuntu1804.exe"
-$zip = "C:\cache\wsl-ubuntu-1804.zip"
-$tar = "C:\cache\ubuntu1804.tar"
+$exe = "C:\MyWSL\Ubuntu2004\ubuntu2004.exe"
+$zip = "C:\cache\wsl-ubuntu-2004.zip"
+$tar = "C:\cache\ubuntu2004.tar"
 
 New-Item -ItemType Directory -Force -Path C:\MyWSL
 
 if (!(Test-Path $tar)) {
     if (!(Test-Path $exe)) {
-        Write-host "Installing Ubuntu 18.04 for WSL"
+        Write-host "Installing Ubuntu 20.04 for WSL"
         if (!(Test-Path $zip)) {
             Write-host "Downloading..."
             [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-            (New-Object Net.WebClient).DownloadFile('https://aka.ms/wsl-ubuntu-1804', "$zip")
+            (New-Object Net.WebClient).DownloadFile('https://aka.ms/wslubuntu2004', "$zip")
         } else {
             Write-host "Downloaded already, found in cache..."
         }
         Write-host "Installing..."
-        Expand-Archive -Path "$zip" -DestinationPath "C:\MyWSL\Ubuntu1804" -Force
-        # Remove-Item "$env:TEMP\wsl-ubuntu-1804.zip"
+        Expand-Archive -Path "$zip" -DestinationPath "C:\MyWSL\ubuntu2004" -Force
+        # Remove-Item "$env:TEMP\wsl-ubuntu-2004.zip"
         . $exe install --root
     }
 
@@ -58,12 +58,12 @@ if (!(Test-Path $tar)) {
     . $exe run sudo apt-get install -y -qq openssh-server `>`/dev/null
     . $exe run sudo service ssh --full-restart
 
-    # Write-Host "Export only available from Version 10.0.18363.720"
+    # Write-Host "Export only available from Version 10.0.20363.720"
     # $host
     # Write-host "Exporting..."
-    # wsl --export Ubuntu-18.04 $tar
+    # wsl --export Ubuntu-20.04 $tar
 } else {
     # Write-host "Found in cache, importing image..."
-    # wsl --import Ubuntu-18.04 C:\MyWSL $tar
+    # wsl --import Ubuntu-20.04 C:\MyWSL $tar
 }
 

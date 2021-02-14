@@ -461,7 +461,7 @@ static int parse_remote(GDCONFIG* fs)
 	if (!fs->remote)
 		return -1;
 
-	char* npath, * locuser, * user, * host, * port, * p;
+	char *npath, *service, *locuser, *user, *host, *port, *p;
 
 	/* translate backslash to forward slash */
 	for (p = fs->remote; *p; p++)
@@ -477,29 +477,34 @@ static int parse_remote(GDCONFIG* fs)
 		len--;
 	}
 
-	if (strncmp(fs->remote, "/golddrive/", 11) != 0) {
+	// now supports any service aname
+	/*if (strncmp(fs->remote, "/golddrive/", 11) != 0) {
 		gd_log("Invalid service name, "
 			"only '\\\\golddrive' is supported: %s\n", 
 			fs->remote);
 		return -1;
-	}
+	}*/
 
-	char mountpoint[256];
-	memcpy(mountpoint, fs->remote + 11, len-11);
-	mountpoint[len-11] = '\0';
-	fs->mountpoint = strdup(mountpoint);
-	
-	
-	
+
 	/* get service name (\\golddrive\) */
 	p = npath;
 	while ('/' == *p)
 		p++;
-	//service = p;
+	service = p;
 	while (*p && '/' != *p)
 		p++;
 	if (*p)
 		*p++ = '\0';
+
+	fs->service = strdup(service);
+
+	/*
+	char mountpoint[256];
+	memcpy(mountpoint, fs->remote + 11, len - 11);
+	mountpoint[len - 11] = '\0';
+	*/
+
+	fs->mountpoint = strdup(p);
 
 	/* parse instance name (syntax: [locuser=]user@host!port/path) */
 	locuser = 0;

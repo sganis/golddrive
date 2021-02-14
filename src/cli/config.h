@@ -77,7 +77,8 @@ extern char* g_logurl;
 #endif
 
 typedef struct GDCONFIG {
-	char *remote;
+	char* remote;
+	char* service;
 	char *host;
 	char *locuser;
 	char *user;

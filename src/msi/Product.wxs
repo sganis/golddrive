@@ -83,38 +83,46 @@
             </Component>-->
           
             <Component Id="C.golddrive.reg" Guid="{CEAAD2C6-3373-43F6-8E1E-A7C6A2691AEC}">
+              <RegistryKey
+                  Root="HKLM"
+                  Key="[P.LauncherRegistryKey]">
                 <RegistryKey
-                    Root="HKLM"
-                    Key="[P.LauncherRegistryKey]">
-                    <RegistryKey
-                        Key="golddrive">
-                        <RegistryValue
-                            Type="string"
-                            Name="Executable"
-                            Value="[INSTALLDIR]golddrive.exe"
-                            KeyPath="yes" />
-                        <RegistryValue
-                            Type="string"
-                            Name="CommandLine"
-                            Value="%2 %1" />
-                        <RegistryValue
-                            Type="string"
-                            Name="Security"
-                            Value="D:P(A;;RPWPLC;;;WD)" />
-                        <RegistryValue
-                            Type="string"
-                            Name="RunAs"
-                            Value="." />
-                        <RegistryValue
-                            Type="integer"
-                            Name="JobControl"
-                            Value="1" />
-                        <RegistryValue
-                            Type="integer"
-                            Name="Credentials"
-                            Value="0" />
-                    </RegistryKey>
+                    Key="golddrive">
+                  <RegistryValue
+                      Type="string"
+                      Name="Executable"
+                      Value="[INSTALLDIR]golddrive.exe"
+                      KeyPath="yes" />
+                  <RegistryValue
+                      Type="string"
+                      Name="CommandLine"
+                      Value="%2 %1" />
+                  <RegistryValue
+                      Type="string"
+                      Name="Security"
+                      Value="D:P(A;;RPWPLC;;;WD)" />
+                  <RegistryValue
+                      Type="string"
+                      Name="RunAs"
+                      Value="." />
+                  <RegistryValue
+                      Type="integer"
+                      Name="JobControl"
+                      Value="1" />
+                  <RegistryValue
+                      Type="integer"
+                      Name="Credentials"
+                      Value="0" />
                 </RegistryKey>
+              </RegistryKey>
+              <RegistryKey
+                  Root="HKLM"
+                  Key="SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters">
+                  <RegistryValue
+                      Type="integer"
+                      Name="directorycachelifetime"
+                      Value="0" />
+                  </RegistryKey>
             </Component>
         </DirectoryRef>
         
