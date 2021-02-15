@@ -25,7 +25,7 @@
 #define WARN							1
 #define INFO							2
 #define DEBUG							3
-#define LOGLEVEL						INFO
+#define LOGLEVEL						ERROR
 
 extern size_t g_sftp_calls;
 extern char* g_logfile;

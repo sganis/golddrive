@@ -682,7 +682,7 @@ int main(int argc, char *argv[])
 	fuse_opt_insert_arg(&args, pos++, volname);
 	fuse_opt_insert_arg(&args, pos++, "-oFileSystemName=Golddrive");
 	fuse_opt_insert_arg(&args, pos++, 
-		"-oFileInfoTimeout=0,DirInfoTimeout=5000,VolumeInfoTimeout=5000");
+		"-oFileInfoTimeout=10000,DirInfoTimeout=10000,VolumeInfoTimeout=20000");
 	fuse_opt_insert_arg(&args, pos++, 
 		"-orellinks,dothidden,uid=-1,gid=-1,umask=000,create_umask=000");
 	
