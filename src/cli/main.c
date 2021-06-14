@@ -98,6 +98,12 @@ static int f_create(const char* path, fuse_mode_t mode,
 	fuse_mode_t mod = mode;
 	int rc = -1 != (fd = gd_open(path, fi->flags, mod)) ? 
 		(fi_setfd(fi, fd), 0) : -errno;
+
+#ifdef USE_CACHE
+	if (rc == 0) {
+		cache_stat_delete_parent(path);
+	}
+#endif
 	return rc;
 }
 
@@ -673,7 +679,7 @@ int main(int argc, char *argv[])
 	strcpy(prefix, g_conf.remote);
 	if (str_contains(g_conf.remote, ":"))
 		str_replace(g_conf.remote, ":", "", prefix);
-	sprintf_s(volprefix, sizeof(volprefix),	"-oVolumePrefix=%s", prefix);
+	sprintf_s(volprefix, sizeof(volprefix),	"-oVolumePrefix=%s/%s", prefix, getenv("USERNAME"));
 	sprintf_s(volname, sizeof(volname), "-ovolname=%s", g_conf.mountpoint);
 	//gd_log("Prefix   = %s\n", volprefix);
 

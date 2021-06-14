@@ -499,6 +499,12 @@ int gd_mkdir(const char* path, fuse_mode_t mode)
 		gd_error(path);
 		rc = error();
 	}
+#ifdef USE_CACHE
+	if (rc == 0) {
+		cache_stat_delete(path);
+		cache_stat_delete_parent(path);
+	}
+#endif
 	log_info("DONE\n");
 	return rc;
 }
@@ -521,7 +527,12 @@ int gd_unlink(const char* path)
 		gd_error(path);
 		rc = error();
 	}
-
+#ifdef USE_CACHE
+	if (rc == 0) {
+		cache_stat_delete(path);
+		cache_stat_delete_parent(path);
+	}
+#endif
 	if (g_conf.audit) {
 		gd_log("%s: DELETE: %s\n", g_conf.user, path);
 	}
@@ -581,7 +592,12 @@ int gd_rmdir(const char* path)
 		gd_error(path);
 		rc = error();
 	}
-
+#ifdef USE_CACHE
+	if (rc == 0) {
+		cache_stat_delete(path);
+		cache_stat_delete_parent(path);
+	}
+#endif
 	//if (g_conf.audit) {
 	//	gd_log("%s: RMDIR: %s\n", g_conf.user, path);
 	//}
@@ -608,9 +624,19 @@ static int _gd_rename(const char* from, const char* to)
 		rc = error();
 	}
 
+#ifdef USE_CACHE
+	if (rc == 0) {
+		cache_stat_delete(from);
+		cache_stat_delete(to);
+		cache_stat_delete_parent(from);
+		cache_stat_delete_parent(to);
+	}
+#endif
+
 	if (g_conf.audit) {
 		gd_log("%s: RENAME: %s -> %s\n", g_conf.user, from, to);
 	}
+
 	log_info("DONE\n");
 	return rc;
 }
@@ -668,6 +694,12 @@ int gd_truncate(const char* path, fuse_off_t size)
 	}
 
 	gd_unlock();
+
+#ifdef USE_CACHE
+	if (rc == 0) {
+		cache_stat_delete(path);
+	}
+#endif
 
 	//struct fuse_stat stbuf;
 	//gd_stat(path, &stbuf);
@@ -744,8 +776,7 @@ intptr_t gd_open(const char* path, int flags, unsigned int mode)
 	gd_lock();
 	do {
 		handle = libssh2_sftp_open_ex(
-			g_ssh->sftp, sh->path, (int)strlen(sh->path),
-			sh->flags, sh->mode, LIBSSH2_SFTP_OPENFILE);
+			g_ssh->sftp, sh->path, (int)strlen(sh->path), sh->flags, sh->mode, LIBSSH2_SFTP_OPENFILE);
 		g_sftp_calls++;
 		if (!handle && libssh2_session_last_errno(g_ssh->ssh) !=
 			LIBSSH2_ERROR_EAGAIN)
@@ -758,6 +789,9 @@ intptr_t gd_open(const char* path, int flags, unsigned int mode)
 		return error();
 	}
 	gd_unlock();
+
+	// if pflags == 43: create
+
 
 	sh->file_handle = handle;
 
@@ -868,6 +902,12 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 			total = -1;
 	}
 	gd_unlock();
+
+#ifdef USE_CACHE
+	if (rc >= 0) {
+		cache_stat_delete(sh->path);
+	}
+#endif
 
 	log_debug("FINISH WRITING %zu, bytes: %zu\n", (size_t)handle, total);
 	return total;// >= 0 ? (int)total : rc;
@@ -1186,6 +1226,13 @@ int gd_utimens(const char* path, const struct fuse_timespec tv[2], struct fuse_f
 		rc = error();
 	}
 	gd_unlock();
+
+#ifdef USE_CACHE
+	if (rc == 0) {
+		cache_stat_delete(path);
+	}
+#endif
+
 	log_info("DONE\n");
 	return rc;
 }

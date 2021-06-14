@@ -45,10 +45,9 @@ if (!(Test-Path $tar)) {
     . $exe run sudo adduser support --gecos `"First,Last,RoomNumber,WorkPhone,HomePhone`" --disabled-password
     . $exe run sudo "echo 'support:support' | sudo chpasswd"
     . $exe run sudo usermod -aG sudo support
-    #. $exe run sudo "echo -e `"`"support\tALL=(ALL)\tNOPASSWD: ALL`"`" > /etc/sudoers.d/support 2>/dev/null"
-    #. $exe run chmod 0755 /etc/sudoers.d/support
-    . $exe run sudo "echo -e `"`"support\tALL=(ALL)\tNOPASSWD: ALL`"`" > /etc/sudoers 2>/dev/null"
-    . $exe run chmod 0755 /etc/sudoers
+    . $exe run sudo "echo -e `"`"support\tALL=(ALL)\tNOPASSWD: ALL`"`" > /etc/sudoers.d/support 2>/dev/null"
+    . $exe run chmod 0755 /etc/sudoers.d/support
+
 
     # Write-host "Updating..."
     # . $exe run sudo apt-get update

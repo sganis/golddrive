@@ -38,7 +38,8 @@ extern size_t g_cache_calls;
 
 CACHE_STAT* cache_stat_find(const char* name);
 void cache_stat_add(CACHE_STAT* value);
-
+void cache_stat_delete(const char* path);
+void cache_stat_delete_parent(const char* path);
 
 inline void cache_stat_lock() {
 	AcquireSRWLockExclusive(&g_cache_stat_lock);
