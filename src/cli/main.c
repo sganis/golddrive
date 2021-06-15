@@ -679,7 +679,7 @@ int main(int argc, char *argv[])
 	strcpy(prefix, g_conf.remote);
 	if (str_contains(g_conf.remote, ":"))
 		str_replace(g_conf.remote, ":", "", prefix);
-	sprintf_s(volprefix, sizeof(volprefix),	"-oVolumePrefix=%s/%s", prefix, getenv("USERNAME"));
+	sprintf_s(volprefix, sizeof(volprefix),	"-oVolumePrefix=%s", prefix);
 	sprintf_s(volname, sizeof(volname), "-ovolname=%s", g_conf.mountpoint);
 	//gd_log("Prefix   = %s\n", volprefix);
 
