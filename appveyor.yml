@@ -3,8 +3,6 @@ version: 2.20.0.{build}
 image: 
   - Visual Studio 2019
   - Visual Studio 2017
-  - Visual Studio 2015
-  - Visual Studio 2013
 platform: 
   - x64
   # - x86
@@ -19,8 +17,6 @@ matrix:
     - platform: x86
     - configuration: Debug
     - image: Visual Studio 2017
-    - image: Visual Studio 2015
-    - image: Visual Studio 2013
 
 install:
   - dir C:\cache >nul 2>&1 || mkdir C:\cache
@@ -37,7 +33,7 @@ for:
       # - set winfsp=winfsp-1.7.20038.msi
       # - if not exist C:\cache\%winfsp% appveyor DownloadFile https://github.com/billziss-gh/winfsp/releases/download/v1.6/%winfsp% -FileName C:\cache\%winfsp%
       # - start /wait msiexec /i C:\cache\%winfsp% /qn ADDLOCAL=ALL
-      - start /wait msiexec /i vendor\winfsp\winfsp-1.8.20304.msi /qn ADDLOCAL=ALL
+      - start /wait msiexec /i vendor\winfsp\winfsp-1.10.22006.msi /qn ADDLOCAL=ALL
       - wslconfig /u Ubuntu-18.04
       - ps: tools\setup_wsl.ps1
       - C:\Python37\python -m pip install --disable-pip-version-check paramiko >NUL

@@ -76,7 +76,7 @@ Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-L
 
 # check to see if ubuntu1804 installation file exists and download the app otherwise
 $appx = "c:\cache\Ubuntu1804.appx"
-if (!(Test-Path $appx)) {
+if (Test-Path $appx) {
     "File does Exist"
 }
 else {
