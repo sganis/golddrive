@@ -31,12 +31,6 @@ cmake .. ^
  -DENABLE_CRYPT_NONE=ON							^
  -DCLEAR_MEMORY=OFF
 
- rem -DOPENSSL_MSVC_STATIC_RT=TRUE 					^
- rem -DOPENSSL_USE_STATIC_LIBS=TRUE 
- rem ::-DZLIB_LIBRARY=%ZLIB_DIR%/lib/zlibstatic.lib   ^
- rem ::-DZLIB_INCLUDE_DIR=%ZLIB_DIR%/include 			
-
 cmake --build . --config Release --target install
-:: -- /clp:ErrorsOnly
 
 cd ..
