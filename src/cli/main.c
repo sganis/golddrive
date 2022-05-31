@@ -770,7 +770,18 @@ int main(int argc, char *argv[])
 	gd_unlock();
 
 	if (rc == 0) {
+		// get last line, ignore warnings
+		size_t outlen = strlen(out);
+		out[outlen - 1] = '\0';
 		g_conf.remote_uid = atoi(out);
+		if (g_conf.remote_uid == 0 && strchr(out, '\n') != NULL) {
+			int i, lastnl = -1;
+			for (i = 0; i <= outlen; i++)
+				if (out[i] == '\n')
+					lastnl = i;
+			if (lastnl > -1) 
+				g_conf.remote_uid = atoi(out + lastnl);
+		}
 		gd_log("uid      = %d\n", g_conf.remote_uid);
 	}
 	gd_lock();
