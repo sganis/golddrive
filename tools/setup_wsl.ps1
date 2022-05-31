@@ -89,7 +89,8 @@ Write-Output "Installed ubuntu 18.04"
 
 
 # exe path
-$exe="C:/Users/"+$env:UserName+"/AppData/Local/Microsoft/WindowsApps/ubuntu1804.exe"
+$drive=(Get-WmiObject Win32_OperatingSystem).SystemDrive
+$exe=$drive+"/Users/"+$env:UserName+"/AppData/Local/Microsoft/WindowsApps/ubuntu1804.exe"
 
 Write-Host "creating root user..."
 . $exe install --root
