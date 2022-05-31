@@ -80,7 +80,10 @@ if (Test-Path $appx) {
     "File does Exist"
 }
 else {
-    Invoke-WebRequest -Uri https://aka.ms/wslubuntu1804 -OutFile $appx -UseBasicParsing
+    Write-host "Downloading..."
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    (New-Object Net.WebClient).DownloadFile('https://aka.ms/wslubuntu1804', "$appx")
+    # Invoke-WebRequest -Uri https://aka.ms/wslubuntu1804 -OutFile $appx -UseBasicParsing
 }
 
 # Actually install the wsl ubuntu 18.04 app
