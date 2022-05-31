@@ -71,19 +71,16 @@
 # Enable wsl subsystems for linux (if powershell is ran in admin mode)
 Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
 
-# Set Tls12 protocol to be able to download the wsl application
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
 # check to see if ubuntu1804 installation file exists and download the app otherwise
-$appx = "c:\cache\Ubuntu1804.appx"
+$appx = "C:\cache\Ubuntu1804.appx"
 if (Test-Path $appx) {
     "File does Exist"
 }
 else {
     Write-host "Downloading..."
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    (New-Object Net.WebClient).DownloadFile('https://aka.ms/wslubuntu1804', "$appx")
-    # Invoke-WebRequest -Uri https://aka.ms/wslubuntu1804 -OutFile $appx -UseBasicParsing
+    #(New-Object Net.WebClient).DownloadFile('https://aka.ms/wslubuntu1804', "$appx")
+    Invoke-WebRequest -Uri https://aka.ms/wsl-ubuntu-1804 -OutFile $appx -UseBasicParsing
 }
 
 # Actually install the wsl ubuntu 18.04 app
