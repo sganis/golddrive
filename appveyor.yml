@@ -1,8 +1,7 @@
 # golddrive
-version: 2.20.0.{build}
+version: 2.26.{build}
 image: 
   - Visual Studio 2019
-  - Visual Studio 2017
 platform: 
   - x64
   # - x86
