@@ -157,7 +157,7 @@
       <DelayLoadDLLs>winfsp-$(PlatformTarget).dll</DelayLoadDLLs>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
-      <AdditionalOptions>/ignore:4099</AdditionalOptions>
+      <AdditionalOptions>/ignore:4099 /NODEFAULTLIB:LIBCMTd</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>rem copy $(ProjectDir)golddrive.ini $(Outdir)
@@ -245,7 +245,7 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
       <DelayLoadDLLs>winfsp-$(PlatformTarget).dll</DelayLoadDLLs>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
-      <AdditionalOptions>/ignore:4099</AdditionalOptions>
+      <AdditionalOptions>/ignore:4099 /NODEFAULTLIB:LIBCMT</AdditionalOptions>
       <Profile>true</Profile>
       <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
     </Link>

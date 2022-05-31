@@ -9,7 +9,7 @@ set DIR=%~dp0
 set DIR=%DIR:~0,-1%
 
 
-perl Configure 			^
+perl Configure 			    ^
 	VC-WIN64A 				^
 	no-shared               ^
 	--prefix=C:\openssl-3	^
