@@ -13,7 +13,7 @@ mkdir build && cd build
 ::set OPENSSL_DIR=%DIR%\..\src\lib\openssl
 ::set OPENSSL_DIR=C:/Users/Sant/Documents/golddrive/src/lib/openssl/lib/x64
 rem set OPENSSL_DIR=C:/libre-x64
-set OPENSSL_DIR=C:/openssl
+set OPENSSL_DIR=C:/openssl-3
 rem set OPENSSL_DIR=C:/Users/Sant/Documents/winlibs/prefix/openssl-x64
 rem set OPENSSL_DIR=C:/Openssl
 set ZLIB_DIR="C:/zlib-x64"

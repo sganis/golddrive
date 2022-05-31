@@ -16,6 +16,8 @@ SET "PATH=C:\Program Files\Git\usr\bin;%PATH%"
 SET "PATH=C:\Program Files (x86)\WiX Toolset v3.11\bin;%PATH%"
 SET "PATH=C:\Strawberry\perl\bin;%PATH%"
 SET "PATH=C:\Program Files\NASM;%PATH%"
+SET "PATH=C:\ghc\bin;%PATH%"
+SET "PATH=C:\Users\San\AppData\Roaming\cabal\bin;%PATH%"
 
 echo Setting x64 development environment...
 SET PLATFORM=x64
