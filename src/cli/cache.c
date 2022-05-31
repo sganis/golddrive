@@ -76,6 +76,32 @@ void cache_stat_add(CACHE_STAT *value)
 	cache_stat_unlock();
 }
 
+void cache_stat_delete(const char* path)
+{
+	CACHE_STAT* value = NULL;
+	HASH_FIND_STR(g_cache_stat_ht, path, value);
+	if (!value)
+		return;
+	cache_stat_lock();
+	HASH_DEL(g_cache_stat_ht, value);
+	free(value);
+	cache_stat_unlock();
+}
+
+void cache_stat_delete_parent(const char* path)
+{
+	const char* s = strrchr(path, '/');
+	if (s) {
+		if (s == path) {
+			cache_stat_delete("/");
+		} 
+		else {
+			char* parent = str_ndup(path, s - path);
+			cache_stat_delete(parent);
+			free(parent);
+		}
+	}
+}
 
 
 #define DEFAULT_CACHE_TIMEOUT_SECS 20

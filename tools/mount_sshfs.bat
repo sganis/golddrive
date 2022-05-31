@@ -27,7 +27,7 @@ rem set SSH=%DIR%\..\..\sshfs-win\.build\x64\root\bin
 rem set BUILD=%DIR%\..\..\sshfs-win\.build\x64\src\sshfs\build
 rem set PATH=%BUILD%;%SSH%;%PATH%
 
-set "SSH=C:\Program Files (x86)\SSHFS-Win\bin"
+set "SSH=C:\Program Files\SSHFS-Win\bin"
 set PATH=%SSH%;%PATH%
 
 where ssh
@@ -45,6 +45,7 @@ sshfs.exe %USERHOST%:../.. %DRIVE%  ^
    -o rellinks ^
    -o dothidden ^
    -o reconnect ^
+   -o dir_cache=no ^
    -f
    
 rem -o dir_cache=no ^

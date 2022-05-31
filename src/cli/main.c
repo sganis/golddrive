@@ -98,6 +98,12 @@ static int f_create(const char* path, fuse_mode_t mode,
 	fuse_mode_t mod = mode;
 	int rc = -1 != (fd = gd_open(path, fi->flags, mod)) ? 
 		(fi_setfd(fi, fd), 0) : -errno;
+
+#ifdef USE_CACHE
+	if (rc == 0) {
+		cache_stat_delete_parent(path);
+	}
+#endif
 	return rc;
 }
 
@@ -168,9 +174,6 @@ static int f_rename(const char* oldpath, const char* newpath,
 	realpath(newpath);
 	realpath(oldpath);
 	int rc = -1 != gd_rename(oldpath, newpath) ? 0 : -errno;
-	/*if (rc) {
-		int err = -errno;
-	}*/
 	return rc;
 }
 
@@ -461,7 +464,7 @@ static int parse_remote(GDCONFIG* fs)
 	if (!fs->remote)
 		return -1;
 
-	char* npath, * locuser, * user, * host, * port, * p;
+	char *npath, *service, *locuser, *user, *host, *port, *p;
 
 	/* translate backslash to forward slash */
 	for (p = fs->remote; *p; p++)
@@ -477,29 +480,34 @@ static int parse_remote(GDCONFIG* fs)
 		len--;
 	}
 
-	if (strncmp(fs->remote, "/golddrive/", 11) != 0) {
+	// now supports any service aname
+	/*if (strncmp(fs->remote, "/golddrive/", 11) != 0) {
 		gd_log("Invalid service name, "
 			"only '\\\\golddrive' is supported: %s\n", 
 			fs->remote);
 		return -1;
-	}
+	}*/
 
-	char mountpoint[256];
-	memcpy(mountpoint, fs->remote + 11, len-11);
-	mountpoint[len-11] = '\0';
-	fs->mountpoint = strdup(mountpoint);
-	
-	
-	
+
 	/* get service name (\\golddrive\) */
 	p = npath;
 	while ('/' == *p)
 		p++;
-	//service = p;
+	service = p;
 	while (*p && '/' != *p)
 		p++;
 	if (*p)
 		*p++ = '\0';
+
+	fs->service = strdup(service);
+
+	/*
+	char mountpoint[256];
+	memcpy(mountpoint, fs->remote + 11, len - 11);
+	mountpoint[len - 11] = '\0';
+	*/
+
+	fs->mountpoint = strdup(p);
 
 	/* parse instance name (syntax: [locuser=]user@host!port/path) */
 	locuser = 0;
@@ -680,7 +688,7 @@ int main(int argc, char *argv[])
 	fuse_opt_insert_arg(&args, pos++, volname);
 	fuse_opt_insert_arg(&args, pos++, "-oFileSystemName=Golddrive");
 	fuse_opt_insert_arg(&args, pos++, 
-		"-oFileInfoTimeout=5000,DirInfoTimeout=5000,VolumeInfoTimeout=5000");
+		"-oFileInfoTimeout=10000,DirInfoTimeout=10000,VolumeInfoTimeout=20000");
 	fuse_opt_insert_arg(&args, pos++, 
 		"-orellinks,dothidden,uid=-1,gid=-1,umask=000,create_umask=000");
 	
@@ -762,7 +770,18 @@ int main(int argc, char *argv[])
 	gd_unlock();
 
 	if (rc == 0) {
+		// get last line, ignore warnings
+		size_t outlen = strlen(out);
+		out[outlen - 1] = '\0';
 		g_conf.remote_uid = atoi(out);
+		if (g_conf.remote_uid == 0 && strchr(out, '\n') != NULL) {
+			int i, lastnl = -1;
+			for (i = 0; i <= outlen; i++)
+				if (out[i] == '\n')
+					lastnl = i;
+			if (lastnl > -1) 
+				g_conf.remote_uid = atoi(out + lastnl);
+		}
 		gd_log("uid      = %d\n", g_conf.remote_uid);
 	}
 	gd_lock();

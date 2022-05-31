@@ -49,7 +49,7 @@ int get_ssh_error(GDSSH* ssh);
 int map_error(int rc);
 void mode_human(unsigned long mode, char* human);
 void get_filetype(unsigned long perm, char* filetype);
-int run_command(const char* cmd, char* out, char* err);
+//int run_command(const char* cmd, char* out, char* err);
 int run_command_channel_exec(const char* cmd, char* out, char* err);
 int waitsocket(GDSSH* sanssh);
 

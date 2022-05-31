@@ -16,7 +16,7 @@
 
 #define BUFFER_SIZE						65536
 #define COMMAND_SIZE					1024
-//#define USE_CACHE						
+// #define USE_CACHE						
 #define CACHE_INODE_TTL					24 * 3600 * 1000 /* 24hs in millisecs */
 #define CACHE_STAT_TTL					20 * 1000 /* millisecs */
 
@@ -77,7 +77,8 @@ extern char* g_logurl;
 #endif
 
 typedef struct GDCONFIG {
-	char *remote;
+	char* remote;
+	char* service;
 	char *host;
 	char *locuser;
 	char *user;
