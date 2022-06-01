@@ -12,7 +12,7 @@ CACHE_INODE* cache_inode_find(const char* path)
 	if (!value) {
 		return NULL;
 	}
-	else if (time_mu() - CACHE_INODE_TTL * 1000 >= value->expiry) {
+	else if (time_mu() - (size_t)CACHE_INODE_TTL * 1000 >= value->expiry) {
 		//debug("CACHE EXPIRED: %s\n", path);
 		return NULL;
 	}
@@ -29,12 +29,12 @@ void cache_inode_add(CACHE_INODE* value)
 	HASH_FIND_STR(g_cache_inode_ht, value->path, entry);  /* path already in the hash? */
 	cache_inode_lock();
 	if (!entry) {
-		value->expiry = time_mu() + CACHE_INODE_TTL * 1000;
+		value->expiry = time_mu() + (size_t)CACHE_INODE_TTL * 1000;
 		HASH_ADD_STR(g_cache_inode_ht, path, value);
 	}
 	else {
 		entry->inode = value->inode;
-		entry->expiry = time_mu() + CACHE_INODE_TTL * 1000;
+		entry->expiry = time_mu() + (size_t)CACHE_INODE_TTL * 1000;
 	}
 	cache_inode_unlock();
 }
@@ -90,13 +90,13 @@ void cache_stat_delete(const char* path)
 
 void cache_stat_delete_parent(const char* path)
 {
-	const char* s = strrchr(path, '/');
+	const char* s = strrchr((char *)path, '/');
 	if (s) {
 		if (s == path) {
 			cache_stat_delete("/");
 		} 
 		else {
-			char* parent = str_ndup(path, s - path);
+			char* parent = str_ndup((char *)path, (int)(s - path));
 			cache_stat_delete(parent);
 			free(parent);
 		}
