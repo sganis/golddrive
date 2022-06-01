@@ -68,9 +68,8 @@ for:
   -
     matrix:
       only:
-        - image:
-          - Visual Studio 2022 
-          - Visual Studio 2017
+        - image: Visual Studio 2022 
+        - image: Visual Studio 2017
     build_script:
       # - ps: Start-FileDownload "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/.build/$env:CONFIGURATION/$env:PLATFORM/golddrive-$env:VERSION-$env:PLATFORM-$env:CONFIGURATION.msi?branch=master&job=Image%3A%20Visual%20Studio%202019%3B%20Configuration%3A%20Release%3B%20Platform%3A%20$env:PLATFORM"
       # - ps: Write-host "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/.build/$env:CONFIGURATION/$env:PLATFORM/golddrive-$env:VERSION-$env:PLATFORM-$env:CONFIGURATION.msi?branch=master&job=Image%3A%20Visual%20Studio%202019%3B%20Configuration%3A%20$env:CONFIGURATION"
