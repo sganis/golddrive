@@ -33,9 +33,7 @@ for:
     matrix:
       only:
         - image: Visual Studio 2022
-          configuration: Release
         - image: Visual Studio 2019
-          configuration: Release
     before_build:
       - start /wait msiexec /i vendor\winfsp\winfsp-1.10.22006.msi /qn ADDLOCAL=ALL
       - wslconfig /u Ubuntu-18.04
