@@ -7,10 +7,9 @@ image:
   - Visual Studio 2015
 platform: 
   - x64
-  # - x86
+  - x86
 configuration: 
   - Release
-  - Debug
 clone_depth: 1
 cache:
   - C:\cache
@@ -32,7 +31,6 @@ for:
       only:
         - image: Visual Studio 2022
         - image: Visual Studio 2019
-          configuration: Release
 
     before_build:
       - start /wait msiexec /i vendor\winfsp\winfsp-1.10.22006.msi /qn ADDLOCAL=ALL
@@ -71,9 +69,8 @@ for:
     matrix:
       only:
         - image: Visual Studio 2017
-          configuration: Release
         - image: Visual Studio 2015
-          configuration: Release
+  
     build_script:
       - ps: Start-FileDownload "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/.build/$env:CONFIGURATION/$env:PLATFORM/golddrive-$env:VERSION-$env:PLATFORM.exe?branch=master&job=Image%3A%20Visual%20Studio%202019"
       - if exist golddrive-%VERSION%-%PLATFORM%.exe start /wait golddrive-%VERSION%-%PLATFORM%.exe /s /qn 
