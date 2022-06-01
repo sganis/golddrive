@@ -183,6 +183,7 @@ static void cache_clean(void)
 static struct node* cache_lookup(const char* path)
 {
 	//return (struct node*)g_hash_table_lookup(cache.table, path);
+	return 0;
 }
 
 static void cache_purge(const char* path)
