@@ -70,6 +70,7 @@ def run(cmd, capture=False, detach=False, shell=True, timeout=30):
 	return r
 	
 def get_app_key(user):
+
 	return f'{ os.path.expandvars("%USERPROFILE%") }\\.ssh\\id_rsa'
 	
 def testhost(userhost, port=22):
@@ -136,7 +137,6 @@ def testssh(userhost, port=22):
 	finally:
 		client.close()
 	return rb
-
 
 def generate_keys(userhost):
 	logger.debug('Generating new ssh keys...')
