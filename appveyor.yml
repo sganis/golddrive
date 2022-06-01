@@ -53,7 +53,7 @@ for:
       - ps: |
           $sw = [Diagnostics.Stopwatch]::StartNew()
           C:\projects\golddrive\vendor\fstools\fsx.exe -N 5000 test xxxxxx
-          if %PLATFORM% == x64 call C:\projects\golddrive\vendor\fstools\fsbench-x64.exe --files=100 -rdwr_cc_* -mmap_* -file_attr* -file_list_single* -file_list_none* -rdwr_nc_*
+          C:\projects\golddrive\vendor\fstools\fsbench-x64.exe --files=100 -rdwr_cc_* -mmap_* -file_attr* -file_list_single* -file_list_none* -rdwr_nc_*
           C:\projects\golddrive\vendor\iozone\iozone.exe -s100m -r2m -r4m -r8m
           $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
       # - ps: get-content -tail 30 $env:LOCALAPPDATA\golddrive\golddrive.log
