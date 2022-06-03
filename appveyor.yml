@@ -13,15 +13,10 @@ configuration:
 clone_depth: 1
 cache:
   - C:\cache
+
 matrix:
-  # fast_finish: true
   allow_failures:
-    - image: Visual Studio 2022
-      platform: x86
-    - image: Visual Studio 2017
-      platform: x86
-    - image: Visual Studio 2015
-      platform: x86
+    - platform: x86
 
 install:
   - dir C:\cache >nul 2>&1 || mkdir C:\cache
@@ -32,11 +27,8 @@ for:
   -
     matrix:
       only:
-        - image: Visual Studio 2022
-          platform: x64
         - image: Visual Studio 2019
           platform: x64
-
     before_build:
       - start /wait msiexec /i vendor\winfsp\winfsp-1.10.22006.msi /qn ADDLOCAL=ALL
       - wslconfig /u Ubuntu-18.04
@@ -67,8 +59,24 @@ for:
     artifacts:
       - path: src\.build\$(configuration)\$(platform)\golddrive-*.msi
         name: msi
-      - path: src\.build\$(configuration)\$(platform)\golddrive-*-$(platform).exe
-        name: exe
+
+  -
+    matrix:
+      only:
+        - image: Visual Studio 2019
+          platform: x86
+    before_build:
+      - start /wait msiexec /i vendor\winfsp\winfsp-1.10.22006.msi /qn ADDLOCAL=ALL
+    build_script:
+      - msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -m /verbosity:quiet /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+      - src\.build\%CONFIGURATION%\%PLATFORM%\golddrive.exe --version
+      - start /wait msiexec /i src\.build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%.msi /qn
+      - if %PLATFORM% == x64 call "c:\Program Files\Golddrive\golddrive.exe" --version
+      - if %PLATFORM% == x86 call "c:\Program Files (x86)\Golddrive\golddrive.exe" --version
+    test: off
+    artifacts:
+      - path: src\.build\$(configuration)\$(platform)\golddrive-*.msi
+        name: msi
   
   -
     matrix:
