@@ -2,7 +2,6 @@
 version: 2.26.{build}
 image: 
   - Visual Studio 2019
-  - Visual Studio 2022
   - Visual Studio 2017
   - Visual Studio 2015
 platform: 
@@ -10,6 +9,7 @@ platform:
   - x86
 configuration: 
   - Release
+  - Debug
 clone_depth: 1
 cache:
   - C:\cache
@@ -29,13 +29,13 @@ for:
       only:
         - image: Visual Studio 2019
           platform: x64
-    before_build:
+          configuration: Release
+    build_script:
       - start /wait msiexec /i vendor\winfsp\winfsp-1.10.22006.msi /qn ADDLOCAL=ALL
       - wslconfig /u Ubuntu-18.04
       - ps: tools\setup_wsl.ps1
       - C:\Python37\python -m pip install --disable-pip-version-check paramiko >NUL
       - C:\Python37\python tools\setupssh.py support@localhost support
-    build_script:
       - msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -m /verbosity:quiet /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
       - src\.build\%CONFIGURATION%\%PLATFORM%\golddrive.exe --version
       - start /wait msiexec /i src\.build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%.msi /qn
@@ -64,10 +64,12 @@ for:
     matrix:
       only:
         - image: Visual Studio 2019
+          platform: x64
+          configuration: Debug
+        - image: Visual Studio 2019
           platform: x86
-    before_build:
-      - start /wait msiexec /i vendor\winfsp\winfsp-1.10.22006.msi /qn ADDLOCAL=ALL
     build_script:
+      - start /wait msiexec /i vendor\winfsp\winfsp-1.10.22006.msi /qn ADDLOCAL=ALL
       - msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -m /verbosity:quiet /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
       - src\.build\%CONFIGURATION%\%PLATFORM%\golddrive.exe --version
       - start /wait msiexec /i src\.build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%.msi /qn
@@ -82,11 +84,22 @@ for:
     matrix:
       only:
         - image: Visual Studio 2017
+          configuration: Release
         - image: Visual Studio 2015
-  
+          configuration: Release
     build_script:
       - ps: Start-FileDownload "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/.build/$env:CONFIGURATION/$env:PLATFORM/golddrive-$env:VERSION-$env:PLATFORM.exe?branch=master&job=Image%3A%20Visual%20Studio%202019"
       - if exist golddrive-%VERSION%-%PLATFORM%.exe start /wait golddrive-%VERSION%-%PLATFORM%.exe /s /qn 
       - if %PLATFORM% == x64 call "c:\Program Files\Golddrive\golddrive.exe" --version"
       - if %PLATFORM% == x86 call "c:\Program Files (x86)\Golddrive\golddrive.exe" --version"
+    test: off
+
+  -
+    matrix:
+      only:
+        - image: Visual Studio 2017
+          configuration: Debug
+        - image: Visual Studio 2015
+          configuration: Debug
+    build: off
     test: off
