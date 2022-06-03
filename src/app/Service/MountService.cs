@@ -776,7 +776,7 @@ namespace golddrive
                     r.Error = "Host does not respond";
                     r.MountStatus = MountStatus.BAD_HOST;
                 }
-                else if (ex.Message.Contains("OPENSSH"))
+                else if (ex.Message.Contains("openssh key type:"))
                 {
                     // openssh keys not supported by ssh.net yet
                     string args = $"-i \"{drive.AppKey}\" -p {drive.CurrentPort} -oPasswordAuthentication=no -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oBatchMode=yes -oConnectTimeout={TIMEOUT} { drive.CurrentUser}@{drive.Host} \"echo ok\"";
