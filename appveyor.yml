@@ -17,6 +17,7 @@ cache:
 matrix:
   allow_failures:
     - platform: x86
+    - image: Visual Studio 2017
 
 install:
   - dir C:\cache >nul 2>&1 || mkdir C:\cache
