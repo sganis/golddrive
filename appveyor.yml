@@ -1,6 +1,7 @@
 # golddrive
 version: 2.26.{build}
 image: 
+  - Visual Studio 2022
   - Visual Studio 2019
   - Visual Studio 2017
 platform: 
@@ -21,6 +22,10 @@ install:
   - dir C:\cache >nul 2>&1 || mkdir C:\cache
   - ps: $env:VERSION = C:\Python37\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
   - echo Version=%VERSION% Configuration=%CONFIGURATION% Platform=%PLATFORM%
+
+artifacts:
+  - path: src\.build\$(configuration)\$(platform)\golddrive-*.msi
+    name: msi
     
 for:
   -
@@ -55,9 +60,6 @@ for:
       # - ps: get-content -tail 30 $env:LOCALAPPDATA\golddrive\golddrive.log
       - ps: |
           C:; net use Z: /d
-    artifacts:
-      - path: src\.build\$(configuration)\$(platform)\golddrive-*.msi
-        name: msi
 
   -
     matrix:
@@ -75,13 +77,12 @@ for:
       - if %PLATFORM% == x64 call "c:\Program Files\Golddrive\golddrive.exe" --version
       - if %PLATFORM% == x86 call "c:\Program Files (x86)\Golddrive\golddrive.exe" --version
     test: off
-    artifacts:
-      - path: src\.build\$(configuration)\$(platform)\golddrive-*.msi
-        name: msi
   
   -
     matrix:
       only:
+        - image: Visual Studio 2022
+          configuration: Release
         - image: Visual Studio 2017
           configuration: Release
     build_script:
@@ -94,7 +95,10 @@ for:
   -
     matrix:
       only:
+        - image: Visual Studio 2022
+          configuration: Debug
         - image: Visual Studio 2017
           configuration: Debug
     build: off
     test: off
+
