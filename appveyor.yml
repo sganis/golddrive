@@ -3,7 +3,6 @@ version: 2.26.{build}
 image: 
   - Visual Studio 2019
   - Visual Studio 2017
-  - Visual Studio 2015
 platform: 
   - x64
   - x86
@@ -85,8 +84,6 @@ for:
       only:
         - image: Visual Studio 2017
           configuration: Release
-        - image: Visual Studio 2015
-          configuration: Release
     build_script:
       - ps: Start-FileDownload "https://ci.appveyor.com/api/projects/sganis/golddrive/artifacts/src/.build/$env:CONFIGURATION/$env:PLATFORM/golddrive-$env:VERSION-$env:PLATFORM.exe?branch=master&job=Image%3A%20Visual%20Studio%202019"
       - if exist golddrive-%VERSION%-%PLATFORM%.exe start /wait golddrive-%VERSION%-%PLATFORM%.exe /s /qn 
@@ -98,8 +95,6 @@ for:
     matrix:
       only:
         - image: Visual Studio 2017
-          configuration: Debug
-        - image: Visual Studio 2015
           configuration: Debug
     build: off
     test: off
