@@ -1,7 +1,7 @@
 # golddrive
 version: 2.26.{build}
 image: 
-  - Visual Studio 2022
+  #- Visual Studio 2022
   - Visual Studio 2019
   - Visual Studio 2017
 platform: 
@@ -26,6 +26,8 @@ install:
 artifacts:
   - path: src\.build\$(configuration)\$(platform)\golddrive-*.msi
     name: msi
+  - path: src\.build\$(configuration)\$(platform)\golddrive-*-$(platform).exe
+    name: exe
     
 for:
   -
@@ -81,8 +83,8 @@ for:
   -
     matrix:
       only:
-        - image: Visual Studio 2022
-          configuration: Release
+        # - image: Visual Studio 2022
+        #   configuration: Release
         - image: Visual Studio 2017
           configuration: Release
     build_script:
@@ -95,8 +97,8 @@ for:
   -
     matrix:
       only:
-        - image: Visual Studio 2022
-          configuration: Debug
+        # - image: Visual Studio 2022
+        #   configuration: Debug
         - image: Visual Studio 2017
           configuration: Debug
     build: off
