@@ -23,7 +23,7 @@ if exist %SKEY% rename %SKEY% id_golddrive_%USER%.%NOW%.bak
 if exist %PKEY% rename %PKEY% id_golddrive_%USER%.pub.%NOW%.bak 
 
 :: generate
-ssh-keygen -q -N "" -f %SKEY%
+ssh-keygen -m PEM -q -N "" -f %SKEY%
 
 :: transfer
 type %PKEY% | ssh %USER%@%HOST% -p %PORT% "umask 077; mkdir -p .ssh; cat >> .ssh/authorized_keys; chmod 700 .ssh; chmod 644 .ssh/authorized_keys"
