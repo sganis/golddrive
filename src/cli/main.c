@@ -681,16 +681,19 @@ int main(int argc, char *argv[])
 		str_replace(g_conf.remote, ":", "", prefix);
 	sprintf_s(volprefix, sizeof(volprefix),	"-oVolumePrefix=%s", prefix);
 	sprintf_s(volname, sizeof(volname), "-ovolname=%s", g_conf.mountpoint);
-	//gd_log("Prefix   = %s\n", volprefix);
+	gd_log("Prefix   = %s\n", volprefix);
 
 	int pos = 1;
 	fuse_opt_insert_arg(&args, pos++, volprefix);
 	fuse_opt_insert_arg(&args, pos++, volname);
 	fuse_opt_insert_arg(&args, pos++, "-oFileSystemName=Golddrive");
-	fuse_opt_insert_arg(&args, pos++, 
-		"-oFileInfoTimeout=10000,DirInfoTimeout=10000,VolumeInfoTimeout=20000");
-	fuse_opt_insert_arg(&args, pos++, 
-		"-orellinks,dothidden,uid=-1,gid=-1,umask=000,create_umask=000");
+	fuse_opt_insert_arg(&args, pos++, "-oFileInfoTimeout=10000");
+	fuse_opt_insert_arg(&args, pos++, "-oDirInfoTimeout=10000");
+	fuse_opt_insert_arg(&args, pos++, "-oVolumeInfoTimeout=20000");
+	fuse_opt_insert_arg(&args, pos++, "-orellinks");
+	fuse_opt_insert_arg(&args, pos++, "-odothidden");
+	fuse_opt_insert_arg(&args, pos++, "-ouid=-1,gid=-1");
+	fuse_opt_insert_arg(&args, pos++, "-oumask=000,create_umask=000");
 	
 	// config file arguments
 	if (g_conf.args && strcmp(g_conf.args, "") != 0) {
@@ -698,8 +701,20 @@ int main(int argc, char *argv[])
 		gd_log("args     = %s\n", g_conf.args);
 	}
 	
-	// drive must be the last argument for winfsp
+	// debuging bad VolumePrefix
+	gd_log("before fuse_opt_parse:\n");
+	for (int i = 1; i < args.argc; i++)
+		gd_log("arg %d    = %s\n", i, args.argv[i]);
+
+	// validate and reformat arguments
 	rc = fuse_opt_parse(&args, &g_conf, fs_opts, fs_opt_proc);
+	
+	// debuging bad VolumePrefix
+	gd_log("after fuse_opt_parse:\n");
+	for (int i = 1; i < args.argc; i++)
+		gd_log("arg %d    = %s\n", i, args.argv[i]);
+
+	// drive must be the last argument for winfsp
 	fuse_opt_add_arg(&args, g_conf.drive);
 
 	// print arguments
