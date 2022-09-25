@@ -702,17 +702,17 @@ int main(int argc, char *argv[])
 	}
 	
 	// debuging bad VolumePrefix
-	gd_log("before fuse_opt_parse:\n");
-	for (int i = 1; i < args.argc; i++)
-		gd_log("arg %d    = %s\n", i, args.argv[i]);
+	//gd_log("before fuse_opt_parse:\n");
+	//for (int i = 1; i < args.argc; i++)
+	//	gd_log("arg %d    = %s\n", i, args.argv[i]);
 
 	// validate and reformat arguments
-	rc = fuse_opt_parse(&args, &g_conf, fs_opts, fs_opt_proc);
+	//rc = fuse_opt_parse(&args, &g_conf, fs_opts, fs_opt_proc);
 	
 	// debuging bad VolumePrefix
-	gd_log("after fuse_opt_parse:\n");
-	for (int i = 1; i < args.argc; i++)
-		gd_log("arg %d    = %s\n", i, args.argv[i]);
+	//gd_log("after fuse_opt_parse:\n");
+	//for (int i = 1; i < args.argc; i++)
+	//	gd_log("arg %d    = %s\n", i, args.argv[i]);
 
 	// drive must be the last argument for winfsp
 	fuse_opt_add_arg(&args, g_conf.drive);
