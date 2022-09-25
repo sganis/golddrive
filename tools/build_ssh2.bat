@@ -8,16 +8,6 @@ setlocal EnableDelayedExpansion
 set DIR=%~dp0
 set DIR=%DIR:~0,-1%
 
-
-::set OPENSSL_DIR=%DIR%\..\src\lib\openssl
-::set OPENSSL_DIR=C:/Users/Sant/Documents/golddrive/src/lib/openssl/lib/x64
-rem set OPENSSL_DIR=C:/libre-x64
-rem set OPENSSL_DIR=C:/openssl-3
-rem set OPENSSL_DIR=C:/Users/Sant/Documents/winlibs/prefix/openssl-x64
-rem set OPENSSL_DIR=C:/Openssl
-::set ZLIB_DIR="C:/zlib-x64"
-::set CL=/DOPENSSL_NO_ENGINE=1 %CL%
-
 call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
 
 mkdir build_x64 && cd build_x64
@@ -35,8 +25,10 @@ cmake .. ^
  -DCLEAR_MEMORY=OFF
 cmake --build . --config Release --target install
 
-xcopy C:\libssh2-x64\lib\libssh2.lib %DIR%\..\vendor\libssh2\lib\libssh2-x64.lib* /y /s /i
-xcopy C:\libssh2-x64\include %DIR%\..\vendor\libssh2\include /y /s /i
+xcopy C:\libssh2-x64\lib\libssh2.lib ^
+    %DIR%\..\vendor\libssh2\lib\libssh2-x64.lib* /y /s /i
+xcopy C:\libssh2-x64\include ^
+    %DIR%\..\vendor\libssh2\include /y /s /i
 cd ..
 
 call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat"
