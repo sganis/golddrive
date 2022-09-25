@@ -1,8 +1,8 @@
 # golddrive
 version: 2.28.{build}
 image: 
-  - Visual Studio 2022
   - Visual Studio 2019
+  - Visual Studio 2022
 platform: 
   - x64
   - x86
@@ -65,6 +65,7 @@ for:
   -
     matrix:
       only:
+        - image: Visual Studio 2022
         - image: Visual Studio 2019
           platform: x64
           configuration: Debug
