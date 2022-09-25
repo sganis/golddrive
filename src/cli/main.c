@@ -10,8 +10,7 @@
 GDSSH*				g_ssh;
 size_t				g_sftp_calls;
 size_t				g_cache_calls;
-CACHE_INODE* g_cache_inode_ht;
-CACHE_STAT* g_cache_stat_ht;
+CACHE_INODE*		g_cache_inode_ht;
 SRWLOCK				g_ssh_lock;
 SRWLOCK				g_log_lock;
 SRWLOCK				g_cache_inode_lock;
@@ -99,11 +98,6 @@ static int f_create(const char* path, fuse_mode_t mode,
 	int rc = -1 != (fd = gd_open(path, fi->flags, mod)) ? 
 		(fi_setfd(fi, fd), 0) : -errno;
 
-#ifdef USE_CACHE
-	if (rc == 0) {
-		cache_stat_delete_parent(path);
-	}
-#endif
 	return rc;
 }
 
@@ -617,8 +611,7 @@ int main(int argc, char *argv[])
 
 	// init cache table
 	g_cache_inode_ht = NULL;
-	g_cache_stat_ht = NULL;
-
+	
 	// parameters
 	int rc;
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
