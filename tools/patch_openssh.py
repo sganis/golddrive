@@ -49,18 +49,15 @@ with open(path, 'wt') as w:
 			w.write(line)
 
 # comment out download of libressl and zlib
-# path = r'contrib\win32\openssh\config.vcxproj'
-# with open(path) as r:
-# 	lines = r.readlines()
-# with open(path, 'wt') as w:
-# 	for line in lines:
-# 		if 'powershell.exe' in line and 'rem' not in line:
-# 			if '<Command>' in line:
-# 				w.write('<Command>rem ' + line)
-# 			else:	
-# 				w.write('rem ' + line)
-# 		else:
-# 			w.write(line)
+path = r'contrib\win32\openssh\config.vcxproj'
+with open(path) as r:
+	lines = r.readlines()
+with open(path, 'wt') as w:
+	for line in lines:
+		if 'powershell.exe' in line and 'rem' not in line:
+			w.write('rem ' + line)
+		else:
+			w.write(line)
 
 # # replace libcrypto.lib in ssh-keygen 32-bit release
 # path = r'contrib\win32\openssh\keygen.vcxproj'
