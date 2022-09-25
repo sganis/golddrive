@@ -1,7 +1,7 @@
 # golddrive
 version: 2.28.{build}
 image: 
-  #- Visual Studio 2022
+  - Visual Studio 2022
   - Visual Studio 2019
 platform: 
   - x64
@@ -19,7 +19,7 @@ matrix:
 
 install:
   - dir C:\cache >nul 2>&1 || mkdir C:\cache
-  - ps: $env:VERSION = C:\Python37\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
+  - ps: $env:VERSION = C:\Python310\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
   - echo Version=%VERSION% Configuration=%CONFIGURATION% Platform=%PLATFORM%
 
 artifacts:
@@ -39,8 +39,8 @@ for:
       - start /wait msiexec /i vendor\winfsp\winfsp-1.10.22006.msi /qn ADDLOCAL=ALL
       - wslconfig /u Ubuntu-18.04
       - ps: tools\setup_wsl.ps1
-      - C:\Python37\python -m pip install --disable-pip-version-check paramiko >NUL
-      - C:\Python37\python tools\setupssh.py support@localhost support
+      - C:\Python310\python -m pip install --disable-pip-version-check paramiko >NUL
+      - C:\Python310\python tools\setupssh.py support@localhost support
       - msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -m /verbosity:quiet /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
       - src\.build\%CONFIGURATION%\%PLATFORM%\golddrive.exe --version
       - start /wait msiexec /i src\.build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%.msi /qn
