@@ -36,7 +36,7 @@ nmake build_generated
 nmake libcrypto.lib
 nmake install_dev
 xcopy C:\openssl-x64\lib\libcrypto.lib ^
-	%DIR%\..\vendor\openssl\lib\libcrypto-x64.lib* /y /s /i
+	%DIR%\..\vendor\openssl\lib\x64\libcrypto.lib* /y /s /i
 xcopy C:\openssl-x64\include ^
 	%DIR%\..\vendor\openssl\include /y /s /i
 
@@ -52,5 +52,5 @@ nmake build_generated
 nmake libcrypto.lib
 nmake install_dev
 xcopy C:\openssl-x86\lib\libcrypto.lib ^
-	%DIR%\..\vendor\openssl\lib\libcrypto-x86.lib* /y /s /i
+	%DIR%\..\vendor\openssl\lib\x86\libcrypto.lib* /y /s /i
 

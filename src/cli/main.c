@@ -784,7 +784,7 @@ int main(int argc, char *argv[])
 		g_conf.remote_uid = atoi(out);
 		if (g_conf.remote_uid == 0 && strchr(out, '\n') != NULL) {
 			int i, lastnl = -1;
-			for (i = 0; i <= outlen; i++)
+			for (i = 0; i <= (int)outlen; i++)
 				if (out[i] == '\n')
 					lastnl = i;
 			if (lastnl > -1) 

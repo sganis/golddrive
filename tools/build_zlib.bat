@@ -1,19 +1,49 @@
-mkdir build && cd build
+:: zlib
 
+:: this script directory
+set DIR=%~dp0
+set DIR=%DIR:~0,-1%
+
+curl -L -O https://zlib.net/zlib1212.zip
+tar xf zlib1212.zip
+cd zlib-1.2.12
 set "MSVC=Visual Studio 16 2019"
 
-set ARCH=x64
-set PLAT=x64
+md build-x64
+cd build-x64
 
-:: zlib
-:: Download http://zlib.net/zlib1211.zip
+call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
+
 cmake ..                                         ^
-    -A %ARCH% 									 ^
+    -A x64 									     ^
     -G"%MSVC%"                                   ^
-    -DCMAKE_INSTALL_PREFIX="C:/zlib-%PLAT%"      ^
+    -DCMAKE_INSTALL_PREFIX="C:/zlib-x64"         ^
     -DBUILD_SHARED_LIBS=OFF
 
- cmake --build . --config Release --target install
-::copy C:/zlib/lib/zlibstatic.lib ../lib/
-::cd ..
-::rd /s zlib-1.2.11
+cmake --build . --config Release --target install
+xcopy C:\zlib-x64\include ^
+    %DIR%\..\vendor\zlib\include /y /s /i
+xcopy C:\zlib-x64\lib\zlibstatic.lib ^
+    %DIR%\..\vendor\zlib\lib\x64\zlibstatic.lib* /y /s /i
+cd ..
+
+md build-x86
+cd build-x86
+
+call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat"
+
+cmake ..                                         ^
+    -A Win32                                     ^
+    -G"%MSVC%"                                   ^
+    -DCMAKE_INSTALL_PREFIX="C:/zlib-x86"         ^
+    -DBUILD_SHARED_LIBS=OFF
+
+cmake --build . --config Release --target install
+xcopy C:\zlib-x86\include ^
+    %DIR%\..\vendor\zlib\include /y /s /i
+xcopy C:\zlib-x86\lib\zlibstatic.lib ^
+    %DIR%\..\vendor\zlib\lib\x64\zlibstatic.lib* /y /s /i
+
+cd ..\..
+rd /s /q zlib-1.2.12
+del zlib1212.zip

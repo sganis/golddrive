@@ -26,7 +26,7 @@ cmake .. ^
 cmake --build . --config Release --target install
 
 xcopy C:\libssh2-x64\lib\libssh2.lib ^
-    %DIR%\..\vendor\libssh2\lib\libssh2-x64.lib* /y /s /i
+    %DIR%\..\vendor\libssh2\lib\x64\libssh2.lib* /y /s /i
 xcopy C:\libssh2-x64\include ^
     %DIR%\..\vendor\libssh2\include /y /s /i
 cd ..
@@ -48,6 +48,7 @@ cmake .. ^
  -DCLEAR_MEMORY=OFF
 cmake --build . --config Release --target install
 
-xcopy C:\libssh2-x86\lib\libssh2.lib %DIR%\..\vendor\libssh2\lib\libssh2-x86.lib* /y /s /i
+xcopy C:\libssh2-x86\lib\libssh2.lib ^
+    %DIR%\..\vendor\libssh2\lib\x86\libssh2.lib* /y /s /i
 
 cd ..

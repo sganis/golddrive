@@ -8,16 +8,19 @@ set DIR=%~dp0
 set DIR=%DIR:~0,-1%
 set CWD=%CD%
 
+set VERSION=8.9.1.0
 
-:: https://github.com/PowerShell/openssh-portable/archive/v8.1.0.0.zip
-
-:: winlibs is cloned in same folder as golddrive
-:: openssh-portable is cloned in same folder as golddrive
-set OPENSSH=%DIR%\..\..\openssh-portable
+cd C:\temp
+set OPENSSH=openssh-portable-%VERSION%
+rd /s /q %OPENSSH%
+curl -L -O https://github.com/PowerShell/openssh-portable/archive/refs/tags/V%VERSION%.zip
+tar xf V%VERSION%.zip
 
 :: apply patch 
 cd %OPENSSH%
-python %DIR%\..\..\winlibs\patch_openssh.py
+python %DIR%\patch_openssh.py
+
+call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
 
 :: build
 msbuild %OPENSSH%\contrib\win32\openssh\config.vcxproj ^
