@@ -29,13 +29,13 @@ with open(path) as r:
 	lines = r.readlines()
 with open(path, 'wt') as w:
 	for line in lines:
-		if '<LibreSSL-Path>' in line:
-			w.write(f'\t<LibreSSL-Path>{DIR}\\..\\vendor\\openssl\\</LibreSSL-Path>\n')
-		elif '<LibreSSL-x64-Path>' in line:
-			w.write(f'\t<LibreSSL-x64-Path>{DIR}\\..\\vendor\\openssl\\lib\\x64\\</LibreSSL-x64-Path>\n')
-		elif '<LibreSSL-x86-Path>' in line:
-			w.write(f'\t<LibreSSL-x86-Path>{DIR}\\..\\vendor\\openssl\\lib\\x86\\</LibreSSL-x86-Path>\n')
-		elif '<ZLib-Path>' in line:
+		# if '<LibreSSL-Path>' in line:
+		# 	w.write(f'\t<LibreSSL-Path>{DIR}\\..\\vendor\\openssl\\</LibreSSL-Path>\n')
+		# elif '<LibreSSL-x64-Path>' in line:
+		# 	w.write(f'\t<LibreSSL-x64-Path>{DIR}\\..\\vendor\\openssl\\lib\\x64\\</LibreSSL-x64-Path>\n')
+		# elif '<LibreSSL-x86-Path>' in line:
+		# 	w.write(f'\t<LibreSSL-x86-Path>{DIR}\\..\\vendor\\openssl\\lib\\x86\\</LibreSSL-x86-Path>\n')
+		if '<ZLib-Path>' in line:
 			w.write(f'\t<ZLib-Path>{DIR}\\..\\vendor\\zlib\\include\\</ZLib-Path>\n')
 		elif '<ZLib-x64-Path>' in line:
 			w.write(f'\t<ZLib-x64-Path>{DIR}\\..\\vendor\\zlib\\lib\\x64\\</ZLib-x64-Path>\n')
@@ -49,15 +49,15 @@ with open(path, 'wt') as w:
 			w.write(line)
 
 # comment out download of libressl and zlib
-path = r'contrib\win32\openssh\config.vcxproj'
-with open(path) as r:
-	lines = r.readlines()
-with open(path, 'wt') as w:
-	for line in lines:
-		if 'powershell.exe' in line and 'rem' not in line:
-			w.write('rem ' + line)
-		else:
-			w.write(line)
+# path = r'contrib\win32\openssh\config.vcxproj'
+# with open(path) as r:
+# 	lines = r.readlines()
+# with open(path, 'wt') as w:
+# 	for line in lines:
+# 		if 'powershell.exe' in line and 'rem' not in line:
+# 			w.write('rem ' + line)
+# 		else:
+# 			w.write(line)
 
 # # replace libcrypto.lib in ssh-keygen 32-bit release
 # path = r'contrib\win32\openssh\keygen.vcxproj'

@@ -7,6 +7,7 @@ setlocal
 
 set DIR=%~dp0
 set DIR=%DIR:~0,-1%
+set CWD=%CD%
 
 call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
 
@@ -53,4 +54,4 @@ cmake --build . --config Release --target install
 xcopy C:\libssh2-x86\lib\libssh2.lib ^
     %DIR%\..\vendor\libssh2\lib\x86\libssh2.lib* /y /s /i
 
-cd ..
+cd %CWD%

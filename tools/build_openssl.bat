@@ -6,15 +6,16 @@
 setlocal
 
 set VERSION=3.0.5
-
-set "PATH=C:\Program Files\NASM;C:\Strawberry\perl\bin;C:\Windows\System32;C:\Windows"
+set TEMP=C:\Temp
+set PATH=C:\Program Files\NASM;C:\Strawberry\perl\bin;C:\Windows\System32;C:\Windows
 set DIR=%~dp0
 set DIR=%DIR:~0,-1%
+set CWD=%CD%
 
 rd /s /q C:\openssl-x64 2>nul
 rd /s /q C:\openssl-x86 2>nul
 
-cd C:\temp
+cd %TEMP%
 rd /s /q openssl-openssl-%VERSION% 2>nul
 
 curl -L -O https://github.com/openssl/openssl/archive/refs/tags/openssl-%VERSION%.zip
@@ -38,8 +39,9 @@ nmake install_dev
 xcopy C:\openssl-x64\lib\libcrypto.lib ^
 	%DIR%\..\vendor\openssl\lib\x64\libcrypto.lib* /y /s /i
 xcopy C:\openssl-x64\include %DIR%\..\vendor\openssl\include /y /s /i
+cd ..
 
-cd ..\openssl-openssl-%VERSION%-x86
+cd openssl-openssl-%VERSION%-x86
 call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat"
 perl Configure 			    ^
 	VC-WIN32 				^
@@ -54,8 +56,8 @@ nmake libcrypto.lib
 nmake install_dev
 xcopy C:\openssl-x86\lib\libcrypto.lib ^
 	%DIR%\..\vendor\openssl\lib\x86\libcrypto.lib* /y /s /i
-
 cd ..
+
 rd /s /q openssl-* 2>nul
 
-cd %DIR%
+cd %CWD%

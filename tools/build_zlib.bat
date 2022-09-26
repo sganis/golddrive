@@ -5,9 +5,10 @@
 @echo off
 setlocal
 
-set "PATH=C:\Program Files\NASM;C:\Strawberry\perl\bin;C:\Windows\System32;C:\Windows"
+set PATH=C:\Program Files\NASM;C:\Strawberry\perl\bin;C:\Windows\System32;C:\Windows
 set DIR=%~dp0
 set DIR=%DIR:~0,-1%
+set CWD=%CD%
 
 curl -L -O https://zlib.net/zlib1212.zip
 tar xf zlib1212.zip
@@ -47,8 +48,9 @@ cmake --build . --config Release --target install
 xcopy C:\zlib-x86\include ^
     %DIR%\..\vendor\zlib\include /y /s /i
 xcopy C:\zlib-x86\lib\zlibstatic.lib ^
-    %DIR%\..\vendor\zlib\lib\x64\zlibstatic.lib* /y /s /i
+    %DIR%\..\vendor\zlib\lib\x86\zlibstatic.lib* /y /s /i
 
 cd ..\..
 rd /s /q zlib-1.2.12
 del zlib1212.zip
+cd %CWD%
