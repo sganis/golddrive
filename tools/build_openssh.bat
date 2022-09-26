@@ -1,9 +1,10 @@
 :: Golddrive
 :: 04/04/2020, San
+:: Build openssh
 
 @echo off
 setlocal
-:: this script directory
+
 set DIR=%~dp0
 set DIR=%DIR:~0,-1%
 set CWD=%CD%

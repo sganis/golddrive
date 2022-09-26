@@ -1,16 +1,17 @@
 :: Golddrive
 :: 09/08/2018, San
+:: Build libssh2
+
 @echo off
 setlocal
-setlocal EnableDelayedExpansion
 
-:: this script directory
 set DIR=%~dp0
 set DIR=%DIR:~0,-1%
 
 call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
 
-mkdir build_x64 && cd build_x64
+mkdir build_x64
+cd build_x64
 cmake .. ^
  -A x64 ^
  -DCMAKE_INSTALL_PREFIX="C:/libssh2-x64"		^
@@ -33,7 +34,8 @@ cd ..
 
 call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat"
 
-mkdir build_x86 && cd build_x86
+mkdir build_x86
+cd build_x86
 cmake .. ^
  -A Win32 ^
  -DCMAKE_INSTALL_PREFIX="C:/libssh2-x86"        ^

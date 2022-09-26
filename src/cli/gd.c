@@ -135,7 +135,7 @@ GDSSH* gd_init_ssh(void)
 
 	// non-blocking mode by 
 	// g_conf.block = 1;
-	libssh2_session_set_blocking(ssh, g_conf.block);
+	libssh2_session_set_blocking(ssh, 1);
 
 	/* create socket  */
 	he = gethostbyname(g_conf.host);
@@ -517,47 +517,15 @@ int gd_rmdir(const char* path)
 	int rc = 0;
 	log_info("%s\n", path);
 
-	if (g_conf.fastrm) {
-		// rename dir/folder -> dir/.deleted_folder
-		// call rm -rf dir/.deleted_folder
-		//char deleted[MAX_PATH];
-		//char drive[_MAX_DRIVE];
-		//char dir[_MAX_DIR];
-		//char fname[_MAX_FNAME];
-		//char ext[_MAX_EXT];
-		//rc = _splitpath_s(path, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, ext, _MAX_EXT);
-		//if (rc != 0) {
-		//	gd_error(path);
-		//	rc = error();
-		//	return rc;
-		//}
-		//// rename		
-		//rc = sprintf_s(deleted, sizeof deleted, "%s.deleted_%s_%s", dir, fname, ext);
-		//rc = gd_rename(path, deleted);
-
-		//if (rc) {
-		//	gd_error(path);
-		//	rc = error();
-		//}
-
-		//char cmd[COMMAND_SIZE];
-		//char out[COMMAND_SIZE];
-		//// FIXME: do not hard-code stat path, find it using which cmd after login
-		//sprintf_s(cmd, sizeof cmd, "/bin/rm -rf \"%s.deleted_%s_%s\"", dir, fname, ext);
-		//gd_lock();
-		//rc = run_command_channel_exec(cmd, out, 0);
-		//gd_unlock();
+	gd_lock();
+	while ((rc = libssh2_sftp_rmdir_ex(
+		g_ssh->sftp, path, (int)strlen(path))) ==
+		LIBSSH2_ERROR_EAGAIN) {
+		waitsocket(g_ssh);
+		g_sftp_calls++;
 	}
-	else {
-		gd_lock();
-		while ((rc = libssh2_sftp_rmdir_ex(
-			g_ssh->sftp, path, (int)strlen(path))) ==
-			LIBSSH2_ERROR_EAGAIN) {
-			waitsocket(g_ssh);
-			g_sftp_calls++;
-		}
-		gd_unlock();
-	}
+	gd_unlock();
+	
 
 	if (rc < 0) {
 		gd_error(path);
@@ -567,6 +535,7 @@ int gd_rmdir(const char* path)
 	//if (g_conf.audit) {
 	//	gd_log("%s: RMDIR: %s\n", g_conf.user, path);
 	//}
+
 	log_info("DONE\n");
 	return rc;
 }

@@ -93,8 +93,6 @@ typedef struct GDCONFIG {
 	char* cipher;
 	int has_root;
 	int keeplink;
-	int fastrm;
-	int block;
 	char *mountpoint;
 	char letter;
 	int port;
@@ -105,7 +103,6 @@ typedef struct GDCONFIG {
 
 extern GDCONFIG g_conf;
 
-#ifndef USE_LIBSSH
 /* SSH Status Codes (returned by libssh2_ssh_last_error() */
 static const char * ssh_errors[] = {
 	"SSH_OK",
@@ -185,7 +182,7 @@ static const char *sftp_errors[] = {
 	"SFTP_LINK_LOOP",
 	"SFTP_UNKNOWN"
 };
-#endif
+
 
 /* macros */
 #define fi_dirbit                       (0x8000000000000000ULL)
@@ -226,25 +223,25 @@ typedef struct GDSSH {
 	int rc;							/* return code from the last ssh/sftp call */
 	int thread;						/* key, thread id that owns this struct */
 	SOCKET socket;					/* sockey id */
-#ifdef USE_LIBSSH
-	ssh_session ssh;
-	sftp_session sftp;
-	ssh_channel channel;
-#else
+//#ifdef USE_LIBSSH
+//	ssh_session ssh;
+//	sftp_session sftp;
+//	ssh_channel channel;
+//#else
 	LIBSSH2_SESSION *ssh;			/* ssh session struct */
 	LIBSSH2_SFTP* sftp;				/* sftp session struct */
 	LIBSSH2_CHANNEL* channel;		/* channel for commands */
-#endif
+//#endif
 } GDSSH;
 
 typedef struct GDHANDLE {
-#ifdef USE_LIBSSH
-	sftp_file file_handle;				/* key, remote file handler		*/
-	sftp_dir dir_handle;				/* key, remote dir handler		*/
-#else
+//#ifdef USE_LIBSSH
+//	sftp_file file_handle;				/* key, remote file handler		*/
+//	sftp_dir dir_handle;				/* key, remote dir handler		*/
+//#else
 	LIBSSH2_SFTP_HANDLE* file_handle;	/* key, remote file handler		*/
 	LIBSSH2_SFTP_HANDLE* dir_handle;	/* key, remote file handler		*/
-#endif
+//#endif
 	int dir;						/* is directory							*/
 	int flags;						/* open flags							*/
 	int mode;						/* open mode							*/

@@ -362,9 +362,7 @@ static struct fuse_opt fs_opts[] = {
 	fs_OPT("-k %s",             pkey, 0),
 	fs_OPT("-k=%s",             pkey, 0),
 	fs_OPT("keeplink",          keeplink, 1),
-	fs_OPT("fastrm",            fastrm, 1),
 	fs_OPT("audit",             audit, 1),
-	fs_OPT("block",             block, 1),
 	fs_OPT("buffer=%u",         buffer, 0),
 	fs_OPT("cipher=%s",         cipher, 0),
 
@@ -401,26 +399,20 @@ static int fs_opt_proc(
 			"\n"
 			"Usage: golddrive drive [remote] [options]\n"
 			"\n"
-			"drive : letter and colon (ex Z:)\n"
-			"remote: remote network path as \\\\golddrive\\[[locuser=]user@]host[!port][\\path]\n"
+			"drive : letter and colon (like Z:)\n"
+			"remote: remote network path like \\\\golddrive\\[[locuser=]user@]host[!port][\\path]\n"
 			"Options:\n"
-			"    --help                     print this help\n"
-			"    --version                  print version\n"
-			"    -o opt,[opt...]            mount options, -o=opt or -oopt is also valid\n"						
+			"    -o opt1,[opt2,...]         mount options\n"						
+			"    --help                     show this help\n"
+			"    --version                  show version\n"
 			"    -h HOST, -o host=HOST      ssh server name or IP\n"
 			"    -u USER, -o user=USER      user to connect to ssh server, default: current user\n"
 			"    -k PKEY, -o pkey=PKEY      private key, default: %%USERPROFILE%%\\.ssh\\id_rsa\n"
 			"    -p PORT, -o port=PORT      server port, default: 22\n"
 			"    -o keeplink                hard links are not removed before overwriting data\n"
-			"    -o fastrm                  use /bin/rm -rf command in host to delete folders\n"
 			"    -o audit                   enable auditing by logging read and write events\n"
-			"    -o block                   disable non-blocking protocol mode\n"
 			"    -o cipher                  cipher for symetric encryption, comma-separated list\n"
 			"    -o buffer=BYTES            read/write block size in bytes, default: 65535\n"
-			"\n"
-			"WinFsp-FUSE options:\n"
-			"    -s                         disable multi-threaded operation\n"
-			"    -d, -o debug               enable debug output\n"
 			"    -o create_umask=MASK       file creation umask permissions\n"
 			"    -o DebugLog=FILE           debug log file (requires -d)\n"
 			"    -o FileInfoTimeout=N       metadata timeout (millis, -1 for data caching)\n"
@@ -429,6 +421,9 @@ static int fs_opt_proc(
 			"    -o EaTimeout=N             extended attribute timeout (millis)\n"
 			"    -o KeepFileCache           do not discard cache when files are closed\n"
 			"    -o ThreadCount             number of file system dispatcher threads\n"
+			"    -s                         disable multi-threaded operation\n"
+			"    -d, -o debug               enable debug output\n"
+
 		);
 		//fuse_opt_add_arg(outargs, "-h");
 		//fuse_main(outargs->argc, outargs->argv, &fs_ops, NULL);
@@ -436,15 +431,10 @@ static int fs_opt_proc(
 
 	case KEY_VERSION:		
 		GetModuleFileNameA(NULL, exepath, MAX_PATH);
-		//char* version = calloc(100, sizeof(char));
 		get_file_version(exepath, version);
 		fprintf(stderr, "Golddrive %s %d-bit %s\n", 
 			version, PLATFORM_BITS, __DATE__);
-#ifdef USE_LIBSSH
-		fprintf(stderr, "LibSSH %s\n", ssh_version(0));
-#else
 		fprintf(stderr, "Libssh2 %s\n", libssh2_version(0));
-#endif
 		fprintf(stderr, "%s\n", OPENSSL_VERSION_TEXT);
 		fprintf(stderr, "FUSE %s\n", fuse_pkgversion());
 		exit(0);
@@ -713,16 +703,14 @@ int main(int argc, char *argv[])
 	// print arguments
 	gd_log("buffer   = %u\n", g_conf.buffer);
 	gd_log("keeplink = %u\n", g_conf.keeplink);
-	gd_log("fastrm   = %u\n", g_conf.fastrm);
 	gd_log("audit    = %u\n", g_conf.audit);
-	gd_log("block    = %u\n", g_conf.block);
 	if (g_conf.cipher)
 		gd_log("cipher   = %s\n", g_conf.cipher);
 
 	if (g_conf.usageurl) 
 		gd_log("usage    = %s\n", g_conf.usageurl);
 
-	gd_log("WinFsp arguments:\n");
+	gd_log("Arguments:\n");
 	for (int i = 1; i < args.argc; i++)
 		gd_log("arg %d    = %s\n", i, args.argv[i]);
 	
