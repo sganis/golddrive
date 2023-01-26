@@ -36,7 +36,7 @@ for:
           platform: x64
           configuration: Release
     build_script:
-      - start /wait msiexec /i vendor\winfsp\winfsp-1.10.22006.msi /qn ADDLOCAL=ALL
+      - start /wait msiexec /i vendor\winfsp\winfsp-1.12.22339.msi /qn ADDLOCAL=ALL
       - wslconfig /u Ubuntu-18.04
       - ps: tools\setup_wsl.ps1
       - C:\Python310\python -m pip install --disable-pip-version-check paramiko >NUL
