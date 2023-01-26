@@ -72,7 +72,7 @@ for:
         - image: Visual Studio 2019
           platform: x86
     build_script:
-      - start /wait msiexec /i vendor\winfsp\winfsp-1.10.22006.msi /qn ADDLOCAL=ALL
+      - start /wait msiexec /i vendor\winfsp\winfsp-1.12.22339.msi /qn ADDLOCAL=ALL
       - msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -m /verbosity:quiet /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
       - src\.build\%CONFIGURATION%\%PLATFORM%\golddrive.exe --version
       - start /wait msiexec /i src\.build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%.msi /qn
