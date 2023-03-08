@@ -51,44 +51,54 @@ GDSSH* gd_init_ssh(void)
 	libssh2_keepalive_send(ssh, 1);*/
 
 	/* supported symetric algorithms */
-	//const char** algorithms;
-	//rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_CRYPT_CS, &algorithms);
-	//if (rc > 0) {
-	//	gd_log("Supported symmetric encryption:\n");
-	//	for (int i = 0; i < rc; i++)
-	//		gd_log("\t%s\n", algorithms[i]);
-	//	libssh2_free(ssh, algorithms);
-	//}
-	//rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_KEX, &algorithms);
-	//if (rc > 0) {
-	//	gd_log("Supported key exchange:\n");
-	//	for (int i = 0; i < rc; i++)
-	//		gd_log("\t%s\n", algorithms[i]);
-	//	libssh2_free(ssh, algorithms);
-	//}
-	//rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_HOSTKEY, &algorithms);
-	//if (rc > 0) {
-	//	gd_log("Supported host keys:\n");
-	//	for (int i = 0; i < rc; i++)
-	//		gd_log("\t%s\n", algorithms[i]);
-	//	libssh2_free(ssh, algorithms);
-	//}
-	//rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_MAC_CS, &algorithms);
-	//if (rc > 0) {
-	//	gd_log("Supported MAC:\n");
-	//	for (int i = 0; i < rc; i++)
-	//		gd_log("\t%s\n", algorithms[i]);
-	//	libssh2_free(ssh, algorithms);
-	//}
-	//// set compression to get info
-	//libssh2_session_flag(ssh, LIBSSH2_FLAG_COMPRESS, 1);
-	//rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_COMP_CS, &algorithms);
-	//if (rc > 0) {
-	//	gd_log("Supported compression:\n");
-	//	for (int i = 0; i < rc; i++)
-	//		gd_log("\t%s\n", algorithms[i]);
-	//	libssh2_free(ssh, algorithms);
-	//}
+	const char** algorithms;
+	rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_CRYPT_CS, &algorithms);
+	if (rc > 0) {
+		gd_log("Supported symmetric encryption Client->Server:\n");
+		for (int i = 0; i < rc; i++)
+			gd_log("\t%s\n", algorithms[i]);
+		libssh2_free(ssh, algorithms);
+	}
+
+	rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_CRYPT_SC, &algorithms);
+	if (rc > 0) {
+		gd_log("Supported symmetric encryption Server->Client:\n");
+		for (int i = 0; i < rc; i++)
+			gd_log("\t%s\n", algorithms[i]);
+		libssh2_free(ssh, algorithms);
+	}
+
+	
+	rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_KEX, &algorithms);
+	if (rc > 0) {
+		gd_log("Supported key exchange:\n");
+		for (int i = 0; i < rc; i++)
+			gd_log("\t%s\n", algorithms[i]);
+		libssh2_free(ssh, algorithms);
+	}
+	rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_HOSTKEY, &algorithms);
+	if (rc > 0) {
+		gd_log("Supported host keys:\n");
+		for (int i = 0; i < rc; i++)
+			gd_log("\t%s\n", algorithms[i]);
+		libssh2_free(ssh, algorithms);
+	}
+	rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_MAC_CS, &algorithms);
+	if (rc > 0) {
+		gd_log("Supported MAC:\n");
+		for (int i = 0; i < rc; i++)
+			gd_log("\t%s\n", algorithms[i]);
+		libssh2_free(ssh, algorithms);
+	}
+	// set compression to get info
+	libssh2_session_flag(ssh, LIBSSH2_FLAG_COMPRESS, 1);
+	rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_COMP_CS, &algorithms);
+	if (rc > 0) {
+		gd_log("Supported compression:\n");
+		for (int i = 0; i < rc; i++)
+			gd_log("\t%s\n", algorithms[i]);
+		libssh2_free(ssh, algorithms);
+	}
 
 	/* debug, need to build with tracing */
 	//libssh2_trace(ssh, 
@@ -116,7 +126,7 @@ GDSSH* gd_init_ssh(void)
 			LIBSSH2_METHOD_CRYPT_CS, g_conf.cipher);
 		rc = libssh2_session_method_pref(ssh, 
 			LIBSSH2_METHOD_CRYPT_SC, g_conf.cipher);
-			//while (libssh2_session_method_pref(ssh, LIBSSH2_METHOD_CRYPT_CS,
+		//while (libssh2_session_method_pref(ssh, LIBSSH2_METHOD_CRYPT_CS,
 		//	g_conf.cipher) == LIBSSH2_ERROR_EAGAIN);
 		//while (libssh2_session_method_pref(ssh, LIBSSH2_METHOD_MAC_CS,
 		//	g_conf.cipher) == LIBSSH2_ERROR_EAGAIN);
@@ -170,14 +180,14 @@ GDSSH* gd_init_ssh(void)
 		return 0;
 	}
 
-	//gd_log("Session symmetric encryption:\n\t%s\n", 
-	//	libssh2_session_methods(ssh, LIBSSH2_METHOD_CRYPT_CS));
-	//gd_log("Session key exchange:\n\t%s\n",
-	//	libssh2_session_methods(ssh, LIBSSH2_METHOD_KEX));
-	//gd_log("Session host keys:\n\t%s\n",
-	//	libssh2_session_methods(ssh, LIBSSH2_METHOD_HOSTKEY));
-	//gd_log("Session MAC:\n\t%s\n",
-	//	libssh2_session_methods(ssh, LIBSSH2_METHOD_MAC_CS));
+	gd_log("Session symmetric encryption:\n\t%s\n", 
+		libssh2_session_methods(ssh, LIBSSH2_METHOD_CRYPT_CS));
+	gd_log("Session key exchange:\n\t%s\n",
+		libssh2_session_methods(ssh, LIBSSH2_METHOD_KEX));
+	gd_log("Session host keys:\n\t%s\n",
+		libssh2_session_methods(ssh, LIBSSH2_METHOD_HOSTKEY));
+	gd_log("Session MAC:\n\t%s\n",
+		libssh2_session_methods(ssh, LIBSSH2_METHOD_MAC_CS));
 	
 	/* At this point we havn't yet authenticated.  The first thing to do
 	 * is check the hostkey's fingerprint against our known hosts Your app
@@ -206,9 +216,9 @@ GDSSH* gd_init_ssh(void)
 	//}
 
 
-	 // authenticate with keys
-	char pubkey[1000];
-	strcpy(pubkey, g_conf.pkey);
+	// authenticate with keys
+	//char pubkey[1000];
+	//strcpy(pubkey, g_conf.pkey);
 	//strcat(pubkey, ".pub");
 	while ((rc = libssh2_userauth_publickey_fromfile(
 		ssh, g_conf.user, NULL, g_conf.pkey, NULL)) ==
