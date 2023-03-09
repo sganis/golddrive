@@ -241,25 +241,25 @@ namespace golddrive.Tests
         public void SetupSshTest()
         {
             var now = DateTime.Now.Ticks.ToString();
-            var backup_sec = $"{_drive.AppKey}.{now}.bak";
-            var backup_pub = $"{_drive.AppPubKey}.{now}.bak";
+            var backup_sec = $"{_drive.DefaultAppKey}.{now}.bak";
+            var backup_pub = $"{_drive.DefaultAppPubKey}.{now}.bak";
             
-            bool has_sec = File.Exists(_drive.AppKey);
-            bool has_pub = File.Exists(_drive.AppPubKey);
+            bool has_sec = File.Exists(_drive.DefaultAppKey);
+            bool has_pub = File.Exists(_drive.DefaultAppPubKey);
             if (has_sec)
-                File.Move(_drive.AppKey, backup_sec);
+                File.Move(_drive.DefaultAppKey, backup_sec);
             if (has_pub)
-                File.Move(_drive.AppPubKey, backup_pub);
+                File.Move(_drive.DefaultAppPubKey, backup_pub);
             var r = _mountService.TestSsh(_drive);
             Assert.IsFalse(r.Success);
             r = _mountService.SetupSsh(_drive, _pass);
             Assert.IsTrue(r.MountStatus == MountStatus.OK);
-            File.Delete(_drive.AppKey);
-            File.Delete(_drive.AppPubKey);
+            File.Delete(_drive.DefaultAppKey);
+            File.Delete(_drive.DefaultAppPubKey);
             if (has_sec)
-                File.Move(backup_sec, _drive.AppKey);
+                File.Move(backup_sec, _drive.DefaultAppKey);
             if (has_pub)
-                File.Move(backup_pub, _drive.AppPubKey);
+                File.Move(backup_pub, _drive.DefaultAppPubKey);
         }
 
         [TestMethod(), TestCategory("Appveyor")]
