@@ -51,54 +51,54 @@ GDSSH* gd_init_ssh(void)
 	libssh2_keepalive_send(ssh, 1);*/
 
 	/* supported symetric algorithms */
-	const char** algorithms;
-	rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_CRYPT_CS, &algorithms);
-	if (rc > 0) {
-		gd_log("Supported symmetric encryption Client->Server:\n");
-		for (int i = 0; i < rc; i++)
-			gd_log("\t%s\n", algorithms[i]);
-		libssh2_free(ssh, algorithms);
-	}
+	//const char** algorithms;
+	//rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_CRYPT_CS, &algorithms);
+	//if (rc > 0) {
+	//	gd_log("Supported symmetric encryption Client->Server:\n");
+	//	for (int i = 0; i < rc; i++)
+	//		gd_log("\t%s\n", algorithms[i]);
+	//	libssh2_free(ssh, algorithms);
+	//}
 
-	rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_CRYPT_SC, &algorithms);
-	if (rc > 0) {
-		gd_log("Supported symmetric encryption Server->Client:\n");
-		for (int i = 0; i < rc; i++)
-			gd_log("\t%s\n", algorithms[i]);
-		libssh2_free(ssh, algorithms);
-	}
+	//rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_CRYPT_SC, &algorithms);
+	//if (rc > 0) {
+	//	gd_log("Supported symmetric encryption Server->Client:\n");
+	//	for (int i = 0; i < rc; i++)
+	//		gd_log("\t%s\n", algorithms[i]);
+	//	libssh2_free(ssh, algorithms);
+	//}
 
-	
-	rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_KEX, &algorithms);
-	if (rc > 0) {
-		gd_log("Supported key exchange:\n");
-		for (int i = 0; i < rc; i++)
-			gd_log("\t%s\n", algorithms[i]);
-		libssh2_free(ssh, algorithms);
-	}
-	rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_HOSTKEY, &algorithms);
-	if (rc > 0) {
-		gd_log("Supported host keys:\n");
-		for (int i = 0; i < rc; i++)
-			gd_log("\t%s\n", algorithms[i]);
-		libssh2_free(ssh, algorithms);
-	}
-	rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_MAC_CS, &algorithms);
-	if (rc > 0) {
-		gd_log("Supported MAC:\n");
-		for (int i = 0; i < rc; i++)
-			gd_log("\t%s\n", algorithms[i]);
-		libssh2_free(ssh, algorithms);
-	}
-	// set compression to get info
-	libssh2_session_flag(ssh, LIBSSH2_FLAG_COMPRESS, 1);
-	rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_COMP_CS, &algorithms);
-	if (rc > 0) {
-		gd_log("Supported compression:\n");
-		for (int i = 0; i < rc; i++)
-			gd_log("\t%s\n", algorithms[i]);
-		libssh2_free(ssh, algorithms);
-	}
+	//
+	//rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_KEX, &algorithms);
+	//if (rc > 0) {
+	//	gd_log("Supported key exchange:\n");
+	//	for (int i = 0; i < rc; i++)
+	//		gd_log("\t%s\n", algorithms[i]);
+	//	libssh2_free(ssh, algorithms);
+	//}
+	//rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_HOSTKEY, &algorithms);
+	//if (rc > 0) {
+	//	gd_log("Supported host keys:\n");
+	//	for (int i = 0; i < rc; i++)
+	//		gd_log("\t%s\n", algorithms[i]);
+	//	libssh2_free(ssh, algorithms);
+	//}
+	//rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_MAC_CS, &algorithms);
+	//if (rc > 0) {
+	//	gd_log("Supported MAC:\n");
+	//	for (int i = 0; i < rc; i++)
+	//		gd_log("\t%s\n", algorithms[i]);
+	//	libssh2_free(ssh, algorithms);
+	//}
+	//// set compression to get info
+	//libssh2_session_flag(ssh, LIBSSH2_FLAG_COMPRESS, 1);
+	//rc = libssh2_session_supported_algs(ssh, LIBSSH2_METHOD_COMP_CS, &algorithms);
+	//if (rc > 0) {
+	//	gd_log("Supported compression:\n");
+	//	for (int i = 0; i < rc; i++)
+	//		gd_log("\t%s\n", algorithms[i]);
+	//	libssh2_free(ssh, algorithms);
+	//}
 
 	/* debug, need to build with tracing */
 	//libssh2_trace(ssh, 
@@ -1695,16 +1695,20 @@ int load_json(GDCONFIG* fs)
 				jsmntok_t* v = &t[i + 2];
 
 				if (strcmp(key, fs->drive) == 0) {
-					i = i + 3;
+					i = i + 2;
 					for (int k = 0; k < v->size; k++) {
 						tok = &t[i + 1];
 						if (tok->type == JSMN_STRING) {
-							char* k = str_ndup(JSON_STRING + tok->start, tok->end - tok->start);
-							if (strcmp(k, "Args") == 0) {
+							char* key2 = str_ndup(JSON_STRING + tok->start, tok->end - tok->start);
+							if (strcmp(key2, "AppKey") == 0) {
+								tok = &t[i + 2];
+								fs->pkey = str_ndup(JSON_STRING + tok->start, tok->end - tok->start);
+							}
+							if (strcmp(key2, "Args") == 0) {
 								tok = &t[i + 2];
 								fs->args = str_ndup(JSON_STRING + tok->start, tok->end - tok->start);
 							}
-							free(k);
+							free(key2);
 							i = i + 2;
 						}
 						else if (tok->type == JSMN_ARRAY) {

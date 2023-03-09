@@ -83,6 +83,14 @@
                      materialDesign:HintAssist.Hint="{Binding SelectedDrive.EnvironmentUser}"
                      Margin="0,0,0,30"
                      FontSize="20" />
+            <TextBlock Text="Private Key"
+                       Style="{StaticResource Title}" />
+            <TextBox Text="{Binding SelectedDrive.AppKey, UpdateSourceTrigger=PropertyChanged}"
+                     IsReadOnly="{Binding IsEditMode, Converter={local:NegateBoolConverter}}"
+                     local:EnterKeyHelper.EnterKeyCommand="{Binding SettingsOkCommand}"
+                     materialDesign:HintAssist.Hint="{Binding SelectedDrive.DefaultAppKey}"
+                     Margin="0,0,0,30"
+                     FontSize="20" />
             <TextBlock Text="Optional Arguments"
                        Style="{StaticResource Title}" />
             <TextBox Text="{Binding SelectedDrive.Args, UpdateSourceTrigger=PropertyChanged}"

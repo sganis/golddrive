@@ -126,80 +126,6 @@ namespace golddrive
             }
         }
 
-
-        //public List<Drive> LoadSettingsDrives()
-        //{
-        //    string filename = LocalAppData + "\\settings.xml";
-        //    List<Drive> drives = new List<Drive>();
-
-        //    if (File.Exists(filename))
-        //    {
-        //        try
-        //        {
-        //            using (Stream fileStream = File.Open(filename, FileMode.Open))
-        //            {
-        //                var ds = new DataContractSerializer(typeof(List<Drive>));
-        //                drives = (List<Drive>)ds.ReadObject(fileStream);
-        //            }
-        //        }
-        //        catch { }
-        //    }
-        //    return drives;
-        //}
-        //public void SaveSettingsDrives(List<Drive> drives)
-        //{
-        //    try
-        //    {
-        //        string filename = LocalAppData + "\\settings.xml";
-        //        DataContractSerializer ds = new DataContractSerializer(typeof(List<Drive>));
-        //        var settings = new XmlWriterSettings { Indent = true };
-        //        using (var w = XmlWriter.Create(filename, settings))
-        //            ds.WriteObject(w, drives);
-        //    }
-        //    catch { }
-        //}
-
-
-        //public void SaveSettingsDrives(List<Drive> drives)
-        //{
-        //    try
-        //    {
-        //        using (MemoryStream ms = new MemoryStream())
-        //        {
-        //            BinaryFormatter bf = new BinaryFormatter();
-        //            bf.Serialize(ms, drives);
-        //            ms.Position = 0;
-        //            byte[] buffer = new byte[(int)ms.Length];
-        //            ms.Read(buffer, 0, buffer.Length);
-        //            Properties.Settings.Default.Drives = Convert.ToBase64String(buffer);
-        //            Properties.Settings.Default.Save();
-        //        }
-        //    }
-        //    catch (Exception ex )
-        //    {
-
-        //    }
-        //}
-
-        //private List<Drive> LoadSettingsDrives()
-        //{
-        //    List<Drive> drives = new List<Drive>();
-        //    try
-        //    {
-        //        using (MemoryStream ms = new MemoryStream(
-        //            Convert.FromBase64String(Properties.Settings.Default.Drives)))
-        //        {
-        //            BinaryFormatter bf = new BinaryFormatter();
-        //            if (ms.Length > 0)
-        //                drives = (List<Drive>)bf.Deserialize(ms);
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //    }
-        //    return drives;
-        //}
-
         #endregion
 
         #region Core Methods
@@ -459,31 +385,7 @@ namespace golddrive
             }
             return drives;
         }
-
-        //public List<Drive> GetGoldDrives(List<Drive> settingsDrives)
-        //{
-        //    //List<Drive> usedDrives = GetUsedDrives().Where(x => x.IsGoldDrive == true).ToList();
-        //    //Settings settings = LoadSettings();
-
-        //    //List<Drive> drives = settings.Drives.Values.ToList();
-        //    foreach (Drive u in GoldDrives)
-        //    {
-        //        var d1 = settingsDrives.Find(x1 => x1.Letter == u.Letter);
-        //        if(d1 == null)
-        //        {
-        //            settingsDrives.Add(u);
-        //        }
-        //        else
-        //        {
-        //            var d2 = settingsDrives.Find(x2 => (x2.Letter == u.Letter && x2.MountPoint == u.MountPoint));
-        //            if(d2 == null)
-        //            {
-        //                d1.MountPoint = u.MountPoint;                       
-        //            }
-        //        }                
-        //    }
-        //    return settingsDrives;
-        //}
+     
         public List<Drive> GetFreeDrives()
         {
             string GOLDLETTERS = "GHIJKLMNOPQRSTUVWXYZ";
@@ -504,24 +406,7 @@ namespace golddrive
             freeDrives.Reverse();
             return freeDrives;
         }
-        //public string GetVolumeName(string letter)
-        //{
-        //    var r = RunLocal($"vol {letter}:");
-        //    foreach (var line in r.Output.Split('\n'))
-        //    {
-        //        try
-        //        {
-        //            Match match = Regex.Match(line, $@"^\s*Volume in drive {letter} is ([^ ]+)");
-        //            if (match.Success)
-        //                return match.Groups[1].Value.Trim();
-        //        }
-        //        catch (Exception ex)
-        //        {
-
-        //        }
-        //    }
-        //    return "";
-        //}
+        
 
         public ReturnBox CheckDriveStatus(Drive drive)
         {
@@ -591,16 +476,7 @@ namespace golddrive
                 return false;
             }
             return ok;
-            //if (works) {
-            //    int epoch = (int)(DateTime.Now - new DateTime(1970, 1, 1, 0, 0, 0, 0)).TotalSeconds;
-            //    string tempfile = $@"{ drive.Name }\tmp\{drive.User}@{drive.Host}.{epoch}";
-            //    var r = RunLocal("type nul > " + tempfile);
-            //    if (r.ExitCode == 0) {
-            //        RunLocal("del " + tempfile);
-            //        return true;
-            //    }
-            //}
-            //return false;
+            
         }
         public string GetExplorerDriveLabel(Drive drive)
         {
@@ -738,9 +614,6 @@ namespace golddrive
         public ReturnBox TestSsh(Drive drive)
         {
             ReturnBox r = new ReturnBox();
-
- 
-            
 
             if (!File.Exists(drive.AppKey))
             {

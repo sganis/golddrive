@@ -25,6 +25,7 @@ namespace golddrive
             User = d.User;
             Letter = d.Letter;
             Label = d.Label;
+            AppKey = d.AppKey;
             Args = d.Args;
         }
         public DriveStatus Status { get; set; }
@@ -218,10 +219,24 @@ namespace golddrive
                 return prof;
             }
         }
+        private string appkey;
+
+        [JsonProperty]
         public string AppKey
         {
-            //get { return $@"{UserProfile}\.ssh\id_golddrive_{CurrentUser}"; }
-            get { return $@"{UserProfile}\.ssh\id_rsa"; }
+            get { return appkey; }
+            set { 
+                if (AppKey != value) {
+                    appkey = value;
+                    NotifyPropertyChanged();
+                }
+            
+            }
+        }
+        public string DefaultAppKey {
+            get {
+                return $@"{UserProfile}\.ssh\id_rsa";
+            }            
         }
         public string AppPubKey
         {
@@ -270,6 +285,8 @@ namespace golddrive
         {
             return $"{ Name } {MountPoint}"; ;
         }
+
+        
     }
 
     public class DriveList : List<Drive>

@@ -426,6 +426,7 @@ namespace golddrive
             }
 
             SelectedDrive.Trim();
+
             if (string.IsNullOrEmpty(SelectedDrive.Host))
             {
                 Message = "Server is required";

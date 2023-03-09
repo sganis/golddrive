@@ -1,5 +1,5 @@
 /* Copyright (c) 2004-2009, Sara Golemon <sarag@libssh2.org>
- * Copyright (c) 2009-2015 Daniel Stenberg
+ * Copyright (c) 2009-2021 Daniel Stenberg
  * Copyright (c) 2010 Simon Josefsson <simon@josefsson.org>
  * All rights reserved.
  *
@@ -40,19 +40,19 @@
 #ifndef LIBSSH2_H
 #define LIBSSH2_H 1
 
-#define LIBSSH2_COPYRIGHT "2004-2019 The libssh2 project and its contributors."
+#define LIBSSH2_COPYRIGHT "2004-2021 The libssh2 project and its contributors."
 
 /* We use underscore instead of dash when appending DEV in dev versions just
    to make the BANNER define (used by src/session.c) be a valid SSH
    banner. Release versions have no appended strings and may of course not
    have dashes either. */
-#define LIBSSH2_VERSION "1.10.0"
+#define LIBSSH2_VERSION                             "1.10.1_DEV"
 
 /* The numeric version number is also available "in parts" by using these
    defines: */
-#define LIBSSH2_VERSION_MAJOR 1
-#define LIBSSH2_VERSION_MINOR 10
-#define LIBSSH2_VERSION_PATCH 0
+#define LIBSSH2_VERSION_MAJOR                       1
+#define LIBSSH2_VERSION_MINOR                       10
+#define LIBSSH2_VERSION_PATCH                       1
 
 /* This is the numeric version of the libssh2 version number, meant for easier
    parsing and comparions by programs. The LIBSSH2_VERSION_NUM define will
@@ -69,7 +69,7 @@
    and it is always a greater number in a more recent release. It makes
    comparisons with greater than and less than work.
 */
-#define LIBSSH2_VERSION_NUM 0x010a00
+#define LIBSSH2_VERSION_NUM                         0x010a01
 
 /*
  * This is the date and time when the full source package was created. The
@@ -80,7 +80,7 @@
  *
  * "Mon Feb 12 11:35:33 UTC 2007"
  */
-#define LIBSSH2_TIMESTAMP "Sun 29 Aug 2021 08:37:50 PM UTC"
+#define LIBSSH2_TIMESTAMP "DEV"
 
 #ifndef RC_INVOKED
 
@@ -99,8 +99,8 @@ extern "C" {
 
 /* Allow alternate API prefix from CFLAGS or calling app */
 #ifndef LIBSSH2_API
-# ifdef LIBSSH2_WIN32
-#  ifdef _WINDLL
+# ifdef WIN32
+#  if defined(_WINDLL) || defined(libssh2_EXPORTS)
 #   ifdef LIBSSH2_LIBRARY
 #    define LIBSSH2_API __declspec(dllexport)
 #   else
@@ -109,9 +109,9 @@ extern "C" {
 #  else
 #   define LIBSSH2_API
 #  endif
-# else /* !LIBSSH2_WIN32 */
+# else /* !WIN32 */
 #  define LIBSSH2_API
-# endif /* LIBSSH2_WIN32 */
+# endif /* WIN32 */
 #endif /* LIBSSH2_API */
 
 #ifdef HAVE_SYS_UIO_H
@@ -272,8 +272,8 @@ typedef off_t libssh2_struct_stat_size;
 
 typedef struct _LIBSSH2_USERAUTH_KBDINT_PROMPT
 {
-    char *text;
-    unsigned int length;
+    unsigned char *text;
+    size_t length;
     unsigned char echo;
 } LIBSSH2_USERAUTH_KBDINT_PROMPT;
 
@@ -282,6 +282,15 @@ typedef struct _LIBSSH2_USERAUTH_KBDINT_RESPONSE
     char *text;
     unsigned int length;
 } LIBSSH2_USERAUTH_KBDINT_RESPONSE;
+
+typedef struct _LIBSSH2_SK_SIG_INFO {
+    uint8_t flags;
+    uint32_t counter;
+    unsigned char *sig_r;
+    size_t sig_r_len;
+    unsigned char *sig_s;
+    size_t sig_s_len;
+} LIBSSH2_SK_SIG_INFO;
 
 /* 'publickey' authentication callback */
 #define LIBSSH2_USERAUTH_PUBLICKEY_SIGN_FUNC(name) \
@@ -294,6 +303,17 @@ typedef struct _LIBSSH2_USERAUTH_KBDINT_RESPONSE
             int instruction_len, int num_prompts, \
             const LIBSSH2_USERAUTH_KBDINT_PROMPT *prompts,              \
             LIBSSH2_USERAUTH_KBDINT_RESPONSE *responses, void **abstract)
+
+/* SK authentication callback */
+#define LIBSSH2_USERAUTH_SK_SIGN_FUNC(name) \
+int name(LIBSSH2_SESSION *session, LIBSSH2_SK_SIG_INFO *sig_info, \
+const unsigned char *data, size_t data_len, int algorithm, uint8_t flags, \
+const char *application, const unsigned char *key_handle, size_t handle_len, \
+void **abstract)
+
+/* Flags for SK authentication */
+#define LIBSSH2_SK_PRESENCE_REQUIRED     0x01
+#define LIBSSH2_SK_VERIFICATION_REQUIRED 0x04
 
 /* Callbacks for special SSH packets */
 #define LIBSSH2_IGNORE_FUNC(name) \
@@ -356,6 +376,7 @@ typedef struct _LIBSSH2_USERAUTH_KBDINT_RESPONSE
 #define LIBSSH2_METHOD_COMP_SC      7
 #define LIBSSH2_METHOD_LANG_CS      8
 #define LIBSSH2_METHOD_LANG_SC      9
+#define LIBSSH2_METHOD_SIGN_ALGO    10
 
 /* flags */
 #define LIBSSH2_FLAG_SIGPIPE        1
@@ -366,6 +387,25 @@ typedef struct _LIBSSH2_CHANNEL                     LIBSSH2_CHANNEL;
 typedef struct _LIBSSH2_LISTENER                    LIBSSH2_LISTENER;
 typedef struct _LIBSSH2_KNOWNHOSTS                  LIBSSH2_KNOWNHOSTS;
 typedef struct _LIBSSH2_AGENT                       LIBSSH2_AGENT;
+
+/* SK signature callback */
+typedef struct _LIBSSH2_PRIVKEY_SK {
+    int algorithm;
+    uint8_t flags;
+    const char *application;
+    const unsigned char *key_handle;
+    size_t handle_len;
+    LIBSSH2_USERAUTH_SK_SIGN_FUNC((*sign_callback));
+    void **orig_abstract;
+} LIBSSH2_PRIVKEY_SK;
+
+int
+libssh2_sign_sk(LIBSSH2_SESSION *session,
+                unsigned char **sig,
+                size_t *sig_len,
+                const unsigned char *data,
+                size_t data_len,
+                void **abstract);
 
 typedef struct _LIBSSH2_POLLFD {
     unsigned char type; /* LIBSSH2_POLLFD_* below */
@@ -506,6 +546,8 @@ typedef struct _LIBSSH2_POLLFD {
 #define LIBSSH2_ERROR_CHANNEL_WINDOW_FULL       -47
 #define LIBSSH2_ERROR_KEYFILE_AUTH_FAILED       -48
 #define LIBSSH2_ERROR_RANDGEN                   -49
+#define LIBSSH2_ERROR_MISSING_USERAUTH_BANNER   -50
+#define LIBSSH2_ERROR_ALGO_UNSUPPORTED          -51
 
 /* this is a define to provide the old (<= 1.2.7) name */
 #define LIBSSH2_ERROR_BANNER_NONE LIBSSH2_ERROR_BANNER_RECV
@@ -614,6 +656,8 @@ LIBSSH2_API const char *libssh2_session_banner_get(LIBSSH2_SESSION *session);
 LIBSSH2_API char *libssh2_userauth_list(LIBSSH2_SESSION *session,
                                         const char *username,
                                         unsigned int username_len);
+LIBSSH2_API int libssh2_userauth_banner(LIBSSH2_SESSION *session,
+                                        char **banner);
 LIBSSH2_API int libssh2_userauth_authenticated(LIBSSH2_SESSION *session);
 
 LIBSSH2_API int
@@ -705,6 +749,17 @@ libssh2_userauth_keyboard_interactive_ex(LIBSSH2_SESSION* session,
     libssh2_userauth_keyboard_interactive_ex((session), (username),     \
                                              (unsigned int)strlen(username), \
                                              (response_callback))
+
+LIBSSH2_API int
+libssh2_userauth_publickey_sk(LIBSSH2_SESSION *session,
+                              const char *username,
+                              size_t username_len,
+                              const char *privatekeydata,
+                              size_t privatekeydata_len,
+                              const char *passphrase,
+                              LIBSSH2_USERAUTH_SK_SIGN_FUNC
+                              ((*sign_callback)),
+                              void **abstract);
 
 LIBSSH2_API int libssh2_poll(LIBSSH2_POLLFD *fds, unsigned int nfds,
                              long timeout);
@@ -939,8 +994,21 @@ LIBSSH2_API int libssh2_base64_decode(LIBSSH2_SESSION *session, char **dest,
 LIBSSH2_API
 const char *libssh2_version(int req_version_num);
 
+typedef enum {
+    libssh2_no_crypto = 0,
+    libssh2_openssl,
+    libssh2_gcrypt,
+    libssh2_mbedtls,
+    libssh2_wincng
+} libssh2_crypto_engine_t;
+
+LIBSSH2_API
+libssh2_crypto_engine_t libssh2_crypto_engine(void);
+
 #define HAVE_LIBSSH2_KNOWNHOST_API 0x010101 /* since 1.1.1 */
 #define HAVE_LIBSSH2_VERSION_API   0x010100 /* libssh2_version since 1.1 */
+#define HAVE_LIBSSH2_CRYPTOENGINE_API 0x011100 /* libssh2_crypto_engine
+                                                  since 1.11 */
 
 struct libssh2_knownhost {
     unsigned int magic;  /* magic stored by the library */

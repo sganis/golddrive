@@ -30,6 +30,7 @@ namespace golddrive
                 d.MountPoint = drive.MountPoint;
                 d.Label = drive.Label;
                 d.Args = drive.Args;
+                d.AppKey = drive.AppKey;
                 d.Status = drive.Status;
             }
             else
@@ -90,6 +91,8 @@ namespace golddrive
                     var data = JsonConvert.DeserializeObject<Dictionary<string, object>>(_drives[_d].ToString());
                     if (data.ContainsKey("Args") && data["Args"] != null)
                         d.Args = data["Args"].ToString();
+                    if (data.ContainsKey("AppKey") && data["AppKey"] != null)
+                        d.AppKey = data["AppKey"].ToString();
                     if (data.ContainsKey("Label") && data["Label"] != null)
                         d.Label = data["Label"].ToString();
                     if (data.ContainsKey("MountPoint") && data["MountPoint"] != null)
