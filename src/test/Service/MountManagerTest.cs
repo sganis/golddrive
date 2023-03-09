@@ -24,7 +24,6 @@ namespace golddrive.Tests
             Label = "Golddrive",
             IsGoldDrive = true,
             Status = DriveStatus.DISCONNECTED,
-            Args = "-o cipher=aes128-gcm@openssh.com",
         };
 
         [TestInitialize]
@@ -41,7 +40,7 @@ namespace golddrive.Tests
         }
         public void Mount()
         {
-
+            _drive.AppKey = _drive.DefaultAppKey;
             var r = _mountService.Connect(_drive, null);
             if (r.DriveStatus != DriveStatus.CONNECTED)
                 Console.WriteLine($"ERROR: {r.Error}");

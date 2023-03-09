@@ -639,7 +639,7 @@ int main(int argc, char *argv[])
 		*u = tolower(*u);
 
 	// private key
-	if (!g_conf.pkey) {
+	if (!g_conf.pkey || strlen(g_conf.pkey) == 0) {
 		char* profile = getenv("USERPROFILE");
 		g_conf.pkey = malloc(MAX_PATH);
 		sprintf_s(g_conf.pkey, MAX_PATH, "%s\\.ssh\\id_rsa", profile);

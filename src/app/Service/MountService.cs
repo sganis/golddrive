@@ -614,8 +614,9 @@ namespace golddrive
         public ReturnBox TestSsh(Drive drive)
         {
             ReturnBox r = new ReturnBox();
+            string appkey = string.IsNullOrEmpty(drive.AppKey) ? drive.DefaultAppKey : drive.AppKey;
 
-            if (!File.Exists(drive.AppKey))
+            if (!File.Exists(appkey))
             {
                 r.MountStatus = MountStatus.BAD_KEY;
                 r.Error = String.Format($"Password is required to connnect to {drive.CurrentUser}@{drive.Host}:{drive.CurrentPort}.\nSSH keys will be generated and used in future conections.");
@@ -624,8 +625,7 @@ namespace golddrive
             try
             {
                 r.MountStatus = MountStatus.UNKNOWN;
-
-                var pk = new PrivateKeyFile(drive.AppKey);
+                var pk = new PrivateKeyFile(appkey);
                 var keyFiles = new[] { pk };
                 SshClient client = new SshClient(drive.Host, drive.CurrentPort, drive.CurrentUser, keyFiles);
                 client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(TIMEOUT);
@@ -636,12 +636,7 @@ namespace golddrive
             }
             catch (Exception ex)
             {
-                r.Error = ex.Message;
-                if (ex is SshAuthenticationException)
-                {
-                    r.MountStatus = MountStatus.BAD_KEY;
-                }
-                else if (ex is SocketException ||
+                if (ex is SocketException ||
                     ex is SshConnectionException ||
                     ex is InvalidOperationException ||
                     ex.Message.Contains("milliseconds"))
@@ -649,10 +644,10 @@ namespace golddrive
                     r.Error = "Host does not respond";
                     r.MountStatus = MountStatus.BAD_HOST;
                 }
-                else if (ex.Message.Contains("openssh key type:"))
+                else
                 {
                     // openssh keys not supported by ssh.net yet
-                    string args = $"-i \"{drive.AppKey}\" -p {drive.CurrentPort} -oPasswordAuthentication=no -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oBatchMode=yes -oConnectTimeout={TIMEOUT} { drive.CurrentUser}@{drive.Host} \"echo ok\"";
+                    string args = $"-i \"{appkey}\" -p {drive.CurrentPort} -oPasswordAuthentication=no -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oBatchMode=yes -oConnectTimeout={TIMEOUT} { drive.CurrentUser}@{drive.Host} \"echo ok\"";
                     var r1 = RunLocal("ssh.exe", args, TIMEOUT);
                     var ok = r1.Output.Trim() == "ok";
                     if (ok)
@@ -676,9 +671,9 @@ namespace golddrive
             try
             {
                 string pubkey = "";
-                if (File.Exists(drive.AppKey) && File.Exists(drive.AppPubKey))
+                if (File.Exists(drive.DefaultAppKey) && File.Exists(drive.DefaultAppPubKey))
                 {
-                    pubkey = File.ReadAllText(drive.AppPubKey);
+                    pubkey = File.ReadAllText(drive.DefaultAppPubKey);
                 }
                 else
                 {
@@ -731,15 +726,15 @@ namespace golddrive
                     Directory.CreateDirectory(dotssh);
                 if (!File.Exists(drive.AppKey))
                 {
-                    ReturnBox r = RunLocal($@"""{AppPath}\ssh-keygen.exe""", $@"-m PEM -N """" -f ""{drive.AppKey}""");
+                    ReturnBox r = RunLocal($@"""{AppPath}\ssh-keygen.exe""", $@"-t rsa -b 4096 -m PEM -N """" -f ""{drive.DefaultAppKey}""");
                 }
-                if (File.Exists(drive.AppPubKey))
+                if (File.Exists(drive.DefaultAppPubKey))
                 {
-                    pubkey = File.ReadAllText(drive.AppPubKey).Trim();
+                    pubkey = File.ReadAllText(drive.DefaultAppPubKey).Trim();
                 }
                 else
                 {
-                    ReturnBox r = RunLocal($@"""{AppPath}\ssh-keygen.exe""", $@"-y -f ""{drive.AppKey}""");
+                    ReturnBox r = RunLocal($@"""{AppPath}\ssh-keygen.exe""", $@"-y -f ""{drive.DefaultAppKey}""");
                     pubkey = r.Output;
                 }
 

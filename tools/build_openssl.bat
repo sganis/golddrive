@@ -5,7 +5,7 @@
 @echo off
 setlocal
 
-set VERSION=3.0.5
+set VERSION=3.0.8
 set TEMP=C:\Temp
 set PATH=C:\Program Files\NASM;C:\Strawberry\perl\bin;C:\Windows\System32;C:\Windows
 set DIR=%~dp0

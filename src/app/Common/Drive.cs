@@ -238,8 +238,10 @@ namespace golddrive
                 return $@"{UserProfile}\.ssh\id_rsa";
             }            
         }
-        public string AppPubKey
-        {
+        public string DefaultAppPubKey {
+            get { return $@"{DefaultAppKey}.pub"; }
+        }
+        public string AppPubKey {
             get { return $@"{AppKey}.pub"; }
         }
 
