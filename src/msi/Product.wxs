@@ -31,7 +31,9 @@
             InstallScope="perMachine" />
 
         <MajorUpgrade
-            DowngradeErrorMessage="A newer version of $(var.MyProductName) is already installed." 
+            AllowDowngrades="no"
+            DowngradeErrorMessage="A newer version of $(var.MyProductName) is already installed."
+            AllowSameVersionUpgrades="no"
             Schedule="afterInstallInitialize" />
 
         <Media Id="1" Cabinet="Golddrive.cab" EmbedCab="yes" />
