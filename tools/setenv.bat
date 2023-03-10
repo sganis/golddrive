@@ -62,6 +62,11 @@ set GOLDDRIVE_PASS=%PASS%
 set GOLDDRIVE_HOST=%HOST%
 set GOLDDRIVE_PORT=22
 
+set TEST_SSH_USER=%USER%
+set TEST_SSH_PASS=%PASS%
+set TEST_SSH_HOST=%HOST%
+set TEST_SSH_PORT=22
+
 doskey ll=dir
 doskey gc=if $1. neq . (git commit -am "$*" $T git push) else (echo "git commit and push usage: gc <message>")
 doskey gs=git status
