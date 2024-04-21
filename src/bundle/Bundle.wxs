@@ -14,7 +14,7 @@
                 LogoSideFile="logoside.png"/>
         </BootstrapperApplicationRef>
         <Chain>
-            <MsiPackage SourceFile="..\..\vendor\winfsp\winfsp-1.12.22339.msi" 
+            <MsiPackage SourceFile="..\..\vendor\winfsp\winfsp-2.0.23075.msi" 
                         Visible="yes">
               <MsiProperty Name="ADDLOCAL" Value="ALL" />
             </MsiPackage>
