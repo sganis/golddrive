@@ -371,7 +371,7 @@ int gd_fstat(intptr_t fd, struct fuse_stat* stbuf)
 	LIBSSH2_SFTP_HANDLE* handle = sh->file_handle;
 	assert(handle);
 
-	log_info("%s\n", sh->path);
+	log_info("FSTAT: %s\n", sh->path);
 
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
 
@@ -398,7 +398,8 @@ int gd_fstat(intptr_t fd, struct fuse_stat* stbuf)
 
 int gd_readlink(const char* path, char* buf, size_t size)
 {
-	log_info("%s, size=%zu\n", path, size);
+
+	log_info("READLINK: %s, size=%zu\n", path, size);
 	log_debug("%s, size=%zu, buf=%s\n", path, size, buf);
 	int rc;
 	assert(size > 0);

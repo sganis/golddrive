@@ -5,7 +5,7 @@
 @echo off
 setlocal
 
-set VERSION=3.0.8
+set VERSION=3.3.0
 set TEMP=C:\Temp
 set PATH=C:\Program Files\NASM;C:\Strawberry\perl\bin;C:\Windows\System32;C:\Windows
 set DIR=%~dp0
@@ -36,8 +36,7 @@ perl Configure 			    ^
 nmake build_generated
 nmake libcrypto.lib
 nmake install_dev
-xcopy C:\openssl-x64\lib\libcrypto.lib ^
-	%DIR%\..\vendor\openssl\lib\x64\libcrypto.lib* /y /s /i
+xcopy C:\openssl-x64\lib\libcrypto.lib %DIR%\..\vendor\openssl\lib\x64\libcrypto.lib* /y /s /i
 xcopy C:\openssl-x64\include %DIR%\..\vendor\openssl\include /y /s /i
 cd ..
 
