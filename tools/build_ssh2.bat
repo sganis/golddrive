@@ -8,7 +8,7 @@ setlocal
 set DIR=%~dp0
 set DIR=%DIR:~0,-1%
 set CWD=%CD%
-set VERSION=1.11.0
+set VERSION=1.11.1
 
 curl -L -O https://github.com/libssh2/libssh2/archive/refs/tags/libssh2-%VERSION%.zip
 tar xf libssh2-%VERSION%.zip
@@ -20,7 +20,6 @@ rem call "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxi
 mkdir build_x64
 cd build_x64
 cmake .. ^
- -A x64 ^
  -DCMAKE_INSTALL_PREFIX="C:/libssh2-x64"		^
  -DCMAKE_BUILD_TYPE=Release						^
  -DCRYPTO_BACKEND=OpenSSL               		^
@@ -43,7 +42,6 @@ call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary
 mkdir build_x86
 cd build_x86
 cmake .. ^
- -A Win32 ^
  -DCMAKE_INSTALL_PREFIX="C:/libssh2-x86"        ^
  -DCMAKE_BUILD_TYPE=Release                     ^
  -DCRYPTO_BACKEND=OpenSSL                       ^
