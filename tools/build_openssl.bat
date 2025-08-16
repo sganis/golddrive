@@ -5,7 +5,7 @@
 @echo off
 setlocal
 
-set VERSION=3.3.0
+set VERSION=3.5.2
 set TEMP=C:\Temp
 set PATH=C:\Program Files\NASM;C:\Strawberry\perl\bin;C:\Windows\System32;C:\Windows
 set DIR=%~dp0
@@ -23,15 +23,21 @@ tar xf openssl-%VERSION%.zip
 xcopy openssl-openssl-%VERSION% openssl-openssl-%VERSION%-x64 /s /e /i /y /q
 xcopy openssl-openssl-%VERSION% openssl-openssl-%VERSION%-x86 /s /e /i /y /q
 
+set CL=/O2 /arch:AVX2
+set LINK=
+
 cd openssl-openssl-%VERSION%-x64
 call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
 perl Configure 			    ^
 	VC-WIN64A 				^
 	no-shared               ^
+	no-ssl3 				^
+	no-comp					^
 	--api=1.1.0 			^
 	no-deprecated			^
 	--prefix=C:\openssl-x64	^
 	--openssldir=C:\openssl-x64
+
 
 nmake build_generated
 nmake libcrypto.lib
@@ -45,8 +51,9 @@ call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary
 perl Configure 			    ^
 	VC-WIN32 				^
 	no-shared               ^
+	no-ssl3 				^
+	no-comp					^
 	--api=1.1.0 			^
-	no-deprecated			^
 	--prefix=C:\openssl-x86	^
 	--openssldir=C:\openssl-x86
 

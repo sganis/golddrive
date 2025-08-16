@@ -10,8 +10,8 @@ set DIR=%DIR:~0,-1%
 set CWD=%CD%
 set VERSION=1.11.1
 
-curl -L -O https://github.com/libssh2/libssh2/archive/refs/tags/libssh2-%VERSION%.zip
-tar xf libssh2-%VERSION%.zip
+@REM curl -L -O https://github.com/libssh2/libssh2/archive/refs/tags/libssh2-%VERSION%.zip
+@REM tar xf libssh2-%VERSION%.zip
 cd libssh2-libssh2-%VERSION%
 
 call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat
