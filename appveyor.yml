@@ -1,21 +1,21 @@
 # golddrive
-version: 2.29.{build}
+version: 2.30.{build}
 image: 
   - Visual Studio 2019
-  - Visual Studio 2022
+  # - Visual Studio 2022
 platform: 
   - x64
-  - x86
+  # - x86
 configuration: 
   - Release
-  - Debug
+  # - Debug
 clone_depth: 1
 cache:
   - C:\cache
 
-matrix:
-  allow_failures:
-    - platform: x86
+# matrix:
+#   allow_failures:
+#     - platform: x86
 
 install:
   - dir C:\cache >nul 2>&1 || mkdir C:\cache
