@@ -824,6 +824,14 @@ int main(int argc, char *argv[])
 	// mount
 	rc = fuse_main(args.argc, args.argv, &fs_ops, NULL);
 	
+	// cleanup keepalive thread FIRST
+	if (g_keepalive_thread) {
+		g_keepalive_stop = 1;
+		WaitForSingleObject(g_keepalive_thread, 5000);
+		CloseHandle(g_keepalive_thread);
+		g_keepalive_thread = NULL;
+	}
+
 	// cleanup
 	if (uh) {
 		WaitForSingleObject(uh, 10000);
