@@ -139,6 +139,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <TargetName>golddrive</TargetName>
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir).build\$(Configuration)\$(PlatformTarget)\</OutDir>
+    <IntDir>$(SolutionDir).build\$(ProjectName).build\$(Configuration)\$(PlatformTarget)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <TargetName>golddrive</TargetName>
