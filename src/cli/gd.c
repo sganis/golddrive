@@ -7,6 +7,7 @@
 
 static HANDLE g_keepalive_thread = NULL;
 static int g_keepalive_stop = 0;
+DWORD WINAPI gd_keepalive_thread(LPVOID param);
 
 GDSSH* gd_init_ssh(void)
 {
