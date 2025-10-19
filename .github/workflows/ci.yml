@@ -35,6 +35,11 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
       - name: Setup cache directory
         shell: cmd
         run: |
@@ -52,12 +57,14 @@ jobs:
         id: version
         shell: pwsh
         run: |
-          $version = C:\Python310\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))"
+          $version = python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))"
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
           echo "Version: $version Configuration: ${{ matrix.configuration }} Platform: ${{ matrix.platform }}"
 
-      - name: Setup MSBuild
+      - name: Setup MSBuild (Visual Studio 2022)
         uses: microsoft/setup-msbuild@v2
+        with:
+          vs-version: '[17.0,18.0)'
 
       - name: Install WinFSP (full test builds)
         if: matrix.run_full_tests == true
@@ -79,19 +86,19 @@ jobs:
       - name: Install Python dependencies (full test only)
         if: matrix.run_full_tests == true
         shell: cmd
-        run: C:\Python310\python -m pip install --disable-pip-version-check paramiko >NUL
+        run: python -m pip install --disable-pip-version-check paramiko >NUL
 
       - name: Setup SSH (full test only)
         if: matrix.run_full_tests == true
         shell: cmd
-        run: C:\Python310\python tools\setupssh.py support@localhost support
+        run: python tools\setupssh.py support@localhost support
 
       - name: Build solution
         shell: cmd
         env:
           CONFIGURATION: ${{ matrix.configuration }}
           PLATFORM: ${{ matrix.platform }}
-        run: msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -p:Platform=%PLATFORM% -m /verbosity:minimal
+        run: msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -p:Platform=%PLATFORM% -p:PlatformToolset=v143 -m /verbosity:minimal
 
       - name: Check build version
         shell: cmd
@@ -164,3 +171,4 @@ jobs:
           name: golddrive-${{ steps.version.outputs.VERSION }}-${{ matrix.platform }}-exe
           path: src\.build\${{ matrix.configuration }}\${{ matrix.platform }}\golddrive-*-${{ matrix.platform }}.exe
           if-no-files-found: error
+          
