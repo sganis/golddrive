@@ -27,9 +27,6 @@ extern "C" {
  * OpenSSL was configured with the following options:
  */
 
-# ifndef OPENSSL_SYS_WIN64A
-#  define OPENSSL_SYS_WIN64A 1
-# endif
 # define OPENSSL_CONFIGURED_API 10100
 # ifndef OPENSSL_RAND_SEED_OS
 #  define OPENSSL_RAND_SEED_OS
@@ -43,17 +40,20 @@ extern "C" {
 # ifndef OPENSSL_NO_AFALGENG
 #  define OPENSSL_NO_AFALGENG
 # endif
+# ifndef OPENSSL_NO_ALLOCFAIL_TESTS
+#  define OPENSSL_NO_ALLOCFAIL_TESTS
+# endif
 # ifndef OPENSSL_NO_ASAN
 #  define OPENSSL_NO_ASAN
+# endif
+# ifndef OPENSSL_NO_ASM
+#  define OPENSSL_NO_ASM
 # endif
 # ifndef OPENSSL_NO_BROTLI
 #  define OPENSSL_NO_BROTLI
 # endif
 # ifndef OPENSSL_NO_BROTLI_DYNAMIC
 #  define OPENSSL_NO_BROTLI_DYNAMIC
-# endif
-# ifndef OPENSSL_NO_COMP
-#  define OPENSSL_NO_COMP
 # endif
 # ifndef OPENSSL_NO_CRYPTO_MDEBUG
 #  define OPENSSL_NO_CRYPTO_MDEBUG
@@ -105,6 +105,9 @@ extern "C" {
 # endif
 # ifndef OPENSSL_NO_KTLS
 #  define OPENSSL_NO_KTLS
+# endif
+# ifndef OPENSSL_NO_LMS
+#  define OPENSSL_NO_LMS
 # endif
 # ifndef OPENSSL_NO_LOADERENG
 #  define OPENSSL_NO_LOADERENG
@@ -185,7 +188,7 @@ extern "C" {
 #  undef THIRTY_TWO_BIT
 # endif
 
-# define RC4_INT unsigned int
+# define RC4_INT unsigned char
 
 # if defined(OPENSSL_NO_COMP) || (defined(OPENSSL_NO_BROTLI) && defined(OPENSSL_NO_ZSTD) && defined(OPENSSL_NO_ZLIB))
 #  define OPENSSL_NO_COMP_ALG
