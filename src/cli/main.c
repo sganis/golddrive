@@ -28,6 +28,12 @@ DWORD WINAPI gd_keepalive_thread(LPVOID param)
     HANDLE stop_event = (HANDLE)param;
     int seconds_to_next;
     DWORD wait_result;
+
+	// ADD THIS: Wait 5 seconds for mount to complete
+    wait_result = WaitForSingleObject(stop_event, 5000);
+    if (wait_result == WAIT_OBJECT_0) {
+        return 0;  // Stopped during initial delay
+    }
     
     while (1) {
         // Wait 30 seconds OR until stop event is signaled
@@ -862,7 +868,7 @@ int main(int argc, char *argv[])
 		WaitForSingleObject(uh, 10000);
 		CloseHandle(uh);
 	}
-	
+
 	// this prouces disconnection delays
 	//uh = gd_usage("disconnected");
 	////if (uh) {
