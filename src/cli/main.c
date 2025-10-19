@@ -19,8 +19,29 @@ GDCONFIG			g_conf;
 char*				g_logfile;
 char*				g_logurl;
 
-static void* f_init(struct fuse_conn_info* conn, 
-	struct fuse_config* conf)
+HANDLE g_keepalive_thread = NULL;
+int g_keepalive_stop = 0;
+
+DWORD WINAPI gd_keepalive_thread(LPVOID param)
+{
+    int* stop = (int*)param;
+    int seconds_to_next;
+	Sleep(60000);  // Wait 60 seconds before first keepalive
+    
+    while (!(*stop)) {
+        Sleep(30000);
+        if (*stop) break;
+        
+        gd_lock();
+        if (g_ssh && g_ssh->ssh) {
+            libssh2_keepalive_send(g_ssh->ssh, &seconds_to_next);
+        }
+        gd_unlock();
+    }
+    return 0;
+}
+
+static void* f_init(struct fuse_conn_info* conn, struct fuse_config* conf)
 {
 #if defined(FUSE_CAP_READDIRPLUS)
 	conn->want |= (conn->capable & FUSE_CAP_READDIRPLUS);
@@ -732,6 +753,13 @@ int main(int argc, char *argv[])
 	g_ssh = gd_init_ssh();
 	if (!g_ssh)
 		return 1;
+
+	// keepalive thread
+	g_keepalive_stop = 0;
+	g_keepalive_thread = CreateThread(NULL, 0, gd_keepalive_thread, &g_keepalive_stop, 0, NULL);
+	if (!g_keepalive_thread) {
+		gd_log("Warning: Failed to create keepalive thread\n");
+	}
 
 	// usage
 	HANDLE* uh = gd_usage("CONNECTED", "");

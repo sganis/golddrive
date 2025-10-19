@@ -5,9 +5,6 @@
 #include "cache.h"
 #include <Winhttp.h>
 
-static HANDLE g_keepalive_thread = NULL;
-static int g_keepalive_stop = 0;
-DWORD WINAPI gd_keepalive_thread(LPVOID param);
 
 GDSSH* gd_init_ssh(void)
 {
@@ -289,22 +286,12 @@ GDSSH* gd_init_ssh(void)
 		g_ssh->thread = GetCurrentThreadId();
 	}
 
-	// start keepalive thread
-	g_keepalive_stop = 0;
-	g_keepalive_thread = CreateThread(NULL, 0, gd_keepalive_thread, &g_keepalive_stop, 0, NULL);
-
 	return g_ssh;
 }
 
 int gd_finalize(int error)
 {
 	log_info("FINALIZE\n");
-
-	if (g_keepalive_thread) {
-		g_keepalive_stop = 1;
-		WaitForSingleObject(g_keepalive_thread, 5000);
-		CloseHandle(g_keepalive_thread);
-	}
 
 	while (libssh2_channel_close(g_ssh->channel) ==
 		LIBSSH2_ERROR_EAGAIN);
@@ -325,24 +312,6 @@ int gd_finalize(int error)
 	printf("sftp calls: %zu\n", g_sftp_calls);
 	
 	return error;
-}
-
-DWORD WINAPI gd_keepalive_thread(LPVOID param)
-{
-    int* stop = (int*)param;
-    int seconds_to_next;
-    
-    while (!(*stop)) {
-        Sleep(30000);
-        if (*stop) break;
-        
-        gd_lock();
-        if (g_ssh && g_ssh->ssh) {
-            libssh2_keepalive_send(g_ssh->ssh, &seconds_to_next);
-        }
-        gd_unlock();
-    }
-    return 0;
 }
 
 int gd_stat(const char* path, struct fuse_stat* stbuf)
