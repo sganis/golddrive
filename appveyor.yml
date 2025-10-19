@@ -68,9 +68,8 @@ for:
         # - image: Visual Studio 2022
         - image: Visual Studio 2019
           platform: x64
-          configuration: Release
-        # - image: Visual Studio 2019
-        #   platform: x86
+        - image: Visual Studio 2019
+          platform: x86
     build_script:
       - start /wait msiexec /i vendor\winfsp\winfsp-1.12.22339.msi /qn ADDLOCAL=ALL
       - msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -m /verbosity:quiet /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
