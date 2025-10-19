@@ -98,7 +98,7 @@ jobs:
         env:
           CONFIGURATION: ${{ matrix.configuration }}
           PLATFORM: ${{ matrix.platform }}
-        run: msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -p:Platform=%PLATFORM% -p:PlatformToolset=v143 -m /verbosity:minimal
+        run: msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -p:Platform=%PLATFORM% -p:PlatformToolset=v143 -m /verbosity:quiet
 
       - name: Check build version
         shell: cmd
@@ -106,8 +106,6 @@ jobs:
           CONFIGURATION: ${{ matrix.configuration }}
           PLATFORM: ${{ matrix.platform }}
         run: src\.build\%CONFIGURATION%\%PLATFORM%\golddrive.exe --version
-        # ARM64 binaries won't run on x64 host, so skip for ARM64
-        if: matrix.platform != 'ARM64'
 
       - name: Install MSI
         shell: cmd
@@ -171,4 +169,3 @@ jobs:
           name: golddrive-${{ steps.version.outputs.VERSION }}-${{ matrix.platform }}-exe
           path: src\.build\${{ matrix.configuration }}\${{ matrix.platform }}\golddrive-*-${{ matrix.platform }}.exe
           if-no-files-found: error
-          
