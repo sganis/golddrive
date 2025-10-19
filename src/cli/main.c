@@ -19,25 +19,33 @@ GDCONFIG			g_conf;
 char*				g_logfile;
 char*				g_logurl;
 
+
 HANDLE g_keepalive_thread = NULL;
-int g_keepalive_stop = 0;
+HANDLE g_keepalive_stop_event = NULL;
 
 DWORD WINAPI gd_keepalive_thread(LPVOID param)
 {
-    int* stop = (int*)param;
+    HANDLE stop_event = (HANDLE)param;
     int seconds_to_next;
-	Sleep(60000);  // Wait 60 seconds before first keepalive
+    DWORD wait_result;
     
-    while (!(*stop)) {
-        Sleep(30000);
-        if (*stop) break;
+    while (1) {
+        // Wait 30 seconds OR until stop event is signaled
+        wait_result = WaitForSingleObject(stop_event, 30000);
         
+        if (wait_result == WAIT_OBJECT_0) {
+            // Stop event was signaled - exit immediately
+            break;
+        }
+        
+        // Timeout occurred - send keepalive
         gd_lock();
         if (g_ssh && g_ssh->ssh) {
             libssh2_keepalive_send(g_ssh->ssh, &seconds_to_next);
         }
         gd_unlock();
     }
+    
     return 0;
 }
 
@@ -754,11 +762,18 @@ int main(int argc, char *argv[])
 	if (!g_ssh)
 		return 1;
 
-	// keepalive thread
-	g_keepalive_stop = 0;
-	g_keepalive_thread = CreateThread(NULL, 0, gd_keepalive_thread, &g_keepalive_stop, 0, NULL);
-	if (!g_keepalive_thread) {
-		gd_log("Warning: Failed to create keepalive thread\n");
+	// keepalive event
+	g_keepalive_stop_event = CreateEvent(NULL, TRUE, FALSE, NULL);
+	if (g_keepalive_stop_event) {
+		g_keepalive_thread = CreateThread(NULL, 0, gd_keepalive_thread, 
+										g_keepalive_stop_event, 0, NULL);
+		if (!g_keepalive_thread) {
+			gd_log("Warning: Failed to create keepalive thread\n");
+			CloseHandle(g_keepalive_stop_event);
+			g_keepalive_stop_event = NULL;
+		}
+	} else {
+		gd_log("Warning: Failed to create keepalive stop event\n");
 	}
 
 	// usage
@@ -824,12 +839,22 @@ int main(int argc, char *argv[])
 	// mount
 	rc = fuse_main(args.argc, args.argv, &fs_ops, NULL);
 	
-	// cleanup keepalive thread FIRST
+	// cleanup keepalive
 	if (g_keepalive_thread) {
-		g_keepalive_stop = 1;
-		WaitForSingleObject(g_keepalive_thread, 5000);
+		// Signal the thread to stop
+		if (g_keepalive_stop_event) {
+			SetEvent(g_keepalive_stop_event);
+		}
+		
+		// Wait for thread to exit (should be immediate now)
+		WaitForSingleObject(g_keepalive_thread, 1000);  // Reduced to 1 second
 		CloseHandle(g_keepalive_thread);
 		g_keepalive_thread = NULL;
+		
+		if (g_keepalive_stop_event) {
+			CloseHandle(g_keepalive_stop_event);
+			g_keepalive_stop_event = NULL;
+		}
 	}
 
 	// cleanup
@@ -837,6 +862,7 @@ int main(int argc, char *argv[])
 		WaitForSingleObject(uh, 10000);
 		CloseHandle(uh);
 	}
+	
 	// this prouces disconnection delays
 	//uh = gd_usage("disconnected");
 	////if (uh) {
