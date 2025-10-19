@@ -62,6 +62,11 @@ if exist "libssh2-%VERSION%.zip" (
 rd /s /q libssh2-libssh2-%VERSION% 2>nul
 echo Extracting libssh2 %VERSION%...
 tar xf libssh2-%VERSION%.zip
+if errorlevel 1 (
+    echo Error: Failed to extract libssh2
+    cd %CWD%
+    exit /b 1
+)
 cd libssh2-libssh2-%VERSION%
 
 :: ====================================
@@ -77,6 +82,11 @@ echo ========================================
 echo Building libssh2 for x64...
 echo ========================================
 call %VCVARSALL% x64
+if errorlevel 1 (
+    echo Error: Failed to initialize Visual Studio environment for x64
+    cd %CWD%
+    exit /b 1
+)
 mkdir build_x64
 cd build_x64
 cmake .. ^
@@ -92,7 +102,17 @@ cmake .. ^
  -DBUILD_EXAMPLES=OFF                           ^
  -DENABLE_CRYPT_NONE=ON                         ^
  -DCLEAR_MEMORY=OFF
+if errorlevel 1 (
+    echo Error: CMake configuration failed for x64
+    cd %CWD%
+    exit /b 1
+)
 cmake --build . --config Release --target install
+if errorlevel 1 (
+    echo Error: CMake build failed for x64
+    cd %CWD%
+    exit /b 1
+)
 xcopy C:\libssh2-x64\lib\libssh2.lib %DIR%\..\vendor\libssh2\lib\x64\libssh2.lib* /y /s /i
 xcopy C:\libssh2-x64\include %DIR%\..\vendor\libssh2\include /y /s /i
 cd ..
@@ -112,6 +132,11 @@ echo ========================================
 echo Building libssh2 for x86...
 echo ========================================
 call %VCVARSALL% x86
+if errorlevel 1 (
+    echo Error: Failed to initialize Visual Studio environment for x86
+    cd %CWD%
+    exit /b 1
+)
 mkdir build_x86
 cd build_x86
 cmake .. ^
@@ -127,8 +152,19 @@ cmake .. ^
  -DBUILD_EXAMPLES=OFF                           ^
  -DENABLE_CRYPT_NONE=ON                         ^
  -DCLEAR_MEMORY=OFF
+if errorlevel 1 (
+    echo Error: CMake configuration failed for x86
+    cd %CWD%
+    exit /b 1
+)
 cmake --build . --config Release --target install
+if errorlevel 1 (
+    echo Error: CMake build failed for x86
+    cd %CWD%
+    exit /b 1
+)
 xcopy C:\libssh2-x86\lib\libssh2.lib %DIR%\..\vendor\libssh2\lib\x86\libssh2.lib* /y /s /i
+xcopy C:\libssh2-x86\include %DIR%\..\vendor\libssh2\include /y /s /i
 cd ..
 
 :skip_x86
@@ -146,6 +182,12 @@ echo ========================================
 echo Building libssh2 for ARM64...
 echo ========================================
 call %VCVARSALL% amd64_arm64
+if errorlevel 1 (
+    echo Error: Failed to initialize Visual Studio environment for ARM64
+    echo Make sure you have "C++ ARM64 build tools" installed in Visual Studio
+    cd %CWD%
+    exit /b 1
+)
 mkdir build_arm64
 cd build_arm64
 cmake .. ^
@@ -161,8 +203,19 @@ cmake .. ^
  -DBUILD_EXAMPLES=OFF                           ^
  -DENABLE_CRYPT_NONE=ON                         ^
  -DCLEAR_MEMORY=OFF
+if errorlevel 1 (
+    echo Error: CMake configuration failed for ARM64
+    cd %CWD%
+    exit /b 1
+)
 cmake --build . --config Release --target install
+if errorlevel 1 (
+    echo Error: CMake build failed for ARM64
+    cd %CWD%
+    exit /b 1
+)
 xcopy C:\libssh2-arm64\lib\libssh2.lib %DIR%\..\vendor\libssh2\lib\arm64\libssh2.lib* /y /s /i
+xcopy C:\libssh2-arm64\include %DIR%\..\vendor\libssh2\include /y /s /i
 cd ..
 
 :skip_arm64

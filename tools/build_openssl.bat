@@ -6,7 +6,7 @@
 setlocal
 set VERSION=3.6.0
 set TEMP=C:\Temp
-set PATH=C:\Program Files\NASM;C:\Strawberry\perl\bin;C:\Windows\System32;C:\Windows
+set BASE_PATH=C:\Strawberry\perl\bin;C:\Windows\System32;C:\Windows
 set DIR=%~dp0
 set DIR=%DIR:~0,-1%
 set CWD=%CD%
@@ -62,6 +62,11 @@ if exist "openssl-%VERSION%.zip" (
 rd /s /q openssl-openssl-%VERSION% 2>nul
 echo Extracting OpenSSL %VERSION%...
 tar xf openssl-%VERSION%.zip
+if errorlevel 1 (
+    echo Error: Failed to extract OpenSSL
+    cd %CWD%
+    exit /b 1
+)
 
 :: Create directories for requested architectures
 if /i "%ARCH%"=="x64" xcopy openssl-openssl-%VERSION% openssl-openssl-%VERSION%-x64 /s /e /i /y /q
@@ -86,7 +91,14 @@ echo ========================================
 echo Building OpenSSL for x64...
 echo ========================================
 cd openssl-openssl-%VERSION%-x64
+:: Set PATH with NASM for x86/x64 builds
+set PATH=C:\Program Files\NASM;%BASE_PATH%
 call %VCVARSALL% x64
+if errorlevel 1 (
+    echo Error: Failed to initialize Visual Studio environment for x64
+    cd %CWD%
+    exit /b 1
+)
 perl Configure                  ^
     VC-WIN64A                   ^
     no-shared                   ^
@@ -94,9 +106,29 @@ perl Configure                  ^
     no-deprecated               ^
     --prefix=C:\openssl-x64     ^
     --openssldir=C:\openssl-x64
+if errorlevel 1 (
+    echo Error: OpenSSL Configure failed for x64
+    cd %CWD%
+    exit /b 1
+)
 nmake build_generated
+if errorlevel 1 (
+    echo Error: nmake build_generated failed for x64
+    cd %CWD%
+    exit /b 1
+)
 nmake libcrypto.lib
+if errorlevel 1 (
+    echo Error: nmake libcrypto.lib failed for x64
+    cd %CWD%
+    exit /b 1
+)
 nmake install_dev
+if errorlevel 1 (
+    echo Error: nmake install_dev failed for x64
+    cd %CWD%
+    exit /b 1
+)
 xcopy C:\openssl-x64\lib\libcrypto.lib %DIR%\..\vendor\openssl\lib\x64\libcrypto.lib* /y /s /i
 xcopy C:\openssl-x64\include %DIR%\..\vendor\openssl\include /y /s /i
 cd ..
@@ -116,7 +148,14 @@ echo ========================================
 echo Building OpenSSL for x86...
 echo ========================================
 cd openssl-openssl-%VERSION%-x86
+:: Set PATH with NASM for x86/x64 builds
+set PATH=C:\Program Files\NASM;%BASE_PATH%
 call %VCVARSALL% x86
+if errorlevel 1 (
+    echo Error: Failed to initialize Visual Studio environment for x86
+    cd %CWD%
+    exit /b 1
+)
 perl Configure                  ^
     VC-WIN32                    ^
     no-shared                   ^
@@ -124,11 +163,31 @@ perl Configure                  ^
     no-deprecated               ^
     --prefix=C:\openssl-x86     ^
     --openssldir=C:\openssl-x86
+if errorlevel 1 (
+    echo Error: OpenSSL Configure failed for x86
+    cd %CWD%
+    exit /b 1
+)
 nmake build_generated
+if errorlevel 1 (
+    echo Error: nmake build_generated failed for x86
+    cd %CWD%
+    exit /b 1
+)
 nmake libcrypto.lib
+if errorlevel 1 (
+    echo Error: nmake libcrypto.lib failed for x86
+    cd %CWD%
+    exit /b 1
+)
 nmake install_dev
-xcopy C:\openssl-x86\lib\libcrypto.lib ^
-    %DIR%\..\vendor\openssl\lib\x86\libcrypto.lib* /y /s /i
+if errorlevel 1 (
+    echo Error: nmake install_dev failed for x86
+    cd %CWD%
+    exit /b 1
+)
+xcopy C:\openssl-x86\lib\libcrypto.lib %DIR%\..\vendor\openssl\lib\x86\libcrypto.lib* /y /s /i
+xcopy C:\openssl-x86\include %DIR%\..\vendor\openssl\include /y /s /i
 cd ..
 
 :skip_x86
@@ -146,7 +205,16 @@ echo ========================================
 echo Building OpenSSL for ARM64...
 echo ========================================
 cd openssl-openssl-%VERSION%-arm64
+:: Set PATH without NASM for ARM64 (NASM is x86/x64 only)
+set PATH=%BASE_PATH%
 call %VCVARSALL% amd64_arm64
+if errorlevel 1 (
+    echo Error: Failed to initialize Visual Studio environment for ARM64
+    echo Make sure you have "C++ ARM64 build tools" installed in Visual Studio
+    cd %CWD%
+    exit /b 1
+)
+echo Note: NASM not needed for ARM64 build (x86/x64 only)
 perl Configure                  ^
     VC-WIN64-ARM                ^
     no-shared                   ^
@@ -154,11 +222,31 @@ perl Configure                  ^
     no-deprecated               ^
     --prefix=C:\openssl-arm64   ^
     --openssldir=C:\openssl-arm64
+if errorlevel 1 (
+    echo Error: OpenSSL Configure failed for ARM64
+    cd %CWD%
+    exit /b 1
+)
 nmake build_generated
+if errorlevel 1 (
+    echo Error: nmake build_generated failed for ARM64
+    cd %CWD%
+    exit /b 1
+)
 nmake libcrypto.lib
+if errorlevel 1 (
+    echo Error: nmake libcrypto.lib failed for ARM64
+    cd %CWD%
+    exit /b 1
+)
 nmake install_dev
-xcopy C:\openssl-arm64\lib\libcrypto.lib ^
-    %DIR%\..\vendor\openssl\lib\arm64\libcrypto.lib* /y /s /i
+if errorlevel 1 (
+    echo Error: nmake install_dev failed for ARM64
+    cd %CWD%
+    exit /b 1
+)
+xcopy C:\openssl-arm64\lib\libcrypto.lib %DIR%\..\vendor\openssl\lib\arm64\libcrypto.lib* /y /s /i
+xcopy C:\openssl-arm64\include %DIR%\..\vendor\openssl\include /y /s /i
 cd ..
 
 :skip_arm64
@@ -166,7 +254,10 @@ cd ..
 :: Cleanup
 echo.
 echo Cleaning up temporary files...
-rd /s /q openssl-* 2>nul
+rd /s /q openssl-openssl-%VERSION% 2>nul
+rd /s /q openssl-openssl-%VERSION%-x64 2>nul
+rd /s /q openssl-openssl-%VERSION%-x86 2>nul
+rd /s /q openssl-openssl-%VERSION%-arm64 2>nul
 cd %CWD%
 
 echo.
