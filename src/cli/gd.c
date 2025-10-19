@@ -46,9 +46,6 @@ GDSSH* gd_init_ssh(void)
 			time_mu(), thread, __func__, __LINE__);
 		return 0;
 	}
-	
-	/*libssh2_keepalive_config(ssh, 1, 2);
-	libssh2_keepalive_send(ssh, 1);*/
 
 	/* supported symetric algorithms */
 	//const char** algorithms;
@@ -180,6 +177,9 @@ GDSSH* gd_init_ssh(void)
 		return 0;
 	}
 
+	// keepalive
+	libssh2_keepalive_config(ssh, 1, 60);
+
 	gd_log("Session symmetric encryption:\n\t%s\n", 
 		libssh2_session_methods(ssh, LIBSSH2_METHOD_CRYPT_CS));
 	gd_log("Session key exchange:\n\t%s\n",
@@ -285,6 +285,7 @@ GDSSH* gd_init_ssh(void)
 		g_ssh->channel = channel;
 		g_ssh->thread = GetCurrentThreadId();
 	}
+
 	return g_ssh;
 }
 
@@ -337,8 +338,8 @@ int gd_stat(const char* path, struct fuse_stat* stbuf)
 		if (errno == EIO) {
 			// terminate
 			//gd_finalize(EIO);
-			gd_log("Program terminated after I/O error.");
-			exit(EIO);
+			gd_log("I/O error detected, connection may be lost.");
+			//exit(EIO);
 		}
 	}
 	copy_attributes(stbuf, &attrs);

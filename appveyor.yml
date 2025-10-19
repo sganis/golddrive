@@ -1,21 +1,21 @@
 # golddrive
-version: 2.29.{build}
+version: 2.31.{build}
 image: 
   - Visual Studio 2019
-  - Visual Studio 2022
+  # - Visual Studio 2022
 platform: 
   - x64
   - x86
 configuration: 
   - Release
-  - Debug
+  # - Debug
 clone_depth: 1
 cache:
   - C:\cache
 
-matrix:
-  allow_failures:
-    - platform: x86
+# matrix:
+#   allow_failures:
+#     - platform: x86
 
 install:
   - dir C:\cache >nul 2>&1 || mkdir C:\cache
@@ -36,7 +36,7 @@ for:
           platform: x64
           configuration: Release
     build_script:
-      - start /wait msiexec /i vendor\winfsp\winfsp-2.0.23075.msi /qn ADDLOCAL=ALL
+      - start /wait msiexec /i vendor\winfsp\winfsp-2.1.25156.msi /qn ADDLOCAL=ALL
       - wslconfig /u Ubuntu-18.04
       - ps: tools\setup_wsl.ps1
       - C:\Python310\python -m pip install --disable-pip-version-check paramiko >NUL
@@ -65,14 +65,14 @@ for:
   -
     matrix:
       only:
-        - image: Visual Studio 2022
+        # - image: Visual Studio 2022
         - image: Visual Studio 2019
           platform: x64
-          configuration: Debug
+          # configuration: Debug
         - image: Visual Studio 2019
           platform: x86
     build_script:
-      - start /wait msiexec /i vendor\winfsp\winfsp-2.0.23075.msi /qn ADDLOCAL=ALL
+      - start /wait msiexec /i vendor\winfsp\winfsp-2.1.25156.msi /qn ADDLOCAL=ALL
       - msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -m /verbosity:quiet /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
       - src\.build\%CONFIGURATION%\%PLATFORM%\golddrive.exe --version
       - start /wait msiexec /i src\.build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%.msi /qn

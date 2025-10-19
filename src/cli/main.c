@@ -19,8 +19,43 @@ GDCONFIG			g_conf;
 char*				g_logfile;
 char*				g_logurl;
 
-static void* f_init(struct fuse_conn_info* conn, 
-	struct fuse_config* conf)
+
+HANDLE g_keepalive_thread = NULL;
+HANDLE g_keepalive_stop_event = NULL;
+
+DWORD WINAPI gd_keepalive_thread(LPVOID param)
+{
+    HANDLE stop_event = (HANDLE)param;
+    int seconds_to_next;
+    DWORD wait_result;
+
+	// ADD THIS: Wait 5 seconds for mount to complete
+    wait_result = WaitForSingleObject(stop_event, 5000);
+    if (wait_result == WAIT_OBJECT_0) {
+        return 0;  // Stopped during initial delay
+    }
+    
+    while (1) {
+        // Wait 30 seconds OR until stop event is signaled
+        wait_result = WaitForSingleObject(stop_event, 30000);
+        
+        if (wait_result == WAIT_OBJECT_0) {
+            // Stop event was signaled - exit immediately
+            break;
+        }
+        
+        // Timeout occurred - send keepalive
+        gd_lock();
+        if (g_ssh && g_ssh->ssh) {
+            libssh2_keepalive_send(g_ssh->ssh, &seconds_to_next);
+        }
+        gd_unlock();
+    }
+    
+    return 0;
+}
+
+static void* f_init(struct fuse_conn_info* conn, struct fuse_config* conf)
 {
 #if defined(FUSE_CAP_READDIRPLUS)
 	conn->want |= (conn->capable & FUSE_CAP_READDIRPLUS);
@@ -733,6 +768,20 @@ int main(int argc, char *argv[])
 	if (!g_ssh)
 		return 1;
 
+	// keepalive event
+	g_keepalive_stop_event = CreateEvent(NULL, TRUE, FALSE, NULL);
+	if (g_keepalive_stop_event) {
+		g_keepalive_thread = CreateThread(NULL, 0, gd_keepalive_thread, 
+										g_keepalive_stop_event, 0, NULL);
+		if (!g_keepalive_thread) {
+			gd_log("Warning: Failed to create keepalive thread\n");
+			CloseHandle(g_keepalive_stop_event);
+			g_keepalive_stop_event = NULL;
+		}
+	} else {
+		gd_log("Warning: Failed to create keepalive stop event\n");
+	}
+
 	// usage
 	HANDLE* uh = gd_usage("CONNECTED", "");
 
@@ -796,11 +845,30 @@ int main(int argc, char *argv[])
 	// mount
 	rc = fuse_main(args.argc, args.argv, &fs_ops, NULL);
 	
+	// cleanup keepalive
+	if (g_keepalive_thread) {
+		// Signal the thread to stop
+		if (g_keepalive_stop_event) {
+			SetEvent(g_keepalive_stop_event);
+		}
+		
+		// Wait for thread to exit (should be immediate now)
+		WaitForSingleObject(g_keepalive_thread, 1000);  // Reduced to 1 second
+		CloseHandle(g_keepalive_thread);
+		g_keepalive_thread = NULL;
+		
+		if (g_keepalive_stop_event) {
+			CloseHandle(g_keepalive_stop_event);
+			g_keepalive_stop_event = NULL;
+		}
+	}
+
 	// cleanup
 	if (uh) {
 		WaitForSingleObject(uh, 10000);
 		CloseHandle(uh);
 	}
+
 	// this prouces disconnection delays
 	//uh = gd_usage("disconnected");
 	////if (uh) {
