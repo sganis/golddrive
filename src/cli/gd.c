@@ -49,8 +49,6 @@ GDSSH* gd_init_ssh(void)
 			time_mu(), thread, __func__, __LINE__);
 		return 0;
 	}
-	
-	libssh2_keepalive_config(ssh, 1, 60);
 
 	/* supported symetric algorithms */
 	//const char** algorithms;
@@ -181,6 +179,9 @@ GDSSH* gd_init_ssh(void)
 			time_mu(), thread, __func__, __LINE__, rc, errmsg);
 		return 0;
 	}
+
+	// keepalive
+	libssh2_keepalive_config(ssh, 1, 60);
 
 	gd_log("Session symmetric encryption:\n\t%s\n", 
 		libssh2_session_methods(ssh, LIBSSH2_METHOD_CRYPT_CS));
