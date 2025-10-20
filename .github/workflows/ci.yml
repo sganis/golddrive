@@ -2,9 +2,7 @@ name: Build golddrive
 
 on:
   push:
-    branches: [ main, master, develop ]
-  pull_request:
-    branches: [ main, master, develop ]
+    branches: [ master ]
   workflow_dispatch:
 
 env:
@@ -12,22 +10,18 @@ env:
 
 jobs:
   build-and-test:
-    runs-on: windows-2025
     strategy:
       fail-fast: false
       matrix:
-        platform: [x64, x86, ARM64]
-        configuration: [Release]
         include:
           - platform: x64
             configuration: Release
-            run_full_tests: true
-          - platform: x86
-            configuration: Release
-            run_full_tests: false
+            runs-on: windows-2025
           - platform: ARM64
             configuration: Release
-            run_full_tests: false
+            runs-on: windows-11-arm
+    
+    runs-on: ${{ matrix.runs-on }}
     
     steps:
       - name: Checkout code
@@ -49,9 +43,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: C:\cache
-          key: ${{ runner.os }}-cache-${{ hashFiles('**/lockfiles') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-cache-${{ hashFiles('**/lockfiles') }}
           restore-keys: |
-            ${{ runner.os }}-cache-
+            ${{ runner.os }}-${{ runner.arch }}-cache-
 
       - name: Extract version
         id: version
@@ -66,30 +60,21 @@ jobs:
         with:
           vs-version: '[17.0,18.0)'
 
-      - name: Install WinFSP (full test builds)
-        if: matrix.run_full_tests == true
+      - name: Install WinFSP
         shell: cmd
-        run: start /wait msiexec /i vendor\winfsp\winfsp-2.1.25156.msi /qn ADDLOCAL=ALL
+        run: start /wait msiexec /i vendor\winfsp\winfsp-1.12.22339.msi /qn ADDLOCAL=ALL
 
-      - name: Install WinFSP (non-test builds)
-        if: matrix.run_full_tests != true
-        shell: cmd
-        run: start /wait msiexec /i vendor\winfsp\winfsp-2.1.25156.msi /qn ADDLOCAL=ALL
-
-      - name: Setup WSL (full test only)
-        if: matrix.run_full_tests == true
+      - name: Setup WSL
         shell: pwsh
         run: |
           wslconfig /u Ubuntu-18.04
           tools\setup_wsl.ps1
 
-      - name: Install Python dependencies (full test only)
-        if: matrix.run_full_tests == true
+      - name: Install Python dependencies
         shell: cmd
-        run: python -m pip install --disable-pip-version-check paramiko >NUL
+        run: python -m pip install --disable-pip-version-check paramiko
 
-      - name: Setup SSH (full test only)
-        if: matrix.run_full_tests == true
+      - name: Setup SSH
         shell: cmd
         run: python tools\setupssh.py support@localhost support
 
@@ -98,7 +83,7 @@ jobs:
         env:
           CONFIGURATION: ${{ matrix.configuration }}
           PLATFORM: ${{ matrix.platform }}
-        run: msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -p:Platform=%PLATFORM% -p:PlatformToolset=v143 -m /verbosity:quiet
+        run: msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -p:Platform=%PLATFORM% -p:PlatformToolset=v143 -m /verbosity:normal
 
       - name: Check build version
         shell: cmd
@@ -114,33 +99,22 @@ jobs:
           PLATFORM: ${{ matrix.platform }}
           VERSION: ${{ steps.version.outputs.VERSION }}
         run: start /wait msiexec /i src\.build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%.msi /qn
-        # Skip installation test for ARM64 since it can't run on x64 host
-        if: matrix.platform != 'ARM64'
 
-      - name: Verify installation (x64)
-        if: matrix.platform == 'x64'
+      - name: Verify installation
         shell: cmd
         run: call "c:\Program Files\Golddrive\golddrive.exe" --version
 
-      - name: Verify installation (x86)
-        if: matrix.platform == 'x86'
-        shell: cmd
-        run: call "c:\Program Files (x86)\Golddrive\golddrive.exe" --version
-
       - name: Run basic tests
-        if: matrix.run_full_tests == true
         shell: cmd
         run: tools\test.bat
 
       - name: Mount network drive
-        if: matrix.run_full_tests == true
         shell: pwsh
         run: |
           net use Z: \\golddrive\support@localhost
           Z:; cd Z:\tmp; echo hello > test.txt; cd
 
       - name: Run comprehensive tests
-        if: matrix.run_full_tests == true
         shell: pwsh
         run: |
           $sw = [Diagnostics.Stopwatch]::StartNew()
@@ -150,7 +124,7 @@ jobs:
           $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
 
       - name: Unmount network drive
-        if: matrix.run_full_tests == true && always()
+        if: always()
         shell: pwsh
         run: |
           C:; net use Z: /d
@@ -169,3 +143,4 @@ jobs:
           name: golddrive-${{ steps.version.outputs.VERSION }}-${{ matrix.platform }}-exe
           path: src\.build\${{ matrix.configuration }}\${{ matrix.platform }}\golddrive-*-${{ matrix.platform }}.exe
           if-no-files-found: error
+          
