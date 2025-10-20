@@ -74,8 +74,15 @@ jobs:
         shell: cmd
         run: python -m pip install --disable-pip-version-check paramiko
 
+      - name: Create SSH directory
+        shell: cmd
+        run: |
+          if not exist %USERPROFILE%\.ssh mkdir %USERPROFILE%\.ssh
+
       - name: Setup SSH
         shell: cmd
+        env:
+          PLATFORM: ${{ matrix.platform }}
         run: python tools\setupssh.py support@localhost support
 
       - name: Build solution
