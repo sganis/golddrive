@@ -150,6 +150,10 @@ def generate_keys(userhost):
 		os.rename(pubkey, f'{pubkey}.{ now }.bak')
 	rb = ReturnBox()
 	
+	ssh_dir = f'{ os.path.expandvars("%USERPROFILE%") }\\.ssh'
+	if not os.path.exists(ssh_dir):
+		os.mkdir(ssh_dir)
+	
 	# use ssh-keygen
 	# print(run('where ssh-keygen'))
 	# cmd = f'echo y |ssh-keygen -q -N "" -f {seckey} -b 2048 -t rsa -m PEM'
