@@ -67,23 +67,13 @@ jobs:
       - name: Setup WSL
         uses: Vampire/setup-wsl@v3
         with:
-          distribution: Ubuntu-22.04
+          distribution: Ubuntu-18.04
 
-      - name: Configure WSL and SSH
+      - name: Configure WSL
         shell: pwsh
         run: |
-          Write-Host "Setting up support user..."
-          wsl -d Ubuntu-22.04 -- sudo useradd -m -s /bin/bash -G sudo support 2>&1 | Out-Null
-          wsl -d Ubuntu-22.04 -- bash -c "echo 'support:support' | sudo chpasswd" 2>&1 | Out-Null
-          wsl -d Ubuntu-22.04 -- sudo bash -c "echo 'support ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/support" 2>&1 | Out-Null
-          wsl -d Ubuntu-22.04 -- sudo chmod 0440 /etc/sudoers.d/support 2>&1 | Out-Null
-          
-          Write-Host "Installing and configuring SSH server..."
-          wsl -d Ubuntu-22.04 -- sudo apt-get update 2>&1 | Out-Null
-          wsl -d Ubuntu-22.04 -- sudo apt-get install -y openssh-server 2>&1 | Out-Null
-          wsl -d Ubuntu-22.04 -- sudo service ssh start 2>&1 | Out-Null
-          
-          Write-Host "WSL and SSH setup completed"
+          wslconfig /u Ubuntu-18.04
+          tools\setup_wsl.ps1
 
       - name: Install Python dependencies
         shell: cmd
@@ -165,3 +155,4 @@ jobs:
           name: golddrive-${{ steps.version.outputs.VERSION }}-${{ matrix.platform }}-exe
           path: src\.build\${{ matrix.configuration }}\${{ matrix.platform }}\golddrive-*-${{ matrix.platform }}.exe
           if-no-files-found: error
+          
