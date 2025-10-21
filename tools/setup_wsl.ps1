@@ -1,92 +1,58 @@
 # Golddrive
 # 04/03/2020, sganis
-# Install WSL with ubuntu1804, ssh server and support user
+# Install WSL with Ubuntu, ssh server and support user
 # For testing purposes
-# It works for new development machines and also in Appveyor
+# Updated to use modern wsl --install approach
 #
 # Run scripts in powershell:
 # set-executionpolicy remotesigned
 #
 # Uninstall:
-# wslconfig /u Ubuntu-18.04
+# wsl --unregister Ubuntu
 
-Write-host "Updating WSL..."
+Write-host "Installing/Updating WSL..."
 try {
-    wsl --update 2>&1 | Out-Null
-    Write-host "WSL updated successfully"
-} catch {
-    Write-host "WSL update skipped or failed (may not be needed): $_"
-}
-
-Write-host "Checking if WSL feature is installed..."
-$result = dism.exe /online /get-featureinfo /featurename:Microsoft-Windows-Subsystem-Linux
-$enabled = $result -match "State : Enabled"
-
-if ($enabled) {
-    Write-host "WSL feature is already enabled"
-} else {   
-    Write-host "WSL feature is not enabled, enabling now..."
-    Write-host "This may take a few minutes and might require a restart..."
-    
-    $dismResult = dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
-    
-    if ($LASTEXITCODE -eq 0) {
-        Write-host "WSL feature enabled successfully"
-    } elseif ($LASTEXITCODE -eq 3010) {
-        Write-host "WSL feature enabled successfully (restart required but skipped)"
-    } else {
-        Write-error "Failed to enable WSL feature. Exit code: $LASTEXITCODE"
-        Write-error "Output: $dismResult"
-        exit 1
+    # Install WSL with Ubuntu using the modern method
+    wsl --install --no-launch -d Ubuntu 2>&1 | Out-Default
+    if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne -1978335191) {
+        Write-host "WSL install command completed with code: $LASTEXITCODE"
     }
-    
-    # Give it a moment to settle
-    Start-Sleep -Seconds 5
+} catch {
+    Write-host "WSL install attempt: $_"
 }
 
-# Verify WSL is working
-Write-host "Verifying WSL installation..."
+# Wait for WSL to be ready
+Write-host "Waiting for WSL to be ready..."
+Start-Sleep -Seconds 5
+
+# Check if Ubuntu is installed
+$distros = wsl --list --quiet 2>&1
+Write-host "Installed distributions: $distros"
+
+# Set Ubuntu as default if it exists
 try {
-    $wslCheck = wsl --status 2>&1
-    Write-host "WSL Status: $wslCheck"
+    wsl --set-default Ubuntu 2>&1 | Out-Null
 } catch {
-    Write-host "WSL status check failed, but continuing..."
+    Write-host "Could not set default distribution"
 }
 
-$zip = "C:\cache\ubuntu1804.zip"
-$exe = "C:\MyWSL\ubuntu1804\ubuntu1804.exe"
-New-Item -ItemType Directory -Force -Path C:\MyWSL
-if (!(Test-Path $exe)) {
-    Write-host "Installing Ubuntu for WSL"
-    if (!(Test-Path $zip)) {
-        Write-host "Downloading..."
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        (New-Object Net.WebClient).DownloadFile('https://aka.ms/wsl-ubuntu-1804', "$zip")
-    } else {
-        Write-host "Downloaded already, found in cache..."
-    }
-    Write-host "Installing..."
-    Expand-Archive -Path "$zip" -DestinationPath "C:\MyWSL\ubuntu1804" -Force
-    Write-host "Running Ubuntu installer..."
-    & $exe install --root
-    if ($LASTEXITCODE -ne 0) {
-        Write-error "Ubuntu installation failed with exit code: $LASTEXITCODE"
-        exit 1
-    }
-}
+Write-host "Configuring Ubuntu..."
+# Initialize Ubuntu (first run)
+wsl -d Ubuntu -- bash -c "echo 'Ubuntu initialized'" 2>&1 | Out-Default
 
-Write-host "Configuring support user..."
-& $exe run sudo adduser support --gecos `"First,Last,RoomNumber,WorkPhone,HomePhone`" --disabled-password
-& $exe run sudo "echo 'support:support' | sudo chpasswd"
-& $exe run sudo usermod -aG sudo support
-& $exe run sudo "echo -e `"`"support\tALL=(ALL)\tNOPASSWD: ALL`"`" > /etc/sudoers.d/support 2>/dev/null"
-& $exe run chmod 0755 /etc/sudoers.d/support
+Write-host "Setting up support user..."
+wsl -d Ubuntu -- sudo useradd -m -s /bin/bash -G sudo support 2>&1 | Out-Null
+wsl -d Ubuntu -- bash -c "echo 'support:support' | sudo chpasswd" 2>&1 | Out-Null
+wsl -d Ubuntu -- sudo bash -c "echo 'support ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/support" 2>&1 | Out-Null
+wsl -d Ubuntu -- sudo chmod 0440 /etc/sudoers.d/support 2>&1 | Out-Null
 
-Write-host "Installing ssh..."
-& $exe run sudo apt-get update
-& $exe run sudo apt-get remove -y -qq --purge openssh-server `>`/dev/null
-& $exe run sudo apt-get install -y -qq openssh-server `>`/dev/null
-& $exe run sudo service ssh --full-restart
+Write-host "Installing and configuring SSH server..."
+wsl -d Ubuntu -- sudo apt-get update 2>&1 | Out-Null
+wsl -d Ubuntu -- sudo apt-get install -y openssh-server 2>&1 | Out-Null
+wsl -d Ubuntu -- sudo service ssh start 2>&1 | Out-Null
+
+# Verify SSH is running
+$sshStatus = wsl -d Ubuntu -- sudo service ssh status 2>&1
+Write-host "SSH Status: $sshStatus"
 
 Write-host "WSL setup completed successfully"
-

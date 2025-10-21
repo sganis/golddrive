@@ -64,19 +64,10 @@ jobs:
         shell: cmd
         run: start /wait msiexec /i vendor\winfsp\winfsp-1.12.22339.msi /qn ADDLOCAL=ALL
 
-      - name: Enable WSL Feature
-        shell: pwsh
-        run: |
-          Write-Host "Enabling WSL feature..."
-          dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
-          Write-Host "Enabling Virtual Machine Platform..."
-          dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
-          Start-Sleep -Seconds 3
-
       - name: Setup WSL
         shell: pwsh
         run: |
-          wslconfig /u Ubuntu-18.04 2>&1 | Out-Null
+          wsl --unregister Ubuntu 2>&1 | Out-Null
           tools\setup_wsl.ps1
 
       - name: Install Python dependencies
@@ -159,4 +150,3 @@ jobs:
           name: golddrive-${{ steps.version.outputs.VERSION }}-${{ matrix.platform }}-exe
           path: src\.build\${{ matrix.configuration }}\${{ matrix.platform }}\golddrive-*-${{ matrix.platform }}.exe
           if-no-files-found: error
-          
