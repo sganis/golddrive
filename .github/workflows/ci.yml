@@ -65,10 +65,25 @@ jobs:
         run: start /wait msiexec /i vendor\winfsp\winfsp-1.12.22339.msi /qn ADDLOCAL=ALL
 
       - name: Setup WSL
+        uses: Vampire/setup-wsl@v3
+        with:
+          distribution: Ubuntu-22.04
+
+      - name: Configure WSL and SSH
         shell: pwsh
         run: |
-          wsl --unregister Ubuntu 2>&1 | Out-Null
-          tools\setup_wsl.ps1
+          Write-Host "Setting up support user..."
+          wsl -d Ubuntu-22.04 -- sudo useradd -m -s /bin/bash -G sudo support 2>&1 | Out-Null
+          wsl -d Ubuntu-22.04 -- bash -c "echo 'support:support' | sudo chpasswd" 2>&1 | Out-Null
+          wsl -d Ubuntu-22.04 -- sudo bash -c "echo 'support ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/support" 2>&1 | Out-Null
+          wsl -d Ubuntu-22.04 -- sudo chmod 0440 /etc/sudoers.d/support 2>&1 | Out-Null
+          
+          Write-Host "Installing and configuring SSH server..."
+          wsl -d Ubuntu-22.04 -- sudo apt-get update 2>&1 | Out-Null
+          wsl -d Ubuntu-22.04 -- sudo apt-get install -y openssh-server 2>&1 | Out-Null
+          wsl -d Ubuntu-22.04 -- sudo service ssh start 2>&1 | Out-Null
+          
+          Write-Host "WSL and SSH setup completed"
 
       - name: Install Python dependencies
         shell: cmd
