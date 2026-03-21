@@ -9,6 +9,7 @@ cache:
 
 install:
   - dir C:\cache >nul 2>&1 || mkdir C:\cache
+  - choco install innosetup -y --no-progress
   - dotnet --version
   - ps: $env:VERSION = python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
   - echo Version=%VERSION% Configuration=%CONFIGURATION% Platform=%PLATFORM%

@@ -68,7 +68,10 @@
       "Bash(nuget list:*)",
       "Bash(nuget search:*)",
       "WebFetch(domain:www.nuget.org)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(wc -l *.c *.h)",
+      "Bash(xargs wc:*)",
+      "Bash(git:*)"
     ]
   }
 }
