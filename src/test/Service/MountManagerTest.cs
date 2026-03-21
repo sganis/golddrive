@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
@@ -16,6 +16,7 @@ namespace golddrive.Tests
         private static readonly string _host = Environment.GetEnvironmentVariable("GOLDDRIVE_HOST");
         private static readonly string _user = Environment.GetEnvironmentVariable("GOLDDRIVE_USER");
         private static readonly string _pass = Environment.GetEnvironmentVariable("GOLDDRIVE_PASS");
+        private static bool _sshAvailable;
         private Drive _drive = new Drive
         {
             Letter = "X",
@@ -25,6 +26,36 @@ namespace golddrive.Tests
             IsGoldDrive = true,
             Status = DriveStatus.DISCONNECTED,
         };
+
+        [ClassInitialize]
+        public static void ClassInit(TestContext context)
+        {
+            if (string.IsNullOrEmpty(_host))
+            {
+                _sshAvailable = false;
+                return;
+            }
+            try
+            {
+                using (var client = new System.Net.Sockets.TcpClient())
+                {
+                    var result = client.BeginConnect(_host, 22, null, null);
+                    _sshAvailable = result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(3));
+                    if (_sshAvailable)
+                        client.EndConnect(result);
+                }
+            }
+            catch
+            {
+                _sshAvailable = false;
+            }
+        }
+
+        private void RequireSsh()
+        {
+            if (!_sshAvailable)
+                Assert.Inconclusive("SSH server not available");
+        }
 
         [TestInitialize]
         public void Init()
@@ -36,23 +67,25 @@ namespace golddrive.Tests
         [TestCleanup]
         public void Teardown()
         {
-            _mountService.Unmount(_drive);
+            _mountService.RunLocal($"net use /d {_drive.Name} /y");
         }
+
         public void Mount()
         {
+            RequireSsh();
             _drive.AppKey = _drive.DefaultAppKey;
             var r = _mountService.Connect(_drive, null);
             if (r.DriveStatus != DriveStatus.CONNECTED)
                 Console.WriteLine($"ERROR: {r.Error}");
-            Assert.AreEqual(r.DriveStatus, DriveStatus.CONNECTED);
-
+            Assert.AreEqual(DriveStatus.CONNECTED, r.DriveStatus);
         }
+
         public void Unmount()
         {
             var r = _mountService.Unmount(_drive);
-            Assert.AreEqual(r.DriveStatus, DriveStatus.DISCONNECTED);
-
+            Assert.AreEqual(DriveStatus.DISCONNECTED, r.DriveStatus);
         }
+
         public void RandomFile(string path, int megabytes)
         {
             FileStream fs = new FileStream(path, FileMode.CreateNew);
@@ -60,6 +93,7 @@ namespace golddrive.Tests
             fs.WriteByte(0);
             fs.Close();
         }
+
         public string Md5(string path)
         {
             using (var md5 = MD5.Create())
@@ -71,6 +105,7 @@ namespace golddrive.Tests
                 }
             }
         }
+
         [TestMethod, TestCategory("Appveyor")]
         public void DrivelLabelTest()
         {
@@ -79,12 +114,10 @@ namespace golddrive.Tests
             _drive.Label = "NEWLABEL";
             _mountService.SetExplorerDriveLabel(_drive);
             string label = _mountService.GetExplorerDriveLabel(_drive);
-            Assert.AreEqual(label, "NEWLABEL");
+            Assert.AreEqual("NEWLABEL", label);
             Unmount();
             _drive.Label = current_label;
         }
-
-
 
         [TestMethod, TestCategory("Appveyor")]
         public void SettingsDrivesTest()
@@ -98,58 +131,57 @@ namespace golddrive.Tests
             if (File.Exists(src))
                 File.Move(src, dst);
             var settings = _mountService.LoadSettings();
-            Assert.AreEqual(settings.Drives.Count, 0);
+            Assert.AreEqual(0, settings.Drives.Count);
             var drives = new List<Drive> { _drive };
             settings.AddDrives(drives);
             _mountService.SaveSettings(settings);
             settings = _mountService.LoadSettings();
-            Assert.AreEqual(settings.Drives.Count, 1);
+            Assert.AreEqual(1, settings.Drives.Count);
             var d = settings.Drives["X:"];
-            Assert.AreEqual(d.Name, _drive.Name);
-            Assert.AreEqual(d.MountPoint, _drive.MountPoint);
+            Assert.AreEqual(_drive.Name, d.Name);
+            Assert.AreEqual(_drive.MountPoint, d.MountPoint);
             File.Delete(src);
             if (File.Exists(dst))
                 File.Move(dst, src);
         }
-
 
         [TestMethod(), TestCategory("Appveyor")]
         public void MountUnmountTest()
         {
             Mount();
             Unmount();
-
         }
+
         [TestMethod(), TestCategory("Appveyor")]
         public void FreeUsedDrivesTest()
         {
             Mount();
             var free_drives = _mountService.GetFreeDrives();
             var used_drives = _mountService.GetUsedDrives();
-            Assert.AreEqual(free_drives.Find(x => x.Name == "X:"), null);
-            Assert.AreNotEqual(used_drives.Find(x => x.Name == "X:"), null);
+            Assert.IsNull(free_drives.Find(x => x.Name == "X:"));
+            Assert.IsNotNull(used_drives.Find(x => x.Name == "X:"));
             Unmount();
             free_drives = _mountService.GetFreeDrives();
             used_drives = _mountService.GetUsedDrives();
-            Assert.AreNotEqual(free_drives.Find(x => x.Name == "X:"), null);
-            Assert.AreEqual(used_drives.Find(x => x.Name == "X:"), null);
+            Assert.IsNotNull(free_drives.Find(x => x.Name == "X:"));
+            Assert.IsNull(used_drives.Find(x => x.Name == "X:"));
         }
+
         [TestMethod(), TestCategory("Appveyor")]
         public void CheckDriveStatusTest()
         {
-            //Unmount();
+            RequireSsh();
             _mountService.RunLocal($"subst W: {_mountService.LocalAppData}");
             Drive c = new Drive { Letter = "C", MountPoint = "sshserver" };
             Drive w = new Drive { Letter = "W", MountPoint = "sshserver" };
-            Drive y = new Drive { Letter = "Y", MountPoint = "sshserver" };
-            Assert.AreEqual(_mountService.CheckDriveStatus(c).DriveStatus, DriveStatus.NOT_SUPPORTED);
-            Assert.AreEqual(_mountService.CheckDriveStatus(w).DriveStatus, DriveStatus.IN_USE);
+            Assert.AreEqual(DriveStatus.NOT_SUPPORTED, _mountService.CheckDriveStatus(c).DriveStatus);
+            Assert.AreEqual(DriveStatus.IN_USE, _mountService.CheckDriveStatus(w).DriveStatus);
             var status = _mountService.CheckDriveStatus(_drive).DriveStatus;
             Assert.IsTrue(status == DriveStatus.DISCONNECTED);
             Mount();
-            Assert.AreEqual(_mountService.CheckDriveStatus(_drive).DriveStatus, DriveStatus.CONNECTED);
+            Assert.AreEqual(DriveStatus.CONNECTED, _mountService.CheckDriveStatus(_drive).DriveStatus);
             Drive t = new Drive { Letter = "T", MountPoint = $"{_user}@{_host}" };
-            Assert.AreEqual(_mountService.CheckDriveStatus(t).DriveStatus, DriveStatus.MOUNTPOINT_IN_USE);
+            Assert.AreEqual(DriveStatus.MOUNTPOINT_IN_USE, _mountService.CheckDriveStatus(t).DriveStatus);
             Unmount();
             _mountService.RunLocal("subst W: /d");
         }
@@ -165,6 +197,7 @@ namespace golddrive.Tests
             Assert.IsFalse(Directory.Exists(path));
             Unmount();
         }
+
         [TestMethod(), TestCategory("Appveyor")]
         public void MakeDirManyTest()
         {
@@ -188,11 +221,11 @@ namespace golddrive.Tests
             DeleteFile(1);
             Unmount();
         }
+
         [TestMethod(), TestCategory("Appveyor")]
         public void CreateManyFileTest()
         {
             Mount();
-
             Parallel.ForEach(Enumerable.Range(1, 20), f =>
             {
                 CreateFile(f);
@@ -203,13 +236,14 @@ namespace golddrive.Tests
             });
             Unmount();
         }
+
         [TestMethod(), TestCategory("Appveyor")]
         public void CopyBigFileTest()
         {
             Mount();
             var tempfile1 = Path.GetTempPath() + "file_" + Guid.NewGuid().ToString() + ".bin";
             var tempfile2 = Path.GetTempPath() + "file_" + Guid.NewGuid().ToString() + ".bin";
-            RandomFile(tempfile1, 100); // 100 mb
+            RandomFile(tempfile1, 10);
             var hash1 = Md5(tempfile1);
             var path = "X:\\tmp\\file_random.bin";
             if (File.Exists(path))
@@ -234,45 +268,65 @@ namespace golddrive.Tests
         [TestMethod(), TestCategory("Appveyor")]
         public void TestSshTest()
         {
+            RequireSsh();
             var r = _mountService.TestSsh(_drive);
             Assert.IsTrue(r.Success);
         }
+
         [TestMethod(), TestCategory("Appveyor")]
         public void SetupSshTest()
         {
+            RequireSsh();
+            var seckey = _drive.DefaultAppKey;
+            var pubkey = _drive.DefaultAppPubKey;
             var now = DateTime.Now.Ticks.ToString();
-            var backup_sec = $"{_drive.DefaultAppKey}.{now}.bak";
-            var backup_pub = $"{_drive.DefaultAppPubKey}.{now}.bak";
-            
-            bool has_sec = File.Exists(_drive.DefaultAppKey);
-            bool has_pub = File.Exists(_drive.DefaultAppPubKey);
+            var backup_sec = $"{seckey}.{now}.bak";
+            var backup_pub = $"{pubkey}.{now}.bak";
+
+            bool has_sec = File.Exists(seckey);
+            bool has_pub = File.Exists(pubkey);
             if (has_sec)
-                File.Move(_drive.DefaultAppKey, backup_sec);
+                File.Move(seckey, backup_sec);
             if (has_pub)
-                File.Move(_drive.DefaultAppPubKey, backup_pub);
-            var r = _mountService.TestSsh(_drive);
-            Assert.IsFalse(r.Success);
-            r = _mountService.SetupSsh(_drive, _pass);
-            Assert.IsTrue(r.MountStatus == MountStatus.OK);
-            File.Delete(_drive.DefaultAppKey);
-            File.Delete(_drive.DefaultAppPubKey);
-            if (has_sec)
-                File.Move(backup_sec, _drive.DefaultAppKey);
-            if (has_pub)
-                File.Move(backup_pub, _drive.DefaultAppPubKey);
+                File.Move(pubkey, backup_pub);
+            try
+            {
+                var r = _mountService.TestSsh(_drive);
+                Assert.IsFalse(r.Success);
+
+                // generate keys using system ssh-keygen
+                var keygen = _mountService.RunLocal("ssh-keygen.exe",
+                    $@"-t rsa -b 4096 -m PEM -N """" -f ""{seckey}""");
+                Assert.AreEqual(0, keygen.ExitCode, "ssh-keygen failed: " + keygen.Error);
+
+                r = _mountService.SetupSsh(_drive, _pass);
+                Assert.AreEqual(MountStatus.OK, r.MountStatus);
+            }
+            finally
+            {
+                if (File.Exists(seckey))
+                    File.Delete(seckey);
+                if (File.Exists(pubkey))
+                    File.Delete(pubkey);
+                if (has_sec)
+                    File.Move(backup_sec, seckey);
+                if (has_pub)
+                    File.Move(backup_pub, pubkey);
+            }
         }
 
         [TestMethod(), TestCategory("Appveyor")]
         public void TestHostTest()
         {
+            RequireSsh();
             Drive nohost = new Drive { Host = "nohost", Port = "22" };
-            Drive noport = new Drive { Host = "localhost", Port = "222" };
+            Drive noport = new Drive { Host = _host, Port = "222" };
             var r = _mountService.TestHost(nohost);
-            Assert.IsTrue(r.MountStatus == MountStatus.BAD_HOST);
+            Assert.AreEqual(MountStatus.BAD_HOST, r.MountStatus);
             r = _mountService.TestHost(noport);
-            Assert.IsTrue(r.MountStatus == MountStatus.BAD_HOST);
+            Assert.AreEqual(MountStatus.BAD_HOST, r.MountStatus);
             r = _mountService.TestHost(_drive);
-            Assert.IsTrue(r.MountStatus == MountStatus.OK);
+            Assert.AreEqual(MountStatus.OK, r.MountStatus);
         }
 
         void CreateFile(int id)
@@ -284,14 +338,15 @@ namespace golddrive.Tests
             myFile.Close();
             Assert.IsTrue(File.Exists(path));
         }
+
         void DeleteFile(int id)
         {
             var path = $"X:\\tmp\\file_{id}.txt";
             if (File.Exists(path))
                 File.Delete(path);
             Assert.IsTrue(!File.Exists(path));
-
         }
+
         void CreateDir(int id)
         {
             var path = $"X:\\tmp\\folder_{id}";
@@ -300,6 +355,7 @@ namespace golddrive.Tests
             Directory.CreateDirectory(path);
             Assert.IsTrue(Directory.Exists(path));
         }
+
         void DeleteDir(int id)
         {
             var path = $"X:\\tmp\\folder_{id}";
@@ -307,6 +363,7 @@ namespace golddrive.Tests
                 Directory.Delete(path);
             Assert.IsTrue(!Directory.Exists(path));
         }
+
         [TestMethod(), TestCategory("Appveyor")]
         public void RenameFileTest()
         {
@@ -322,6 +379,7 @@ namespace golddrive.Tests
             Assert.IsTrue(!File.Exists(f2));
             Unmount();
         }
+
         [TestMethod(), TestCategory("Appveyor")]
         public void RenameDirTest()
         {

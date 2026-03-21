@@ -1,7 +1,8 @@
-:: Golddrive
-:: 04/01/2020, San
 @echo off
-setlocal
+:: Setup SSH RSA key for golddrive
+:: Usage: tools\setupssh.bat [user] [host] [port]
+:: Example: tools\setupssh.bat support 192.168.100.250 22
+
 setlocal EnableDelayedExpansion
 
 if [%3]==[] goto :usage
@@ -10,39 +11,41 @@ if "%1"=="-h" goto :usage
 set USER=%1
 set HOST=%2
 set PORT=%3
+set PASS=%4
+if "%PASS%"=="" set PASS=support
 
-set DIR=%~dp0
-set DIR=%DIR:~0,-1%
-set NOW=%DATE:/=%%TIME::=%
-set NOW=%NOW: =%
-set NOW=%NOW:~0,-3%
-set USERHOST=%USER%@%HOST%
-set SKEY=%USERPROFILE%\.ssh\id_golddrive_%USER%
-set PKEY=%USERPROFILE%\.ssh\id_golddrive_%USER%.pub
-if exist %SKEY% rename %SKEY% id_golddrive_%USER%.%NOW%.bak 
-if exist %PKEY% rename %PKEY% id_golddrive_%USER%.pub.%NOW%.bak 
+set SKEY=%USERPROFILE%\.ssh\id_rsa
+set PKEY=%USERPROFILE%\.ssh\id_rsa.pub
 
-:: generate
-ssh-keygen -m PEM -q -N "" -f %SKEY%
+if not exist "%USERPROFILE%\.ssh" mkdir "%USERPROFILE%\.ssh"
 
-:: transfer
-type %PKEY% | ssh %USER%@%HOST% -p %PORT% "umask 077; mkdir -p .ssh; cat >> .ssh/authorized_keys; chmod 700 .ssh; chmod 644 .ssh/authorized_keys"
+:: generate RSA key if not exists
+if not exist "%SKEY%" (
+    echo Generating RSA key...
+    ssh-keygen -t rsa -b 4096 -m PEM -q -N "" -f %SKEY%
+)
+
+:: read public key
+set /p PUBKEY=<%PKEY%
+
+:: transfer key using paramiko (handles password and keyboard-interactive)
+python -c "import paramiko;c=paramiko.SSHClient();c.set_missing_host_key_policy(paramiko.AutoAddPolicy());c.connect('%HOST%',username='%USER%',password='%PASS%',port=%PORT%,timeout=10,allow_agent=False,look_for_keys=False);c.exec_command('umask 077;mkdir -p .ssh;echo \"%PUBKEY%\" >> .ssh/authorized_keys;chmod 700 .ssh;chmod 644 .ssh/authorized_keys');c.close();print('Key transferred')"
 if %errorlevel% neq 0 goto fail
 
-:: test
-ssh -i %SKEY% -p %PORT% 			^
-	-oPasswordAuthentication=no 	^
-	-oStrictHostKeyChecking=no 		^
-	-oUserKnownHostsFile=/dev/null 	^
-	-oBatchMode=yes 				^
-	%USER%@%HOST% echo OK
+:: test key auth
+ssh -i %SKEY% -p %PORT% ^
+    -oPasswordAuthentication=no ^
+    -oStrictHostKeyChecking=no ^
+    -oUserKnownHostsFile=/dev/null ^
+    -oBatchMode=yes ^
+    %USER%@%HOST% echo OK
 if %errorlevel% neq 0 goto fail
+echo SSH setup complete
 goto :eof
 
 :fail
 echo FAILED
 goto :eof
-
 
 :usage
 echo usage: %0 [user] [host] [port]

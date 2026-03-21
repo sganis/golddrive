@@ -1,83 +1,46 @@
 # golddrive
-version: 2.31.{build}
-image: 
-  - Visual Studio 2019
-  # - Visual Studio 2022
-platform: 
-  - x64
-  - x86
-configuration: 
-  - Release
-  # - Debug
+version: 2.4.{build}
+image: Visual Studio 2022
+platform: x64
+configuration: Release
 clone_depth: 1
 cache:
   - C:\cache
 
-# matrix:
-#   allow_failures:
-#     - platform: x86
-
 install:
   - dir C:\cache >nul 2>&1 || mkdir C:\cache
-  - ps: $env:VERSION = C:\Python310\python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
+  - dotnet --version
+  - ps: $env:VERSION = python -c "import re; print(re.search(r'<MyVersion>([0-9\.]+)</MyVersion>.+', open('src\\version.xml').read().replace('\n','')).group(1))" | Out-String
   - echo Version=%VERSION% Configuration=%CONFIGURATION% Platform=%PLATFORM%
 
 artifacts:
-  - path: src\.build\$(configuration)\$(platform)\golddrive-*.msi
-    name: msi
-  - path: src\.build\$(configuration)\$(platform)\golddrive-*-$(platform).exe
-    name: exe
-    
-for:
-  -
-    matrix:
-      only:
-        - image: Visual Studio 2019
-          platform: x64
-          configuration: Release
-    build_script:
-      - start /wait msiexec /i vendor\winfsp\winfsp-1.12.22339.msi /qn ADDLOCAL=ALL
-      - wslconfig /u Ubuntu-18.04
-      - ps: tools\setup_wsl.ps1
-      - C:\Python310\python -m pip install --disable-pip-version-check paramiko >NUL
-      - C:\Python310\python tools\setupssh.py support@localhost support
-      - msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -m /verbosity:quiet /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-      - src\.build\%CONFIGURATION%\%PLATFORM%\golddrive.exe --version
-      - start /wait msiexec /i src\.build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%.msi /qn
-      - if %PLATFORM% == x64 call "c:\Program Files\Golddrive\golddrive.exe" --version
-      - if %PLATFORM% == x86 call "c:\Program Files (x86)\Golddrive\golddrive.exe" --version
-      #  - reg query HKLM\Software\WOW6432Node\WinFsp\Services\golddrive /s
-    test_script:
-      - tools\test.bat
-      - ps: |
-          net use Z: \\golddrive\support@localhost
-          Z:; cd Z:\tmp; echo hello > test.txt; cd
-      - ps: |
-          $sw = [Diagnostics.Stopwatch]::StartNew()
-          C:\projects\golddrive\vendor\fstools\fsx.exe -N 5000 test xxxxxx
-          C:\projects\golddrive\vendor\fstools\fsbench-x64.exe --files=100 -rdwr_cc_* -mmap_* -file_attr* -file_list_single* -file_list_none* -rdwr_nc_*
-          C:\projects\golddrive\vendor\iozone\iozone.exe -s100m -r2m
-          $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
-      # - ps: get-content -tail 30 $env:LOCALAPPDATA\golddrive\golddrive.log
-      - ps: |
-          C:; net use Z: /d
+  - path: build\$(configuration)\$(platform)\golddrive-*-setup.exe
+    name: setup
 
-  -
-    matrix:
-      only:
-        # - image: Visual Studio 2022
-        - image: Visual Studio 2019
-          platform: x64
-        - image: Visual Studio 2019
-          platform: x86
-    build_script:
-      - start /wait msiexec /i vendor\winfsp\winfsp-1.12.22339.msi /qn ADDLOCAL=ALL
-      - msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -m /verbosity:quiet /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-      - src\.build\%CONFIGURATION%\%PLATFORM%\golddrive.exe --version
-      - start /wait msiexec /i src\.build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%.msi /qn
-      - if %PLATFORM% == x64 call "c:\Program Files\Golddrive\golddrive.exe" --version
-      - if %PLATFORM% == x86 call "c:\Program Files (x86)\Golddrive\golddrive.exe" --version
-    test: off
-  
+build_script:
+  - start /wait msiexec /i vendor\winfsp\winfsp-1.12.22339.msi /qn ADDLOCAL=ALL
+  - wslconfig /u Ubuntu-18.04
+  - ps: tools\setup_wsl.ps1
+  - python -m pip install --disable-pip-version-check paramiko >NUL
+  - python tools\setupssh.py support@localhost support
+  - msbuild src\cli\cli.vcxproj /t:rebuild /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM% /p:SolutionDir=%CD%\src\ /v:minimal
+  - dotnet build src\app\app.csproj -c %CONFIGURATION% -o build\%CONFIGURATION%\%PLATFORM%
+  - dotnet build src\test\test.csproj -c %CONFIGURATION% -o build\%CONFIGURATION%\%PLATFORM%
+  - build\%CONFIGURATION%\%PLATFORM%\golddrive.exe --version
+  - '"%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe" /DMyAppVersion=%VERSION% /DMyPlatform=%PLATFORM% /DMyConfiguration=%CONFIGURATION% installer\setup.iss'
+  - build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%-setup.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
+  - call "c:\Program Files\Golddrive\golddrive.exe" --version
 
-
+test_script:
+  - tools\test.bat
+  - ps: |
+      net use Z: \\golddrive\support@localhost
+      Z:; cd Z:\tmp; echo hello > test.txt; cd
+  - ps: |
+      $sw = [Diagnostics.Stopwatch]::StartNew()
+      C:\projects\golddrive\vendor\fstools\fsx.exe -N 5000 test xxxxxx
+      C:\projects\golddrive\vendor\fstools\fsbench-x64.exe --files=100 -rdwr_cc_* -mmap_* -file_attr* -file_list_single* -file_list_none* -rdwr_nc_*
+      C:\projects\golddrive\vendor\iozone\iozone.exe -s100m -r2m
+      $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
+  - ps: |
+      C:; net use Z: /d

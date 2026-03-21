@@ -694,6 +694,16 @@ namespace golddrive
                         url => System.Diagnostics.Process.Start("explorer.exe", _mountService.LocalAppData)));
             }
         }
+        private ICommand _openHelpCommand;
+        public ICommand OpenHelpCommand
+        {
+            get
+            {
+                return _openHelpCommand ??
+                    (_openHelpCommand = new RelayCommand(
+                        x => System.Diagnostics.Process.Start("notepad.exe", _mountService.AppPath + "\\help.md")));
+            }
+        }
 
         #endregion
 

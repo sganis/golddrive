@@ -20,9 +20,9 @@ jobs:
           - platform: ARM64
             configuration: Release
             runs-on: windows-11-arm
-    
+
     runs-on: ${{ matrix.runs-on }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -90,27 +90,54 @@ jobs:
           PLATFORM: ${{ matrix.platform }}
         run: python tools\setupssh.py support@localhost support
 
-      - name: Build solution
+      - name: Build CLI
         shell: cmd
         env:
           CONFIGURATION: ${{ matrix.configuration }}
           PLATFORM: ${{ matrix.platform }}
-        run: msbuild src\golddrive.sln -p:Configuration=%CONFIGURATION% -p:Platform=%PLATFORM% -p:PlatformToolset=v143 -m /verbosity:normal
+        run: msbuild src\cli\cli.vcxproj /t:rebuild /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM% /p:SolutionDir=%CD%\src\ /v:minimal
+
+      - name: Build App
+        shell: cmd
+        env:
+          CONFIGURATION: ${{ matrix.configuration }}
+          PLATFORM: ${{ matrix.platform }}
+        run: dotnet build src\app\app.csproj -c %CONFIGURATION% -o build\%CONFIGURATION%\%PLATFORM%
+
+      - name: Build Tests
+        shell: cmd
+        env:
+          CONFIGURATION: ${{ matrix.configuration }}
+          PLATFORM: ${{ matrix.platform }}
+        run: dotnet build src\test\test.csproj -c %CONFIGURATION% -o build\%CONFIGURATION%\%PLATFORM%
 
       - name: Check build version
         shell: cmd
         env:
           CONFIGURATION: ${{ matrix.configuration }}
           PLATFORM: ${{ matrix.platform }}
-        run: src\.build\%CONFIGURATION%\%PLATFORM%\golddrive.exe --version
+        run: build\%CONFIGURATION%\%PLATFORM%\golddrive.exe --version
 
-      - name: Install MSI
+      - name: Install Inno Setup
+        shell: cmd
+        run: choco install innosetup -y --no-progress
+
+      - name: Build installer
         shell: cmd
         env:
           CONFIGURATION: ${{ matrix.configuration }}
           PLATFORM: ${{ matrix.platform }}
           VERSION: ${{ steps.version.outputs.VERSION }}
-        run: start /wait msiexec /i src\.build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%.msi /qn
+        run: |
+          "%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe" /DMyAppVersion=%VERSION% /DMyPlatform=%PLATFORM% /DMyConfiguration=%CONFIGURATION% installer\setup.iss
+
+      - name: Install golddrive
+        shell: cmd
+        env:
+          CONFIGURATION: ${{ matrix.configuration }}
+          PLATFORM: ${{ matrix.platform }}
+          VERSION: ${{ steps.version.outputs.VERSION }}
+        run: build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%-setup.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
 
       - name: Verify installation
         shell: cmd
@@ -130,9 +157,9 @@ jobs:
         shell: pwsh
         run: |
           $sw = [Diagnostics.Stopwatch]::StartNew()
-          C:\projects\golddrive\vendor\fstools\fsx.exe -N 5000 test xxxxxx
-          C:\projects\golddrive\vendor\fstools\fsbench-x64.exe --files=100 -rdwr_cc_* -mmap_* -file_attr* -file_list_single* -file_list_none* -rdwr_nc_*
-          C:\projects\golddrive\vendor\iozone\iozone.exe -s100m -r2m
+          vendor\fstools\fsx.exe -N 5000 test xxxxxx
+          vendor\fstools\fsbench-x64.exe --files=100 -rdwr_cc_* -mmap_* -file_attr* -file_list_single* -file_list_none* -rdwr_nc_*
+          vendor\iozone\iozone.exe -s100m -r2m
           $sw.Stop(); Write-host "Time: " $sw.Elapsed.totalseconds
 
       - name: Unmount network drive
@@ -142,17 +169,9 @@ jobs:
           C:; net use Z: /d
         continue-on-error: true
 
-      - name: Upload MSI artifact
+      - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: golddrive-${{ steps.version.outputs.VERSION }}-${{ matrix.platform }}-msi
-          path: src\.build\${{ matrix.configuration }}\${{ matrix.platform }}\golddrive-*.msi
+          name: golddrive-${{ steps.version.outputs.VERSION }}-${{ matrix.platform }}-setup
+          path: build\${{ matrix.configuration }}\${{ matrix.platform }}\golddrive-*-setup.exe
           if-no-files-found: error
-
-      - name: Upload EXE artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: golddrive-${{ steps.version.outputs.VERSION }}-${{ matrix.platform }}-exe
-          path: src\.build\${{ matrix.configuration }}\${{ matrix.platform }}\golddrive-*-${{ matrix.platform }}.exe
-          if-no-files-found: error
-          

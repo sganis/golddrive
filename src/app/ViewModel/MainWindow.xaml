@@ -55,6 +55,9 @@
                             Content="Open Logs Folder"
                             Command="{Binding OpenLogsFolderCommand}" />
                         <Button
+                            Content="Help"
+                            Command="{Binding OpenHelpCommand}" />
+                        <Button
                             Content="About"
                             Command="{Binding ShowPageCommand}"
                             CommandParameter="{x:Static local:Page.About}" />
