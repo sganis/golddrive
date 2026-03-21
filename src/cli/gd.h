@@ -28,13 +28,6 @@ int gd_check_hlink(const char *path);
 int gd_utimens(const char* path, const struct fuse_timespec tv[2], struct fuse_file_info* fi);
 int gd_fsync(intptr_t fd);
 int gd_flush(intptr_t fd);
-//int gd_chmod(const char* path, fuse_mode_t mode);
-//int gd_chown(const char* path, fuse_uid_t uid, fuse_gid_t gid);
-//int gd_setxattr(const char* path, const char* name, const char* value, size_t size, int flags);
-//int gd_getxattr(const char* path, const char* name, char* value, size_t size);
-//int gd_listxattr(const char* path, char* namebuf, size_t size);
-//int gd_removexattr(const char* path, const char* name);
-
 void gd_log(const char* fmt, ...);
 int jsoneq(const char* json, jsmntok_t* tok, const char* s);
 int load_json(GDCONFIG* conf);
@@ -56,10 +49,6 @@ int waitsocket(GDSSH* sanssh);
 void libssh2_logger(LIBSSH2_SESSION* session, void* context,
 	const char* data, size_t length);
 void copy_attributes(struct fuse_stat* stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs);
-//void print_permissions(const char* path, LIBSSH2_SFTP_ATTRIBUTES* attrs);
-//void print_stat(const char* path, LIBSSH2_SFTP_ATTRIBUTES* attrs);
-//void print_statvfs(const char* path, LIBSSH2_SFTP_STATVFS* st);
-
 // message queue
 typedef struct GDQUEUE {
 	int front, rear, size;

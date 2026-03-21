@@ -1,4 +1,5 @@
-﻿using System;
+// src/app/ViewModel/MainWindowViewModel.cs
+using System;
 using System.Linq;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -27,8 +28,8 @@ namespace golddrive
             get { return _version; }
             set { _version = value; NotifyPropertyChanged(); }
         }
-        public bool IsEditMode { get { return IsDriveNew || IsDriveEdit;  } }
-        
+        public bool IsEditMode { get { return IsDriveNew || IsDriveEdit; } }
+
         private bool _isDriveNew;
         public bool IsDriveNew
         {
@@ -39,7 +40,7 @@ namespace golddrive
                 {
                     _isDriveNew = value;
                     NotifyPropertyChanged();
-                    NotifyPropertyChanged("IsEditMode");
+                    NotifyPropertyChanged(nameof(IsEditMode));
                 }
             }
         }
@@ -53,7 +54,7 @@ namespace golddrive
                 {
                     _isDriveEdit = value;
                     NotifyPropertyChanged();
-                    NotifyPropertyChanged("IsEditMode");
+                    NotifyPropertyChanged(nameof(IsEditMode));
                 }
             }
         }
@@ -61,21 +62,22 @@ namespace golddrive
         public Page CurrentPage
         {
             get { return _currentPage; }
-            set {
+            set
+            {
                 Title = value.ToString();
                 _currentPage = value;
                 HasBack = _currentPage == Page.Settings || _currentPage == Page.About;
                 NotifyPropertyChanged();
-                NotifyPropertyChanged("HasBack");
-                NotifyPropertyChanged("Title");
+                NotifyPropertyChanged(nameof(HasBack));
+                NotifyPropertyChanged(nameof(Title));
             }
         }
         public bool HasBack { get; set; }
         public string Title { get; set; }
-        
+
         public ObservableCollection<Drive> FreeDriveList { get; set; } = new ObservableCollection<Drive>();
         public ObservableCollection<Drive> GoldDriveList { get; set; } = new ObservableCollection<Drive>();
-        
+
         public Drive OriginalDrive { get; set; }
 
         private Drive _selectedDrive;
@@ -83,21 +85,21 @@ namespace golddrive
         {
             get { return _selectedDrive; }
             set
-            {                  
+            {
                 if (_selectedDrive != value)
                 {
                     _selectedDrive = value;
                     NotifyPropertyChanged();
-                    NotifyPropertyChanged("HasDrives");                    
+                    NotifyPropertyChanged(nameof(HasDrives));
                 }
-            }            
+            }
         }
 
-        public bool HasDrives 
-        { 
-            get 
-            { 
-                return _mountService.GoldDrives != null && _mountService.GoldDrives.Count > 0; 
+        public bool HasDrives
+        {
+            get
+            {
+                return _mountService.GoldDrives != null && _mountService.GoldDrives.Count > 0;
             }
         }
 
@@ -109,8 +111,8 @@ namespace golddrive
             {
                 driveStatus = value;
                 NotifyPropertyChanged();
-                NotifyPropertyChanged("ConnectButtonText");
-                NotifyPropertyChanged("ConnectButtonColor");
+                NotifyPropertyChanged(nameof(ConnectButtonText));
+                NotifyPropertyChanged(nameof(ConnectButtonColor));
             }
         }
 
@@ -122,9 +124,8 @@ namespace golddrive
             {
                 _mountStatus = value;
                 NotifyPropertyChanged();
-                NotifyPropertyChanged("MessageColor");
-                NotifyPropertyChanged("ConnectButtonIsEnabled");
-
+                NotifyPropertyChanged(nameof(MessageColor));
+                NotifyPropertyChanged(nameof(ConnectButtonIsEnabled));
             }
         }
 
@@ -132,16 +133,12 @@ namespace golddrive
         public bool IsWorking
         {
             get { return _isWorking; }
-            set
-            {
-                _isWorking = value;
-                NotifyPropertyChanged();
-            }
+            set { _isWorking = value; NotifyPropertyChanged(); }
         }
-        
-        public string ConnectButtonText => 
-            (DriveStatus == DriveStatus.CONNECTED 
-            || DriveStatus == DriveStatus.BROKEN ) ? "Disconnect" : "Connect";
+
+        public string ConnectButtonText =>
+            (DriveStatus == DriveStatus.CONNECTED
+            || DriveStatus == DriveStatus.BROKEN) ? "Disconnect" : "Connect";
         public string ConnectButtonColor => DriveStatus == DriveStatus.CONNECTED ? "#689F38" : "#607d8b";
         public bool ConnectButtonIsEnabled => true;
         public bool IsSettingsChanged { get; set; }
@@ -152,21 +149,15 @@ namespace golddrive
             get { return message; }
             set { message = value; NotifyPropertyChanged(); }
         }
-        public Brush MessageColor
-        {
-            get
-            {
-                return Brushes.Black;
-                //return MountStatus == MountStatus.OK ? Brushes.Black : Brushes.Red;
-            }
-        }
+        public Brush MessageColor { get { return Brushes.Black; } }
+
         private string password;
         public string Password
         {
             get { return password; }
             set { password = value; NotifyPropertyChanged(); }
         }
-        
+
         #endregion
 
         #region Constructor
@@ -174,16 +165,12 @@ namespace golddrive
         public MainWindowViewModel(ReturnBox rb)
         {
             _mountService = new MountService();
-            //Messenger.Default.Register<string>(this, OnShowView);
-            
             CurrentPage = Page.Main;
             LoadDrivesAsync();
             GetVersionsAsync();
             if (rb != null)
-                Message = rb.Error;           
+                Message = rb.Error;
         }
-
-        
 
         #endregion
 
@@ -196,10 +183,11 @@ namespace golddrive
                 return;
             IsWorking = true;
         }
+
         private void WorkDone(ReturnBox r = null)
         {
             IsWorking = false;
-            
+
             if (r == null)
             {
                 Message = "";
@@ -228,13 +216,10 @@ namespace golddrive
                 case MountStatus.OK:
                     CurrentPage = Page.Main;
                     Message = r.DriveStatus.ToString();
-                    NotifyPropertyChanged("HasDrives");
-                    break;
-                default:
+                    NotifyPropertyChanged(nameof(HasDrives));
                     break;
             }
             IsWorking = false;
-
         }
 
         public async void LoadDrivesAsync()
@@ -248,7 +233,7 @@ namespace golddrive
                     SelectedDrive = settings.SelectedDrive;
                 _mountService.UpdateDrives(settings);
             });
-            
+
             UpdateObservableDrives();
 
             if (_mountService.GoldDrives.Count == 0)
@@ -264,14 +249,11 @@ namespace golddrive
                 CheckDriveStatusAsync();
             }
             Loaded = true;
-
         }
 
         private void UpdateObservableDrives()
         {
-            Drive old = null;
-            if (SelectedDrive != null)
-                old = SelectedDrive;
+            Drive old = SelectedDrive;
             GoldDriveList.Clear();
             FreeDriveList.Clear();
             _mountService.GoldDrives.ForEach(GoldDriveList.Add);
@@ -300,28 +282,19 @@ namespace golddrive
             else
             {
                 if (_mountService.GoldDrives.Count > 0)
-                {
                     SelectedDrive = _mountService.GoldDrives.First();
-                }
                 else if (_mountService.FreeDrives.Count > 0)
-                {
                     SelectedDrive = _mountService.FreeDrives.First();
-                }
             }
 
-            NotifyPropertyChanged("FreeDriveList");
-            NotifyPropertyChanged("GoldDriveList");
-        }
-
-        void ReportStatus(string message)
-        {
-            Message = message;
+            NotifyPropertyChanged(nameof(FreeDriveList));
+            NotifyPropertyChanged(nameof(GoldDriveList));
         }
 
         private async void ConnectAsync(Drive drive)
         {
             WorkStart("Connecting...");
-            var status = new Progress<string>(ReportStatus);
+            var status = new Progress<string>(s => Message = s);
             ReturnBox r = await Task.Run(() => _mountService.Connect(drive, status));
             SkipComboChanged = true;
             UpdateObservableDrives();
@@ -350,9 +323,7 @@ namespace golddrive
 
         private async void OnConnect(object obj)
         {
-            if (IsWorking)
-                return;
-
+            if (IsWorking) return;
             Message = "";
 
             if (GoldDriveList.Count == 0 || string.IsNullOrEmpty(SelectedDrive.Host))
@@ -372,17 +343,11 @@ namespace golddrive
                 ReturnBox r = await Task.Run(() => _mountService.Unmount(SelectedDrive));
                 WorkDone(r);
             }
-
         }
 
         private void OnConnectHost(object obj)
         {
-            if (SelectedDrive == null)
-            {
-                Message = "Invalid drive";
-                return;                
-            }
-
+            if (SelectedDrive == null) { Message = "Invalid drive"; return; }
             if (string.IsNullOrEmpty(SelectedDrive.Host))
             {
                 Message = "Server is required";
@@ -394,52 +359,34 @@ namespace golddrive
 
         private async void OnConnectPassword(object obj)
         {
-            if (SelectedDrive == null)
-            {
-                Message = "Invalid drive";
-                return;
-            }
+            if (SelectedDrive == null) { Message = "Invalid drive"; return; }
 
             WorkStart("Connecting...");
-            var status = new Progress<string>(ReportStatus);
+            var status = new Progress<string>(s => Message = s);
             ReturnBox r = await Task.Run(() => _mountService.ConnectPassword(SelectedDrive, password, status));
             SkipComboChanged = true;
             UpdateObservableDrives();
             SkipComboChanged = false;
             WorkDone(r);
         }
-        
-        private void OnSettingsShow(object obj)
-        {
-            IsDriveNew = false;
-            if(GoldDriveList.Count == 0)
-            {
-                IsDriveNew = true;
-            }
-        }
+
         private async void OnSettingsSave(object obj)
         {
-            if (SelectedDrive == null)
-            {
-                Message = "Invalid drive";
-                return;
-            }
+            if (SelectedDrive == null) { Message = "Invalid drive"; return; }
 
             SelectedDrive.Trim();
-
             if (string.IsNullOrEmpty(SelectedDrive.Host))
             {
                 Message = "Server is required";
-                OnFocusRequested("SelectedDrive.Host");
+                OnFocusRequested(nameof(SelectedDrive.Host));
                 return;
             }
 
             Regex hostRegex = new Regex(HostRegex);
-            if (!hostRegex.Match(SelectedDrive.Host).Success 
-                && !hostRegex.Match(SelectedDrive.Host).Success)
+            if (!hostRegex.Match(SelectedDrive.Host).Success)
             {
                 Message = "Invalid server name";
-                OnFocusRequested("SelectedDrive.Host");
+                OnFocusRequested(nameof(SelectedDrive.Host));
                 return;
             }
             await Task.Run(() =>
@@ -454,36 +401,20 @@ namespace golddrive
             Message = "";
             IsDriveNew = false;
             IsDriveEdit = false;
-
         }
+
         private void OnSettingsCancel(object obj)
         {
-            if (SelectedDrive == null)
-            {
-                Message = "Invalid drive";
-                return;
-            }
-
+            if (SelectedDrive == null) { Message = "Invalid drive"; return; }
             SelectedDrive.Clone(OriginalDrive);
             Message = "";
             IsDriveNew = false;
-            IsDriveEdit = false;            
+            IsDriveEdit = false;
         }
 
-        private void OnSettingsNew(object obj)
-        {
-            OriginalDrive = new Drive(SelectedDrive);
-            SelectedDrive = FreeDriveList.First();
-            IsDriveNew = true;            
-        }
-        
         private async void OnSettingsDelete(object obj)
         {
-            if (SelectedDrive == null)
-            {
-                Message = "Invalid drive";
-                return;
-            }
+            if (SelectedDrive == null) { Message = "Invalid drive"; return; }
 
             Drive d = SelectedDrive;
             if (GoldDriveList.Contains(d))
@@ -498,15 +429,10 @@ namespace golddrive
                 _mountService.UpdateDrives(settings);
             });
             UpdateObservableDrives();
-            if(GoldDriveList.Count == 0)
+            if (GoldDriveList.Count == 0)
                 IsDriveNew = true;
-    
         }
-        private void OnSettingsEdit(object obj)
-        {
-            OriginalDrive = new Drive(SelectedDrive);
-            IsDriveEdit = true;
-        }
+
         public void Closing(object obj)
         {
             Settings settings = _mountService.LoadSettings();
@@ -518,216 +444,95 @@ namespace golddrive
             }
         }
 
-
         #endregion
 
         #region Commands
 
         private ICommand _connectCommand;
-        public ICommand ConnectCommand
-        {
-            get
-            {
-                return _connectCommand ??
-                    (_connectCommand = new RelayCommand(OnConnect));
-            }
-        }
+        public ICommand ConnectCommand => _connectCommand ?? (_connectCommand = new RelayCommand(OnConnect));
+
         private ICommand _connectHostCommand;
-        public ICommand ConnectHostCommand
-        {
-            get
-            {
-                return _connectHostCommand ??
-                    (_connectHostCommand = new RelayCommand(OnConnectHost));
-            }
-        }
+        public ICommand ConnectHostCommand => _connectHostCommand ?? (_connectHostCommand = new RelayCommand(OnConnectHost));
+
         private ICommand _showPageCommand;
-        public ICommand ShowPageCommand
-        {
-            get
+        public ICommand ShowPageCommand => _showPageCommand ?? (_showPageCommand = new RelayCommand(
+            x =>
             {
-                return _showPageCommand ??
-                    (_showPageCommand = new RelayCommand(
-                        x =>
-                        {
-                            Message = "";                            
-                            CurrentPage = (Page)x;
-                            
-                            if (CurrentPage == Page.Settings)
-                            {
-                                OnSettingsShow(x);
-                            }
-                            if (CurrentPage == Page.Main)
-                            {
-                                CheckDriveStatusAsync();
-                            }
-                        },
-                        // can execute
-                        x =>
-                        {
-                            return CurrentPage != (Page)x; 
-                        }));
-            }
-        }
-        
+                Message = "";
+                CurrentPage = (Page)x;
+                if (CurrentPage == Page.Settings)
+                {
+                    IsDriveNew = GoldDriveList.Count == 0;
+                }
+                if (CurrentPage == Page.Main)
+                {
+                    CheckDriveStatusAsync();
+                }
+            },
+            x => CurrentPage != (Page)x));
+
         private ICommand _connectPasswordCommand;
-        public ICommand ConnectPasswordCommand
-        {
-            get
-            {
-                return _connectPasswordCommand ??
-                    (_connectPasswordCommand = new RelayCommand(OnConnectPassword));
-            }
-        }
+        public ICommand ConnectPasswordCommand => _connectPasswordCommand ?? (_connectPasswordCommand = new RelayCommand(OnConnectPassword));
+
         private ICommand _showPasswordCommand;
-        public ICommand ShowLoginCommand
-        {
-            get
-            {
-                return _showPasswordCommand ??
-                    (_showPasswordCommand = new RelayCommand(
-                        x => { CurrentPage = Page.Password; }));
-            }
-        }
+        public ICommand ShowLoginCommand => _showPasswordCommand ?? (_showPasswordCommand = new RelayCommand(x => { CurrentPage = Page.Password; }));
 
         private ICommand _settingsOkCommand;
-        public ICommand SettingsOkCommand
-        {
-            get
-            {
-                return _settingsOkCommand ?? (_settingsOkCommand = new RelayCommand(
-                   // action
-                   x =>
-                   {
-                       OnSettingsSave(x);
-                   },
-                   // can execute
-                   x =>
-                   {
-                       return true; // IsSettingsChanged;
-                   }));
-            }
-        }
+        public ICommand SettingsOkCommand => _settingsOkCommand ?? (_settingsOkCommand = new RelayCommand(OnSettingsSave));
+
         private ICommand _settingsNewCommand;
-        public ICommand SettingsNewCommand
+        public ICommand SettingsNewCommand => _settingsNewCommand ?? (_settingsNewCommand = new RelayCommand(x =>
         {
-            get
-            {
-                return _settingsNewCommand ??
-                    (_settingsNewCommand = new RelayCommand(OnSettingsNew));
-            }
-        }
+            OriginalDrive = new Drive(SelectedDrive);
+            SelectedDrive = FreeDriveList.First();
+            IsDriveNew = true;
+        }));
+
         private ICommand _settingsCancelCommand;
-        public ICommand SettingsCancelCommand
-        {
-            get
-            {
-                return _settingsCancelCommand ??
-                    (_settingsCancelCommand = new RelayCommand(OnSettingsCancel));
-            }
-        }
+        public ICommand SettingsCancelCommand => _settingsCancelCommand ?? (_settingsCancelCommand = new RelayCommand(OnSettingsCancel));
+
         private ICommand _settingsDeleteCommand;
-        public ICommand SettingsDeleteCommand
-        {
-            get
-            {
-                return _settingsDeleteCommand ?? (_settingsDeleteCommand = new RelayCommand(
-                   // action
-                   x =>
-                   {
-                       OnSettingsDelete(x);
-                   },
-                   // can execute
-                   x =>
-                   {
-                       return true;
-                       //return GoldDriveList != null && GoldDriveList.Count > 0;
-                   }));
-            }
-        }
+        public ICommand SettingsDeleteCommand => _settingsDeleteCommand ?? (_settingsDeleteCommand = new RelayCommand(OnSettingsDelete));
+
         private ICommand _settingsEditCommand;
-        public ICommand SettingsEditCommand
+        public ICommand SettingsEditCommand => _settingsEditCommand ?? (_settingsEditCommand = new RelayCommand(x =>
         {
-            get
-            {
-                return _settingsEditCommand ?? (_settingsEditCommand = new RelayCommand(
-                   // action
-                   x =>
-                   {
-                       OnSettingsEdit(x);
-                   },
-                   // can execute
-                   x =>
-                   {
-                       return true;
-                       //return GoldDriveList != null && GoldDriveList.Count > 0;
-                   }));
-            }
-        }
+            OriginalDrive = new Drive(SelectedDrive);
+            IsDriveEdit = true;
+        }));
+
         private ICommand _githubCommand;
-        public ICommand GithubCommand
-        {
-            get
-            {
-                return _githubCommand ??
-                    (_githubCommand = new RelayCommand(
-                        url => System.Diagnostics.Process.Start(url.ToString())));
-            }
-        }
+        public ICommand GithubCommand => _githubCommand ?? (_githubCommand = new RelayCommand(
+            url => System.Diagnostics.Process.Start(url.ToString())));
+
         private ICommand _runTerminalCommand;
-        public ICommand RunTerminalCommand
-        {
-            get
-            {
-                return _runTerminalCommand ??
-                    (_runTerminalCommand = new RelayCommand(
-                        url => System.Diagnostics.Process.Start("cmd.exe")));
-            }
-        }
+        public ICommand RunTerminalCommand => _runTerminalCommand ?? (_runTerminalCommand = new RelayCommand(
+            url => System.Diagnostics.Process.Start("cmd.exe")));
+
         private ICommand _openLogsFolderCommand;
-        public ICommand OpenLogsFolderCommand
-        {
-            get
-            {
-                return _openLogsFolderCommand ??
-                    (_openLogsFolderCommand = new RelayCommand(
-                        url => System.Diagnostics.Process.Start("explorer.exe", _mountService.LocalAppData)));
-            }
-        }
+        public ICommand OpenLogsFolderCommand => _openLogsFolderCommand ?? (_openLogsFolderCommand = new RelayCommand(
+            url => System.Diagnostics.Process.Start("explorer.exe", _mountService.LocalAppData)));
+
         private ICommand _openHelpCommand;
-        public ICommand OpenHelpCommand
-        {
-            get
-            {
-                return _openHelpCommand ??
-                    (_openHelpCommand = new RelayCommand(
-                        x => System.Diagnostics.Process.Start("notepad.exe", _mountService.AppPath + "\\help.md")));
-            }
-        }
+        public ICommand OpenHelpCommand => _openHelpCommand ?? (_openHelpCommand = new RelayCommand(
+            x => System.Diagnostics.Process.Start("notepad.exe", _mountService.AppPath + "\\help.md")));
 
         #endregion
 
-        #region events
-        
+        #region Events
+
         protected virtual void OnFocusRequested(string propertyName)
         {
             FocusRequested?.Invoke(this, new FocusRequestedEventArgs(propertyName));
         }
-        
+
         public void OnComboChanged()
-        {            
-            if (!Loaded)
+        {
+            if (!Loaded || SkipComboChanged || CurrentPage == Page.Settings)
                 return;
-            if (SkipComboChanged)
-                return;
-            if (CurrentPage == Page.Settings)
-                return;
-            
             CheckDriveStatusAsync();
         }
 
         #endregion
-
     }
 }
-

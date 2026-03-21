@@ -156,12 +156,12 @@ namespace golddrive.Tests
         public void FreeUsedDrivesTest()
         {
             Mount();
-            var free_drives = _mountService.GetFreeDrives();
+            var free_drives = _mountService.FreeDrives;
             var used_drives = _mountService.GetUsedDrives();
             Assert.IsNull(free_drives.Find(x => x.Name == "X:"));
             Assert.IsNotNull(used_drives.Find(x => x.Name == "X:"));
             Unmount();
-            free_drives = _mountService.GetFreeDrives();
+            free_drives = _mountService.FreeDrives;
             used_drives = _mountService.GetUsedDrives();
             Assert.IsNotNull(free_drives.Find(x => x.Name == "X:"));
             Assert.IsNull(used_drives.Find(x => x.Name == "X:"));
@@ -269,7 +269,7 @@ namespace golddrive.Tests
         public void TestSshTest()
         {
             RequireSsh();
-            var r = _mountService.TestSsh(_drive);
+            var r = _mountService.SshService.TestSsh(_drive);
             Assert.IsTrue(r.Success);
         }
 
@@ -291,7 +291,7 @@ namespace golddrive.Tests
                 File.Move(pubkey, backup_pub);
             try
             {
-                var r = _mountService.TestSsh(_drive);
+                var r = _mountService.SshService.TestSsh(_drive);
                 Assert.IsFalse(r.Success);
 
                 // generate keys using system ssh-keygen
@@ -299,7 +299,7 @@ namespace golddrive.Tests
                     $@"-t rsa -b 4096 -m PEM -N """" -f ""{seckey}""");
                 Assert.AreEqual(0, keygen.ExitCode, "ssh-keygen failed: " + keygen.Error);
 
-                r = _mountService.SetupSsh(_drive, _pass);
+                r = _mountService.SshService.SetupSsh(_drive, _pass);
                 Assert.AreEqual(MountStatus.OK, r.MountStatus);
             }
             finally
@@ -321,11 +321,11 @@ namespace golddrive.Tests
             RequireSsh();
             Drive nohost = new Drive { Host = "nohost", Port = "22" };
             Drive noport = new Drive { Host = _host, Port = "222" };
-            var r = _mountService.TestHost(nohost);
+            var r = _mountService.SshService.TestHost(nohost);
             Assert.AreEqual(MountStatus.BAD_HOST, r.MountStatus);
-            r = _mountService.TestHost(noport);
+            r = _mountService.SshService.TestHost(noport);
             Assert.AreEqual(MountStatus.BAD_HOST, r.MountStatus);
-            r = _mountService.TestHost(_drive);
+            r = _mountService.SshService.TestHost(_drive);
             Assert.AreEqual(MountStatus.OK, r.MountStatus);
         }
 

@@ -50,7 +50,7 @@ namespace golddrive
             Drives = new Dictionary<string, Drive>();
         }
 
-        internal void Load()
+        public void Load()
         {
             if (!File.Exists(Filename))
                 return;

@@ -1,11 +1,4 @@
 {
-  "Args": "-ocreate_umask=002,FileInfoTimeout=3000,DirInfoTimeout=5000,VolumeInfoTimeout=20000",
-  "Drives": {
-    "Z:": {
-      "Hosts": [
-        "166.87.203.108"
-      ],
-      "MountPoint": "166.87.203.108"
-    }
-  }
+  "Args": "-ocreate_umask=022,FileInfoTimeout=3000,DirInfoTimeout=5000,VolumeInfoTimeout=20000",
+  "Drives": {}
 }

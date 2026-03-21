@@ -71,7 +71,8 @@
       "Bash(cd:*)",
       "Bash(wc -l *.c *.h)",
       "Bash(xargs wc:*)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(c:/Dev/golddrive/build/Release/x64/golddrive.exe --version 2>&1)"
     ]
   }
 }

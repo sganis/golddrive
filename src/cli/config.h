@@ -223,25 +223,14 @@ typedef struct GDSSH {
 	int rc;							/* return code from the last ssh/sftp call */
 	int thread;						/* key, thread id that owns this struct */
 	SOCKET socket;					/* sockey id */
-//#ifdef USE_LIBSSH
-//	ssh_session ssh;
-//	sftp_session sftp;
-//	ssh_channel channel;
-//#else
 	LIBSSH2_SESSION *ssh;			/* ssh session struct */
 	LIBSSH2_SFTP* sftp;				/* sftp session struct */
 	LIBSSH2_CHANNEL* channel;		/* channel for commands */
-//#endif
 } GDSSH;
 
 typedef struct GDHANDLE {
-//#ifdef USE_LIBSSH
-//	sftp_file file_handle;				/* key, remote file handler		*/
-//	sftp_dir dir_handle;				/* key, remote dir handler		*/
-//#else
 	LIBSSH2_SFTP_HANDLE* file_handle;	/* key, remote file handler		*/
 	LIBSSH2_SFTP_HANDLE* dir_handle;	/* key, remote file handler		*/
-//#endif
 	int dir;						/* is directory							*/
 	int flags;						/* open flags							*/
 	int mode;						/* open mode							*/

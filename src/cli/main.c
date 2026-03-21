@@ -293,52 +293,6 @@ static int f_flush(const char* path, struct fuse_file_info* fi)
 	return -1 != gd_flush(fd) ? 0 : -errno;
 }
 
-//int f_chmod(const char* path, fuse_mode_t mode, struct fuse_file_info* fi)
-//{
-//	realpath(path);
-//	//char cmd[1000], out[1000], err[1000];
-//	//sprintf_s(cmd, sizeof cmd, "chmod 777 \"%s\"\n", path);
-//	//run_command(cmd, out, err);
-//	return -1 != gd_chmod(path, mode) ? 0 : -errno;
-//}
-//
-//int f_chown(const char* path, fuse_uid_t uid, fuse_gid_t gid, struct fuse_file_info* fi)
-//{
-//	realpath(path);
-//	return -1 != gd_chown(path, uid, gid) ? 0 : -errno;
-//}
-//int f_mknod(const char* path, fuse_mode_t mode, fuse_dev_t dev)
-//{
-//	return 0;
-//}
-//
-//int f_setxattr(const char* path, const char* name, const char* value, size_t size, int flags)
-//{
-//	realpath(path);
-//	return -1 != gd_setxattr(path, name, value, size, flags) ? 0 : -errno;
-//}
-//
-//int f_getxattr(const char* path, const char* name, char* value, size_t size)
-//{
-//	realpath(path);
-//	int nb;
-//	return -1 != (nb = gd_getxattr(path, name, value, size)) ? nb : -errno;
-//}
-//
-//int f_listxattr(const char* path, char* namebuf, size_t size)
-//{
-//	realpath(path);
-//	int nb;
-//	return -1 != (nb = gd_listxattr(path, namebuf, size)) ? nb : -errno;
-//}
-//
-//int f_removexattr(const char* path, const char* name)
-//{
-//	realpath(path);
-//	return -1 != gd_removexattr(path, name) ? 0 : -errno;
-//}
-
-
 /* supported fs operations */
 static struct fuse_operations fs_ops = {
 	.init = f_init,
@@ -566,8 +520,8 @@ static int parse_remote(GDCONFIG* fs)
 	 * not in windows */
 	if (p && *p != '/') {
 		char s[MAX_PATH];
-		strcpy(s, "/");
-		strcat(s, p);
+		strcpy_s(s, MAX_PATH, "/");
+		strcat_s(s, MAX_PATH, p);
 		free(fs->root);
 		fs->root = strdup(s);
 		fs->has_root = strlen(fs->root) > 1;
@@ -589,8 +543,12 @@ static int load_config_file(GDCONFIG* fs)
 	//	rc = load_json(fs);
 	//return rc;
 	char* appdata = getenv("LOCALAPPDATA");
+	if (!appdata) {
+		fprintf(stderr, "LOCALAPPDATA environment variable not set\n");
+		return 1;
+	}
 	char jsonfile[MAX_PATH];
-	sprintf_s(jsonfile, MAX_PATH, 
+	sprintf_s(jsonfile, MAX_PATH,
 		"%s\\Golddrive\\config.json", appdata);
 	fs->json = strdup(jsonfile);
 	rc = load_json(fs);
@@ -604,8 +562,12 @@ static void init_logging(GDCONFIG* fs)
 
 	if (!g_logfile) {
 		char* appdata = getenv("LOCALAPPDATA");
+		if (!appdata) {
+			fprintf(stderr, "LOCALAPPDATA not set, logging disabled\n");
+			return;
+		}
 		char f[MAX_PATH];
-		sprintf_s(f, MAX_PATH, "%s\\Golddrive", appdata);	
+		sprintf_s(f, MAX_PATH, "%s\\Golddrive", appdata);
 		g_logfile = malloc(MAX_PATH);
 		sprintf_s(g_logfile, MAX_PATH, "%s\\golddrive.log", f);
 		if (!directory_exists(f))
@@ -676,7 +638,15 @@ int main(int argc, char *argv[])
 	// private key
 	if (!g_conf.pkey || strlen(g_conf.pkey) == 0) {
 		char* profile = getenv("USERPROFILE");
+		if (!profile) {
+			fprintf(stderr, "USERPROFILE environment variable not set\n");
+			return 1;
+		}
 		g_conf.pkey = malloc(MAX_PATH);
+		if (!g_conf.pkey) {
+			fprintf(stderr, "out of memory\n");
+			return 1;
+		}
 		sprintf_s(g_conf.pkey, MAX_PATH, "%s\\.ssh\\id_rsa", profile);
 	}
 
@@ -694,7 +664,7 @@ int main(int argc, char *argv[])
 
 	// winfsp arguments
 	char volprefix[256], volname[256], prefix[256];
-	strcpy(prefix, g_conf.remote);
+	strcpy_s(prefix, sizeof(prefix), g_conf.remote);
 	if (str_contains(g_conf.remote, ":"))
 		str_replace(g_conf.remote, ":", "", prefix);
 	sprintf_s(volprefix, sizeof(volprefix),	"-oVolumePrefix=%s", prefix);
@@ -793,23 +763,6 @@ int main(int argc, char *argv[])
 	//snprintf(cmd, sizeof(cmd), "id -u %s", g_fs.user);
 	snprintf(cmd, sizeof(cmd), "id -u %s", g_conf.user);
 
-	// bencharmk commands
-	//LARGE_INTEGER frequency, start, end;
-	//double interval;
-	//QueryPerformanceFrequency(&frequency);
-	//QueryPerformanceCounter(&start);
-
-	//// code to be measured
-	//for (int u = 0; u < 100; u++) {
-	//	memset(out, 0, COMMAND_SIZE);
-	//	memset(err, 0, COMMAND_SIZE);
-	//	rc = run_command_channel_exec(cmd, out, err);
-	//	//printf("out: %s, err: %s\n", out, err);
-	//}
-	//QueryPerformanceCounter(&end);
-	//interval = (double)(end.QuadPart - start.QuadPart) / frequency.QuadPart;
-	//printf("\ncommand execution time: %f\n\n", interval);
-
 	gd_lock();
 	rc = run_command_channel_exec(cmd, out, err);
 	gd_unlock();
@@ -817,7 +770,8 @@ int main(int argc, char *argv[])
 	if (rc == 0) {
 		// get last line, ignore warnings
 		size_t outlen = strlen(out);
-		out[outlen - 1] = '\0';
+		if (outlen > 0)
+			out[outlen - 1] = '\0';
 		g_conf.remote_uid = atoi(out);
 		if (g_conf.remote_uid == 0 && strchr(out, '\n') != NULL) {
 			int i, lastnl = -1;

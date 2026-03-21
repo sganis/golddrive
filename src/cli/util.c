@@ -58,50 +58,6 @@ int file_exists(const char* path)
 
 
 
-//int load_ini(const char* appdir, GDCONFIG * fs)
-//{
-//	//printf("loading ini..., json.jsonfile=%s\n",json->jsonfile);
-//	char key[100] = { '\0' };
-//	char val[FILENAME_MAX] = { '\0' };
-//	char line[300] = { '\0' };
-//	size_t span = 0;
-//	char ini_path[FILENAME_MAX];
-//	snprintf(ini_path, sizeof ini_path, "%s\\golddrive.ini", appdir);
-//	//printf("ini path=%s\n", ini_path);
-//	FILE *ini_file = fopen(ini_path, "r");
-//	if (!ini_file) {
-//		fprintf(stderr, "json config will not be used, cannot read ini file: %s\n", ini_path);
-//		return 1;
-//	}
-//	else {
-//		while (fgets(line, sizeof(line), ini_file)) {
-//			char *equal = strpbrk(line, "="); //find the equal
-//			if (equal) {
-//				span = equal - line;
-//				memcpy(key, line, span);
-//				key[span] = '\0';
-//				str_trim(key);
-//				if (strcmp(key, "json") == 0) {
-//					equal++; //advance past the =
-//					char *nl = strpbrk(equal, "\n"); //fine the newline
-//					if (nl) {
-//						span = nl - equal;
-//						//printf("span=%d\n", span);
-//						strncpy(val, equal, span);
-//						str_trim(val);
-//						fs->json = strdup(val);
-//					}
-//					else {
-//						//printf("no nl\n");
-//					}
-//				}
-//			}
-//		}
-//	}
-//	fclose(ini_file);
-//	return 0;
-//}
-
 void str_trim(char *str)
 {
 	char *end;
@@ -259,35 +215,3 @@ unsigned long hash_path(const char* path)
 	// printf("hash %lu : %s\n", hash, path);
 	return hash;
 }
-//void ShowLastError()
-//{
-//	// Retrieve the system error message for the last-error code
-//
-//	LPVOID lpMsgBuf;
-//	LPVOID lpDisplayBuf;
-//	DWORD dw = GetLastError();
-//
-//	FormatMessage(
-//		FORMAT_MESSAGE_ALLOCATE_BUFFER |
-//		FORMAT_MESSAGE_FROM_SYSTEM |
-//		FORMAT_MESSAGE_IGNORE_INSERTS,
-//		NULL,
-//		dw,
-//		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-//		(LPTSTR)&lpMsgBuf,
-//		0, NULL);
-//
-//	// Display the error message and exit the process
-//
-//	lpDisplayBuf = (LPVOID)LocalAlloc(LMEM_ZEROINIT,
-//		(lstrlen((LPCTSTR)lpMsgBuf) +  40) * sizeof(TCHAR));
-//	StringCchPrintf((LPTSTR)lpDisplayBuf,
-//		LocalSize(lpDisplayBuf) / sizeof(TCHAR),
-//		TEXT("Function failed with error %d: %s"),
-//		dw, lpMsgBuf);
-//	MessageBox(NULL, (LPCTSTR)lpDisplayBuf, TEXT("Error"), MB_OK);
-//
-//	LocalFree(lpMsgBuf);
-//	LocalFree(lpDisplayBuf);
-//	ExitProcess(dw);
-//}

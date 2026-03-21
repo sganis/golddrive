@@ -1,14 +1,14 @@
 @echo off
 :: Build installer only (requires CLI and App to be built first)
 :: Usage: tools\build_installer.bat [version] [platform]
-:: Example: tools\build_installer.bat 2.4 x64
+:: Example: tools\build_installer.bat 2.5 x64
 
 setlocal
 
 set VERSION=%~1
 set PLATFORM=%~2
 
-if "%VERSION%"=="" set VERSION=2.4
+if "%VERSION%"=="" set VERSION=2.5
 if "%PLATFORM%"=="" set PLATFORM=x64
 
 set ISCC="%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe"
