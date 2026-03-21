@@ -161,6 +161,11 @@ namespace golddrive.Tests
             Assert.IsNull(free_drives.Find(x => x.Name == "X:"));
             Assert.IsNotNull(used_drives.Find(x => x.Name == "X:"));
             Unmount();
+            // Remove drive from settings so it becomes FREE instead of DISCONNECTED
+            var settings = _mountService.LoadSettings();
+            settings.Drives.Remove(_drive.Name);
+            _mountService.SaveSettings(settings);
+            _mountService.UpdateDrives(settings);
             free_drives = _mountService.FreeDrives;
             used_drives = _mountService.GetUsedDrives();
             Assert.IsNotNull(free_drives.Find(x => x.Name == "X:"));

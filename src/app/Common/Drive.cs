@@ -1,7 +1,7 @@
-﻿using Newtonsoft.Json;
+// src/app/Common/Drive.cs
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 
 namespace golddrive
 {
@@ -10,7 +10,6 @@ namespace golddrive
     {
         public Drive()
         {
-
         }
         public Drive(Drive d)
         {
@@ -34,19 +33,6 @@ namespace golddrive
 
         public string Path { get; set; }
 
-        //private bool _isDirty;
-        //public bool IsDirty
-        //{
-        //    get { return _isDirty; }
-        //    set
-        //    {
-        //        if (_isDirty != value)
-        //        {
-        //            _isDirty = value;
-        //            NotifyPropertyChanged();
-        //        }
-        //    }
-        //}
         private string _host;
         public string Host
         {
@@ -58,7 +44,6 @@ namespace golddrive
                     _host = value;
                     NotifyPropertyChanged();
                 }
-                
             }
         }
         public string Letter { get; set; }
@@ -81,7 +66,6 @@ namespace golddrive
             }
         }
 
-        
         private string _label;
         [JsonProperty]
         public string Label
@@ -92,7 +76,6 @@ namespace golddrive
                 if (_label != value)
                 {
                     _label = value;
-
                     NotifyPropertyChanged();
                     NotifyPropertyChanged("ComboDisplay");
                 }
@@ -102,7 +85,7 @@ namespace golddrive
         [JsonProperty]
         public string MountPoint
         {
-            get 
+            get
             {
                 string s = Host;
                 if (string.IsNullOrEmpty(s))
@@ -113,7 +96,7 @@ namespace golddrive
                     s = string.Format($"{CurrentUser}@{s}");
                 if (!string.IsNullOrEmpty(Path))
                     s = string.Format($"{s}{Path}");
-                return s;  
+                return s;
             }
             set
             {
@@ -131,7 +114,6 @@ namespace golddrive
                 if (string.IsNullOrEmpty(s))
                     return;
 
-                
                 if (s.Contains("\\"))
                 {
                     Host = s.Split('\\')[0];
@@ -157,15 +139,14 @@ namespace golddrive
                 NotifyPropertyChanged();
                 NotifyPropertyChanged("Host");
             }
-
         }
 
         private string user;
         public string User
         {
             get { return user; }
-            set {
-
+            set
+            {
                 if (user != value)
                 {
                     user = value;
@@ -189,59 +170,59 @@ namespace golddrive
         public string Port
         {
             get { return port; }
-            set {
+            set
+            {
                 if (port != value)
                 {
                     port = value;
                     NotifyPropertyChanged();
                 }
-
             }
         }
         public int CurrentPort
         {
-            get 
-            {   
+            get
+            {
                 int port = int.Parse("0" + Port);
                 if (port == 0)
                     port = 22;
                 return port;
-            } 
+            }
         }
 
         public string UserProfile
         {
             get
             {
-                var prof = Environment.ExpandEnvironmentVariables("%USERPROFILE%");
-                //if(!prof.Contains(User))
-                //    prof = Regex.Replace(prof, @"(?i)([a-z]:\\Users\\)([a-z0-9_\.]+)", $@"$1{User}");
-                return prof;
+                return Environment.ExpandEnvironmentVariables("%USERPROFILE%");
             }
         }
+
         private string appkey;
 
         [JsonProperty]
         public string AppKey
         {
             get { return appkey; }
-            set { 
-                if (AppKey != value) {
+            set
+            {
+                if (AppKey != value)
+                {
                     appkey = value;
                     NotifyPropertyChanged();
                 }
-            
             }
         }
-        public string DefaultAppKey {
-            get {
-                return $@"{UserProfile}\.ssh\id_rsa";
-            }            
+        public string DefaultAppKey
+        {
+            get { return $@"{UserProfile}\.ssh\id_rsa"; }
         }
-        public string DefaultAppPubKey {
+        public string DefaultAppPubKey
+        {
             get { return $@"{DefaultAppKey}.pub"; }
         }
-        public string AppPubKey {
+        public string AppPubKey
+        {
             get { return $@"{AppKey}.pub"; }
         }
 
@@ -255,18 +236,7 @@ namespace golddrive
         }
         public string ComboDisplay
         {
-            get
-            {
-                //int maxLengh = 15;
-                string display = $"{ Name } {Label}";
-                return display;
-
-                //if (string.IsNullOrEmpty(s))
-                //    s = Remote;
-                //if (s.Length > maxLengh)
-                //    s = "..." + s.Substring(s.Length - maxLengh);
-                //return $"{ Letter }: {s}";
-            }
+            get { return $"{ Name } {Label}"; }
         }
 
         public void Trim()
@@ -274,7 +244,6 @@ namespace golddrive
             Host = Host?.Trim();
             Port = Port?.Trim();
             Label = Label?.Trim();
-            User = User?.Trim();
             User = User?.Trim().ToLower();
             Args = Args?.Trim();
             if (Port == "22")
@@ -285,10 +254,8 @@ namespace golddrive
 
         public override string ToString()
         {
-            return $"{ Name } {MountPoint}"; ;
+            return $"{ Name } {MountPoint}";
         }
-
-        
     }
 
     public class DriveList : List<Drive>

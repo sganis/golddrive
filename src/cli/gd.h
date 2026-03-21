@@ -1,7 +1,7 @@
+// src/cli/gd.h
 #pragma once
 #include "config.h"
 #include "jsmn.h"
-
 
 GDSSH *gd_init_ssh(void);
 int gd_finalize(int);
@@ -32,32 +32,16 @@ void gd_log(const char* fmt, ...);
 int jsoneq(const char* json, jsmntok_t* tok, const char* s);
 int load_json(GDCONFIG* conf);
 
-// Send message to UsageUrl in config.json
-// The http post also includes user and host 
+/* Send message to UsageUrl in config.json */
 HANDLE* gd_usage(const char* action, const char* data);
 
 DWORD WINAPI _post_background(LPVOID data);
 int _post(const char* url, const char* data);
 int get_ssh_error(GDSSH* ssh);
 int map_error(int rc);
-void mode_human(unsigned long mode, char* human);
-void get_filetype(unsigned long perm, char* filetype);
-//int run_command(const char* cmd, char* out, char* err);
 int run_command_channel_exec(const char* cmd, char* out, char* err);
-int waitsocket(GDSSH* sanssh);
+int waitsocket(GDSSH* ssh);
 
 void libssh2_logger(LIBSSH2_SESSION* session, void* context,
 	const char* data, size_t length);
 void copy_attributes(struct fuse_stat* stbuf, LIBSSH2_SFTP_ATTRIBUTES* attrs);
-// message queue
-typedef struct GDQUEUE {
-	int front, rear, size;
-	unsigned capacity;
-	char** data;
-} GDQUEUE;
-
-GDQUEUE* gd_create_queue(unsigned capacity);
-int gd_queue_is_full(GDQUEUE* queue);
-int gd_queue_is_empty(GDQUEUE* queue);
-void gd_enqueue(GDQUEUE* queue, char* item);
-char* gd_dequeue(GDQUEUE* queue);

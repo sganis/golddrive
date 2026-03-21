@@ -1,3 +1,4 @@
+// src/cli/util.c
 #include <windows.h>
 #include <strsafe.h>
 #include <time.h>
@@ -21,7 +22,6 @@ int time_str(size_t time_mu, char *time_string)
 	time_t current_time;
 	current_time = time_mu / 1000000;
 	struct tm  ts;
-	// 2020-04-26 13:59:09
 	ts = *localtime(&current_time);
 	strftime(time_string, TIME_SIZE, "%Y-%m-%d %H:%M:%S", &ts);
 	return 0;
@@ -31,15 +31,14 @@ size_t time_mu(void)
 {
 	FILETIME ft;
 	LARGE_INTEGER li;
-	/* Get the amount of 100 nano seconds intervals elapsed since January 1, 1601 (UTC) and copy it
-	* to a LARGE_INTEGER structure. */
+	/* Get the amount of 100 nano seconds intervals elapsed since January 1, 1601 (UTC)
+	 * and copy it to a LARGE_INTEGER structure. */
 	GetSystemTimeAsFileTime(&ft);
 	li.LowPart = ft.dwLowDateTime;
 	li.HighPart = ft.dwHighDateTime;
 	long long ret = li.QuadPart;
 	ret -= 116444736000000000LL; /* Convert from file time to UNIX epoch time. */
-	//ret /= 10000; /* From 100 nano seconds (10^-7) to 1 millisecond (10^-3) intervals */
-	ret /= 10; /* From 100 nano seconds (10^-7) to 1 microsecond (10^-) intervals */
+	ret /= 10; /* From 100 nano seconds (10^-7) to 1 microsecond (10^-6) intervals */
 	return (size_t)ret;
 }
 
@@ -56,36 +55,24 @@ int file_exists(const char* path)
 	return (attr != INVALID_FILE_ATTRIBUTES && !(attr & FILE_ATTRIBUTE_DIRECTORY));
 }
 
-
-
 void str_trim(char *str)
 {
 	char *end;
 
-	// Trim leading space
+	/* trim leading space */
 	while (isspace((unsigned char)*str))
 		str++;
 
-	if (*str == 0)  // All spaces?
+	if (*str == 0)
 		return;
 
-	// Trim trailing space
+	/* trim trailing space */
 	end = str + strlen(str) - 1;
 	while (end > str && isspace((unsigned char)*end))
 		end--;
 
-	// Write new null terminator character
 	end[1] = '\0';
 }
-
-int randint(int min, int max)
-{
-	srand((unsigned int)time(NULL));
-	int n = min + (rand() % (max-min+1));
-	return n;
-}	
-
-
 
 void gd_random_string(char *s, const int len)
 {
@@ -98,6 +85,7 @@ void gd_random_string(char *s, const int len)
 	}
 	s[len] = 0;
 }
+
 int directory_exists(const char* path)
 {
 	DWORD attr = GetFileAttributesA(path);
@@ -138,38 +126,28 @@ int get_file_version(char* filename, char *version)
 			}
 		}
 		free(verData);
-		
 	}
 	return rc;
 }
 
 void str_replace(const char *s, const char *oldW, const char *newW, char *result)
 {
-	// result must be char result[MAX_PATH]
 	int i, cnt = 0;
 	int newWlen = (int)strlen(newW);
 	int oldWlen = (int)strlen(oldW);
 
-	// Counting the number of times old word 
-	// occur in the string 
 	for (i = 0; s[i] != '\0'; i++)
 	{
 		if (strstr(&s[i], oldW) == &s[i])
 		{
 			cnt++;
-
-			// Jumping to index after the old word. 
 			i += oldWlen - 1;
 		}
 	}
 
-	// Making new string of enough length 
-	//result = (char *)malloc(i + cnt * (newWlen - oldWlen) + 1);
-
 	i = 0;
 	while (*s)
 	{
-		// compare the substring with the result 
 		if (strstr(s, oldW) == s)
 		{
 			strcpy(&result[i], newW);
@@ -181,7 +159,6 @@ void str_replace(const char *s, const char *oldW, const char *newW, char *result
 	}
 
 	result[i] = '\0';
-	//return result;
 }
 
 int str_contains(const char *str, const char* word)
@@ -205,6 +182,7 @@ int path_concat(const char *s1, const char *s2, char *s3)
 	strcat_s(s3, MAX_PATH, s2);
 	return 0;
 }
+
 unsigned long hash_path(const char* path)
 {
 	unsigned long hash = 5381;
@@ -212,6 +190,5 @@ unsigned long hash_path(const char* path)
 	const char* p = path;
 	while (c = *p++)
 		hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
-	// printf("hash %lu : %s\n", hash, path);
 	return hash;
 }

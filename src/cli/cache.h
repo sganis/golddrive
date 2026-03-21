@@ -6,7 +6,7 @@
 typedef struct {
 	char path[MAX_PATH];            /* key (string is WITHIN the structure) */
 	unsigned long inode;			/* generated inode number from path */
-	size_t expiry;					/* expiration in microsecons */
+	size_t expiry;					/* expiration in microseconds */
 	UT_hash_handle hh;				/* makes this structure hashable */
 } CACHE_INODE;
 

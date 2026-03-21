@@ -1,10 +1,9 @@
+// src/cli/main.c
 #include "util.h"
 #include "gd.h"
 #include "cache.h"
-#include <direct.h>						/* _mkdir */
-#include <openssl/opensslv.h>			/* to get version only */
-//#include <Shlwapi.h>					/* PathRemoveFileSpecA */
-//#pragma comment(lib, "shlwapi.lib")
+#include <direct.h>
+#include <openssl/opensslv.h>
 
 /* global variables */
 GDSSH*				g_ssh;
@@ -19,7 +18,6 @@ GDCONFIG			g_conf;
 char*				g_logfile;
 char*				g_logurl;
 
-
 HANDLE g_keepalive_thread = NULL;
 HANDLE g_keepalive_stop_event = NULL;
 
@@ -29,29 +27,26 @@ DWORD WINAPI gd_keepalive_thread(LPVOID param)
     int seconds_to_next;
     DWORD wait_result;
 
-	// ADD THIS: Wait 5 seconds for mount to complete
+    /* wait 5 seconds for mount to complete */
     wait_result = WaitForSingleObject(stop_event, 5000);
     if (wait_result == WAIT_OBJECT_0) {
-        return 0;  // Stopped during initial delay
+        return 0;
     }
-    
+
     while (1) {
-        // Wait 30 seconds OR until stop event is signaled
         wait_result = WaitForSingleObject(stop_event, 30000);
-        
+
         if (wait_result == WAIT_OBJECT_0) {
-            // Stop event was signaled - exit immediately
             break;
         }
-        
-        // Timeout occurred - send keepalive
+
         gd_lock();
         if (g_ssh && g_ssh->ssh) {
             libssh2_keepalive_send(g_ssh->ssh, &seconds_to_next);
         }
         gd_unlock();
     }
-    
+
     return 0;
 }
 
@@ -60,7 +55,6 @@ static void* f_init(struct fuse_conn_info* conn, struct fuse_config* conf)
 #if defined(FUSE_CAP_READDIRPLUS)
 	conn->want |= (conn->capable & FUSE_CAP_READDIRPLUS);
 #endif
-	//conn->want |= (conn->capable & FSP_FUSE_CAP_STAT_EX);
 #if defined(FSP_FUSE_USE_STAT_EX) && defined(FSP_FUSE_CAP_STAT_EX)
 	conn->want |= (conn->capable & FSP_FUSE_CAP_STAT_EX);
 #endif
@@ -73,7 +67,7 @@ static int f_statfs(const char* path, struct fuse_statvfs* stbuf)
 	return -1 != gd_statvfs(path, stbuf) ? 0 : -errno;
 }
 
-static int f_getattr(const char* path, struct fuse_stat* stbuf, 
+static int f_getattr(const char* path, struct fuse_stat* stbuf,
 	struct fuse_file_info* fi)
 {
 	int rc;
@@ -87,13 +81,6 @@ static int f_getattr(const char* path, struct fuse_stat* stbuf,
 		intptr_t fd = fi_fd(fi);
 		rc = -1 != gd_fstat(fd, stbuf) ? 0 : -errno;
 	}
-	//if (rc) {
-	//	// debug
-	//	int err = -errno;
-	//}
-
-	//printf("f_getattr: %s, rc=%d\n", path, rc);
-
 	return rc;
 }
 
@@ -101,42 +88,28 @@ static int f_readlink(const char* path, char* buf, size_t size)
 {
 	realpath(path);
 	int rc = -1 != gd_readlink(path, buf, size) ? 0 : -errno;
-	/*if (rc) {
-		int err = -errno;
-	}*/
 	return rc;
 }
-
 
 static int f_unlink(const char* path)
 {
 	realpath(path);
 	int rc = -1 != gd_unlink(path) ? 0 : -errno;
-	/*if (rc) {
-		int err = -errno;
-	}*/
 	return rc;
 }
 
-
-
-static int f_create(const char* path, fuse_mode_t mode, 
+static int f_create(const char* path, fuse_mode_t mode,
 	struct fuse_file_info* fi)
 {
-	// printf("f_create: %s, mode=%d, flags=%d\n", path, mode, fi->flags);
-
 	realpath(path);
 	intptr_t fd;
-	// remove execution bit in files
-	// fuse_mode_t mod = mode & 0666; // int 438 
 	fuse_mode_t mod = mode;
-	int rc = -1 != (fd = gd_open(path, fi->flags, mod)) ? 
+	int rc = -1 != (fd = gd_open(path, fi->flags, mod)) ?
 		(fi_setfd(fi, fd), 0) : -errno;
-
 	return rc;
 }
 
-static int f_truncate(const char* path, fuse_off_t size, 
+static int f_truncate(const char* path, fuse_off_t size,
 	struct fuse_file_info* fi)
 {
 	if (0 == fi)
@@ -153,43 +126,30 @@ static int f_truncate(const char* path, fuse_off_t size,
 
 static int f_open(const char* path, struct fuse_file_info* fi)
 {
-	// printf("f_open: %s, flags=%d\n", path, fi->flags);
-
 	realpath(path);
 	intptr_t fd;
-	int rc = -1 != (fd = gd_open(path, fi->flags, 0)) ? 
+	int rc = -1 != (fd = gd_open(path, fi->flags, 0)) ?
 		(fi_setfd(fi, fd), 0) : -errno;
-	/*if (rc != 0) {
-		printf("error: f_open: %s, flags=%d\n", path, fi->flags);
-	}*/
 	return rc;
 }
 
-static int f_read(const char* path, char* buf, size_t size, 
+static int f_read(const char* path, char* buf, size_t size,
 	fuse_off_t off, struct fuse_file_info* fi)
 {
 	intptr_t fd = fi_fd(fi);
 	int nb;
 	int rc = -1 != (nb = gd_read(fd, buf, size, off)) ? nb : -errno;
-
 	return rc;
-
 }
 
-static int f_write(const char* path, const char* buf, 
+static int f_write(const char* path, const char* buf,
 	size_t size, fuse_off_t off, struct fuse_file_info* fi)
 {
-	int rc = 0;
 	intptr_t fd = fi_fd(fi);
 	int nb;
-	rc = -1 != (nb = gd_write(fd, buf, size, off)) ? nb : -errno;
-
-	//if(size != nb)
-	//	printf("f_write error: %s, flags=%d, size=%zu, rc=%d\n", path, fi->flags, size, rc);
-
+	int rc = -1 != (nb = gd_write(fd, buf, size, off)) ? nb : -errno;
 	return rc;
 }
-
 
 static int f_release(const char* path, struct fuse_file_info* fi)
 {
@@ -197,7 +157,7 @@ static int f_release(const char* path, struct fuse_file_info* fi)
 	return gd_close(fd);
 }
 
-static int f_rename(const char* oldpath, const char* newpath, 
+static int f_rename(const char* oldpath, const char* newpath,
 	unsigned int flags)
 {
 	realpath(newpath);
@@ -210,12 +170,12 @@ static int f_opendir(const char* path, struct fuse_file_info* fi)
 {
 	realpath(path);
 	GDDIR* dirp;
-	return 0 != (dirp = gd_opendir(path)) ? 
-		(fi_setdirp(fi, dirp), 0) : 
+	return 0 != (dirp = gd_opendir(path)) ?
+		(fi_setdirp(fi, dirp), 0) :
 		-errno;
 }
 
-static int f_readdir(const char* path, void* buf, 
+static int f_readdir(const char* path, void* buf,
 	fuse_fill_dir_t filler, fuse_off_t off,
 	struct fuse_file_info* fi, enum fuse_readdir_flags flags)
 {
@@ -230,7 +190,7 @@ static int f_readdir(const char* path, void* buf,
 		if (de == 0)
 			break;
 
-		if (0 != filler(buf, de->d_name, &de->d_stat, 
+		if (0 != filler(buf, de->d_name, &de->d_stat,
 			0, FUSE_FILL_DIR_PLUS))
 			return -ENOMEM;
 	}
@@ -238,7 +198,7 @@ static int f_readdir(const char* path, void* buf,
 	return -errno;
 }
 
-static int f_releasedir(const char* path, 
+static int f_releasedir(const char* path,
 	struct fuse_file_info* fi)
 {
 	GDDIR* dirp = fi_dirp(fi);
@@ -249,38 +209,25 @@ static int f_mkdir(const char* path, fuse_mode_t  mode)
 {
 	realpath(path);
 	int rc = -1 != gd_mkdir(path, mode) ? 0 : -errno;
-	/*if (rc) {
-		int err = -errno;
-	}*/
 	return rc;
 }
 
 static int f_rmdir(const char* path)
 {
 	realpath(path);
-	//int rc;
-	// rmdir fails if hidden files are not shown
-	//if (!g_fs.hidden)
-	//	rc = gd_rm_hidden(path);
-
 	int rc = -1 != gd_rmdir(path) ? 0 : -errno;
-	/*if (rc) {
-		int err = -errno;
-	}*/
-	//ShowLastError();
 	return rc;
 }
 
-
-static int f_utimens(const char* path, 
-	const struct fuse_timespec tv[2], 
+static int f_utimens(const char* path,
+	const struct fuse_timespec tv[2],
 	struct fuse_file_info* fi)
 {
 	realpath(path);
 	return -1 != gd_utimens(path, tv, fi) ? 0 : -errno;
 }
 
-static int f_fsync(const char* path, 
+static int f_fsync(const char* path,
 	int datasync, struct fuse_file_info* fi)
 {
 	intptr_t fd = fi_fd(fi);
@@ -315,18 +262,7 @@ static struct fuse_operations fs_ops = {
 	.write = f_write,
 	.statfs = f_statfs,
 	.create = f_create,
-	//.mknod = f_mknod,
-	//.access = f_access,
-	//.symlink = f_symlink,
-	//.link = f_link,
-	//.chmod = f_chmod,
-	//.chown = f_chown,
-	//.setxattr = f_setxattr,
-	//.getxattr = f_getxattr,
-	//.listxattr = f_listxattr,
-	//.removexattr = f_removexattr,
 #if defined(FSP_FUSE_USE_STAT_EX)
-	//.chflags = f_chflags,
 #endif
 };
 
@@ -361,13 +297,11 @@ static struct fuse_opt fs_opts[] = {
 };
 
 static int fs_opt_proc(
-	void *data, const char *arg, 
+	void *data, const char *arg,
 	int key, struct fuse_args *outargs)
 {
 	char exepath[MAX_PATH];
 	char version[100];
-	//char arch[3];
-	//sprintf_s(arch, 3, "%d", sizeof(void*) * 8);
 
 	switch (key) {
 	case FUSE_OPT_KEY_NONOPT:
@@ -381,8 +315,6 @@ static int fs_opt_proc(
 		}
 		fprintf(stderr, "golddrive: invalid argument '%s'\n", arg);
 		return -1;
-	//case FUSE_OPT_KEY_OPT:
-	//	return 1;
 	case KEY_HELP:
 		fprintf(stderr,
 			"\n"
@@ -391,7 +323,7 @@ static int fs_opt_proc(
 			"drive : letter and colon (like Z:)\n"
 			"remote: remote network path like \\\\golddrive\\[[locuser=]user@]host[!port][\\path]\n"
 			"Options:\n"
-			"    -o opt1,[opt2,...]         mount options\n"						
+			"    -o opt1,[opt2,...]         mount options\n"
 			"    --help                     show this help\n"
 			"    --version                  show version\n"
 			"    -h HOST, -o host=HOST      ssh server name or IP\n"
@@ -400,7 +332,7 @@ static int fs_opt_proc(
 			"    -p PORT, -o port=PORT      server port, default: 22\n"
 			"    -o keeplink                hard links are not removed before overwriting data\n"
 			"    -o audit                   enable auditing by logging read and write events\n"
-			"    -o cipher                  cipher for symetric encryption, comma-separated list\n"
+			"    -o cipher                  cipher for symmetric encryption, comma-separated list\n"
 			"    -o buffer=BYTES            read/write block size in bytes, default: 65535\n"
 			"    -o create_umask=MASK       file creation umask permissions\n"
 			"    -o DebugLog=FILE           debug log file (requires -d)\n"
@@ -412,16 +344,13 @@ static int fs_opt_proc(
 			"    -o ThreadCount             number of file system dispatcher threads\n"
 			"    -s                         disable multi-threaded operation\n"
 			"    -d, -o debug               enable debug output\n"
-
 		);
-		//fuse_opt_add_arg(outargs, "-h");
-		//fuse_main(outargs->argc, outargs->argv, &fs_ops, NULL);
 		exit(1);
 
-	case KEY_VERSION:		
+	case KEY_VERSION:
 		GetModuleFileNameA(NULL, exepath, MAX_PATH);
 		get_file_version(exepath, version);
-		fprintf(stderr, "Golddrive %s %d-bit %s\n", 
+		fprintf(stderr, "Golddrive %s %d-bit %s\n",
 			version, PLATFORM_BITS, __DATE__);
 		fprintf(stderr, "Libssh2 %s\n", libssh2_version(0));
 		fprintf(stderr, "%s\n", OPENSSL_VERSION_TEXT);
@@ -433,7 +362,6 @@ static int fs_opt_proc(
 
 static int parse_remote(GDCONFIG* fs)
 {
-	
 	if (!fs->remote)
 		return -1;
 
@@ -453,15 +381,6 @@ static int parse_remote(GDCONFIG* fs)
 		len--;
 	}
 
-	// now supports any service aname
-	/*if (strncmp(fs->remote, "/golddrive/", 11) != 0) {
-		gd_log("Invalid service name, "
-			"only '\\\\golddrive' is supported: %s\n", 
-			fs->remote);
-		return -1;
-	}*/
-
-
 	/* get service name (\\golddrive\) */
 	p = npath;
 	while ('/' == *p)
@@ -473,13 +392,6 @@ static int parse_remote(GDCONFIG* fs)
 		*p++ = '\0';
 
 	fs->service = strdup(service);
-
-	/*
-	char mountpoint[256];
-	memcpy(mountpoint, fs->remote + 11, len - 11);
-	mountpoint[len - 11] = '\0';
-	*/
-
 	fs->mountpoint = strdup(p);
 
 	/* parse instance name (syntax: [locuser=]user@host!port/path) */
@@ -512,12 +424,11 @@ static int parse_remote(GDCONFIG* fs)
 		fs->user = strdup(user);
 	if(port)
 		fs->port = atoi(port);
-	
-	fs->root = strdup(p);	
+
+	fs->root = strdup(p);
 	fs->has_root = 0;
-	/* mount root by default, prepend a slash before path 
-	 * if needed in remote linux file system
-	 * not in windows */
+	/* mount root by default, prepend a slash before path
+	 * if needed in remote linux file system */
 	if (p && *p != '/') {
 		char s[MAX_PATH];
 		strcpy_s(s, MAX_PATH, "/");
@@ -534,14 +445,6 @@ static int parse_remote(GDCONFIG* fs)
 static int load_config_file(GDCONFIG* fs)
 {
 	int rc = 0;
-	//// app dir
-	//char appdir[MAX_PATH];
-	//GetModuleFileNameA(NULL, appdir, MAX_PATH);
-	//PathRemoveFileSpecA(appdir);
-	//rc = load_ini(appdir, fs);
-	//if (!rc)
-	//	rc = load_json(fs);
-	//return rc;
 	char* appdata = getenv("LOCALAPPDATA");
 	if (!appdata) {
 		fprintf(stderr, "LOCALAPPDATA environment variable not set\n");
@@ -553,7 +456,6 @@ static int load_config_file(GDCONFIG* fs)
 	fs->json = strdup(jsonfile);
 	rc = load_json(fs);
 	return rc;
-		
 }
 
 static void init_logging(GDCONFIG* fs)
@@ -571,12 +473,11 @@ static void init_logging(GDCONFIG* fs)
 		g_logfile = malloc(MAX_PATH);
 		sprintf_s(g_logfile, MAX_PATH, "%s\\golddrive.log", f);
 		if (!directory_exists(f))
-			_mkdir(f);		
+			_mkdir(f);
 	}
-	// touch file
+	/* touch file */
 	FILE* log = fopen(g_logfile, "a");
 	if (log != NULL) {
-		//fprintf(log, "starting logging to file %s\n", g_logfile);
 		fclose(log);
 	}
 	else {
@@ -588,7 +489,7 @@ static void init_logging(GDCONFIG* fs)
 
 int main(int argc, char *argv[])
 {
-	// load fuse driver
+	/* load fuse driver */
 	if (FspLoad(0) != STATUS_SUCCESS) {
 		fprintf(stderr,
 			"failed to load winfsp driver, "
@@ -596,27 +497,27 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	// init cache table
+	/* init cache table */
 	g_cache_inode_ht = NULL;
-	
-	// parameters
+
+	/* parameters */
 	int rc;
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 	memset(&g_conf, 0, sizeof(g_conf));
 	rc = fuse_opt_parse(&args, &g_conf, fs_opts, fs_opt_proc);
-	if (rc || argc < 2 || 
+	if (rc || argc < 2 ||
 		!g_conf.drive || strlen(g_conf.drive) < 2) {
 		fprintf(stderr, "bad arguments, try --help\n");
 		return 1;
 	}
 
-	// load arguments from config file
+	/* load arguments from config file */
 	load_config_file(&g_conf);
 
-	// logging
+	/* logging */
 	init_logging(&g_conf);
 
-	// set arguments
+	/* set arguments */
 	g_conf.drive[0] = toupper(g_conf.drive[0]);
 	g_conf.letter = g_conf.drive[0];
 	if (!g_conf.port)
@@ -624,18 +525,18 @@ int main(int argc, char *argv[])
 	if (!g_conf.buffer)
 		g_conf.buffer = BUFFER_SIZE;
 
-	// parse network path
+	/* parse network path */
 	if (parse_remote(&g_conf))
 		return 1;
-	
-	// user in lower case
+
+	/* user in lower case */
 	if (!g_conf.user)
 		g_conf.user = getenv("USERNAME");
 	char* u = g_conf.user;
 	for (; *u; ++u)
 		*u = tolower(*u);
 
-	// private key
+	/* private key */
 	if (!g_conf.pkey || strlen(g_conf.pkey) == 0) {
 		char* profile = getenv("USERPROFILE");
 		if (!profile) {
@@ -650,8 +551,7 @@ int main(int argc, char *argv[])
 		sprintf_s(g_conf.pkey, MAX_PATH, "%s\\.ssh\\id_rsa", profile);
 	}
 
-
-	// show parameters
+	/* show parameters */
 	gd_log("Arguments:\n");
 	gd_log("drive    = %s\n", g_conf.drive);
 	gd_log("remote   = %s\n", g_conf.remote);
@@ -662,7 +562,7 @@ int main(int argc, char *argv[])
 	gd_log("root     = %s\n", g_conf.root);
 	gd_log("pkey     = %s\n", g_conf.pkey);
 
-	// winfsp arguments
+	/* winfsp arguments */
 	char volprefix[256], volname[256], prefix[256];
 	strcpy_s(prefix, sizeof(prefix), g_conf.remote);
 	if (str_contains(g_conf.remote, ":"))
@@ -682,50 +582,36 @@ int main(int argc, char *argv[])
 	fuse_opt_insert_arg(&args, pos++, "-odothidden");
 	fuse_opt_insert_arg(&args, pos++, "-ouid=-1,gid=-1");
 	fuse_opt_insert_arg(&args, pos++, "-oumask=000,create_umask=000");
-	
-	// config file arguments
+
+	/* config file arguments */
 	if (g_conf.args && strcmp(g_conf.args, "") != 0) {
 		fuse_opt_insert_arg(&args, pos++, g_conf.args);
 		gd_log("args     = %s\n", g_conf.args);
 	}
-	
-	// debuging bad VolumePrefix
-	//gd_log("before fuse_opt_parse:\n");
-	//for (int i = 1; i < args.argc; i++)
-	//	gd_log("arg %d    = %s\n", i, args.argv[i]);
 
-	// validate and reformat arguments
-	//rc = fuse_opt_parse(&args, &g_conf, fs_opts, fs_opt_proc);
-	
-	// debuging bad VolumePrefix
-	//gd_log("after fuse_opt_parse:\n");
-	//for (int i = 1; i < args.argc; i++)
-	//	gd_log("arg %d    = %s\n", i, args.argv[i]);
-
-	// drive must be the last argument for winfsp
+	/* drive must be the last argument for winfsp */
 	fuse_opt_add_arg(&args, g_conf.drive);
 
-	// print arguments
+	/* print arguments */
 	gd_log("buffer   = %u\n", g_conf.buffer);
 	gd_log("keeplink = %u\n", g_conf.keeplink);
 	gd_log("audit    = %u\n", g_conf.audit);
 	if (g_conf.cipher)
 		gd_log("cipher   = %s\n", g_conf.cipher);
-
-	if (g_conf.usageurl) 
+	if (g_conf.usageurl)
 		gd_log("usage    = %s\n", g_conf.usageurl);
 
 	gd_log("Arguments:\n");
 	for (int i = 1; i < args.argc; i++)
 		gd_log("arg %d    = %s\n", i, args.argv[i]);
-	
-	// check existance of private key before trying to ssh
+
+	/* check existence of private key before trying to ssh */
 	if (!file_exists(g_conf.pkey)) {
 		gd_log("cannot read private key: %s\n", g_conf.pkey);
 		return 1;
 	}
 
-	// initialize thread locks
+	/* initialize thread locks */
 	InitializeSRWLock(&g_ssh_lock);
 	InitializeSRWLock(&g_log_lock);
 	InitializeSRWLock(&g_cache_inode_lock);
@@ -733,15 +619,15 @@ int main(int argc, char *argv[])
 	g_cache_calls = 0;
 	g_sftp_calls = 0;
 
-	// initialize ssh
+	/* initialize ssh */
 	g_ssh = gd_init_ssh();
 	if (!g_ssh)
 		return 1;
 
-	// keepalive event
+	/* keepalive event */
 	g_keepalive_stop_event = CreateEvent(NULL, TRUE, FALSE, NULL);
 	if (g_keepalive_stop_event) {
-		g_keepalive_thread = CreateThread(NULL, 0, gd_keepalive_thread, 
+		g_keepalive_thread = CreateThread(NULL, 0, gd_keepalive_thread,
 										g_keepalive_stop_event, 0, NULL);
 		if (!g_keepalive_thread) {
 			gd_log("Warning: Failed to create keepalive thread\n");
@@ -752,15 +638,11 @@ int main(int argc, char *argv[])
 		gd_log("Warning: Failed to create keepalive stop event\n");
 	}
 
-	// usage
+	/* usage */
 	HANDLE* uh = gd_usage("CONNECTED", "");
 
-	// get uid
+	/* get uid */
 	char cmd[COMMAND_SIZE], out[COMMAND_SIZE], err[COMMAND_SIZE];
-	//snprintf(cmd, sizeof(cmd), "hostname", g_fs.user);
-	//rc = run_command_channel_exec(cmd, out, err);
-
-	//snprintf(cmd, sizeof(cmd), "id -u %s", g_fs.user);
 	snprintf(cmd, sizeof(cmd), "id -u %s", g_conf.user);
 
 	gd_lock();
@@ -768,7 +650,7 @@ int main(int argc, char *argv[])
 	gd_unlock();
 
 	if (rc == 0) {
-		// get last line, ignore warnings
+		/* get last line, ignore warnings */
 		size_t outlen = strlen(out);
 		if (outlen > 0)
 			out[outlen - 1] = '\0';
@@ -778,7 +660,7 @@ int main(int argc, char *argv[])
 			for (i = 0; i <= (int)outlen; i++)
 				if (out[i] == '\n')
 					lastnl = i;
-			if (lastnl > -1) 
+			if (lastnl > -1)
 				g_conf.remote_uid = atoi(out + lastnl);
 		}
 		gd_log("uid      = %d\n", g_conf.remote_uid);
@@ -792,42 +674,28 @@ int main(int argc, char *argv[])
 		gd_log("home     = %s\n", g_conf.home);
 	}
 
-	// number of threads
-	//printf("Threads = %d\n", gd_threads(5, get_number_of_processors()));
-
-
-	// mount
+	/* mount */
 	rc = fuse_main(args.argc, args.argv, &fs_ops, NULL);
-	
-	// cleanup keepalive
+
+	/* cleanup keepalive */
 	if (g_keepalive_thread) {
-		// Signal the thread to stop
 		if (g_keepalive_stop_event) {
 			SetEvent(g_keepalive_stop_event);
 		}
-		
-		// Wait for thread to exit (should be immediate now)
-		WaitForSingleObject(g_keepalive_thread, 1000);  // Reduced to 1 second
+		WaitForSingleObject(g_keepalive_thread, 1000);
 		CloseHandle(g_keepalive_thread);
 		g_keepalive_thread = NULL;
-		
 		if (g_keepalive_stop_event) {
 			CloseHandle(g_keepalive_stop_event);
 			g_keepalive_stop_event = NULL;
 		}
 	}
 
-	// cleanup
+	/* cleanup */
 	if (uh) {
 		WaitForSingleObject(uh, 10000);
 		CloseHandle(uh);
 	}
 
-	// this prouces disconnection delays
-	//uh = gd_usage("disconnected");
-	////if (uh) {
-	//	WaitForSingleObject(uh, 10000);
-	//	CloseHandle(uh);
-	//}
 	return gd_finalize(rc);
 }

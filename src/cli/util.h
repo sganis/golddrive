@@ -1,5 +1,5 @@
+// src/cli/util.h
 #pragma once
-//#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <stdio.h>
 
 #define TIME_SIZE 100
@@ -12,7 +12,7 @@ int directory_exists(const char* path);
 int get_file_version(char* filename, char *version);
 char *str_ndup(char *str, int chars);
 void str_trim(char *str);
-void str_replace(const char *s, const char *oldW, 
+void str_replace(const char *s, const char *oldW,
 	const char *newW, char *result);
 int str_contains(const char *str, const char* word);
 int str_startswith(const char *str, const char* beg);

@@ -1,11 +1,9 @@
+// src/cli/config.h
 #pragma once
 #ifndef _WIN64
 #pragma warning(disable: 4244 4142)
 #endif
 #pragma warning(disable: 4099)
-
-// windows file attributes
-//#define FSP_FUSE_USE_STAT_EX
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -31,7 +29,7 @@ extern char* g_logfile;
 extern char* g_logurl;
 
 /* file system supports fuse_stat_ex */
-#define FSP_FUSE_CAP_STAT_EX            (1 << 23)   
+#define FSP_FUSE_CAP_STAT_EX            (1 << 23)
 /* from FreeBSD */
 #define FSP_FUSE_UF_HIDDEN              0x00008000
 #define FSP_FUSE_UF_READONLY            0x00001000
@@ -42,7 +40,6 @@ extern char* g_logurl;
 #define O_ACCMODE						0x0003
 #define AT_FDCWD                        -2
 #define AT_SYMLINK_NOFOLLOW             2
-
 
 #ifdef _WIN64
 #define PLATFORM_BITS 64
@@ -57,10 +54,10 @@ extern char* g_logurl;
 	printf(format, __VA_ARGS__);										\
 	fflush(stdout);														\
 }
-#define log_debug(format, ...)  log_message("DEBUG", format, __VA_ARGS__) 
-#define log_info(format, ...)   log_message("INFO ", format, __VA_ARGS__) 
-#define log_warn(format, ...)   log_message("WARN ", format, __VA_ARGS__) 
-#define log_error(format, ...)  log_message("ERROR", format, __VA_ARGS__) 
+#define log_debug(format, ...)  log_message("DEBUG", format, __VA_ARGS__)
+#define log_info(format, ...)   log_message("INFO ", format, __VA_ARGS__)
+#define log_warn(format, ...)   log_message("WARN ", format, __VA_ARGS__)
+#define log_error(format, ...)  log_message("ERROR", format, __VA_ARGS__)
 
 #if LOGLEVEL < DEBUG
 #undef log_debug
@@ -103,7 +100,7 @@ typedef struct GDCONFIG {
 
 extern GDCONFIG g_conf;
 
-/* SSH Status Codes (returned by libssh2_ssh_last_error() */
+/* SSH Status Codes (returned by libssh2_ssh_last_error()) */
 static const char * ssh_errors[] = {
 	"SSH_OK",
 	"SSH_SOCKET_NONE",
@@ -156,7 +153,7 @@ static const char * ssh_errors[] = {
 	"SSH_UNKNOWN"
 };
 
-/* SFTP Status Codes (returned by libssh2_sftp_last_error() ) */
+/* SFTP Status Codes (returned by libssh2_sftp_last_error()) */
 static const char *sftp_errors[] = {
 	"SFTP_OK",
 	"SFTP_EOF",
@@ -182,7 +179,6 @@ static const char *sftp_errors[] = {
 	"SFTP_LINK_LOOP",
 	"SFTP_UNKNOWN"
 };
-
 
 /* macros */
 #define fi_dirbit                       (0x8000000000000000ULL)
@@ -216,39 +212,39 @@ static const char *sftp_errors[] = {
 }
 
 /* count the number of threads in this app */
-/* n is the -o ThreadCount=n arg, c is number of cores*/
+/* n is the -o ThreadCount=n arg, c is number of cores */
 int gd_threads(int n, int c);
 
 typedef struct GDSSH {
 	int rc;							/* return code from the last ssh/sftp call */
 	int thread;						/* key, thread id that owns this struct */
-	SOCKET socket;					/* sockey id */
+	SOCKET socket;					/* socket id */
 	LIBSSH2_SESSION *ssh;			/* ssh session struct */
 	LIBSSH2_SFTP* sftp;				/* sftp session struct */
 	LIBSSH2_CHANNEL* channel;		/* channel for commands */
 } GDSSH;
 
 typedef struct GDHANDLE {
-	LIBSSH2_SFTP_HANDLE* file_handle;	/* key, remote file handler		*/
-	LIBSSH2_SFTP_HANDLE* dir_handle;	/* key, remote file handler		*/
-	int dir;						/* is directory							*/
-	int flags;						/* open flags							*/
-	int mode;						/* open mode							*/
-	char path[MAX_PATH];			/* file full path						*/
+	LIBSSH2_SFTP_HANDLE* file_handle;	/* remote file handle */
+	LIBSSH2_SFTP_HANDLE* dir_handle;	/* remote dir handle */
+	int dir;						/* is directory */
+	int flags;						/* open flags */
+	int mode;						/* open mode */
+	char path[MAX_PATH];			/* file full path */
 	long size;
 } GDHANDLE;
 
 struct GDDIRENT {
-	struct fuse_stat d_stat;		/* file stats                           */
-	char d_name[FILENAME_MAX];		/* file name                            */
-	int dir;						/* is directory							*/
-	int hidden;						/* is hidden							*/
+	struct fuse_stat d_stat;		/* file stats */
+	char d_name[FILENAME_MAX];		/* file name */
+	int dir;						/* is directory */
+	int hidden;						/* is hidden */
 };
 
 typedef struct GDDIR {
-	GDHANDLE *handle;				/* file handle			                */
-	struct GDDIRENT de;			/* file item entry		                */
-	char path[MAX_PATH];			/* directory full path	                */
+	GDHANDLE *handle;				/* file handle */
+	struct GDDIRENT de;				/* file item entry */
+	char path[MAX_PATH];			/* directory full path */
 } GDDIR;
 
 enum _FILE_TYPE {
@@ -261,22 +257,17 @@ typedef struct usagedata {
 	char data[1024];
 } usagedata;
 
-
 extern GDSSH *g_ssh;
 extern SRWLOCK g_ssh_lock;
 extern SRWLOCK g_log_lock;
 
-inline void gd_lock() 
-{ 
-	//printf("locking...");
-	AcquireSRWLockExclusive(&g_ssh_lock);
-	//printf("locking done\n");
-}
-inline void gd_unlock() 
+inline void gd_lock()
 {
-	//printf("unlocking...");
+	AcquireSRWLockExclusive(&g_ssh_lock);
+}
+inline void gd_unlock()
+{
 	ReleaseSRWLockExclusive(&g_ssh_lock);
-	//printf("unlocking done\n");
 }
 
 /* file flags */
@@ -299,8 +290,7 @@ inline void gd_unlock()
 #define GD_IFCHR  0020000 /* character special */
 #define GD_IFIFO  0010000 /* named pipe */
 
-/* macros to get fily type */
+/* macros to get file type */
 #define GD_ISLNK(m) (((m) & GD_IFMT) == GD_IFLNK)
 #define GD_ISREG(m) (((m) & GD_IFMT) == GD_IFREG)
 #define GD_ISDIR(m) (((m) & GD_IFMT) == GD_IFDIR)
-

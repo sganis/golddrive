@@ -1,4 +1,4 @@
-﻿#pragma warning disable CS0168
+// src/app/Common/Settings.cs
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -10,8 +10,6 @@ namespace golddrive
     [JsonObject(MemberSerialization.OptOut)]
     public class Settings
     {
-        //public string Args { get; set; }
-        //public string LogFile { get; set; }
         public string UsageUrl { get; set; }
         public string Selected { get; set; }
         public Dictionary<string, Drive> Drives { get; set; }
@@ -59,20 +57,9 @@ namespace golddrive
             {
                 string args = "";
                 var json = JsonConvert.DeserializeObject<Dictionary<string, object>>(File.ReadAllText(Filename));
-                //if (json.ContainsKey("Args"))
-                //    Args = json["Args"].ToString();
-                //LogFile = "C:\\Users\\Sant\\Desktop\\golddrive.log";
-
-                //if (json.ContainsKey("LogFile"))
-                //    LogFile = json["LogFile"].ToString();
                 if (json.ContainsKey("UsageUrl"))
                 {
                     UsageUrl = json["UsageUrl"].ToString();
-                }
-                else
-                {
-                    // testing url logging
-                    //UsageUrl = "https://192.168.100.201:5000";
                 }
                 if (json.ContainsKey("Selected"))
                     Selected = json["Selected"].ToString();
@@ -97,8 +84,6 @@ namespace golddrive
                         d.Label = data["Label"].ToString();
                     if (data.ContainsKey("MountPoint") && data["MountPoint"] != null)
                         d.MountPoint = data["MountPoint"].ToString();
-                    //if (data.ContainsKey("Hosts") && data["Hosts"] != null)
-                    //    d.Hosts = JsonConvert.DeserializeObject<List<string>>(data["Hosts"].ToString());
                     Drives[d.Name] = d;
                 }
                 var selected = Drives.Values.ToList().Find(x => x.Name == Selected);
@@ -109,6 +94,7 @@ namespace golddrive
             }
             catch (Exception ex)
             {
+                Logger.Log($"Error loading settings: {ex.Message}");
             }
         }
     }
