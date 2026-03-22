@@ -127,13 +127,11 @@ end;
 procedure UnmountGoldDrives;
 var
   ExitCode: Integer;
-  Output: AnsiString;
-  Letter: Char;
+  I: Integer;
 begin
-  { Disconnect only golddrive-mounted drives, not all network drives }
-  for Letter := 'G' to 'Z' do
+  for I := Ord('G') to Ord('Z') do
   begin
-    Exec('net.exe', 'use ' + Letter + ': /d /y', '', SW_HIDE, ewWaitUntilTerminated, ExitCode);
+    Exec('net.exe', 'use ' + Chr(I) + ': /d /y', '', SW_HIDE, ewWaitUntilTerminated, ExitCode);
   end;
 end;
 
