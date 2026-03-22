@@ -7,7 +7,7 @@ setlocal
 set DIR=%~dp0
 set DIR=%DIR:~0,-1%
 set CWD=%CD%
-set VERSION=1.11.0
+set VERSION=1.11.1
 set TEMP=C:\Temp
 
 :: Visual Studio 2022 configuration
