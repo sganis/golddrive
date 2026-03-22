@@ -9,7 +9,7 @@ Golddrive is an SSHFS implementation for Windows that maps network drives to rem
 ## Prerequisites
 
 - **Visual Studio 2022** with C++ desktop workload (for MSVC compiler)
-- **.NET 9 SDK** (for the WPF app and tests)
+- **.NET Framework 4.8** (included with Windows 10; SDK-style projects using `net48` target)
 - **WinFsp** installed from https://github.com/winfsp/winfsp/releases (provides FUSE headers and runtime)
 - **Inno Setup 6** (optional, for building the installer) from https://jrsoftware.org/isinfo.php
 
@@ -27,17 +27,17 @@ Or use the helper script (sets up vcvars automatically):
 tools\build_cli.bat
 ```
 
-### 2. WPF App (.NET 9)
+### 2. WPF App (.NET Framework 4.8)
 
 ```cmd
-dotnet build src\app\app.csproj -c Release -o src\build\Release\x64
+dotnet build src\app\app.csproj -c Release -o build\Release\x64
 ```
 
-### 3. Tests (.NET 9)
+### 3. Tests (.NET Framework 4.8)
 
 Build:
 ```cmd
-dotnet build src\test\test.csproj -c Release
+dotnet build src\test\test.csproj -c Release -o build\Release\x64
 ```
 
 Run (requires SSH server, see Testing section):
@@ -49,20 +49,20 @@ dotnet test src\test\test.csproj -c Release --no-build -v normal
 
 After building CLI and App:
 ```cmd
-tools\build_installer.bat 2.4 x64
+tools\build_installer.bat 2.6
 ```
 
 Or call ISCC directly:
 ```cmd
-"%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe" /DMyAppVersion=2.4 /DMyPlatform=x64 /DMyConfiguration=Release src\installer\setup.iss
+"%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe" /DMyAppVersion=2.6 /DMyPlatform=x64 /DMyConfiguration=Release installer\setup.iss
 ```
 
 ### Full build (all components)
 
 From a Developer Command Prompt:
 ```cmd
-tools\build.bat x64
-tools\build_installer.bat 2.4 x64
+tools\build.bat
+tools\build_installer.bat 2.6
 ```
 
 ### Register CLI for development (admin terminal, one-time)
@@ -84,7 +84,7 @@ tools\test.bat
 
 ## Build Output
 
-All build artifacts go to `src/build/{Configuration}/{Platform}/`:
+All build artifacts go to `build/{Configuration}/{Platform}/`:
 - `golddrive.exe` - CLI filesystem driver
 - `golddrive-app.exe` - GUI application
 - `golddrive-test.dll` - Test assembly
@@ -99,7 +99,7 @@ All build artifacts go to `src/build/{Configuration}/{Platform}/`:
   - `main.c` - FUSE entry point and filesystem callbacks
   - `cache.c` / `cache.h` - Inode and stat caching
 
-- **app** (`src/app/`) - WPF GUI application (.NET 9) with Material Design UI for managing drive connections. Uses MVVM pattern:
+- **app** (`src/app/`) - WPF GUI application (.NET Framework 4.8) with Material Design UI for managing drive connections. Uses MVVM pattern:
   - `Service/MountService.cs` - Core mounting logic, SSH key management, drive status
   - `ViewModel/MainWindowViewModel.cs` - Main UI logic
   - `Common/Drive.cs` - Drive model with mount point parsing
@@ -107,13 +107,14 @@ All build artifacts go to `src/build/{Configuration}/{Platform}/`:
 
 - **test** (`src/test/`) - MSTest unit tests for the app layer
 
-- **installer** (`src/installer/`) - Inno Setup script producing a standalone installer EXE
+- **installer** (`installer/`) - Inno Setup script producing a standalone installer EXE
 
 ### Dependencies
 
 External libraries in `vendor/`:
-- libssh2 - SSH2 protocol library
-- OpenSSL - Cryptographic library
+- libssh2 1.11.1 - SSH2 protocol library
+- OpenSSL 3.6.0 - Cryptographic library
+- OpenSSH v10 - SSH client tools (ssh.exe, ssh-keygen.exe)
 - WinFsp - Windows FUSE implementation
 
 NuGet packages (app):
@@ -121,7 +122,7 @@ NuGet packages (app):
 - Newtonsoft.Json - JSON serialization
 - NLog - Logging
 - SSH.NET - SSH client for key setup and testing
-- System.ServiceProcess.ServiceController - WinFsp service detection
+- System.ServiceProcess - WinFsp service detection (framework assembly)
 
 ### Drive Mounting
 
@@ -134,4 +135,4 @@ The CLI registers with WinFsp as a network provider service. Configuration is st
 
 ## CI
 
-GitHub Actions builds x64 and ARM64 Release configurations on Windows. The CLI is built with `msbuild`, the .NET app and tests with `dotnet build`, and the installer with Inno Setup 6. The build runs the full test suite including filesystem stress tests (fsx, fsbench, iozone).
+AppVeyor builds x64 Release on Windows (Visual Studio 2022 image). The CLI is built with `msbuild`, the .NET app and tests with `dotnet build`, and the installer with Inno Setup 6. The build runs the full test suite including filesystem stress tests (fsx, fsbench, iozone).

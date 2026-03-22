@@ -7,7 +7,7 @@ SSHFS for Windows - Map drives to remote filesystems using SSH.
 Installation
 ------------
 
-Install WinFsp from https://github.com/billziss-gh/winfsp/releases, then install Golddrive from https://github.com/sganis/golddrive/releases. The installation requires admin priviledges.
+Install WinFsp from https://github.com/winfsp/winfsp/releases, then install Golddrive from https://github.com/sganis/golddrive/releases. The installation requires admin priviledges.
 
 How to use
 ----------

@@ -1,6 +1,9 @@
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
+
+[assembly: InternalsVisibleTo("golddrive-test")]
 
 [assembly: AssemblyTitle("golddrive")]
 [assembly: AssemblyDescription("Secure Network Drive")]

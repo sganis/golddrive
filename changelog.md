@@ -1,8 +1,8 @@
 # Changelog
 
-## 1. .NET Framework 4.5.2 → .NET 8.0 Migration
+## 1. SDK-Style Project Migration
 
-The biggest theme across the staged changes. Both `src/app/app.csproj` and `src/test/test.csproj` were rewritten from legacy MSBuild format to modern SDK-style targeting `net8.0-windows`. Key consequences:
+Both `src/app/app.csproj` and `src/test/test.csproj` were rewritten from legacy MSBuild format to modern SDK-style (still targeting `net48`). Key consequences:
 
 - **`packages.config` deleted** — replaced by `<PackageReference>` entries with updated versions (MaterialDesignThemes 4→5, NLog 4→5, SSH.NET 2020→2024, etc.)
 - **`AssemblyInfo.cs`** — version changed from `2.29.0.*` to `2.29.0.0` (SDK-style projects don't support wildcard versioning)
@@ -12,7 +12,7 @@ The biggest theme across the staged changes. Both `src/app/app.csproj` and `src/
 
 All native `.vcxproj` files (cli, runapp, sanssh, sanssh-libssh) were updated:
 
-- **PlatformToolset** changed from hardcoded `v140`/`v142` to `$(DefaultPlatformToolset)` — no longer locked to a specific VS version
+- **PlatformToolset** changed from hardcoded `v140`/`v142` to `$(DefaultPlatformToolset)` for x64, ARM64, and Win32 configurations; orphaned x86 configs removed
 - **WindowsTargetPlatformVersion** bumped from `8.1` to `10.0`
 - A **hardcoded user-specific include path** was replaced with a portable relative path
 - Removed Whole Program Optimization and profiling flags from Release builds
@@ -51,7 +51,29 @@ Moved `cache_inode_lock()` **before** `HASH_FIND_STR()` — fixing a TOCTOU race
 
 Complete rewrite with proper architecture: dataclass result types, context-managed SSH client, `cryptography`-library key generation (RSA/Ed25519/ECDSA), ~20 integration tests, argparse CLI, and retry logic.
 
-## 9. New Files
+## 9. Production Readiness (Second Audit)
+
+CLI:
+- **SSH reconnection** — `gd_reconnect()` tears down and re-establishes SSH/SFTP/channel; `RETRY_ON_DISCONNECT` macro retries getattr/statfs/opendir on connection errors
+- **WinHttp NULL deref fix** — null check on `hRequest` before `WinHttpSendRequest`
+- **Command injection fix** — path validation in `gd_check_hlink()` rejects shell metacharacters
+- **Channel null check** — `run_command_channel_exec()` validates channel before use
+- **WSAStartup cleanup** — `WSACleanup()` called if `libssh2_init()` fails
+
+App:
+- **MountService IDisposable** — implements `IDisposable`, disposed on window close
+- **Config file ACLs** — `config.json` restricted to current user after save
+- **PrivateKeyFile disposal** — wrapped in `using` block in `TestSsh()`
+- **Async exception handling** — try-catch added to `LoadDrivesAsync`, `CheckDriveStatusAsync`, `GetVersionsAsync`
+- **Event handler leaks** — Unloaded handlers unsubscribe `FocusRequested` in HostControl/PasswordControl
+
+Tests/CI:
+- **SanitizeShellArg tests** — 14 new tests covering all injection characters
+- **Code coverage** — `coverlet.collector` added to test project
+- **AppVeyor WinFsp** — updated from 1.12 to 2.1
+- **Newtonsoft.Json** — updated from 13.0.3 to 13.0.4
+
+## 10. New Files
 
 - **`CLAUDE.md`** — project documentation for AI assistant context
 - **`PLAN.md`** — 5-phase improvement plan (many items above correspond to this plan)

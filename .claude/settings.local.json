@@ -82,7 +82,8 @@
       "WebFetch(domain:github.com)",
       "Bash(xargs -I{} basename {})",
       "Bash(xargs -I{} basename {} .vcxproj)",
-      "Bash(tar tf:*)"
+      "Bash(tar tf:*)",
+      "Bash(echo \"exit: $?\")"
     ]
   }
 }

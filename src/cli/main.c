@@ -50,6 +50,29 @@ DWORD WINAPI gd_keepalive_thread(LPVOID param)
     return 0;
 }
 
+/* Check if an error indicates a dead SSH connection that may be recoverable */
+static int is_connection_error(int err)
+{
+	return err == -EIO || err == -ECONNRESET || err == -ENOTCONN;
+}
+
+/* Try to reconnect and retry an operation once.
+ * Returns the original error if reconnection fails. */
+#define RETRY_ON_DISCONNECT(call) do {                     \
+	int _rc = (call);                                      \
+	if (_rc != 0 && is_connection_error(_rc)) {            \
+		gd_log("Connection error (%d), attempting reconnect\n", _rc); \
+		gd_lock();                                         \
+		if (gd_reconnect() == 0) {                         \
+			gd_unlock();                                   \
+			_rc = (call);                                  \
+		} else {                                           \
+			gd_unlock();                                   \
+		}                                                  \
+	}                                                      \
+	return _rc;                                            \
+} while(0)
+
 static void* f_init(struct fuse_conn_info* conn, struct fuse_config* conf)
 {
 	(void)conf;
@@ -62,13 +85,17 @@ static void* f_init(struct fuse_conn_info* conn, struct fuse_config* conf)
 	return fuse_get_context()->private_data;
 }
 
-static int f_statfs(const char* path, struct fuse_statvfs* stbuf)
+static int f_statfs_impl(const char* path, struct fuse_statvfs* stbuf)
 {
 	realpath(path);
 	return -1 != gd_statvfs(path, stbuf) ? 0 : -errno;
 }
+static int f_statfs(const char* path, struct fuse_statvfs* stbuf)
+{
+	RETRY_ON_DISCONNECT(f_statfs_impl(path, stbuf));
+}
 
-static int f_getattr(const char* path, struct fuse_stat* stbuf,
+static int f_getattr_impl(const char* path, struct fuse_stat* stbuf,
 	struct fuse_file_info* fi)
 {
 	int rc;
@@ -83,6 +110,11 @@ static int f_getattr(const char* path, struct fuse_stat* stbuf,
 		rc = -1 != gd_fstat(fd, stbuf) ? 0 : -errno;
 	}
 	return rc;
+}
+static int f_getattr(const char* path, struct fuse_stat* stbuf,
+	struct fuse_file_info* fi)
+{
+	RETRY_ON_DISCONNECT(f_getattr_impl(path, stbuf, fi));
 }
 
 static int f_readlink(const char* path, char* buf, size_t size)
@@ -141,6 +173,12 @@ static int f_read(const char* path, char* buf, size_t size,
 	intptr_t fd = fi_fd(fi);
 	int nb;
 	int rc = -1 != (nb = gd_read(fd, buf, size, off)) ? nb : -errno;
+	if (rc != 0 && is_connection_error(rc)) {
+		gd_log("Read connection error (%d), attempting reconnect\n", rc);
+		gd_lock();
+		gd_reconnect();
+		gd_unlock();
+	}
 	return rc;
 }
 
@@ -151,6 +189,12 @@ static int f_write(const char* path, const char* buf,
 	intptr_t fd = fi_fd(fi);
 	int nb;
 	int rc = -1 != (nb = gd_write(fd, buf, size, off)) ? nb : -errno;
+	if (rc != 0 && is_connection_error(rc)) {
+		gd_log("Write connection error (%d), attempting reconnect\n", rc);
+		gd_lock();
+		gd_reconnect();
+		gd_unlock();
+	}
 	return rc;
 }
 
@@ -171,13 +215,17 @@ static int f_rename(const char* oldpath, const char* newpath,
 	return rc;
 }
 
-static int f_opendir(const char* path, struct fuse_file_info* fi)
+static int f_opendir_impl(const char* path, struct fuse_file_info* fi)
 {
 	realpath(path);
 	GDDIR* dirp;
 	return 0 != (dirp = gd_opendir(path)) ?
 		(fi_setdirp(fi, dirp), 0) :
 		-errno;
+}
+static int f_opendir(const char* path, struct fuse_file_info* fi)
+{
+	RETRY_ON_DISCONNECT(f_opendir_impl(path, fi));
 }
 
 static int f_readdir(const char* path, void* buf,

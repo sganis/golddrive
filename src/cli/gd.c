@@ -34,6 +34,7 @@ GDSSH* gd_init_ssh(void)
 		gd_log("%zd: %d :ERROR: %s: %d: "
 			"failed to initialize crypto library, rc=%d\n",
 			time_mu(), thread, __func__, __LINE__, rc);
+		WSACleanup();
 		return 0;
 	}
 
@@ -252,6 +253,49 @@ GDSSH* gd_init_ssh(void)
 	g_ssh->thread = GetCurrentThreadId();
 
 	return g_ssh;
+}
+
+int gd_reconnect(void)
+{
+	/* Caller must hold g_ssh_lock */
+	gd_log("Attempting SSH reconnection...\n");
+	int retries;
+
+	/* tear down old connection */
+	if (g_ssh) {
+		if (g_ssh->channel) {
+			retries = 10;
+			while (libssh2_channel_close(g_ssh->channel) ==
+				LIBSSH2_ERROR_EAGAIN && retries-- > 0)
+				Sleep(10);
+			libssh2_channel_free(g_ssh->channel);
+			g_ssh->channel = NULL;
+		}
+		if (g_ssh->sftp) {
+			retries = 10;
+			while (libssh2_sftp_shutdown(g_ssh->sftp) ==
+				LIBSSH2_ERROR_EAGAIN && retries-- > 0)
+				Sleep(10);
+			g_ssh->sftp = NULL;
+		}
+		if (g_ssh->ssh) {
+			libssh2_session_disconnect(g_ssh->ssh, "reconnecting");
+			libssh2_session_free(g_ssh->ssh);
+			g_ssh->ssh = NULL;
+		}
+		closesocket(g_ssh->socket);
+		free(g_ssh);
+		g_ssh = NULL;
+	}
+
+	/* re-establish connection (reuses gd_init_ssh which sets g_ssh) */
+	GDSSH* new_ssh = gd_init_ssh();
+	if (!new_ssh) {
+		gd_log("SSH reconnection failed\n");
+		return -1;
+	}
+	gd_log("SSH reconnection successful\n");
+	return 0;
 }
 
 int gd_finalize(int error)
@@ -1007,6 +1051,15 @@ int gd_check_hlink(const char* path)
 	char out[COMMAND_SIZE];
 
 	/* FIXME: use stat cmd until we get hlinks from sftp v6 */
+	/* Validate path: reject shell metacharacters to prevent command injection */
+	for (const char* p = path; *p; p++) {
+		if (*p == '`' || *p == '$' || *p == '(' || *p == ')' ||
+			*p == ';' || *p == '|' || *p == '&' || *p == '\n' || *p == '\r') {
+			log_error("ERROR: path contains unsafe characters: %s\n", path);
+			errno = EINVAL;
+			return -1;
+		}
+	}
 	sprintf_s(cmd, sizeof cmd, "/usr/bin/stat -c%%h \"%s\"", path);
 	gd_lock();
 	rc = run_command_channel_exec(cmd, out, 0);
@@ -1135,11 +1188,12 @@ int run_command_channel_exec(const char* cmd, char* out, char* err)
 	if (err)
 		memset(err, 0, COMMAND_SIZE);
 
-	if (!g_ssh || !g_ssh->ssh) {
+	if (!g_ssh || !g_ssh->ssh || !g_ssh->channel) {
 		log_error("ERROR: ssh session not initialized\n");
 		return -1;
 	}
 	LIBSSH2_CHANNEL* channel = g_ssh->channel;
+	/* Note: caller must hold g_ssh_lock to ensure channel remains valid */
 	char* errmsg;
 	char buffer[COMMAND_SIZE];
 	memset(buffer, 0, COMMAND_SIZE);
@@ -1568,6 +1622,11 @@ int _post(const char* url, const char* data)
 			NULL, WINHTTP_NO_REFERER,
 			WINHTTP_DEFAULT_ACCEPT_TYPES,
 			secflag);
+	if (!hRequest) {
+		if (hConnect) WinHttpCloseHandle(hConnect);
+		if (hSession) WinHttpCloseHandle(hSession);
+		return 1;
+	}
 	DWORD headersLength = (DWORD)-1;
 
 	int retry = 0;

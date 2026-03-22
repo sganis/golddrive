@@ -8,7 +8,7 @@
 
 ; Passed via /DMyAppVersion=x.y from command line
 #ifndef MyAppVersion
-  #define MyAppVersion "2.5"
+  #define MyAppVersion "2.6"
 #endif
 
 ; Passed via /DMyPlatform=x64 from command line

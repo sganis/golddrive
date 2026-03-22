@@ -4,6 +4,7 @@
 #include "jsmn.h"
 
 GDSSH *gd_init_ssh(void);
+int gd_reconnect(void);
 int gd_finalize(int);
 int gd_stat(const char *path, struct fuse_stat *stbuf);
 int gd_fstat(intptr_t fd, struct fuse_stat *stbuf);

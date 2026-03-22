@@ -99,13 +99,15 @@ namespace golddrive
             try
             {
                 r.MountStatus = MountStatus.UNKNOWN;
-                var pk = new PrivateKeyFile(appkey);
-                var keyFiles = new[] { pk };
-                using (SshClient client = new SshClient(drive.Host, drive.CurrentPort, drive.CurrentUser, keyFiles))
+                using (var pk = new PrivateKeyFile(appkey))
                 {
-                    client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(TIMEOUT);
-                    client.Connect();
-                    client.Disconnect();
+                    var keyFiles = new[] { pk };
+                    using (SshClient client = new SshClient(drive.Host, drive.CurrentPort, drive.CurrentUser, keyFiles))
+                    {
+                        client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(TIMEOUT);
+                        client.Connect();
+                        client.Disconnect();
+                    }
                 }
                 r.MountStatus = MountStatus.OK;
                 r.Success = true;

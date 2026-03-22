@@ -2,7 +2,7 @@
 
 ## Dependencies
 
-- WinFsp: https://github.com/billziss-gh/winfsp/releases
+- WinFsp: https://github.com/winfsp/winfsp/releases
 
 - In case of missing dll like: api-ms-win-crt-runtime-l1-1-0.dll, 
   update the Universal C Runtime in Windows (KB2999226): 
@@ -28,11 +28,11 @@ There are scripts in the tools directory to build dependencies:
 OpenSSH portable is available for windows using LibreSSL. Unfortunatelly, it is much slower in Golddrive.
 I replaced LibreSSL with the following steps. Only works with OpenSSL 1.0.x, not 1.1.x for far.
 
-## Build OpenSSH with Visual Studio 2019
+## Build OpenSSH with Visual Studio 2022
 
 1. Clone openssh-portable from microsoft repository powershell: https://github.com/PowerShell/openssh-portable.git
 2. Remove config project
-3. Retarget solution to VS 2019
+3. Retarget solution to VS 2022
 4. Add these lines in the define section of posix_compat/inc/unistd.h:
 	```
 	#pragma warning(disable: 4005 4030)

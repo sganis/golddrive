@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Input;
 
@@ -15,6 +15,12 @@ namespace golddrive
         {
             IRequestFocus focus = (IRequestFocus)DataContext;
             focus.FocusRequested += Focus_FocusRequested;
+        }
+
+        private void UserControl_Unloaded(object sender, System.Windows.RoutedEventArgs e)
+        {
+            if (DataContext is IRequestFocus focus)
+                focus.FocusRequested -= Focus_FocusRequested;
         }
 
         private void Focus_FocusRequested(object sender, FocusRequestedEventArgs e)

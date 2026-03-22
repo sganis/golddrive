@@ -227,27 +227,35 @@ namespace golddrive
         {
             Loaded = false;
             WorkStart("Exploring local drives...");
-            await Task.Run(() =>
+            try
             {
-                Settings settings = _mountService.LoadSettings();
-                if (_selectedDrive == null && settings.SelectedDrive != null)
-                    SelectedDrive = settings.SelectedDrive;
-                _mountService.UpdateDrives(settings);
-            });
+                await Task.Run(() =>
+                {
+                    Settings settings = _mountService.LoadSettings();
+                    if (_selectedDrive == null && settings.SelectedDrive != null)
+                        SelectedDrive = settings.SelectedDrive;
+                    _mountService.UpdateDrives(settings);
+                });
 
-            UpdateObservableDrives();
+                UpdateObservableDrives();
 
-            if (_mountService.GoldDrives.Count == 0)
-            {
-                CurrentPage = Page.Host;
-                IsDriveNew = true;
-                OnFocusRequested(nameof(SelectedDrive.Host));
-                SelectedDrive = FreeDriveList.FirstOrDefault();
-                WorkDone();
+                if (_mountService.GoldDrives.Count == 0)
+                {
+                    CurrentPage = Page.Host;
+                    IsDriveNew = true;
+                    OnFocusRequested(nameof(SelectedDrive.Host));
+                    SelectedDrive = FreeDriveList.FirstOrDefault();
+                    WorkDone();
+                }
+                else
+                {
+                    CheckDriveStatusAsync();
+                }
             }
-            else
+            catch (Exception ex)
             {
-                CheckDriveStatusAsync();
+                Logger.Log($"LoadDrives error: {ex.Message}");
+                WorkDone(new ReturnBox { Error = ex.Message, MountStatus = MountStatus.UNKNOWN });
             }
             Loaded = true;
         }
@@ -324,14 +332,29 @@ namespace golddrive
             if (SelectedDrive != null)
             {
                 WorkStart("Checking status...");
-                ReturnBox r = await Task.Run(() => _mountService.CheckDriveStatus(SelectedDrive));
-                WorkDone(r);
+                try
+                {
+                    ReturnBox r = await Task.Run(() => _mountService.CheckDriveStatus(SelectedDrive));
+                    WorkDone(r);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log($"CheckDriveStatus error: {ex.Message}");
+                    WorkDone(new ReturnBox { Error = ex.Message, MountStatus = MountStatus.UNKNOWN });
+                }
             }
         }
 
         private async void GetVersionsAsync()
         {
-            Version = await Task.Run(() => _mountService.GetVersions());
+            try
+            {
+                Version = await Task.Run(() => _mountService.GetVersions());
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"GetVersions error: {ex.Message}");
+            }
         }
 
         #endregion
@@ -480,6 +503,7 @@ namespace golddrive
                 settings.AddDrives(GoldDriveList.ToList());
                 _mountService.SaveSettings(settings);
             }
+            _mountService.Dispose();
         }
 
         #endregion

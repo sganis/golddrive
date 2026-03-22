@@ -9,11 +9,13 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.ServiceProcess;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Text.RegularExpressions;
 
 namespace golddrive
 {
-    public class MountService
+    public class MountService : IDisposable
     {
         #region Properties
 
@@ -97,6 +99,11 @@ namespace golddrive
             if (Ssh != null) { try { Ssh.Dispose(); } catch { } Ssh = null; }
         }
 
+        public void Dispose()
+        {
+            Disconnect();
+        }
+
         #region Serialization
 
         public Settings LoadSettings()
@@ -125,10 +132,31 @@ namespace golddrive
                         });
                     file.Write(json);
                 }
+                RestrictFilePermissions(settings.Filename);
             }
             catch (Exception ex)
             {
                 Logger.Log($"Error saving settings: {ex.Message}");
+            }
+        }
+
+        private static void RestrictFilePermissions(string filePath)
+        {
+            try
+            {
+                var fileInfo = new FileInfo(filePath);
+                var security = fileInfo.GetAccessControl();
+                security.SetAccessRuleProtection(true, false);
+                var currentUser = WindowsIdentity.GetCurrent().User;
+                security.AddAccessRule(new FileSystemAccessRule(
+                    currentUser,
+                    FileSystemRights.FullControl,
+                    AccessControlType.Allow));
+                fileInfo.SetAccessControl(security);
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"Warning: Could not restrict config file permissions: {ex.Message}");
             }
         }
 
@@ -632,7 +660,7 @@ namespace golddrive
             return "n/a";
         }
 
-        private static string SanitizeShellArg(string arg)
+        internal static string SanitizeShellArg(string arg)
         {
             if (string.IsNullOrEmpty(arg)) return arg;
             // reject characters that could enable command injection

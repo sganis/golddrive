@@ -6,7 +6,7 @@
 setlocal
 
 set VERSION=%~1
-if "%VERSION%"=="" set VERSION=2.5
+if "%VERSION%"=="" set VERSION=2.6
 
 set ISCC="%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe"
 set SCRIPT=%~dp0..\installer\setup.iss
