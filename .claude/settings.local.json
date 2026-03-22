@@ -79,7 +79,10 @@
       "Bash(curl -L -o V10.0.0.0.zip https://github.com/PowerShell/openssh-portable/archive/refs/tags/V10.0.0.0.zip)",
       "Bash(unzip -qo v10.zip)",
       "Bash(cat:*)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(xargs -I{} basename {})",
+      "Bash(xargs -I{} basename {} .vcxproj)",
+      "Bash(tar tf:*)"
     ]
   }
 }
