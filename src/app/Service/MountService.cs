@@ -355,10 +355,8 @@ namespace golddrive
                     r.DriveStatus = DriveStatus.MOUNTPOINT_IN_USE;
                     r.Error = "Mount point in use";
                 }
-                else if (disconnected)
+                else if (disconnected || free)
                     r.DriveStatus = DriveStatus.DISCONNECTED;
-                else if (free)
-                    r.DriveStatus = DriveStatus.FREE;
                 else if (!isGold)
                 {
                     r.MountStatus = MountStatus.BAD_DRIVE;
@@ -478,7 +476,7 @@ namespace golddrive
                 return r;
             }
             r = CheckDriveStatus(drive);
-            if (r.DriveStatus != DriveStatus.DISCONNECTED && r.DriveStatus != DriveStatus.FREE)
+            if (r.DriveStatus != DriveStatus.DISCONNECTED)
             {
                 r.MountStatus = MountStatus.BAD_DRIVE;
                 return r;
