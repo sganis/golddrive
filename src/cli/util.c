@@ -1,6 +1,7 @@
 // src/cli/util.c
 #include <windows.h>
 #include <strsafe.h>
+#include <ntsecapi.h>
 #include <time.h>
 #include <string.h>
 #include <stdio.h>
@@ -80,8 +81,17 @@ void gd_random_string(char *s, const int len)
 		"0123456789"
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 		"abcdefghijklmnopqrstuvwxyz";
-	for (int i = 0; i < len; ++i) {
-		s[i] = alphanum[rand() % (sizeof(alphanum) - 1)];
+	unsigned char buf[256];
+	int n = len < (int)sizeof(buf) ? len : (int)sizeof(buf);
+	/* use OS cryptographic random */
+	if (!RtlGenRandom(buf, n)) {
+		/* fallback: seed rand and use it */
+		srand((unsigned)GetTickCount());
+		for (int i = 0; i < len; ++i)
+			s[i] = alphanum[rand() % (sizeof(alphanum) - 1)];
+	} else {
+		for (int i = 0; i < len; ++i)
+			s[i] = alphanum[buf[i % n] % (sizeof(alphanum) - 1)];
 	}
 	s[len] = 0;
 }
@@ -130,32 +140,28 @@ int get_file_version(char* filename, char *version)
 	return rc;
 }
 
-void str_replace(const char *s, const char *oldW, const char *newW, char *result)
+void str_replace(const char *s, const char *oldW, const char *newW, char *result, size_t result_size)
 {
-	int i, cnt = 0;
+	int i = 0;
 	int newWlen = (int)strlen(newW);
 	int oldWlen = (int)strlen(oldW);
+	int limit = (int)result_size - 1;
 
-	for (i = 0; s[i] != '\0'; i++)
-	{
-		if (strstr(&s[i], oldW) == &s[i])
-		{
-			cnt++;
-			i += oldWlen - 1;
-		}
-	}
-
-	i = 0;
 	while (*s)
 	{
 		if (strstr(s, oldW) == s)
 		{
-			strcpy(&result[i], newW);
+			if (i + newWlen > limit)
+				break;
+			memcpy(&result[i], newW, newWlen);
 			i += newWlen;
 			s += oldWlen;
 		}
-		else
+		else {
+			if (i >= limit)
+				break;
 			result[i++] = *s++;
+		}
 	}
 
 	result[i] = '\0';

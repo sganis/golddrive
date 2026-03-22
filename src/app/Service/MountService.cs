@@ -91,6 +91,12 @@ namespace golddrive
             SshService = new SshService(AppPath);
         }
 
+        public void Disconnect()
+        {
+            if (Sftp != null) { try { Sftp.Dispose(); } catch { } Sftp = null; }
+            if (Ssh != null) { try { Ssh.Dispose(); } catch { } Ssh = null; }
+        }
+
         #region Serialization
 
         public Settings LoadSettings()
@@ -154,7 +160,14 @@ namespace golddrive
                 process.Start();
                 r.Output = process.StandardOutput.ReadToEnd();
                 r.Error = process.StandardError.ReadToEnd();
-                process.WaitForExit(timeout_secs * 1000);
+                if (!process.WaitForExit(timeout_secs * 1000))
+                {
+                    try { process.Kill(); } catch { }
+                    r.ExitCode = -1;
+                    r.Error = "Process timed out";
+                    r.Success = false;
+                    return r;
+                }
                 r.ExitCode = process.ExitCode;
                 r.Success = r.ExitCode == 0;
             }
@@ -342,8 +355,10 @@ namespace golddrive
                     r.DriveStatus = DriveStatus.MOUNTPOINT_IN_USE;
                     r.Error = "Mount point in use";
                 }
-                else if (free || disconnected)
+                else if (disconnected)
                     r.DriveStatus = DriveStatus.DISCONNECTED;
+                else if (free)
+                    r.DriveStatus = DriveStatus.FREE;
                 else if (!isGold)
                 {
                     r.MountStatus = MountStatus.BAD_DRIVE;
@@ -463,7 +478,7 @@ namespace golddrive
                 return r;
             }
             r = CheckDriveStatus(drive);
-            if (r.DriveStatus != DriveStatus.DISCONNECTED)
+            if (r.DriveStatus != DriveStatus.DISCONNECTED && r.DriveStatus != DriveStatus.FREE)
             {
                 r.MountStatus = MountStatus.BAD_DRIVE;
                 return r;

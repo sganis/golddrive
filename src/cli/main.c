@@ -420,13 +420,19 @@ static int parse_remote(GDCONFIG* fs)
 	}
 	if (*p)
 		*p++ = '\0';
-	if(host)
+	if (host) {
 		fs->host = strdup(host);
-	if (locuser)
+		if (!fs->host) { free(npath); return -1; }
+	}
+	if (locuser) {
 		fs->locuser = strdup(locuser);
-	if(user)
+		if (!fs->locuser) { free(npath); return -1; }
+	}
+	if (user) {
 		fs->user = strdup(user);
-	if(port)
+		if (!fs->user) { free(npath); return -1; }
+	}
+	if (port)
 		fs->port = atoi(port);
 
 	fs->root = strdup(p);
@@ -440,6 +446,7 @@ static int parse_remote(GDCONFIG* fs)
 		strcat_s(s, MAX_PATH, p);
 		free(fs->root);
 		fs->root = strdup(s);
+		if (!fs->root) { free(npath); return -1; }
 		fs->has_root = strlen(fs->root) > 1;
 	}
 
@@ -542,6 +549,10 @@ int main(int argc, char *argv[])
 	/* user in lower case */
 	if (!g_conf.user)
 		g_conf.user = getenv("USERNAME");
+	if (!g_conf.user) {
+		fprintf(stderr, "error: USERNAME environment variable not set\n");
+		return 1;
+	}
 	char* u = g_conf.user;
 	for (; *u; ++u)
 		*u = tolower(*u);
@@ -576,7 +587,7 @@ int main(int argc, char *argv[])
 	char volprefix[256], volname[256], prefix[256];
 	strcpy_s(prefix, sizeof(prefix), g_conf.remote);
 	if (str_contains(g_conf.remote, ":"))
-		str_replace(g_conf.remote, ":", "", prefix);
+		str_replace(g_conf.remote, ":", "", prefix, sizeof(prefix));
 	sprintf_s(volprefix, sizeof(volprefix),	"-oVolumePrefix=%s", prefix);
 	sprintf_s(volname, sizeof(volname), "-ovolname=%s", g_conf.mountpoint);
 	gd_log("Prefix   = %s\n", volprefix);

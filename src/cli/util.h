@@ -13,7 +13,7 @@ int get_file_version(char* filename, char *version);
 char *str_ndup(char *str, int chars);
 void str_trim(char *str);
 void str_replace(const char *s, const char *oldW,
-	const char *newW, char *result);
+	const char *newW, char *result, size_t result_size);
 int str_contains(const char *str, const char* word);
 int str_startswith(const char *str, const char* beg);
 int path_concat(const char *s1, const char *s2, char *s3);

@@ -15,7 +15,7 @@ CACHE_INODE* cache_inode_find(const char* path)
 		cache_inode_unlock();
 		return NULL;
 	}
-	else if (time_mu() - (size_t)CACHE_INODE_TTL * 1000 >= value->expiry) {
+	else if (time_mu() >= value->expiry) {
 		cache_inode_unlock();
 		return NULL;
 	}

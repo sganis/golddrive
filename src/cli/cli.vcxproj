@@ -281,7 +281,7 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
@@ -292,6 +292,7 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
       <AdditionalIncludeDirectories>$(MSBuildProgramFiles32)\WinFsp\inc\fuse3;$(MSBuildProgramFiles32)\WinFsp\inc;$(ProjectDir)..\..\vendor\libssh2\include;$(ProjectDir)..\..\vendor\openssl\include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -303,7 +304,6 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4099 /NODEFAULTLIB:LIBCMT</AdditionalOptions>
-      <Profile>true</Profile>
       <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
     </Link>
     <PostBuildEvent>
@@ -317,7 +317,7 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
@@ -328,6 +328,7 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
       <AdditionalIncludeDirectories>$(MSBuildProgramFiles32)\WinFsp\inc\fuse3;$(MSBuildProgramFiles32)\WinFsp\inc;$(ProjectDir)..\..\vendor\libssh2\include;$(ProjectDir)..\..\vendor\openssl\include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -339,7 +340,6 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4099 /NODEFAULTLIB:LIBCMT</AdditionalOptions>
-      <Profile>true</Profile>
       <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
     </Link>
     <PostBuildEvent>

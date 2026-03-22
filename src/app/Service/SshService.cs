@@ -232,7 +232,14 @@ namespace golddrive
                 process.Start();
                 r.Output = process.StandardOutput.ReadToEnd();
                 r.Error = process.StandardError.ReadToEnd();
-                process.WaitForExit(timeout_secs * 1000);
+                if (!process.WaitForExit(timeout_secs * 1000))
+                {
+                    try { process.Kill(); } catch { }
+                    r.ExitCode = -1;
+                    r.Error = "Process timed out";
+                    r.Success = false;
+                    return r;
+                }
                 r.ExitCode = process.ExitCode;
                 r.Success = r.ExitCode == 0;
             }

@@ -129,6 +129,9 @@ var
   ExitCode: Integer;
   I: Integer;
 begin
+  { Golddrive only uses drive letters G-Z by convention.
+    net use /d /y silently ignores drives that are not mapped,
+    so this is safe even if some letters are unused. }
   for I := Ord('G') to Ord('Z') do
   begin
     Exec('net.exe', 'use ' + Chr(I) + ': /d /y', '', SW_HIDE, ewWaitUntilTerminated, ExitCode);

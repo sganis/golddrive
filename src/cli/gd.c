@@ -257,23 +257,34 @@ GDSSH* gd_init_ssh(void)
 int gd_finalize(int error)
 {
 	log_info("FINALIZE\n");
+	int retries;
 
 	if (g_ssh) {
 		if (g_ssh->channel) {
+			retries = 50;
 			while (libssh2_channel_close(g_ssh->channel) ==
-				LIBSSH2_ERROR_EAGAIN);
+				LIBSSH2_ERROR_EAGAIN && retries-- > 0)
+				waitsocket(g_ssh);
+			retries = 50;
 			while (libssh2_channel_free(g_ssh->channel) ==
-				LIBSSH2_ERROR_EAGAIN);
+				LIBSSH2_ERROR_EAGAIN && retries-- > 0)
+				waitsocket(g_ssh);
 		}
 		if (g_ssh->sftp) {
+			retries = 50;
 			while (libssh2_sftp_shutdown(g_ssh->sftp) ==
-				LIBSSH2_ERROR_EAGAIN);
+				LIBSSH2_ERROR_EAGAIN && retries-- > 0)
+				waitsocket(g_ssh);
 		}
 		if (g_ssh->ssh) {
+			retries = 50;
 			while (libssh2_session_disconnect(g_ssh->ssh, "ssh session disconnected") ==
-				LIBSSH2_ERROR_EAGAIN);
+				LIBSSH2_ERROR_EAGAIN && retries-- > 0)
+				waitsocket(g_ssh);
+			retries = 50;
 			while (libssh2_session_free(g_ssh->ssh) ==
-				LIBSSH2_ERROR_EAGAIN);
+				LIBSSH2_ERROR_EAGAIN && retries-- > 0)
+				waitsocket(g_ssh);
 		}
 
 		libssh2_exit();
@@ -887,6 +898,8 @@ GDDIR* gd_opendir(const char* path)
 
 	dirp = malloc(sizeof * dirp + pathlen + 2);
 	if (0 == dirp) {
+		while (libssh2_sftp_close_handle(handle) == LIBSSH2_ERROR_EAGAIN)
+			waitsocket(g_ssh);
 		free(sh);
 		gd_unlock();
 		return 0;
@@ -1615,8 +1628,8 @@ HANDLE* gd_usage(const char* action, const char* data)
 	if (strncmp(g_conf.usageurl, "http://", 7) != 0 &&
 		strncmp(g_conf.usageurl, "https://", 8) != 0)
 		return 0;
-	char hostname[50];
-	gethostname(hostname, 50);
+	char hostname[256];
+	gethostname(hostname, sizeof(hostname));
 	char exepath[MAX_PATH];
 	char version[100] = { 0 };
 	GetModuleFileNameA(NULL, exepath, MAX_PATH);

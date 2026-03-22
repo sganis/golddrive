@@ -1,6 +1,7 @@
 // src/app/ViewModel/MainWindowViewModel.cs
 using System;
 using System.Linq;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Threading.Tasks;
@@ -241,7 +242,7 @@ namespace golddrive
                 CurrentPage = Page.Host;
                 IsDriveNew = true;
                 OnFocusRequested(nameof(SelectedDrive.Host));
-                SelectedDrive = FreeDriveList.First();
+                SelectedDrive = FreeDriveList.FirstOrDefault();
                 WorkDone();
             }
             else
@@ -253,42 +254,50 @@ namespace golddrive
 
         private void UpdateObservableDrives()
         {
-            Drive old = SelectedDrive;
-            GoldDriveList.Clear();
-            FreeDriveList.Clear();
-            _mountService.GoldDrives.ForEach(GoldDriveList.Add);
-            _mountService.FreeDrives.ForEach(FreeDriveList.Add);
-            if (old != null && SelectedDrive == null)
-                SelectedDrive = old;
-
-            if (SelectedDrive != null)
+            var action = new Action(() =>
             {
-                var d1 = _mountService.GoldDrives.ToList().Find(x => x.Name == SelectedDrive.Name);
-                if (d1 != null)
+                Drive old = SelectedDrive;
+                GoldDriveList.Clear();
+                FreeDriveList.Clear();
+                _mountService.GoldDrives.ForEach(GoldDriveList.Add);
+                _mountService.FreeDrives.ForEach(FreeDriveList.Add);
+                if (old != null && SelectedDrive == null)
+                    SelectedDrive = old;
+
+                if (SelectedDrive != null)
                 {
-                    d1.Clone(SelectedDrive);
-                    SelectedDrive = d1;
+                    var d1 = _mountService.GoldDrives.ToList().Find(x => x.Name == SelectedDrive.Name);
+                    if (d1 != null)
+                    {
+                        d1.Clone(SelectedDrive);
+                        SelectedDrive = d1;
+                    }
+                    else
+                    {
+                        var d2 = _mountService.FreeDrives.ToList().Find(x => x.Name == SelectedDrive.Name);
+                        if (d2 != null)
+                        {
+                            d2.Clone(SelectedDrive);
+                            SelectedDrive = d2;
+                        }
+                    }
                 }
                 else
                 {
-                    var d2 = _mountService.FreeDrives.ToList().Find(x => x.Name == SelectedDrive.Name);
-                    if (d2 != null)
-                    {
-                        d2.Clone(SelectedDrive);
-                        SelectedDrive = d2;
-                    }
+                    if (_mountService.GoldDrives.Count > 0)
+                        SelectedDrive = _mountService.GoldDrives.First();
+                    else if (_mountService.FreeDrives.Count > 0)
+                        SelectedDrive = _mountService.FreeDrives.First();
                 }
-            }
-            else
-            {
-                if (_mountService.GoldDrives.Count > 0)
-                    SelectedDrive = _mountService.GoldDrives.First();
-                else if (_mountService.FreeDrives.Count > 0)
-                    SelectedDrive = _mountService.FreeDrives.First();
-            }
 
-            NotifyPropertyChanged(nameof(FreeDriveList));
-            NotifyPropertyChanged(nameof(GoldDriveList));
+                NotifyPropertyChanged(nameof(FreeDriveList));
+                NotifyPropertyChanged(nameof(GoldDriveList));
+            });
+
+            if (Application.Current?.Dispatcher?.CheckAccess() == false)
+                Application.Current.Dispatcher.Invoke(action);
+            else
+                action();
         }
 
         private async void ConnectAsync(Drive drive)
@@ -337,7 +346,7 @@ namespace golddrive
             if (GoldDriveList.Count == 0 || string.IsNullOrEmpty(SelectedDrive.Host))
             {
                 IsDriveNew = true;
-                SelectedDrive = FreeDriveList.First();
+                SelectedDrive = FreeDriveList.FirstOrDefault();
                 CurrentPage = Page.Host;
                 return;
             }
@@ -373,7 +382,9 @@ namespace golddrive
             try
             {
                 var status = new Progress<string>(s => Message = s);
-                ReturnBox r = await Task.Run(() => _mountService.ConnectPassword(SelectedDrive, password, status));
+                string pwd = password;
+                Password = null;
+                ReturnBox r = await Task.Run(() => _mountService.ConnectPassword(SelectedDrive, pwd, status));
                 SkipComboChanged = true;
                 UpdateObservableDrives();
                 SkipComboChanged = false;
@@ -511,7 +522,7 @@ namespace golddrive
         public ICommand SettingsNewCommand => _settingsNewCommand ?? (_settingsNewCommand = new RelayCommand(x =>
         {
             OriginalDrive = new Drive(SelectedDrive);
-            SelectedDrive = FreeDriveList.First();
+            SelectedDrive = FreeDriveList.FirstOrDefault();
             IsDriveNew = true;
         }));
 

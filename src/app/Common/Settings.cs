@@ -102,7 +102,10 @@ namespace golddrive
                     if (!File.Exists(backup))
                         File.Copy(Filename, backup);
                 }
-                catch { }
+                catch (Exception backupEx)
+                {
+                    Logger.Log($"Failed to backup corrupt settings: {backupEx.Message}");
+                }
             }
             catch (Exception ex)
             {
