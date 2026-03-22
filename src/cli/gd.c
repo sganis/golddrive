@@ -98,6 +98,65 @@ GDSSH* gd_init_ssh(void)
 		return 0;
 	}
 
+	/* verify host key against known_hosts */
+	{
+		LIBSSH2_KNOWNHOSTS* nh = libssh2_knownhost_init(ssh);
+		if (nh) {
+			char knownhosts_path[MAX_PATH];
+			char* profile = getenv("USERPROFILE");
+			if (profile) {
+				sprintf_s(knownhosts_path, MAX_PATH,
+					"%s\\.ssh\\known_hosts", profile);
+				libssh2_knownhost_readfile(nh, knownhosts_path,
+					LIBSSH2_KNOWNHOST_FILE_OPENSSH);
+			}
+			size_t hostkey_len;
+			int hostkey_type;
+			const char* hostkey = libssh2_session_hostkey(ssh,
+				&hostkey_len, &hostkey_type);
+			if (hostkey) {
+				int kh_type = (hostkey_type == LIBSSH2_HOSTKEY_TYPE_RSA) ?
+					LIBSSH2_KNOWNHOST_KEY_SSHRSA :
+					LIBSSH2_KNOWNHOST_KEY_SSHDSS;
+				struct libssh2_knownhost* host = NULL;
+				int check = libssh2_knownhost_checkp(nh,
+					g_conf.host, g_conf.port,
+					hostkey, hostkey_len,
+					LIBSSH2_KNOWNHOST_TYPE_PLAIN |
+					LIBSSH2_KNOWNHOST_KEYENC_RAW |
+					kh_type, &host);
+				if (check == LIBSSH2_KNOWNHOST_CHECK_MISMATCH) {
+					gd_log("%zd: %d :ERROR: %s: %d: "
+						"host key mismatch for %s, possible MITM attack\n",
+						time_mu(), thread, __func__, __LINE__,
+						g_conf.host);
+					libssh2_knownhost_free(nh);
+					libssh2_session_disconnect(ssh,
+						"host key mismatch");
+					libssh2_session_free(ssh);
+					closesocket(sock);
+					return 0;
+				}
+				if (check == LIBSSH2_KNOWNHOST_CHECK_NOTFOUND && profile) {
+					/* TOFU: add host key on first connection */
+					libssh2_knownhost_addc(nh,
+						g_conf.host, NULL,
+						hostkey, hostkey_len,
+						NULL, 0,
+						LIBSSH2_KNOWNHOST_TYPE_PLAIN |
+						LIBSSH2_KNOWNHOST_KEYENC_RAW |
+						kh_type, NULL);
+					libssh2_knownhost_writefile(nh,
+						knownhosts_path,
+						LIBSSH2_KNOWNHOST_FILE_OPENSSH);
+					gd_log("Added host key for %s to known_hosts\n",
+						g_conf.host);
+				}
+			}
+			libssh2_knownhost_free(nh);
+		}
+	}
+
 	/* keepalive */
 	libssh2_keepalive_config(ssh, 1, 60);
 
@@ -176,13 +235,21 @@ GDSSH* gd_init_ssh(void)
 	}
 
 	g_ssh = malloc(sizeof(GDSSH));
-	if (g_ssh) {
-		g_ssh->socket = sock;
-		g_ssh->ssh = ssh;
-		g_ssh->sftp = sftp;
-		g_ssh->channel = channel;
-		g_ssh->thread = GetCurrentThreadId();
+	if (!g_ssh) {
+		gd_log("%zd: %d :ERROR: %s: %d: out of memory\n",
+			time_mu(), thread, __func__, __LINE__);
+		libssh2_channel_free(channel);
+		libssh2_sftp_shutdown(sftp);
+		libssh2_session_disconnect(ssh, "out of memory");
+		libssh2_session_free(ssh);
+		closesocket(sock);
+		return 0;
 	}
+	g_ssh->socket = sock;
+	g_ssh->ssh = ssh;
+	g_ssh->sftp = sftp;
+	g_ssh->channel = channel;
+	g_ssh->thread = GetCurrentThreadId();
 
 	return g_ssh;
 }
@@ -974,10 +1041,12 @@ int gd_check_hlink(const char* path)
 					LIBSSH2_ERROR_EAGAIN)
 					break;
 			} while (!handle);
-			while ((rc = libssh2_sftp_close_handle(handle)) ==
-				LIBSSH2_ERROR_EAGAIN) {
-				waitsocket(g_ssh);
-				g_sftp_calls++;
+			if (handle) {
+				while ((rc = libssh2_sftp_close_handle(handle)) ==
+					LIBSSH2_ERROR_EAGAIN) {
+					waitsocket(g_ssh);
+					g_sftp_calls++;
+				}
 			}
 			gd_unlock();
 		}
@@ -1092,8 +1161,13 @@ int run_command_channel_exec(const char* cmd, char* out, char* err)
 			}
 			if (rc <= 0)
 				break;
+			if (offset + rc > COMMAND_SIZE - 1)
+				rc = COMMAND_SIZE - 1 - (int)offset;
+			if (rc <= 0)
+				break;
 			memcpy(out + offset, buffer, rc);
 			offset += rc;
+			out[offset] = '\0';
 			if (libssh2_channel_eof(channel))
 				break;
 			if (strstr(out, "RCODE="))
@@ -1121,14 +1195,19 @@ int run_command_channel_exec(const char* cmd, char* out, char* err)
 				}
 				if (rc <= 0)
 					break;
+				if (offset + rc > COMMAND_SIZE - 1)
+					rc = COMMAND_SIZE - 1 - (int)offset;
+				if (rc <= 0)
+					break;
 				memcpy(err + offset, buffer, rc);
 				offset += rc;
+				err[offset] = '\0';
 				if (libssh2_channel_eof(channel))
 					break;
 				if(strstr(err, "\n"))
 					break;
 			}
-			err[min(strcspn(err, "\n"), COMMAND_SIZE)] = '\0';
+			err[min(strcspn(err, "\n"), COMMAND_SIZE - 1)] = '\0';
 		}
 	}
 
@@ -1265,10 +1344,19 @@ int load_json(GDCONFIG* fs)
 	char* JSON_STRING = 0;
 	size_t size = 0;
 	FILE* fp = fopen(fs->json, "r");
+	if (!fp) {
+		fprintf(stderr, "cannot open json file: %s\n", fs->json);
+		return 1;
+	}
 	fseek(fp, 0, SEEK_END);
 	size = ftell(fp);
 	rewind(fp);
-	JSON_STRING = calloc(size + 1, sizeof(char*));
+	JSON_STRING = calloc(size + 1, sizeof(char));
+	if (!JSON_STRING) {
+		fclose(fp);
+		fprintf(stderr, "out of memory reading json\n");
+		return 1;
+	}
 	fread(JSON_STRING, size, 1, fp);
 	JSON_STRING[size] = '\0';
 	fclose(fp);
@@ -1279,6 +1367,11 @@ int load_json(GDCONFIG* fs)
 	jsmntok_t* tok;
 	int num_tokens = 1024;
 	jsmntok_t* t = malloc(num_tokens * sizeof(jsmntok_t));
+	if (!t) {
+		free(JSON_STRING);
+		fprintf(stderr, "out of memory for json tokens\n");
+		return 1;
+	}
 
 	jsmn_init(&p);
 	r = jsmn_parse(&p, JSON_STRING, strlen(JSON_STRING),
@@ -1299,43 +1392,54 @@ int load_json(GDCONFIG* fs)
 
 	/* loop over all keys of the root object */
 	for (i = 1; i < r; i++) {
+		if (i + 1 >= r) break;
 		if (jsoneq(JSON_STRING, &t[i], "LogFile") == 0) {
 			tok = &t[i + 1];
 			val = str_ndup(JSON_STRING + tok->start, tok->end - tok->start);
-			fs->logfile = strdup(val);
-			free(val);
+			if (val) {
+				fs->logfile = strdup(val);
+				free(val);
+			}
 			i++;
 		}
 		else if (jsoneq(JSON_STRING, &t[i], "UsageUrl") == 0) {
 			tok = &t[i + 1];
 			val = str_ndup(JSON_STRING + tok->start, tok->end - tok->start);
-			fs->usageurl = strdup(val);
-			free(val);
+			if (val) {
+				fs->usageurl = strdup(val);
+				free(val);
+			}
 			i++;
 		}
 		else if (jsoneq(JSON_STRING, &t[i], "Drives") == 0) {
+			if (i + 1 >= r) break;
 			int size = t[i + 1].size;
 			i++;
 			for (int j = 0; j < size; j++) {
+				if (i + 2 >= r) break;
 				tok = &t[i + 1];
 				char* key = str_ndup(JSON_STRING + tok->start, tok->end - tok->start);
+				if (!key) { i += 3; continue; }
 				jsmntok_t* v = &t[i + 2];
 
 				if (strcmp(key, fs->drive) == 0) {
 					i = i + 2;
 					for (int k = 0; k < v->size; k++) {
+						if (i + 2 >= r) break;
 						tok = &t[i + 1];
 						if (tok->type == JSMN_STRING) {
 							char* key2 = str_ndup(JSON_STRING + tok->start, tok->end - tok->start);
-							if (strcmp(key2, "AppKey") == 0) {
-								tok = &t[i + 2];
-								fs->pkey = str_ndup(JSON_STRING + tok->start, tok->end - tok->start);
+							if (key2) {
+								if (strcmp(key2, "AppKey") == 0) {
+									tok = &t[i + 2];
+									fs->pkey = str_ndup(JSON_STRING + tok->start, tok->end - tok->start);
+								}
+								if (strcmp(key2, "Args") == 0) {
+									tok = &t[i + 2];
+									fs->args = str_ndup(JSON_STRING + tok->start, tok->end - tok->start);
+								}
+								free(key2);
 							}
-							if (strcmp(key2, "Args") == 0) {
-								tok = &t[i + 2];
-								fs->args = str_ndup(JSON_STRING + tok->start, tok->end - tok->start);
-							}
-							free(key2);
 							i = i + 2;
 						}
 						else if (tok->type == JSMN_ARRAY) {
@@ -1346,6 +1450,7 @@ int load_json(GDCONFIG* fs)
 				else {
 					i = i + 3;
 					for (int k = 0; k < v->size; k++) {
+						if (i + 1 >= r) break;
 						tok = &t[i + 1];
 						if (tok->type == JSMN_STRING) {
 							i = i + 2;
@@ -1466,23 +1571,9 @@ int _post(const char* url, const char* data)
 			int result = GetLastError();
 
 			if (result == ERROR_WINHTTP_SECURE_FAILURE) {
-				DWORD dwFlags =
-					SECURITY_FLAG_IGNORE_UNKNOWN_CA |
-					SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE |
-					SECURITY_FLAG_IGNORE_CERT_CN_INVALID |
-					SECURITY_FLAG_IGNORE_CERT_DATE_INVALID;
-
-				if (optionset)
-					break;
-
-				if (WinHttpSetOption(
-					hRequest,
-					WINHTTP_OPTION_SECURITY_FLAGS,
-					&dwFlags,
-					sizeof(dwFlags))) {
-					retry = 1;
-					optionset = 1;
-				}
+				/* do not bypass certificate validation */
+				gd_log("SSL certificate validation failed for usage URL\n");
+				break;
 			}
 			else if (result == ERROR_WINHTTP_RESEND_REQUEST) {
 				retry = 1;
@@ -1520,6 +1611,10 @@ HANDLE* gd_usage(const char* action, const char* data)
 {
 	if (!g_conf.usageurl)
 		return 0;
+	/* validate URL starts with http:// or https:// */
+	if (strncmp(g_conf.usageurl, "http://", 7) != 0 &&
+		strncmp(g_conf.usageurl, "https://", 8) != 0)
+		return 0;
 	char hostname[50];
 	gethostname(hostname, 50);
 	char exepath[MAX_PATH];
@@ -1528,6 +1623,8 @@ HANDLE* gd_usage(const char* action, const char* data)
 	get_file_version(exepath, version);
 
 	usagedata* d = malloc(sizeof(usagedata));
+	if (!d)
+		return 0;
 	strcpy_s(d->url, MAX_PATH, g_conf.usageurl);
 	strcpy_s(d->data, 1024, "application=GOLDDRIVE");
 	strcat_s(d->data, 1024, "&version=");

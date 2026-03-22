@@ -13,7 +13,7 @@ namespace golddrive
     {
         #region Properties
 
-        const string HostRegex = @"^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$";
+        const string HostRegex = @"^((([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])|(\d{1,3}\.){3}\d{1,3})$";
 
         public event EventHandler<FocusRequestedEventArgs> FocusRequested;
 
@@ -294,12 +294,20 @@ namespace golddrive
         private async void ConnectAsync(Drive drive)
         {
             WorkStart("Connecting...");
-            var status = new Progress<string>(s => Message = s);
-            ReturnBox r = await Task.Run(() => _mountService.Connect(drive, status));
-            SkipComboChanged = true;
-            UpdateObservableDrives();
-            SkipComboChanged = false;
-            WorkDone(r);
+            try
+            {
+                var status = new Progress<string>(s => Message = s);
+                ReturnBox r = await Task.Run(() => _mountService.Connect(drive, status));
+                SkipComboChanged = true;
+                UpdateObservableDrives();
+                SkipComboChanged = false;
+                WorkDone(r);
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"Connect error: {ex.Message}");
+                WorkDone(new ReturnBox { Error = ex.Message, MountStatus = MountStatus.UNKNOWN });
+            }
         }
 
         private async void CheckDriveStatusAsync()
@@ -362,12 +370,20 @@ namespace golddrive
             if (SelectedDrive == null) { Message = "Invalid drive"; return; }
 
             WorkStart("Connecting...");
-            var status = new Progress<string>(s => Message = s);
-            ReturnBox r = await Task.Run(() => _mountService.ConnectPassword(SelectedDrive, password, status));
-            SkipComboChanged = true;
-            UpdateObservableDrives();
-            SkipComboChanged = false;
-            WorkDone(r);
+            try
+            {
+                var status = new Progress<string>(s => Message = s);
+                ReturnBox r = await Task.Run(() => _mountService.ConnectPassword(SelectedDrive, password, status));
+                SkipComboChanged = true;
+                UpdateObservableDrives();
+                SkipComboChanged = false;
+                WorkDone(r);
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"ConnectPassword error: {ex.Message}");
+                WorkDone(new ReturnBox { Error = ex.Message, MountStatus = MountStatus.UNKNOWN });
+            }
         }
 
         private async void OnSettingsSave(object obj)
@@ -419,15 +435,26 @@ namespace golddrive
             Drive d = SelectedDrive;
             if (GoldDriveList.Contains(d))
                 GoldDriveList.Remove(d);
-            await Task.Run(() =>
+            try
             {
-                if (d.Status == DriveStatus.CONNECTED)
-                    _mountService.Unmount(d);
-                Settings settings = _mountService.LoadSettings();
-                settings.AddDrives(GoldDriveList);
-                _mountService.SaveSettings(settings);
-                _mountService.UpdateDrives(settings);
-            });
+                await Task.Run(() =>
+                {
+                    if (d.Status == DriveStatus.CONNECTED)
+                    {
+                        var ur = _mountService.Unmount(d);
+                        if (!ur.Success)
+                            Logger.Log($"Failed to unmount {d.Name}: {ur.Error}");
+                    }
+                    Settings settings = _mountService.LoadSettings();
+                    settings.AddDrives(GoldDriveList);
+                    _mountService.SaveSettings(settings);
+                    _mountService.UpdateDrives(settings);
+                });
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"Delete error: {ex.Message}");
+            }
             UpdateObservableDrives();
             if (GoldDriveList.Count == 0)
                 IsDriveNew = true;

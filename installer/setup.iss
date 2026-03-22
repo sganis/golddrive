@@ -124,12 +124,36 @@ begin
   end;
 end;
 
+procedure UnmountGoldDrives;
+var
+  ExitCode: Integer;
+  Output: AnsiString;
+  Letter: Char;
+begin
+  { Disconnect only golddrive-mounted drives, not all network drives }
+  for Letter := 'G' to 'Z' do
+  begin
+    Exec('net.exe', 'use ' + Letter + ': /d /y', '', SW_HIDE, ewWaitUntilTerminated, ExitCode);
+  end;
+end;
+
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
   ResultCode: Integer;
+  ConfigDir: String;
 begin
   if CurUninstallStep = usUninstall then
   begin
-    Exec('net.exe', 'use * /d /y', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    UnmountGoldDrives;
+    { Clean up user config directory }
+    ConfigDir := ExpandConstant('{localappdata}\Golddrive');
+    if DirExists(ConfigDir) then
+    begin
+      if MsgBox('Remove Golddrive configuration and logs?' + #13#10 + ConfigDir,
+                 mbConfirmation, MB_YESNO) = IDYES then
+      begin
+        DelTree(ConfigDir, True, True, True);
+      end;
+    end;
   end;
 end;

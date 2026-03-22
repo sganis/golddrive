@@ -172,7 +172,7 @@ namespace golddrive
                     command.CommandTimeout = TimeSpan.FromSeconds(timeout_secs);
                     r.Output = command.Execute();
                     r.Error = command.Error;
-                    r.ExitCode = command.ExitStatus;
+                    r.ExitCode = command.ExitStatus ?? -1;
                 }
                 catch (Exception ex)
                 {
@@ -555,9 +555,23 @@ namespace golddrive
             return "n/a";
         }
 
+        private static string SanitizeShellArg(string arg)
+        {
+            if (string.IsNullOrEmpty(arg)) return arg;
+            // reject characters that could enable command injection
+            foreach (char c in new[] { '&', '|', ';', '`', '$', '(', ')', '{', '}', '<', '>', '"', '\'', '\n', '\r' })
+            {
+                if (arg.Contains(c))
+                    throw new ArgumentException($"Invalid character '{c}' in argument: {arg}");
+            }
+            return arg;
+        }
+
         public ReturnBox Mount(Drive drive)
         {
-            ReturnBox r = RunLocal("net.exe", $"use {drive.Name} {drive.Remote} /persistent:yes");
+            string name = SanitizeShellArg(drive.Name);
+            string remote = SanitizeShellArg(drive.Remote);
+            ReturnBox r = RunLocal("net.exe", $"use {name} {remote} /persistent:yes");
             if (!r.Success)
             {
                 r.MountStatus = MountStatus.UNKNOWN;
@@ -578,7 +592,8 @@ namespace golddrive
 
         public ReturnBox Unmount(Drive drive)
         {
-            ReturnBox r = RunLocal("net.exe", "use /d " + drive.Name);
+            string name = SanitizeShellArg(drive.Name);
+            ReturnBox r = RunLocal("net.exe", "use /d " + name);
             if (!r.Success)
             {
                 r.Drive = drive;
@@ -599,7 +614,8 @@ namespace golddrive
 
         public string GetUid(string user)
         {
-            return RunRemote($"id -u {user}").Output;
+            string safeUser = SanitizeShellArg(user);
+            return RunRemote($"id -u {safeUser}").Output;
         }
     }
 }

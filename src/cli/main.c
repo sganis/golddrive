@@ -307,10 +307,12 @@ static int fs_opt_proc(
 	case FUSE_OPT_KEY_NONOPT:
 		if (!g_conf.drive) {
 			g_conf.drive = strdup(arg);
+			if (!g_conf.drive) return -1;
 			return 0;
 		}
 		if (!g_conf.remote) {
 			g_conf.remote = strdup(arg);
+			if (!g_conf.remote) return -1;
 			return 0;
 		}
 		fprintf(stderr, "golddrive: invalid argument '%s'\n", arg);
@@ -373,6 +375,7 @@ static int parse_remote(GDCONFIG* fs)
 			*p = '/';
 
 	npath = strdup(fs->remote);
+	if (!npath) return -1;
 	/* remove first slash if it has 2 slashes // */
 	size_t len = strlen(npath);
 	if (len > 2 && npath[0] == '/' && npath[1] == '/') {
@@ -393,6 +396,7 @@ static int parse_remote(GDCONFIG* fs)
 
 	fs->service = strdup(service);
 	fs->mountpoint = strdup(p);
+	if (!fs->service || !fs->mountpoint) { free(npath); return -1; }
 
 	/* parse instance name (syntax: [locuser=]user@host!port/path) */
 	locuser = 0;
@@ -426,6 +430,7 @@ static int parse_remote(GDCONFIG* fs)
 		fs->port = atoi(port);
 
 	fs->root = strdup(p);
+	if (!fs->root) { free(npath); return -1; }
 	fs->has_root = 0;
 	/* mount root by default, prepend a slash before path
 	 * if needed in remote linux file system */
@@ -454,6 +459,7 @@ static int load_config_file(GDCONFIG* fs)
 	sprintf_s(jsonfile, MAX_PATH,
 		"%s\\Golddrive\\config.json", appdata);
 	fs->json = strdup(jsonfile);
+	if (!fs->json) return 1;
 	rc = load_json(fs);
 	return rc;
 }
@@ -471,6 +477,10 @@ static void init_logging(GDCONFIG* fs)
 		char f[MAX_PATH];
 		sprintf_s(f, MAX_PATH, "%s\\Golddrive", appdata);
 		g_logfile = malloc(MAX_PATH);
+		if (!g_logfile) {
+			fprintf(stderr, "out of memory for log file path\n");
+			return;
+		}
 		sprintf_s(g_logfile, MAX_PATH, "%s\\golddrive.log", f);
 		if (!directory_exists(f))
 			_mkdir(f);
@@ -670,6 +680,10 @@ int main(int argc, char *argv[])
 	gd_unlock();
 	if (rc == 0) {
 		g_conf.home = malloc(sizeof out);
+		if (!g_conf.home) {
+			gd_log("out of memory for home path\n");
+			return 1;
+		}
 		strcpy_s(g_conf.home, sizeof out, out);
 		gd_log("home     = %s\n", g_conf.home);
 	}

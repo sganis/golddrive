@@ -43,7 +43,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: C:\cache
-          key: ${{ runner.os }}-${{ runner.arch }}-cache-${{ hashFiles('**/lockfiles') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-cache-${{ hashFiles('src/**/*.csproj', 'src/version.xml') }}
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}-cache-
 
@@ -88,7 +88,8 @@ jobs:
         shell: cmd
         env:
           PLATFORM: ${{ matrix.platform }}
-        run: python tools\setupssh.py support@localhost support
+          SSH_TEST_PASSWORD: ${{ secrets.SSH_TEST_PASSWORD || 'support' }}
+        run: python tools\setupssh.py support@localhost %SSH_TEST_PASSWORD%
 
       - name: Build CLI
         shell: cmd
@@ -120,7 +121,7 @@ jobs:
 
       - name: Install Inno Setup
         shell: cmd
-        run: choco install innosetup -y --no-progress
+        run: choco install innosetup --version=6.2.2 -y --no-progress
 
       - name: Build installer
         shell: cmd
@@ -175,3 +176,4 @@ jobs:
           name: golddrive-${{ steps.version.outputs.VERSION }}-${{ matrix.platform }}-setup
           path: build\${{ matrix.configuration }}\${{ matrix.platform }}\golddrive-*-setup.exe
           if-no-files-found: error
+          retention-days: 90

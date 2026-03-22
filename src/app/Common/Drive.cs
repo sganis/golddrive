@@ -183,10 +183,9 @@ namespace golddrive
         {
             get
             {
-                int port = int.Parse("0" + Port);
-                if (port == 0)
-                    port = 22;
-                return port;
+                if (int.TryParse(Port, out int p) && p > 0 && p <= 65535)
+                    return p;
+                return 22;
             }
         }
 

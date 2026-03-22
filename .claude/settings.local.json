@@ -73,7 +73,8 @@
       "Bash(xargs wc:*)",
       "Bash(git:*)",
       "Bash(c:/Dev/golddrive/build/Release/x64/golddrive.exe --version 2>&1)",
-      "Bash(tools/build_cli.bat x64:*)"
+      "Bash(tools/build_cli.bat x64:*)",
+      "Bash(xargs cat:*)"
     ]
   }
 }

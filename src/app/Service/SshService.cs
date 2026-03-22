@@ -31,15 +31,19 @@ namespace golddrive
                     {
                         throw new Exception("Timeout. Server unknown or does not respond.");
                     }
-                    else
+                    try
                     {
-                        if (client.Connected)
-                        {
-                            r.MountStatus = MountStatus.OK;
-                            r.Success = true;
-                        }
+                        client.EndConnect(result);
                     }
-                    client.EndConnect(result);
+                    catch (SocketException)
+                    {
+                        throw new Exception("Connection refused by server.");
+                    }
+                    if (client.Connected)
+                    {
+                        r.MountStatus = MountStatus.OK;
+                        r.Success = true;
+                    }
                 }
             }
             catch (Exception ex)
@@ -118,7 +122,7 @@ namespace golddrive
                 }
                 else
                 {
-                    string args = $"-i \"{appkey}\" -p {drive.CurrentPort} -oPasswordAuthentication=no -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oBatchMode=yes -oConnectTimeout={TIMEOUT} {drive.CurrentUser}@{drive.Host} \"echo ok\"";
+                    string args = $"-i \"{appkey}\" -p {drive.CurrentPort} -oPasswordAuthentication=no -oStrictHostKeyChecking=accept-new -oBatchMode=yes -oConnectTimeout={TIMEOUT} {drive.CurrentUser}@{drive.Host} \"echo ok\"";
                     var r1 = RunLocalProcess("ssh.exe", args, TIMEOUT);
                     var ok = r1.Output.Trim() == "ok";
                     if (ok)
@@ -160,13 +164,15 @@ namespace golddrive
                     bool linux = !client.ConnectionInfo.ServerVersion.ToLower().Contains("windows");
                     if (linux)
                     {
-                        cmd = $"exec sh -c \"cd; mkdir -p .ssh; chmod 700 .ssh; touch .ssh/authorized_keys; chmod 744 .ssh/authorized_keys; echo '{pubkey}' >> .ssh/authorized_keys; chmod 644 .ssh/authorized_keys\"";
+                        // sanitize pubkey to prevent shell injection — only allow safe SSH key chars
+                        string safePubkey = System.Text.RegularExpressions.Regex.Replace(pubkey.Trim(), @"[^A-Za-z0-9+/=@ .\-]", "");
+                        cmd = $"exec sh -c \"cd; mkdir -p .ssh; chmod 700 .ssh; touch .ssh/authorized_keys; chmod 744 .ssh/authorized_keys; echo '{safePubkey}' >> .ssh/authorized_keys; chmod 644 .ssh/authorized_keys\"";
                     }
                     SshCommand command = client.CreateCommand(cmd);
                     command.CommandTimeout = TimeSpan.FromSeconds(TIMEOUT);
                     r.Output = command.Execute();
                     r.Error = command.Error;
-                    r.ExitCode = command.ExitStatus;
+                    r.ExitCode = command.ExitStatus ?? -1;
                 }
             }
             catch (Exception ex)

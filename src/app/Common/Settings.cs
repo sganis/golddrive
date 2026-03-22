@@ -92,9 +92,21 @@ namespace golddrive
                     SelectedDrive = selected;
                 }
             }
+            catch (JsonException ex)
+            {
+                Logger.Log($"Error parsing settings JSON ({Filename}): {ex.Message}");
+                // preserve corrupted file for diagnosis
+                try
+                {
+                    string backup = Filename + ".corrupt";
+                    if (!File.Exists(backup))
+                        File.Copy(Filename, backup);
+                }
+                catch { }
+            }
             catch (Exception ex)
             {
-                Logger.Log($"Error loading settings: {ex.Message}");
+                Logger.Log($"Error loading settings ({Filename}): {ex.Message}");
             }
         }
     }
