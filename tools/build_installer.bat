@@ -1,7 +1,7 @@
 @echo off
 :: Build installer only (requires CLI and App to be built first)
 :: Usage: tools\build_installer.bat [version]
-:: Example: tools\build_installer.bat 2.5
+:: Example: tools\build_installer.bat 2.6
 
 setlocal
 

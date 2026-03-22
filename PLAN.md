@@ -48,7 +48,7 @@ Original audit identified 21 issues. All actionable items now resolved except #1
 | Event handler leaks in UserControls | `src/app/Controls/HostControl.xaml.cs`, `PasswordControl.xaml.cs` | Done — Unloaded handlers unsubscribe |
 | SanitizeShellArg() untested | `src/test/Unit/SanitizeShellArgTest.cs` | Done — 14 tests |
 | No code coverage tooling | `src/test/test.csproj` | Done — coverlet.collector added |
-| AppVeyor installs old WinFsp 1.12 | `appveyor.yml` | Done — updated to 2.1 |
+| WinFsp 2.x MSI removed from vendor | `vendor/winfsp/` | Done — 2.x incompatible with Windows 10, keeping 1.12 |
 | Newtonsoft.Json 13.0.3 outdated | `src/app/app.csproj` | Done — updated to 13.0.4 |
 
 ## Reverted (not a bug)

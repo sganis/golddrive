@@ -70,7 +70,7 @@ App:
 Tests/CI:
 - **SanitizeShellArg tests** — 14 new tests covering all injection characters
 - **Code coverage** — `coverlet.collector` added to test project
-- **AppVeyor WinFsp** — updated from 1.12 to 2.1
+- **AppVeyor WinFsp** — stays at 1.12 (2.x incompatible with Windows 10); removed 2.x MSI from vendor
 - **Newtonsoft.Json** — updated from 13.0.3 to 13.0.4
 
 ## 10. New Files
