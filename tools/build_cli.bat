@@ -1,12 +1,8 @@
 @echo off
 :: Build CLI only
-:: Usage: tools\build_cli.bat [platform]
-:: Example: tools\build_cli.bat x64
+:: Usage: tools\build_cli.bat
 
 setlocal enabledelayedexpansion
-
-set PLATFORM=%~1
-if "%PLATFORM%"=="" set PLATFORM=x64
 
 set "VCVARS="
 for %%E in (Enterprise Professional Community BuildTools) do (
@@ -21,7 +17,7 @@ if "%VCVARS%"=="" (
 call "%VCVARS%" >nul 2>&1
 
 set SOLUTIONDIR=%~dp0..\src\
-msbuild %SOLUTIONDIR%cli\cli.vcxproj /t:rebuild /p:Configuration=Release /p:Platform=%PLATFORM% /p:SolutionDir=%SOLUTIONDIR% /v:minimal
+msbuild %SOLUTIONDIR%cli\cli.vcxproj /t:rebuild /p:Configuration=Release /p:Platform=x64 /p:SolutionDir=%SOLUTIONDIR% /v:minimal
 if !errorlevel! neq 0 (
     echo BUILD FAILED
     exit /b 1

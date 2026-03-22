@@ -194,7 +194,7 @@ unsigned long hash_path(const char* path)
 	unsigned long hash = 5381;
 	int c;
 	const char* p = path;
-	while (c = *p++)
+	while ((c = *p++) != 0)
 		hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
 	return hash;
 }

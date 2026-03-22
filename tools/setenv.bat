@@ -22,7 +22,7 @@ SET "PATH=C:\Users\San\AppData\Roaming\cabal\bin;%PATH%"
 echo Setting x64 development environment...
 SET PLATFORM=x64
 set CONFIGURATION=Release
-call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
+call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
 
 ::set GOLDDRIVE=%DIR%\..
 ECHO Select remote test host:
@@ -35,15 +35,15 @@ CHOICE /C 1234 /M "Enter ssh server for testing: "
 :: Note - list ERRORLEVELS in decreasing order
 IF ERRORLEVEL 4 (
 	SET HOST=mac
-	goto hostdone 
+	goto hostdone
 )
 IF ERRORLEVEL 3 (
 	SET HOST=192.168.99.101
-	goto hostdone 
+	goto hostdone
 )
 IF ERRORLEVEL 2 (
 	SET HOST=192.168.100.201
-	goto hostdone 
+	goto hostdone
 )
 IF ERRORLEVEL 1 (
 	SET HOST=localhost

@@ -1,16 +1,8 @@
 @echo off
 :: Build all components: CLI + App + Tests
-:: Usage: tools\build.bat [platform]
-:: Example: tools\build.bat x64
+:: Usage: tools\build.bat
 
 setlocal enabledelayedexpansion
-
-set PLATFORM=%~1
-if "%PLATFORM%"=="" set PLATFORM=x64
-if /i not "%PLATFORM%"=="x64" if /i not "%PLATFORM%"=="ARM64" (
-    echo ERROR: Platform must be x64 or ARM64, got: %PLATFORM%
-    exit /b 1
-)
 
 :: Setup MSVC environment - detect VS edition
 set "VCVARS="
@@ -26,10 +18,10 @@ if "%VCVARS%"=="" (
 call "%VCVARS%" >nul 2>&1
 
 set SOLUTIONDIR=%~dp0..\src\
-set OUTDIR=%~dp0..\build\Release\%PLATFORM%
+set OUTDIR=%~dp0..\build\Release\x64
 
 echo === Building CLI ===
-msbuild %SOLUTIONDIR%cli\cli.vcxproj /t:rebuild /p:Configuration=Release /p:Platform=%PLATFORM% /p:SolutionDir=%SOLUTIONDIR% /v:minimal
+msbuild %SOLUTIONDIR%cli\cli.vcxproj /t:rebuild /p:Configuration=Release /p:Platform=x64 /p:SolutionDir=%SOLUTIONDIR% /v:minimal
 if !errorlevel! neq 0 (
     echo CLI BUILD FAILED
     exit /b 1

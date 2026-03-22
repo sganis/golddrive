@@ -4,6 +4,9 @@
 #pragma warning(disable: 4244 4142)
 #endif
 #pragma warning(disable: 4099)
+#pragma warning(disable: 4324) /* structure padded due to alignment (WinFsp) */
+#pragma warning(disable: 4201) /* nameless struct/union (WinFsp) */
+#pragma warning(disable: 4245) /* signed/unsigned mismatch (FUSE_OPT_KEY) */
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -48,9 +51,9 @@ extern char* g_logurl;
 #endif
 
 #define log_message(level, format, ...) {								\
-	int thread = GetCurrentThreadId();									\
+	int _log_tid = GetCurrentThreadId();								\
 	printf("%zd: %zd: %-6d: %s: %-15s:%3d: ",							\
-		g_sftp_calls, time_mu(), thread, level, __func__, __LINE__);	\
+		g_sftp_calls, time_mu(), _log_tid, level, __func__, __LINE__);	\
 	printf(format, __VA_ARGS__);										\
 	fflush(stdout);														\
 }

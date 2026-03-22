@@ -75,7 +75,11 @@
       "Bash(c:/Dev/golddrive/build/Release/x64/golddrive.exe --version 2>&1)",
       "Bash(tools/build_cli.bat x64:*)",
       "Bash(xargs cat:*)",
-      "Bash(1 dumpbin:*)"
+      "Bash(1 dumpbin:*)",
+      "Bash(curl -L -o V10.0.0.0.zip https://github.com/PowerShell/openssh-portable/archive/refs/tags/V10.0.0.0.zip)",
+      "Bash(unzip -qo v10.zip)",
+      "Bash(cat:*)",
+      "WebFetch(domain:github.com)"
     ]
   }
 }

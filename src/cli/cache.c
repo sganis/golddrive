@@ -4,6 +4,10 @@
 #include "cache.h"
 #include "uthash.h"
 
+#pragma warning(push)
+#pragma warning(disable: 4127) /* conditional expression is constant (uthash macros) */
+#pragma warning(disable: 4702) /* unreachable code (uthash macros) */
+
 CACHE_INODE* cache_inode_find(const char* path)
 {
 	if (!path)
@@ -42,3 +46,5 @@ void cache_inode_add(CACHE_INODE* value)
 	}
 	cache_inode_unlock();
 }
+
+#pragma warning(pop)

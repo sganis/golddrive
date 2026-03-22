@@ -871,7 +871,6 @@ GDDIR* gd_opendir(const char* path)
 	}
 	sh->file_handle = 0;
 	sh->dir_handle = 0;
-	unsigned int mode = 0;
 	log_debug("OPEN GDHANDLE: %zu, %s\n", (size_t)sh, path);
 
 	LIBSSH2_SFTP_HANDLE* handle;
@@ -1070,6 +1069,7 @@ int gd_check_hlink(const char* path)
 
 int gd_utimens(const char* path, const struct fuse_timespec tv[2], struct fuse_file_info* fi)
 {
+	(void)fi;
 	log_info("%s\n", path);
 	int rc = 0;
 
@@ -1329,6 +1329,7 @@ int map_error(int rc)
 void libssh2_logger(LIBSSH2_SESSION* session,
 	void* context, const char* data, size_t length)
 {
+	(void)session; (void)context; (void)length;
 	printf("libssh2: %s\n", data);
 }
 
@@ -1426,9 +1427,9 @@ int load_json(GDCONFIG* fs)
 		}
 		else if (jsoneq(JSON_STRING, &t[i], "Drives") == 0) {
 			if (i + 1 >= r) break;
-			int size = t[i + 1].size;
+			int ndrives = t[i + 1].size;
 			i++;
-			for (int j = 0; j < size; j++) {
+			for (int j = 0; j < ndrives; j++) {
 				if (i + 2 >= r) break;
 				tok = &t[i + 1];
 				char* key = str_ndup(JSON_STRING + tok->start, tok->end - tok->start);
@@ -1537,7 +1538,7 @@ int _post(const char* url, const char* data)
 		urlComp.lpszHostName, (rsize_t)urlComp.dwHostNameLength);
 	wcsncpy_s(wpath, 100,
 		urlComp.lpszUrlPath, (rsize_t)urlComp.dwUrlPathLength);
-	int port = urlComp.nPort;
+	INTERNET_PORT port = urlComp.nPort;
 
 	DWORD datalen = (DWORD)strlen(data);
 
@@ -1567,10 +1568,9 @@ int _post(const char* url, const char* data)
 			NULL, WINHTTP_NO_REFERER,
 			WINHTTP_DEFAULT_ACCEPT_TYPES,
 			secflag);
-	DWORD headersLength = -1;
+	DWORD headersLength = (DWORD)-1;
 
 	int retry = 0;
-	int optionset = 0;
 	int retries = 0;
 	int maxretries = 1;
 	do {

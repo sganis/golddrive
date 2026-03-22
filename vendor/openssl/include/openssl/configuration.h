@@ -30,7 +30,7 @@ extern "C" {
 # ifndef OPENSSL_SYS_WIN64A
 #  define OPENSSL_SYS_WIN64A 1
 # endif
-# define OPENSSL_CONFIGURED_API 10100
+# define OPENSSL_CONFIGURED_API 30600
 # ifndef OPENSSL_RAND_SEED_OS
 #  define OPENSSL_RAND_SEED_OS
 # endif
@@ -63,9 +63,6 @@ extern "C" {
 # endif
 # ifndef OPENSSL_NO_DEMOS
 #  define OPENSSL_NO_DEMOS
-# endif
-# ifndef OPENSSL_NO_DEPRECATED
-#  define OPENSSL_NO_DEPRECATED
 # endif
 # ifndef OPENSSL_NO_DEVCRYPTOENG
 #  define OPENSSL_NO_DEVCRYPTOENG
@@ -138,9 +135,6 @@ extern "C" {
 # endif
 # ifndef OPENSSL_NO_TFO
 #  define OPENSSL_NO_TFO
-# endif
-# ifndef OPENSSL_NO_TLS_DEPRECATED_EC
-#  define OPENSSL_NO_TLS_DEPRECATED_EC
 # endif
 # ifndef OPENSSL_NO_TRACE
 #  define OPENSSL_NO_TRACE

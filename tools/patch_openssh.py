@@ -1,91 +1,83 @@
-# patch openssh-portable windows to build with openssl
+# patch openssh-portable v10 windows to build with our vendor libraries
+# our openssl 3.6 is built with no-deprecated, but openssh uses deprecated
+# APIs (EC_KEY, RSA, DSA). The symbols exist in libcrypto.lib but are hidden
+# by headers. We define OPENSSL_API_COMPAT=0x10100000L to expose them.
+# We also fix config.h.vs for functions removed in openssl 3.6:
+# - BN_is_prime_ex (removed, use BN_check_prime)
+# - EVP_CIPHER_CTX_get_iv/set_iv (removed, use compat shims)
 import os
+import glob
 
 DIR = os.path.dirname(os.path.realpath(__file__))
+VENDOR = os.path.normpath(os.path.join(DIR, '..', 'vendor'))
 
-
-# add these defines
-#pragma warning(disable: 4005 4030)
-#define _CRT_INTERNAL_NONSTDC_NAMES 0
-path = r'contrib\win32\win32compat\inc\unistd.h'
-with open(path) as r:
-	lines = r.readlines()
-done = False
-for line in lines:
-	if '#define _CRT_INTERNAL_NONSTDC_NAMES 0' in line:
-		done = True
-		break
-if not done:
-	with open(path, 'wt') as w:
-		for line in lines:
-			if '#define STDIN_FILENO 0' in line:
-				w.write('#pragma warning(disable: 4005 4030)\n')
-				w.write('#define _CRT_INTERNAL_NONSTDC_NAMES 0\n')
-			w.write(line)
-
-# add openssl and zlib 
+# paths.targets: use generic SDK version so msbuild picks whatever is installed
 path = r'contrib\win32\openssh\paths.targets'
 with open(path) as r:
-	lines = r.readlines()
+    data = r.read()
 with open(path, 'wt') as w:
-	for line in lines:
-		# if '<LibreSSL-Path>' in line:
-		# 	w.write(f'\t<LibreSSL-Path>{DIR}\\..\\vendor\\openssl\\</LibreSSL-Path>\n')
-		# elif '<LibreSSL-x64-Path>' in line:
-		# 	w.write(f'\t<LibreSSL-x64-Path>{DIR}\\..\\vendor\\openssl\\lib\\x64\\</LibreSSL-x64-Path>\n')
-		# elif '<LibreSSL-x86-Path>' in line:
-		# 	w.write(f'\t<LibreSSL-x86-Path>{DIR}\\..\\vendor\\openssl\\lib\\x86\\</LibreSSL-x86-Path>\n')
-		if '<ZLib-Path>' in line:
-			w.write(f'\t<ZLib-Path>{DIR}\\..\\vendor\\zlib\\include\\</ZLib-Path>\n')
-		elif '<ZLib-x64-Path>' in line:
-			w.write(f'\t<ZLib-x64-Path>{DIR}\\..\\vendor\\zlib\\lib\\x64\\</ZLib-x64-Path>\n')
-		elif '<ZLib-x86-Path>' in line:
-			w.write(f'\t<ZLib-x86-Path>{DIR}\\..\\vendor\\zlib\\lib\\x86\\</ZLib-x86-Path>\n')
-		# elif '<SSLLib>' in line:
-		# 	w.write('\t<SSLLib>libeay32.lib;</SSLLib>\n')
-		elif '<WindowsSDKVersion>' in line:
-			w.write('\t<WindowsSDKVersion>10</WindowsSDKVersion>\n')
-		else:
-			w.write(line)
+    w.write(data.replace(
+        '<WindowsSDKVersion>10.0.22621.0</WindowsSDKVersion>',
+        '<WindowsSDKVersion>10.0</WindowsSDKVersion>'))
 
-# comment out download of libressl and zlib
-# path = r'contrib\win32\openssh\config.vcxproj'
-# with open(path) as r:
-# 	lines = r.readlines()
-# with open(path, 'wt') as w:
-# 	for line in lines:
-# 		if 'powershell.exe' in line and 'rem' not in line:
-# 			w.write('rem ' + line)
-# 		else:
-# 			w.write(line)
+# patch all vcxproj: disable spectre mitigation
+for path in glob.glob(r'contrib\win32\openssh\*.vcxproj'):
+    with open(path) as r:
+        data = r.read()
+    if '<SpectreMitigation>Spectre</SpectreMitigation>' in data:
+        with open(path, 'wt') as w:
+            w.write(data.replace(
+                '<SpectreMitigation>Spectre</SpectreMitigation>',
+                '<SpectreMitigation>false</SpectreMitigation>'))
 
-# # replace libcrypto.lib in ssh-keygen 32-bit release
-# path = r'contrib\win32\openssh\keygen.vcxproj'
-# with open(path) as r:
-# 	data = r.read()
-# with open(path, 'wt') as w:
-# 	w.write(data.replace('libcrypto.lib','$(SSLLib)'))
-
-# replace zlib.lib by zlibstatic.lib
-path = r'contrib\win32\openssh\ssh.vcxproj'
+# config.h.vs: fix feature flags for openssl 3.6 (no-deprecated build)
+path = r'contrib\win32\openssh\config.h.vs'
 with open(path) as r:
-	data = r.read()
+    data = r.read()
+# BN_is_prime_ex doesn't exist in openssl 3.6 no-deprecated
+data = data.replace(
+    '#define HAVE_BN_IS_PRIME_EX 1',
+    '/* #undef HAVE_BN_IS_PRIME_EX */')
+# EVP_CIPHER_CTX_get_iv/set_iv were removed in openssl 3.0.8+
+# unset these so the compat shims in libressl-api-compat.c are used
+data = data.replace(
+    '#define HAVE_EVP_CIPHER_CTX_GET_IV 1',
+    '/* #undef HAVE_EVP_CIPHER_CTX_GET_IV */\n'
+    '#define HAVE_EVP_CIPHER_CTX_GET_UPDATED_IV 1')
+data = data.replace(
+    '#define HAVE_EVP_CIPHER_CTX_SET_IV 1',
+    '/* #undef HAVE_EVP_CIPHER_CTX_SET_IV */\n'
+    '#define HAVE_EVP_CIPHER_CTX_IV_NOCONST 1')
 with open(path, 'wt') as w:
-	w.write(data.replace('zlib.lib','zlibstatic.lib'))
+    w.write(data)
 
-# ssh 32-bit needs /nodefaultlib:msvcrt.lib linker option
-path = r'contrib\win32\openssh\ssh.vcxproj'
+# moduli.c: replace BN_is_prime_ex with BN_check_prime
+path = 'moduli.c'
 with open(path) as r:
-	lines = r.readlines()
+    data = r.read()
+data = data.replace('BN_is_prime_ex(q, 1, NULL, NULL)', 'BN_check_prime(q, NULL, NULL)')
+data = data.replace('BN_is_prime_ex(p, trials, NULL, NULL)', 'BN_check_prime(p, NULL, NULL)')
+data = data.replace('BN_is_prime_ex(q, trials - 1, NULL, NULL)', 'BN_check_prime(q, NULL, NULL)')
+data = data.replace('BN_is_prime_ex failed', 'BN_check_prime failed')
 with open(path, 'wt') as w:
-	link=False
-	for line in lines:
-		if '<Link>' in line: link=True
-		if '</Link>' in line: link=False
-		if link and '<AdditionalOptions>' in line:
-			w.write('      <AdditionalOptions>/incremental:no /ignore:4099 /nodefaultlib:msvcrt.lib %(AdditionalOptions)</AdditionalOptions>\n')
-		else:
-			w.write(line)
+    w.write(data)
 
-
-    
+# create Directory.Build.props to:
+# - inject vendor openssl/zlib include and library paths
+# - define OPENSSL_API_COMPAT=0x10100000L to expose deprecated APIs in headers
+#   (the symbols are compiled into libcrypto.lib, just hidden by header guards)
+props = fr'''<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>{VENDOR}\openssl\include;{VENDOR}\zlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>OPENSSL_API_COMPAT=0x10100000L;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>{VENDOR}\openssl\lib\x64;{VENDOR}\zlib\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>
+'''
+with open(r'contrib\win32\openssh\Directory.Build.props', 'wt') as w:
+    w.write(props)

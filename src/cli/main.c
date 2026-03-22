@@ -52,6 +52,7 @@ DWORD WINAPI gd_keepalive_thread(LPVOID param)
 
 static void* f_init(struct fuse_conn_info* conn, struct fuse_config* conf)
 {
+	(void)conf;
 #if defined(FUSE_CAP_READDIRPLUS)
 	conn->want |= (conn->capable & FUSE_CAP_READDIRPLUS);
 #endif
@@ -136,6 +137,7 @@ static int f_open(const char* path, struct fuse_file_info* fi)
 static int f_read(const char* path, char* buf, size_t size,
 	fuse_off_t off, struct fuse_file_info* fi)
 {
+	(void)path;
 	intptr_t fd = fi_fd(fi);
 	int nb;
 	int rc = -1 != (nb = gd_read(fd, buf, size, off)) ? nb : -errno;
@@ -145,6 +147,7 @@ static int f_read(const char* path, char* buf, size_t size,
 static int f_write(const char* path, const char* buf,
 	size_t size, fuse_off_t off, struct fuse_file_info* fi)
 {
+	(void)path;
 	intptr_t fd = fi_fd(fi);
 	int nb;
 	int rc = -1 != (nb = gd_write(fd, buf, size, off)) ? nb : -errno;
@@ -153,6 +156,7 @@ static int f_write(const char* path, const char* buf,
 
 static int f_release(const char* path, struct fuse_file_info* fi)
 {
+	(void)path;
 	intptr_t fd = fi_fd(fi);
 	return gd_close(fd);
 }
@@ -160,6 +164,7 @@ static int f_release(const char* path, struct fuse_file_info* fi)
 static int f_rename(const char* oldpath, const char* newpath,
 	unsigned int flags)
 {
+	(void)flags;
 	realpath(newpath);
 	realpath(oldpath);
 	int rc = -1 != gd_rename(oldpath, newpath) ? 0 : -errno;
@@ -179,6 +184,7 @@ static int f_readdir(const char* path, void* buf,
 	fuse_fill_dir_t filler, fuse_off_t off,
 	struct fuse_file_info* fi, enum fuse_readdir_flags flags)
 {
+	(void)path; (void)off; (void)flags;
 	GDDIR* dirp = fi_dirp(fi);
 	struct GDDIRENT* de;
 
@@ -201,6 +207,7 @@ static int f_readdir(const char* path, void* buf,
 static int f_releasedir(const char* path,
 	struct fuse_file_info* fi)
 {
+	(void)path;
 	GDDIR* dirp = fi_dirp(fi);
 	return gd_closedir(dirp);
 }
@@ -230,12 +237,14 @@ static int f_utimens(const char* path,
 static int f_fsync(const char* path,
 	int datasync, struct fuse_file_info* fi)
 {
+	(void)path; (void)datasync;
 	intptr_t fd = fi_fd(fi);
 	return -1 != gd_fsync(fd) ? 0 : -errno;
 }
 
 static int f_flush(const char* path, struct fuse_file_info* fi)
 {
+	(void)path;
 	intptr_t fd = fi_fd(fi);
 	return -1 != gd_flush(fd) ? 0 : -errno;
 }
@@ -300,6 +309,7 @@ static int fs_opt_proc(
 	void *data, const char *arg,
 	int key, struct fuse_args *outargs)
 {
+	(void)data; (void)outargs;
 	char exepath[MAX_PATH];
 	char version[100];
 
@@ -535,7 +545,7 @@ int main(int argc, char *argv[])
 	init_logging(&g_conf);
 
 	/* set arguments */
-	g_conf.drive[0] = toupper(g_conf.drive[0]);
+	g_conf.drive[0] = (char)toupper(g_conf.drive[0]);
 	g_conf.letter = g_conf.drive[0];
 	if (!g_conf.port)
 		g_conf.port = 22;
@@ -555,7 +565,7 @@ int main(int argc, char *argv[])
 	}
 	char* u = g_conf.user;
 	for (; *u; ++u)
-		*u = tolower(*u);
+		*u = (char)tolower(*u);
 
 	/* private key */
 	if (!g_conf.pkey || strlen(g_conf.pkey) == 0) {
