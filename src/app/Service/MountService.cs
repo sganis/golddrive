@@ -439,6 +439,70 @@ namespace golddrive
             }
         }
 
+        public int CleanMounts()
+        {
+            int count = 0;
+            try
+            {
+                string mountPoints2 = @"Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2";
+                using (RegistryKey mp2 = Registry.CurrentUser.OpenSubKey(mountPoints2))
+                {
+                    if (mp2 != null)
+                    {
+                        foreach (string name in mp2.GetSubKeyNames())
+                        {
+                            if (name.IndexOf("golddrive", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                Registry.CurrentUser.DeleteSubKey($@"{mountPoints2}\{name}", false);
+                                Logger.Log($"Cleaned MountPoints2: {name}");
+                                count++;
+                            }
+                        }
+                    }
+                }
+
+                string drivesKey = @"Software\Classes\Applications\Explorer.exe\Drives";
+                string letters = "GHIJKLMNOPQRSTUVWXYZ";
+                foreach (char c in letters)
+                {
+                    string iconKey = $@"{drivesKey}\{c}\DefaultIcon";
+                    using (RegistryKey k = Registry.CurrentUser.OpenSubKey(iconKey))
+                    {
+                        if (k != null)
+                        {
+                            string val = k.GetValue("")?.ToString() ?? "";
+                            if (val.IndexOf("golddrive", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                Registry.CurrentUser.DeleteSubKeyTree($@"{drivesKey}\{c}", false);
+                                Logger.Log($"Cleaned drive icon: {c}");
+                                count++;
+                            }
+                        }
+                    }
+
+                    string netKey = $@"Network\{c}";
+                    using (RegistryKey k = Registry.CurrentUser.OpenSubKey(netKey))
+                    {
+                        if (k != null)
+                        {
+                            string val = k.GetValue("RemotePath")?.ToString() ?? "";
+                            if (val.IndexOf("golddrive", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                Registry.CurrentUser.DeleteSubKey(netKey, false);
+                                Logger.Log($"Cleaned persistent mount: {c}");
+                                count++;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"CleanMounts error: {ex.Message}");
+            }
+            return count;
+        }
+
         public void SetDriveIcon(Drive drive, string icoPath)
         {
             try

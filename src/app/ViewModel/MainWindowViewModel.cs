@@ -140,7 +140,7 @@ namespace golddrive
         public string ConnectButtonText =>
             (DriveStatus == DriveStatus.CONNECTED
             || DriveStatus == DriveStatus.BROKEN) ? "Disconnect" : "Connect";
-        public string ConnectButtonColor => DriveStatus == DriveStatus.CONNECTED ? "#689F38" : "#607d8b";
+        public string ConnectButtonColor => DriveStatus == DriveStatus.CONNECTED ? "#43A047" : "#5C6BC0";
         public bool ConnectButtonIsEnabled => true;
         public bool IsSettingsChanged { get; set; }
 
@@ -543,6 +543,12 @@ namespace golddrive
         public ICommand GithubCommand => _githubCommand ?? (_githubCommand = new RelayCommand(
             url => System.Diagnostics.Process.Start(url.ToString())));
 
+        private ICommand _cleanMountsCommand;
+        public ICommand CleanMountsCommand => _cleanMountsCommand ?? (_cleanMountsCommand = new RelayCommand(OnCleanMounts));
+
+        private ICommand _restartExplorerCommand;
+        public ICommand RestartExplorerCommand => _restartExplorerCommand ?? (_restartExplorerCommand = new RelayCommand(OnRestartExplorer));
+
         private ICommand _runTerminalCommand;
         public ICommand RunTerminalCommand => _runTerminalCommand ?? (_runTerminalCommand = new RelayCommand(
             url => System.Diagnostics.Process.Start("cmd.exe")));
@@ -562,6 +568,31 @@ namespace golddrive
         protected virtual void OnFocusRequested(string propertyName)
         {
             FocusRequested?.Invoke(this, new FocusRequestedEventArgs(propertyName));
+        }
+
+        private async void OnCleanMounts(object obj)
+        {
+            if (IsWorking) return;
+            WorkStart("Cleaning old mounts...");
+            int count = await Task.Run(() => _mountService.CleanMounts());
+            Message = count > 0 ? $"Cleaned {count} old mount(s)" : "No old mounts found";
+            IsWorking = false;
+        }
+
+        private void OnRestartExplorer(object obj)
+        {
+            try
+            {
+                foreach (var p in System.Diagnostics.Process.GetProcessesByName("explorer"))
+                    p.Kill();
+                System.Diagnostics.Process.Start("explorer.exe");
+                Message = "Explorer restarted";
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"RestartExplorer error: {ex.Message}");
+                Message = $"Failed to restart Explorer: {ex.Message}";
+            }
         }
 
         public void OnComboChanged()

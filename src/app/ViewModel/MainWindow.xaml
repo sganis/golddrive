@@ -49,6 +49,12 @@
                             Command="{Binding ShowPageCommand}"
                             CommandParameter="{x:Static local:Page.Settings}" />
                         <Button
+                            Content="Clean Mounts"
+                            Command="{Binding CleanMountsCommand}" />
+                        <Button
+                            Content="Restart Explorer"
+                            Command="{Binding RestartExplorerCommand}" />
+                        <Button
                             Content="Open Terminal"
                             Command="{Binding RunTerminalCommand}" />
                         <Button
