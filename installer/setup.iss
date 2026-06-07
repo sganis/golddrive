@@ -8,7 +8,7 @@
 
 ; Passed via /DMyAppVersion=x.y from command line
 #ifndef MyAppVersion
-  #define MyAppVersion "2.6"
+  #define MyAppVersion "2.7"
 #endif
 
 ; Passed via /DMyPlatform=x64 from command line
@@ -45,8 +45,10 @@ WizardStyle=modern
 PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-; Windows 11 (build 22000) or later
-MinVersion=10.0.22000
+; Windows 11 / Server 2022 generation (build 20348+); excludes Windows 10.
+; 20348 is the lowest Win11-era build (Server 2022) — a 22000 (Win11 client)
+; floor would reject the CI install smoke test, which runs on Server 2022.
+MinVersion=10.0.20348
 DisableProgramGroupPage=yes
 CloseApplications=yes
 RestartApplications=no

@@ -6,13 +6,18 @@
 setlocal
 
 set VERSION=%~1
-if "%VERSION%"=="" set VERSION=2.6
+if "%VERSION%"=="" set VERSION=2.7
 
-set ISCC="%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe"
+set "ISCC="
+for %%P in (
+    "%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe"
+    "%ProgramFiles%\Inno Setup 6\ISCC.exe"
+    "%USERPROFILE%\.local\InnoSetup6\ISCC.exe"
+) do if exist %%P set "ISCC=%%P"
 set SCRIPT=%~dp0..\installer\setup.iss
 
-if not exist %ISCC% (
-    echo ERROR: Inno Setup 6 not found at %ISCC%
+if "%ISCC%"=="" (
+    echo ERROR: Inno Setup 6 not found in Program Files or %USERPROFILE%\.local\InnoSetup6
     exit /b 1
 )
 
