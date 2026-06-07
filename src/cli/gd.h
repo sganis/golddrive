@@ -30,7 +30,6 @@ int gd_utimens(const char* path, const struct fuse_timespec tv[2], struct fuse_f
 int gd_fsync(intptr_t fd);
 int gd_flush(intptr_t fd);
 void gd_log(const char* fmt, ...);
-int jsoneq(const char* json, jsmntok_t* tok, const char* s);
 int load_json(GDCONFIG* conf);
 
 /* Send message to UsageUrl in config.json */

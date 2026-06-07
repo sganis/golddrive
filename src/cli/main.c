@@ -2,6 +2,7 @@
 #include "util.h"
 #include "gd.h"
 #include "cache.h"
+#include "parse.h"
 #include <direct.h>
 #include <openssl/opensslv.h>
 
@@ -425,90 +426,38 @@ static int parse_remote(GDCONFIG* fs)
 	if (!fs->remote)
 		return -1;
 
-	char *npath, *service, *locuser, *user, *host, *port, *p;
-
-	/* translate backslash to forward slash */
-	for (p = fs->remote; *p; p++)
+	/* translate backslash to forward slash (in place; VolumePrefix reads this) */
+	for (char* p = fs->remote; *p; p++)
 		if ('\\' == *p)
 			*p = '/';
 
-	npath = strdup(fs->remote);
-	if (!npath) return -1;
-	/* remove first slash if it has 2 slashes // */
-	size_t len = strlen(npath);
-	if (len > 2 && npath[0] == '/' && npath[1] == '/') {
-		memcpy(fs->remote, npath + 1, len - 1);
-		fs->remote[len - 1] = '\0';
-		len--;
-	}
+	/* remove the first slash when the remote starts with "//" */
+	size_t len = strlen(fs->remote);
+	if (len > 2 && fs->remote[0] == '/' && fs->remote[1] == '/')
+		memmove(fs->remote, fs->remote + 1, len);
 
-	/* get service name (\\golddrive\) */
-	p = npath;
-	while ('/' == *p)
-		p++;
-	service = p;
-	while (*p && '/' != *p)
-		p++;
-	if (*p)
-		*p++ = '\0';
+	/* field parsing lives in the unit-tested pure helper (src/cli/parse.c) */
+	gd_remote r;
+	if (parse_remote_str(fs->remote, &r) != 0)
+		return -1;
 
-	fs->service = strdup(service);
-	fs->mountpoint = strdup(p);
-	if (!fs->service || !fs->mountpoint) { free(npath); return -1; }
-
-	/* parse instance name (syntax: [locuser=]user@host!port/path) */
-	locuser = 0;
-	user = 0;
-	port = 0;
-	host = p;
-	while (*p && '/' != *p) {
-		if ('=' == *p) {
-			*p = '\0';
-			locuser = host;
-			host = p + 1;
-		} else if ('@' == *p) {
-			*p = '\0';
-			user = host;
-			host = p + 1;
-		} else if ('!' == *p) {
-			*p = '\0';
-			port = p + 1;
-		}
-		p++;
+	fs->service = strdup(r.service);
+	fs->mountpoint = strdup(r.mountpoint);
+	fs->host = strdup(r.host);
+	fs->root = strdup(r.root);
+	if (!fs->service || !fs->mountpoint || !fs->host || !fs->root)
+		return -1;
+	if (r.has_locuser) {
+		fs->locuser = strdup(r.locuser);
+		if (!fs->locuser) return -1;
 	}
-	if (*p)
-		*p++ = '\0';
-	if (host) {
-		fs->host = strdup(host);
-		if (!fs->host) { free(npath); return -1; }
+	if (r.has_user) {
+		fs->user = strdup(r.user);
+		if (!fs->user) return -1;
 	}
-	if (locuser) {
-		fs->locuser = strdup(locuser);
-		if (!fs->locuser) { free(npath); return -1; }
-	}
-	if (user) {
-		fs->user = strdup(user);
-		if (!fs->user) { free(npath); return -1; }
-	}
-	if (port)
-		fs->port = atoi(port);
-
-	fs->root = strdup(p);
-	if (!fs->root) { free(npath); return -1; }
-	fs->has_root = 0;
-	/* mount root by default, prepend a slash before path
-	 * if needed in remote linux file system */
-	if (p && *p != '/') {
-		char s[MAX_PATH];
-		strcpy_s(s, MAX_PATH, "/");
-		strcat_s(s, MAX_PATH, p);
-		free(fs->root);
-		fs->root = strdup(s);
-		if (!fs->root) { free(npath); return -1; }
-		fs->has_root = strlen(fs->root) > 1;
-	}
-
-	free(npath);
+	if (r.has_port)
+		fs->port = r.port;
+	fs->has_root = r.has_root;
 	return 0;
 }
 

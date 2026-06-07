@@ -45,7 +45,8 @@ WizardStyle=modern
 PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-MinVersion=10.0
+; Windows 11 (build 22000) or later
+MinVersion=10.0.22000
 DisableProgramGroupPage=yes
 CloseApplications=yes
 RestartApplications=no

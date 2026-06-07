@@ -4,6 +4,8 @@
 #include "util.h"
 #include "gd.h"
 #include "cache.h"
+#include "parse.h"
+#include "net.h"
 #include <Winhttp.h>
 
 GDSSH* gd_init_ssh(void)
@@ -11,9 +13,8 @@ GDSSH* gd_init_ssh(void)
 	int rc;
 	char* errmsg = 0;
 	int errlen;
-	SOCKADDR_IN sin;
-	HOSTENT* he;
-	SOCKET sock;
+	SOCKET sock = INVALID_SOCKET;
+	int ssh_lib_ok = 0;
 	LIBSSH2_SESSION* ssh = NULL;
 	LIBSSH2_SFTP* sftp = NULL;
 	LIBSSH2_CHANNEL* channel = NULL;
@@ -34,9 +35,9 @@ GDSSH* gd_init_ssh(void)
 		gd_log("%zd: %d :ERROR: %s: %d: "
 			"failed to initialize crypto library, rc=%d\n",
 			time_mu(), thread, __func__, __LINE__, rc);
-		WSACleanup();
-		return 0;
+		goto fail;
 	}
+	ssh_lib_ok = 1;
 
 	/* create a session instance */
 	ssh = libssh2_session_init();
@@ -44,7 +45,7 @@ GDSSH* gd_init_ssh(void)
 		gd_log("%zd: %d :ERROR: %s: %d: "
 			"failed allocate memory for ssh session\n",
 			time_mu(), thread, __func__, __LINE__);
-		return 0;
+		goto fail;
 	}
 
 	/* encryption */
@@ -59,30 +60,20 @@ GDSSH* gd_init_ssh(void)
 			gd_log("%zd: %d :ERROR: %s: %d: "
 				"failed to set cipher [rc=%d, %s]\n",
 				time_mu(), thread, __func__, __LINE__, rc, errmsg);
-			return 0;
+			goto fail;
 		}
 	}
 
 	/* blocking mode */
 	libssh2_session_set_blocking(ssh, 1);
 
-	/* create socket */
-	he = gethostbyname(g_conf.host);
-	if (!he) {
-		gd_log("%zd: %d :ERROR: %s: %d: host not found: %s\n",
-			time_mu(), thread, __func__, __LINE__, g_conf.host);
-		return 0;
-	}
-	sin.sin_addr.s_addr = **(int**)he->h_addr_list;
-	sin.sin_family = AF_INET;
-	sin.sin_port = htons((u_short)g_conf.port);
-	sock = socket(AF_INET, SOCK_STREAM, 0);
-	rc = connect(sock, (SOCKADDR*)(&sin), sizeof(SOCKADDR_IN));
-	if (rc) {
+	/* resolve (IPv4 or IPv6) and connect */
+	sock = gd_tcp_connect(g_conf.host, g_conf.port);
+	if (sock == INVALID_SOCKET) {
 		gd_log("%zd: %d :ERROR: %s: %d: "
-			"failed to open socket, host not found or port not open, rc=%d\n",
-			time_mu(), thread, __func__, __LINE__, rc);
-		return 0;
+			"failed to connect to %s:%d (host not found or port closed)\n",
+			time_mu(), thread, __func__, __LINE__, g_conf.host, g_conf.port);
+		goto fail;
 	}
 
 	/* start it up: trade welcome banners, exchange keys,
@@ -96,7 +87,7 @@ GDSSH* gd_init_ssh(void)
 		gd_log("%zd: %d :ERROR: %s: %d: "
 			"failed to complete ssh handshake [rc=%d, %s]\n",
 			time_mu(), thread, __func__, __LINE__, rc, errmsg);
-		return 0;
+		goto fail;
 	}
 
 	/* verify host key against known_hosts */
@@ -116,9 +107,7 @@ GDSSH* gd_init_ssh(void)
 			const char* hostkey = libssh2_session_hostkey(ssh,
 				&hostkey_len, &hostkey_type);
 			if (hostkey) {
-				int kh_type = (hostkey_type == LIBSSH2_HOSTKEY_TYPE_RSA) ?
-					LIBSSH2_KNOWNHOST_KEY_SSHRSA :
-					LIBSSH2_KNOWNHOST_KEY_SSHDSS;
+				int kh_type = gd_knownhost_keytype(hostkey_type);
 				struct libssh2_knownhost* host = NULL;
 				int check = libssh2_knownhost_checkp(nh,
 					g_conf.host, g_conf.port,
@@ -132,11 +121,7 @@ GDSSH* gd_init_ssh(void)
 						time_mu(), thread, __func__, __LINE__,
 						g_conf.host);
 					libssh2_knownhost_free(nh);
-					libssh2_session_disconnect(ssh,
-						"host key mismatch");
-					libssh2_session_free(ssh);
-					closesocket(sock);
-					return 0;
+					goto fail;
 				}
 				if (check == LIBSSH2_KNOWNHOST_CHECK_NOTFOUND && profile) {
 					/* TOFU: add host key on first connection */
@@ -181,7 +166,7 @@ GDSSH* gd_init_ssh(void)
 		gd_log("%zd: %d :ERROR: %s: %d: "
 			"authentication by public key failed [rc=%d, %s]\n",
 			time_mu(), thread, __func__, __LINE__, rc, errmsg);
-		return 0;
+		goto fail;
 	}
 
 	/* init sftp channel */
@@ -196,7 +181,7 @@ GDSSH* gd_init_ssh(void)
 				gd_log("%zd: %d :ERROR: %s: %d: "
 					"failed to start sftp session [rc=%d, %s]\n",
 					time_mu(), thread, __func__, __LINE__, rc, errmsg);
-				return 0;
+				goto fail;
 			}
 			if (!sftp) Sleep(100);
 		} while (!sftp && ++retries < max_retries);
@@ -204,7 +189,7 @@ GDSSH* gd_init_ssh(void)
 			gd_log("%zd: %d :ERROR: %s: %d: "
 				"timeout waiting for sftp session\n",
 				time_mu(), thread, __func__, __LINE__);
-			return 0;
+			goto fail;
 		}
 	}
 
@@ -222,7 +207,7 @@ GDSSH* gd_init_ssh(void)
 	if (!channel) {
 		rc = libssh2_session_last_error(ssh, &errmsg, NULL, 0);
 		log_error("ERROR: invalid channel to run commands, rc=%d, %s\n", rc, errmsg);
-		return 0;
+		goto fail;
 	}
 	else {
 		while ((rc = libssh2_channel_shell(channel)) ==
@@ -231,7 +216,7 @@ GDSSH* gd_init_ssh(void)
 		if (rc) {
 			rc = libssh2_session_last_error(ssh, &errmsg, NULL, 0);
 			gd_log("cannot request shell: [rc=%d, %s]\n", rc, errmsg);
-			return 0;
+			goto fail;
 		}
 	}
 
@@ -239,12 +224,7 @@ GDSSH* gd_init_ssh(void)
 	if (!g_ssh) {
 		gd_log("%zd: %d :ERROR: %s: %d: out of memory\n",
 			time_mu(), thread, __func__, __LINE__);
-		libssh2_channel_free(channel);
-		libssh2_sftp_shutdown(sftp);
-		libssh2_session_disconnect(ssh, "out of memory");
-		libssh2_session_free(ssh);
-		closesocket(sock);
-		return 0;
+		goto fail;
 	}
 	g_ssh->socket = sock;
 	g_ssh->ssh = ssh;
@@ -253,6 +233,17 @@ GDSSH* gd_init_ssh(void)
 	g_ssh->thread = GetCurrentThreadId();
 
 	return g_ssh;
+
+fail:
+	/* unified cleanup for every failure above; each resource freed only if
+	 * it was actually acquired (NULL/INVALID guards), so partial init is safe */
+	if (channel) libssh2_channel_free(channel);
+	if (sftp) libssh2_sftp_shutdown(sftp);
+	if (ssh) libssh2_session_free(ssh);
+	if (sock != INVALID_SOCKET) closesocket(sock);
+	if (ssh_lib_ok) libssh2_exit();
+	WSACleanup();
+	return 0;
 }
 
 int gd_reconnect(void)
@@ -455,40 +446,19 @@ int gd_readlink(const char* path, char* buf, size_t size)
 		}
 		return 0;
 	}
-	if (rc >= size) {
+	if (rc >= (int)size || rc >= MAX_PATH) {
 		free(target);
 		errno = ENAMETOOLONG;
 		return -1;
 	}
+	target[rc] = '\0';
 
-	/* replace double slashes */
-	char* output = malloc(MAX_PATH);
-	if (!output) {
+	/* collapse double slashes and strip a trailing slash */
+	if (normalize_link_path(target, buf, size) < 0) {
 		free(target);
-		errno = ENOMEM;
+		errno = ENAMETOOLONG;
 		return -1;
 	}
-	char c = 0;
-	char* t = target;
-	char* o = output;
-	for (int i = 0; *t != '\0'; i++) {
-		if (t[0] == '/' && c == '/') {
-			rc--;
-		}
-		else {
-			c = t[0];
-			*o++ = c;
-		}
-		t++;
-	}
-	/* remove trailing slash */
-	c = output[rc-1];
-	if (c == '/' && rc > 1)
-		rc--;
-
-	strncpy(buf, output, rc);
-	buf[rc] = '\0';
-	free(output);
 	free(target);
 	log_info("DONE\n");
 	return 0;
@@ -1241,14 +1211,11 @@ int run_command_channel_exec(const char* cmd, char* out, char* err)
 				break;
 		}
 
-		char* ptr = strstr(out, "RCODE=");
-		if (ptr) {
-			char* rcs = str_ndup(ptr + 6, 10);
-			rcs[min(strcspn(rcs, "\n"), 10)] = '\0';
-			rcode = atoi(rcs);
-			free(rcs);
-			*ptr = '\0';
-			out[min(strlen(out), COMMAND_SIZE)] = '\0';
+		int rc_code = 0;
+		int sentinel_off = extract_rcode(out, &rc_code);
+		if (sentinel_off >= 0) {
+			rcode = rc_code;
+			out[sentinel_off] = '\0';
 		}
 
 		if (err && libssh2_poll_channel_read(channel, 1)) {
@@ -1396,13 +1363,6 @@ int gd_threads(int n, int c)
 	return (n < 1 ? c : max(2, n)) + c + 2;
 }
 
-int jsoneq(const char* json, jsmntok_t* tok, const char* s)
-{
-	return (tok->type == JSMN_STRING
-		&& (int)strlen(s) == tok->end - tok->start
-		&& strncmp(json + tok->start, s, tok->end - tok->start) == 0) ? 0 : -1;
-}
-
 int load_json(GDCONFIG* fs)
 {
 	if (!file_exists(fs->json)) {
@@ -1429,115 +1389,19 @@ int load_json(GDCONFIG* fs)
 	JSON_STRING[size] = '\0';
 	fclose(fp);
 
-	int i, r;
-	char* val;
-	jsmn_parser p;
-	jsmntok_t* tok;
-	int num_tokens = 1024;
-	jsmntok_t* t = malloc(num_tokens * sizeof(jsmntok_t));
-	if (!t) {
-		free(JSON_STRING);
-		fprintf(stderr, "out of memory for json tokens\n");
-		return 1;
-	}
-
-	jsmn_init(&p);
-	r = jsmn_parse(&p, JSON_STRING, strlen(JSON_STRING),
-		t, num_tokens);
-	if (r < 0) {
-		fprintf(stderr, "Failed to parse JSON: %d\n", r);
-		free(t);
-		free(JSON_STRING);
-		return 1;
-	}
-
-	if (r < 1 || t[0].type != JSMN_OBJECT) {
-		fprintf(stderr, "Object expected, json type=%d\n", t[0].type);
-		free(t);
-		free(JSON_STRING);
-		return 1;
-	}
-
-	/* loop over all keys of the root object */
-	for (i = 1; i < r; i++) {
-		if (i + 1 >= r) break;
-		if (jsoneq(JSON_STRING, &t[i], "LogFile") == 0) {
-			tok = &t[i + 1];
-			val = str_ndup(JSON_STRING + tok->start, tok->end - tok->start);
-			if (val) {
-				fs->logfile = strdup(val);
-				free(val);
-			}
-			i++;
-		}
-		else if (jsoneq(JSON_STRING, &t[i], "UsageUrl") == 0) {
-			tok = &t[i + 1];
-			val = str_ndup(JSON_STRING + tok->start, tok->end - tok->start);
-			if (val) {
-				fs->usageurl = strdup(val);
-				free(val);
-			}
-			i++;
-		}
-		else if (jsoneq(JSON_STRING, &t[i], "Drives") == 0) {
-			if (i + 1 >= r) break;
-			int ndrives = t[i + 1].size;
-			i++;
-			for (int j = 0; j < ndrives; j++) {
-				if (i + 2 >= r) break;
-				tok = &t[i + 1];
-				char* key = str_ndup(JSON_STRING + tok->start, tok->end - tok->start);
-				if (!key) { i += 3; continue; }
-				jsmntok_t* v = &t[i + 2];
-
-				if (strcmp(key, fs->drive) == 0) {
-					i = i + 2;
-					for (int k = 0; k < v->size; k++) {
-						if (i + 2 >= r) break;
-						tok = &t[i + 1];
-						if (tok->type == JSMN_STRING) {
-							char* key2 = str_ndup(JSON_STRING + tok->start, tok->end - tok->start);
-							if (key2) {
-								if (strcmp(key2, "AppKey") == 0) {
-									tok = &t[i + 2];
-									fs->pkey = str_ndup(JSON_STRING + tok->start, tok->end - tok->start);
-								}
-								if (strcmp(key2, "Args") == 0) {
-									tok = &t[i + 2];
-									fs->args = str_ndup(JSON_STRING + tok->start, tok->end - tok->start);
-								}
-								free(key2);
-							}
-							i = i + 2;
-						}
-						else if (tok->type == JSMN_ARRAY) {
-							i = i + tok->size + 1;
-						}
-					}
-				}
-				else {
-					i = i + 3;
-					for (int k = 0; k < v->size; k++) {
-						if (i + 1 >= r) break;
-						tok = &t[i + 1];
-						if (tok->type == JSMN_STRING) {
-							i = i + 2;
-						}
-						else if (tok->type == JSMN_ARRAY) {
-							i = i + tok->size + 1;
-						}
-					}
-				}
-				free(key);
-			}
-		}
-		else {
-			/* assume key with 1 value, skip it */
-			i++;
-		}
-	}
+	/* token walk lives in the unit-tested pure helper (src/cli/parse.c) */
+	gd_json j;
+	int rc = parse_json_buffer(JSON_STRING, fs->drive, &j);
 	free(JSON_STRING);
-	free(t);
+	if (rc != 0) {
+		fprintf(stderr, "Failed to parse JSON\n");
+		return 1;
+	}
+
+	if (j.has_logfile)  fs->logfile  = strdup(j.logfile);
+	if (j.has_usageurl) fs->usageurl = strdup(j.usageurl);
+	if (j.has_pkey)     fs->pkey     = strdup(j.pkey);
+	if (j.has_args)     fs->args     = strdup(j.args);
 	return 0;
 }
 
