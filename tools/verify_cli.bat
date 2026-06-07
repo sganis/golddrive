@@ -35,8 +35,8 @@ cl /nologo /c /W4 /wd4996 /MT ^
   /I "%SDK%\inc\fuse3" /I "%SDK%\inc" ^
   /I "%ROOT%\vendor\libssh2\include" /I "%ROOT%\vendor\openssl\include" ^
   "%ROOT%\src\cli\cache.c" "%ROOT%\src\cli\gd.c" "%ROOT%\src\cli\jsmn.c" ^
-  "%ROOT%\src\cli\main.c" "%ROOT%\src\cli\net.c" "%ROOT%\src\cli\parse.c" ^
-  "%ROOT%\src\cli\util.c"
+  "%ROOT%\src\cli\main.c" "%ROOT%\src\cli\net.c" "%ROOT%\src\cli\pool.c" ^
+  "%ROOT%\src\cli\parse.c" "%ROOT%\src\cli\util.c"
 set "RC=!errorlevel!"
 popd
 if !RC! neq 0 ( echo COMPILE FAILED & exit /b 1 )

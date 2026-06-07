@@ -99,6 +99,7 @@ typedef struct GDCONFIG {
 	unsigned buffer;
 	unsigned local_uid;
 	unsigned remote_uid;
+	int connections;				/* SSH connection-pool size (-o connections=N) */
 } GDCONFIG;
 
 extern GDCONFIG g_conf;
@@ -225,11 +226,13 @@ typedef struct GDSSH {
 	LIBSSH2_SESSION *ssh;			/* ssh session struct */
 	LIBSSH2_SFTP* sftp;				/* sftp session struct */
 	LIBSSH2_CHANNEL* channel;		/* channel for commands */
+	SRWLOCK lock;					/* serializes use of this connection */
 } GDSSH;
 
 typedef struct GDHANDLE {
 	LIBSSH2_SFTP_HANDLE* file_handle;	/* remote file handle */
 	LIBSSH2_SFTP_HANDLE* dir_handle;	/* remote dir handle */
+	struct GDSSH* conn;				/* connection that owns the handle (affinity) */
 	int dir;						/* is directory */
 	int flags;						/* open flags */
 	int mode;						/* open mode */
@@ -260,18 +263,16 @@ typedef struct usagedata {
 	char data[1024];
 } usagedata;
 
-extern GDSSH *g_ssh;
-extern SRWLOCK g_ssh_lock;
+extern __declspec(thread) GDSSH *g_ssh;	/* current thread's active connection */
 extern SRWLOCK g_log_lock;
 
-inline void gd_lock()
-{
-	AcquireSRWLockExclusive(&g_ssh_lock);
-}
-inline void gd_unlock()
-{
-	ReleaseSRWLockExclusive(&g_ssh_lock);
-}
+/* connection-pool aware locking (impl in pool.c):
+ *   gd_lock()      pick a pooled connection (round-robin) into g_ssh, lock it
+ *   gd_lock_conn() bind g_ssh to a specific connection (handle affinity), lock it
+ *   gd_unlock()    release g_ssh's lock */
+void gd_lock(void);
+void gd_lock_conn(GDSSH* c);
+void gd_unlock(void);
 
 /* file flags */
 #define GD_READONLY   0x00

@@ -3,15 +3,14 @@
 #include "gd.h"
 #include "cache.h"
 #include "parse.h"
+#include "pool.h"
 #include <direct.h>
 #include <openssl/opensslv.h>
 
-/* global variables */
-GDSSH*				g_ssh;
+/* global variables (g_ssh is thread-local, defined in pool.c) */
 size_t				g_sftp_calls;
 size_t				g_cache_calls;
 CACHE_INODE*		g_cache_inode_ht;
-SRWLOCK				g_ssh_lock;
 SRWLOCK				g_log_lock;
 SRWLOCK				g_cache_inode_lock;
 SRWLOCK				g_cache_stat_lock;
@@ -41,11 +40,14 @@ DWORD WINAPI gd_keepalive_thread(LPVOID param)
             break;
         }
 
-        gd_lock();
-        if (g_ssh && g_ssh->ssh) {
-            libssh2_keepalive_send(g_ssh->ssh, &seconds_to_next);
+        for (int i = 0; i < g_pool.size; i++) {
+            GDSSH* c = g_pool.conn[i];
+            if (c && c->ssh) {
+                gd_lock_conn(c);
+                libssh2_keepalive_send(c->ssh, &seconds_to_next);
+                gd_unlock();
+            }
         }
-        gd_unlock();
     }
 
     return 0;
@@ -62,9 +64,10 @@ static int is_connection_error(int err)
 #define RETRY_ON_DISCONNECT(call) do {                     \
 	int _rc = (call);                                      \
 	if (_rc != 0 && is_connection_error(_rc)) {            \
+		GDSSH* _c = g_ssh;  /* connection the failed op used */ \
 		gd_log("Connection error (%d), attempting reconnect\n", _rc); \
-		gd_lock();                                         \
-		if (gd_reconnect() == 0) {                         \
+		gd_lock_conn(_c);                                  \
+		if (gd_reconnect(_c) == 0) {                        \
 			gd_unlock();                                   \
 			_rc = (call);                                  \
 		} else {                                           \
@@ -176,8 +179,9 @@ static int f_read(const char* path, char* buf, size_t size,
 	int rc = -1 != (nb = gd_read(fd, buf, size, off)) ? nb : -errno;
 	if (rc != 0 && is_connection_error(rc)) {
 		gd_log("Read connection error (%d), attempting reconnect\n", rc);
-		gd_lock();
-		gd_reconnect();
+		GDSSH* c = g_ssh;
+		gd_lock_conn(c);
+		gd_reconnect(c);
 		gd_unlock();
 	}
 	return rc;
@@ -192,8 +196,9 @@ static int f_write(const char* path, const char* buf,
 	int rc = -1 != (nb = gd_write(fd, buf, size, off)) ? nb : -errno;
 	if (rc != 0 && is_connection_error(rc)) {
 		gd_log("Write connection error (%d), attempting reconnect\n", rc);
-		gd_lock();
-		gd_reconnect();
+		GDSSH* c = g_ssh;
+		gd_lock_conn(c);
+		gd_reconnect(c);
 		gd_unlock();
 	}
 	return rc;
@@ -347,6 +352,7 @@ static struct fuse_opt fs_opts[] = {
 	fs_OPT("keeplink",          keeplink, 1),
 	fs_OPT("audit",             audit, 1),
 	fs_OPT("buffer=%u",         buffer, 0),
+	fs_OPT("connections=%d",    connections, 0),
 	fs_OPT("cipher=%s",         cipher, 0),
 
 	FUSE_OPT_KEY("--version",      KEY_VERSION),
@@ -395,6 +401,7 @@ static int fs_opt_proc(
 			"    -o audit                   enable auditing by logging read and write events\n"
 			"    -o cipher                  cipher for symmetric encryption, comma-separated list\n"
 			"    -o buffer=BYTES            read/write block size in bytes, default: 65535\n"
+			"    -o connections=N           SSH connection-pool size (1-16), default: 4\n"
 			"    -o create_umask=MASK       file creation umask permissions\n"
 			"    -o DebugLog=FILE           debug log file (requires -d)\n"
 			"    -o FileInfoTimeout=N       metadata timeout (millis, -1 for data caching)\n"
@@ -548,6 +555,8 @@ int main(int argc, char *argv[])
 		g_conf.port = 22;
 	if (!g_conf.buffer)
 		g_conf.buffer = BUFFER_SIZE;
+	if (!g_conf.connections)
+		g_conf.connections = 4;
 
 	/* parse network path */
 	if (parse_remote(&g_conf))
@@ -640,17 +649,20 @@ int main(int argc, char *argv[])
 	}
 
 	/* initialize thread locks */
-	InitializeSRWLock(&g_ssh_lock);
 	InitializeSRWLock(&g_log_lock);
 	InitializeSRWLock(&g_cache_inode_lock);
 	InitializeSRWLock(&g_cache_stat_lock);
 	g_cache_calls = 0;
 	g_sftp_calls = 0;
 
-	/* initialize ssh */
-	g_ssh = gd_init_ssh();
-	if (!g_ssh)
+	/* one-time Winsock/libssh2 init, then build the SSH connection pool */
+	if (gd_global_init() != 0)
 		return 1;
+	if (gd_pool_init(g_conf.connections) < 1) {
+		gd_log("failed to establish any SSH connection\n");
+		return 1;
+	}
+	gd_log("connections = %d\n", g_pool.size);
 
 	/* keepalive event */
 	g_keepalive_stop_event = CreateEvent(NULL, TRUE, FALSE, NULL);

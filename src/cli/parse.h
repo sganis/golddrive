@@ -66,3 +66,11 @@ typedef struct {
  * drive or some fields are absent), -1 on malformed JSON or bad args. Pure: no
  * file I/O, no globals. */
 int parse_json_buffer(const char* json, const char* drive, gd_json* out);
+
+/* Clamp v into [lo, hi]. Used to bound the connection-pool size. */
+int clamp_int(int v, int lo, int hi);
+
+/* Round-robin index for a 1-based monotonically increasing counter over `size`
+ * slots: rr_index(1,4)=0, rr_index(2,4)=1, ... rr_index(5,4)=0. Returns 0 if
+ * size <= 0. Pure — backs the connection-pool picker. */
+int rr_index(long counter, int size);

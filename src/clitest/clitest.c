@@ -202,6 +202,30 @@ static void test_parse_json(void)
 	CHECK(parse_json_buffer(NULL, "Z:", &g) == -1, "null json rejected");
 }
 
+static void test_pool_math(void)
+{
+	printf("pool math (I1: clamp_int / rr_index)...\n");
+
+	CHECK(clamp_int(5, 1, 16) == 5, "in range");
+	CHECK(clamp_int(0, 1, 16) == 1, "below -> lo");
+	CHECK(clamp_int(-3, 1, 16) == 1, "negative -> lo");
+	CHECK(clamp_int(20, 1, 16) == 16, "above -> hi");
+	CHECK(clamp_int(1, 1, 16) == 1 && clamp_int(16, 1, 16) == 16, "bounds inclusive");
+
+	CHECK(rr_index(1, 4) == 0, "rr first slot");
+	CHECK(rr_index(4, 4) == 3, "rr last slot");
+	CHECK(rr_index(5, 4) == 0, "rr wraps");
+	CHECK(rr_index(8, 4) == 3, "rr wraps full");
+	CHECK(rr_index(1, 1) == 0 && rr_index(100, 1) == 0, "single slot");
+	CHECK(rr_index(3, 0) == 0, "size 0 guarded");
+
+	/* even distribution: counters 1..8 over 4 slots hit each slot twice */
+	int hits[4] = { 0, 0, 0, 0 };
+	for (long c = 1; c <= 8; c++)
+		hits[rr_index(c, 4)]++;
+	CHECK(hits[0] == 2 && hits[1] == 2 && hits[2] == 2 && hits[3] == 2, "even round-robin");
+}
+
 int main(void)
 {
 	printf("== golddrive native unit tests ==\n");
@@ -212,6 +236,7 @@ int main(void)
 	test_str_helpers();
 	test_parse_remote();
 	test_parse_json();
+	test_pool_math();
 	g_failures += run_net_tests();
 	g_failures += run_fuzz();
 

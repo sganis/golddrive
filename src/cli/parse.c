@@ -71,6 +71,26 @@ int extract_rcode(const char* out, int* rcode)
 	return (int)(last - out);
 }
 
+int clamp_int(int v, int lo, int hi)
+{
+	if (v < lo)
+		return lo;
+	if (v > hi)
+		return hi;
+	return v;
+}
+
+int rr_index(long counter, int size)
+{
+	if (size <= 0)
+		return 0;
+	/* counter is 1-based; map to [0, size) */
+	long m = (counter - 1) % size;
+	if (m < 0)
+		m += size;
+	return (int)m;
+}
+
 static void copy_field(char* dst, size_t cap, const char* src)
 {
 	if (cap == 0)

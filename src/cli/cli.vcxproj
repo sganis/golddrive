@@ -380,6 +380,7 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
     <ClCompile Include="jsmn.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="net.c" />
+    <ClCompile Include="pool.c" />
     <ClCompile Include="parse.c" />
     <ClCompile Include="util.c" />
   </ItemGroup>
@@ -389,6 +390,7 @@ rem copy $(OutDir)golddrive.exe $(SolutionDir)..\tools\golddrive
     <ClInclude Include="config.h" />
     <ClInclude Include="jsmn.h" />
     <ClInclude Include="net.h" />
+    <ClInclude Include="pool.h" />
     <ClInclude Include="parse.h" />
     <ClInclude Include="uthash.h" />
     <ClInclude Include="util.h" />

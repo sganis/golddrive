@@ -6,7 +6,27 @@
 #include "cache.h"
 #include "parse.h"
 #include "net.h"
+#include "pool.h"
 #include <Winhttp.h>
+
+/* process-wide one-time init: Winsock + libssh2 crypto. Call once before
+ * building the connection pool. */
+int gd_global_init(void)
+{
+	WSADATA wsadata;
+	int rc = WSAStartup(MAKEWORD(2, 0), &wsadata);
+	if (rc != 0) {
+		gd_log("WSAStartup failed, rc=%d\n", rc);
+		return -1;
+	}
+	rc = libssh2_init(0);
+	if (rc) {
+		gd_log("failed to initialize crypto library, rc=%d\n", rc);
+		WSACleanup();
+		return -1;
+	}
+	return 0;
+}
 
 GDSSH* gd_init_ssh(void)
 {
@@ -14,32 +34,13 @@ GDSSH* gd_init_ssh(void)
 	char* errmsg = 0;
 	int errlen;
 	SOCKET sock = INVALID_SOCKET;
-	int ssh_lib_ok = 0;
 	LIBSSH2_SESSION* ssh = NULL;
 	LIBSSH2_SFTP* sftp = NULL;
 	LIBSSH2_CHANNEL* channel = NULL;
 	int thread = GetCurrentThreadId();
 
-	/* initialize windows socket */
-	WSADATA wsadata;
-	rc = WSAStartup(MAKEWORD(2, 0), &wsadata);
-	if (rc != 0) {
-		gd_log("%zd: %d :ERROR: %s: %d: WSAStartup failed, rc=%d\n",
-			time_mu(), thread, __func__, __LINE__, rc);
-		return 0;
-	}
-
-	/* init ssh */
-	rc = libssh2_init(0);
-	if (rc) {
-		gd_log("%zd: %d :ERROR: %s: %d: "
-			"failed to initialize crypto library, rc=%d\n",
-			time_mu(), thread, __func__, __LINE__, rc);
-		goto fail;
-	}
-	ssh_lib_ok = 1;
-
-	/* create a session instance */
+	/* create a session instance (Winsock + libssh2 init done once in
+	 * gd_global_init before the pool is built) */
 	ssh = libssh2_session_init();
 	if (!ssh) {
 		gd_log("%zd: %d :ERROR: %s: %d: "
@@ -220,71 +221,113 @@ GDSSH* gd_init_ssh(void)
 		}
 	}
 
-	g_ssh = malloc(sizeof(GDSSH));
-	if (!g_ssh) {
+	GDSSH* s = malloc(sizeof(GDSSH));
+	if (!s) {
 		gd_log("%zd: %d :ERROR: %s: %d: out of memory\n",
 			time_mu(), thread, __func__, __LINE__);
 		goto fail;
 	}
-	g_ssh->socket = sock;
-	g_ssh->ssh = ssh;
-	g_ssh->sftp = sftp;
-	g_ssh->channel = channel;
-	g_ssh->thread = GetCurrentThreadId();
+	s->socket = sock;
+	s->ssh = ssh;
+	s->sftp = sftp;
+	s->channel = channel;
+	s->thread = GetCurrentThreadId();
+	InitializeSRWLock(&s->lock);
 
-	return g_ssh;
+	return s;
 
 fail:
-	/* unified cleanup for every failure above; each resource freed only if
-	 * it was actually acquired (NULL/INVALID guards), so partial init is safe */
+	/* free whatever this connection acquired; each freed only if acquired.
+	 * libssh2_exit/WSACleanup are process-global (done once in gd_finalize). */
 	if (channel) libssh2_channel_free(channel);
 	if (sftp) libssh2_sftp_shutdown(sftp);
 	if (ssh) libssh2_session_free(ssh);
 	if (sock != INVALID_SOCKET) closesocket(sock);
-	if (ssh_lib_ok) libssh2_exit();
-	WSACleanup();
 	return 0;
 }
 
-int gd_reconnect(void)
+/* gracefully tear down one connection and free its struct */
+void gd_conn_free(GDSSH* c)
 {
-	/* Caller must hold g_ssh_lock */
+	int retries;
+	if (!c)
+		return;
+	if (c->channel) {
+		retries = 50;
+		while (libssh2_channel_close(c->channel) ==
+			LIBSSH2_ERROR_EAGAIN && retries-- > 0)
+			waitsocket(c);
+		retries = 50;
+		while (libssh2_channel_free(c->channel) ==
+			LIBSSH2_ERROR_EAGAIN && retries-- > 0)
+			waitsocket(c);
+	}
+	if (c->sftp) {
+		retries = 50;
+		while (libssh2_sftp_shutdown(c->sftp) ==
+			LIBSSH2_ERROR_EAGAIN && retries-- > 0)
+			waitsocket(c);
+	}
+	if (c->ssh) {
+		retries = 50;
+		while (libssh2_session_disconnect(c->ssh, "ssh session disconnected") ==
+			LIBSSH2_ERROR_EAGAIN && retries-- > 0)
+			waitsocket(c);
+		retries = 50;
+		while (libssh2_session_free(c->ssh) ==
+			LIBSSH2_ERROR_EAGAIN && retries-- > 0)
+			waitsocket(c);
+	}
+	closesocket(c->socket);
+	free(c);
+}
+
+/* rebuild connection c in place; caller must hold c->lock. Returns 0 on success */
+int gd_reconnect(GDSSH* c)
+{
 	gd_log("Attempting SSH reconnection...\n");
 	int retries;
+	if (!c)
+		return -1;
 
-	/* tear down old connection */
-	if (g_ssh) {
-		if (g_ssh->channel) {
-			retries = 10;
-			while (libssh2_channel_close(g_ssh->channel) ==
-				LIBSSH2_ERROR_EAGAIN && retries-- > 0)
-				Sleep(10);
-			libssh2_channel_free(g_ssh->channel);
-			g_ssh->channel = NULL;
-		}
-		if (g_ssh->sftp) {
-			retries = 10;
-			while (libssh2_sftp_shutdown(g_ssh->sftp) ==
-				LIBSSH2_ERROR_EAGAIN && retries-- > 0)
-				Sleep(10);
-			g_ssh->sftp = NULL;
-		}
-		if (g_ssh->ssh) {
-			libssh2_session_disconnect(g_ssh->ssh, "reconnecting");
-			libssh2_session_free(g_ssh->ssh);
-			g_ssh->ssh = NULL;
-		}
-		closesocket(g_ssh->socket);
-		free(g_ssh);
-		g_ssh = NULL;
+	/* tear down the dead session (abrupt) */
+	if (c->channel) {
+		retries = 10;
+		while (libssh2_channel_close(c->channel) ==
+			LIBSSH2_ERROR_EAGAIN && retries-- > 0)
+			Sleep(10);
+		libssh2_channel_free(c->channel);
+		c->channel = NULL;
 	}
+	if (c->sftp) {
+		retries = 10;
+		while (libssh2_sftp_shutdown(c->sftp) ==
+			LIBSSH2_ERROR_EAGAIN && retries-- > 0)
+			Sleep(10);
+		c->sftp = NULL;
+	}
+	if (c->ssh) {
+		libssh2_session_disconnect(c->ssh, "reconnecting");
+		libssh2_session_free(c->ssh);
+		c->ssh = NULL;
+	}
+	closesocket(c->socket);
+	c->socket = INVALID_SOCKET;
 
-	/* re-establish connection (reuses gd_init_ssh which sets g_ssh) */
-	GDSSH* new_ssh = gd_init_ssh();
-	if (!new_ssh) {
+	/* build a fresh connection and adopt its session into c, keeping c's lock
+	 * (held by the caller); discard the temporary shell */
+	GDSSH* n = gd_init_ssh();
+	if (!n) {
 		gd_log("SSH reconnection failed\n");
 		return -1;
 	}
+	c->socket = n->socket;
+	c->ssh = n->ssh;
+	c->sftp = n->sftp;
+	c->channel = n->channel;
+	c->thread = n->thread;
+	free(n);
+
 	gd_log("SSH reconnection successful\n");
 	return 0;
 }
@@ -292,43 +335,10 @@ int gd_reconnect(void)
 int gd_finalize(int error)
 {
 	log_info("FINALIZE\n");
-	int retries;
-
-	if (g_ssh) {
-		if (g_ssh->channel) {
-			retries = 50;
-			while (libssh2_channel_close(g_ssh->channel) ==
-				LIBSSH2_ERROR_EAGAIN && retries-- > 0)
-				waitsocket(g_ssh);
-			retries = 50;
-			while (libssh2_channel_free(g_ssh->channel) ==
-				LIBSSH2_ERROR_EAGAIN && retries-- > 0)
-				waitsocket(g_ssh);
-		}
-		if (g_ssh->sftp) {
-			retries = 50;
-			while (libssh2_sftp_shutdown(g_ssh->sftp) ==
-				LIBSSH2_ERROR_EAGAIN && retries-- > 0)
-				waitsocket(g_ssh);
-		}
-		if (g_ssh->ssh) {
-			retries = 50;
-			while (libssh2_session_disconnect(g_ssh->ssh, "ssh session disconnected") ==
-				LIBSSH2_ERROR_EAGAIN && retries-- > 0)
-				waitsocket(g_ssh);
-			retries = 50;
-			while (libssh2_session_free(g_ssh->ssh) ==
-				LIBSSH2_ERROR_EAGAIN && retries-- > 0)
-				waitsocket(g_ssh);
-		}
-
-		libssh2_exit();
-		closesocket(g_ssh->socket);
-		free(g_ssh);
-		g_ssh = NULL;
-	}
+	gd_pool_free();
+	libssh2_exit();
+	WSACleanup();
 	printf("sftp calls: %zu\n", g_sftp_calls);
-
 	return error;
 }
 
@@ -393,7 +403,7 @@ int gd_fstat(intptr_t fd, struct fuse_stat* stbuf)
 
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
 
-	gd_lock();
+	gd_lock_conn(sh->conn);
 	while ((rc = libssh2_sftp_fstat_ex(handle, &attrs, 0)) ==
 		LIBSSH2_ERROR_EAGAIN) {
 		waitsocket(g_ssh);
@@ -711,6 +721,7 @@ intptr_t gd_open(const char* path, int flags, unsigned int mode)
 	gd_unlock();
 
 	sh->file_handle = handle;
+	sh->conn = g_ssh;	/* pin the handle to the connection that opened it */
 
 	log_info("OPEN HANDLE : %zu:%zu: %s, flags=%d, mode=%d\n",
 		(size_t)sh, (size_t)handle, sh->path, sh->flags, sh->mode);
@@ -735,7 +746,7 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 	log_info("READING HANDLE: %zu size=%zu, offset=%zu\n",
 		(size_t)handle, size, offset);
 
-	gd_lock();
+	gd_lock_conn(sh->conn);
 	libssh2_sftp_seek64(handle, offset);
 
 	size_t bsize;
@@ -780,7 +791,7 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 	LIBSSH2_SFTP_HANDLE* handle = sh->file_handle;
 	log_info("WRITING HANDLE: %zu size: %zu\n", (size_t)handle, size);
 
-	gd_lock();
+	gd_lock_conn(sh->conn);
 	libssh2_sftp_seek64(handle, offset);
 
 	size_t bsize;
@@ -854,7 +865,7 @@ int gd_close(intptr_t fd)
 		return -1;
 	}
 	log_info("CLOSE HANDLE: %zu:%zu\n", (size_t)sh, (size_t)handle);
-	gd_lock();
+	gd_lock_conn(sh->conn);
 	while ((rc = libssh2_sftp_close_handle(handle)) ==
 		LIBSSH2_ERROR_EAGAIN) {
 		waitsocket(g_ssh);
@@ -920,6 +931,7 @@ GDDIR* gd_opendir(const char* path)
 
 	strcpy_s(sh->path, MAX_PATH, path);
 	sh->dir_handle = handle;
+	sh->conn = g_ssh;	/* pin the dir handle to the connection that opened it */
 	sh->dir = 1;
 	memset(dirp, 0, sizeof * dirp);
 	dirp->handle = sh;
@@ -937,7 +949,7 @@ void gd_rewinddir(GDDIR* dirp)
 	log_info("%s\n", dirp->path);
 	GDHANDLE* sh = dirp->handle;
 	LIBSSH2_SFTP_HANDLE* handle = sh->dir_handle;
-	gd_lock();
+	gd_lock_conn(sh->conn);
 	libssh2_sftp_seek64(handle, 0);
 	g_sftp_calls++;
 	gd_unlock();
@@ -954,7 +966,7 @@ struct GDDIRENT* gd_readdir(GDDIR* dirp)
 	memset(&attrs, 0, sizeof attrs);
 	char fname[FILENAME_MAX];
 
-	gd_lock();
+	gd_lock_conn(sh->conn);
 	while ((rc = libssh2_sftp_readdir(
 		handle, fname, FILENAME_MAX, &attrs)) ==
 		LIBSSH2_ERROR_EAGAIN) {
@@ -987,7 +999,7 @@ int gd_closedir(GDDIR* dirp)
 	LIBSSH2_SFTP_HANDLE* handle = dirfh->dir_handle;
 	log_info("CLOSE HANDLE: %zu:%zu\n", (size_t)dirfh, (size_t)handle);
 
-	gd_lock();
+	gd_lock_conn(dirfh->conn);
 	while ((rc = libssh2_sftp_close_handle(handle)) ==
 		LIBSSH2_ERROR_EAGAIN) {
 		waitsocket(g_ssh);
@@ -1133,7 +1145,7 @@ int gd_fsync(intptr_t fd)
 		return -1;
 	}
 	log_info("%s\n", sh->path);
-	gd_lock();
+	gd_lock_conn(sh->conn);
 	while ((rc = libssh2_sftp_fsync(handle)) ==
 		LIBSSH2_ERROR_EAGAIN) {
 		waitsocket(g_ssh);
@@ -1163,7 +1175,8 @@ int run_command_channel_exec(const char* cmd, char* out, char* err)
 		return -1;
 	}
 	LIBSSH2_CHANNEL* channel = g_ssh->channel;
-	/* Note: caller must hold g_ssh_lock to ensure channel remains valid */
+	/* Note: caller must hold the connection lock (gd_lock/gd_lock_conn) so
+	 * g_ssh and its channel stay valid for the duration of this call */
 	char* errmsg;
 	char buffer[COMMAND_SIZE];
 	memset(buffer, 0, COMMAND_SIZE);
