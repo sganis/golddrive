@@ -933,6 +933,14 @@ GDDIR* gd_opendir(const char* path)
 	if (0 < pathlen && '/' == path[pathlen - 1])
 		pathlen--;
 
+	if (pathlen >= MAX_PATH - 1) {
+		while (libssh2_sftp_close_handle(handle) == LIBSSH2_ERROR_EAGAIN)
+			waitsocket(g_ssh);
+		free(sh);
+		gd_unlock();
+		return 0;
+	}
+
 	dirp = malloc(sizeof * dirp + pathlen + 2);
 	if (0 == dirp) {
 		while (libssh2_sftp_close_handle(handle) == LIBSSH2_ERROR_EAGAIN)
