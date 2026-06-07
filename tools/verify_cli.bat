@@ -16,8 +16,8 @@ call "%VCVARS%" >nul 2>&1
 pushd "%~dp0.."
 set "ROOT=%CD%"
 popd
-set "SDK=%ROOT%\build\winfsp-sdk\WinFsp"
-set "MSI=%ROOT%\vendor\winfsp\winfsp-1.12.22339.msi"
+set "SDK=%ROOT%\build\winfsp-sdk\DYNAMIC"
+set "MSI=%ROOT%\vendor\winfsp\winfsp-2.1.25156.msi"
 set "OUT=%ROOT%\build\verify"
 
 :: extract the WinFsp SDK once

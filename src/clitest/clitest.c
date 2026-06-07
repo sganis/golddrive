@@ -226,6 +226,32 @@ static void test_pool_math(void)
 	CHECK(hits[0] == 2 && hits[1] == 2 && hits[2] == 2 && hits[3] == 2, "even round-robin");
 }
 
+static void test_backoff(void)
+{
+	printf("backoff_ms (I3)...\n");
+
+	CHECK(backoff_ms(0, 200, 5000, 0) == 0, "zero jitter -> 0");
+	CHECK(backoff_ms(3, 200, 5000, 0) == 0, "zero jitter any attempt -> 0");
+	CHECK(backoff_ms(2, 0, 5000, 0xFFFFFFFF) == 0, "base 0 -> 0");
+	CHECK(backoff_ms(0, 200, 5000, 200) == 200, "jitter can hit the ceiling");
+	CHECK(backoff_ms(-1, 200, 5000, 12345) >= 0, "negative attempt safe");
+
+	int ok = 1;
+	for (unsigned r = 0; r < 20000; r += 137)
+		if (backoff_ms(0, 200, 5000, r) > 200) { ok = 0; break; }
+	CHECK(ok, "attempt 0 bounded by base (200)");
+
+	ok = 1;
+	for (unsigned r = 0; r < 20000; r += 137)
+		if (backoff_ms(3, 200, 5000, r) > 1600) { ok = 0; break; }	/* 200<<3 */
+	CHECK(ok, "attempt 3 bounded by 1600");
+
+	ok = 1;
+	for (unsigned r = 0; r < 50000; r += 311)
+		if (backoff_ms(20, 200, 5000, r) > 5000) { ok = 0; break; }	/* capped */
+	CHECK(ok, "large attempt capped at 5000");
+}
+
 int main(void)
 {
 	printf("== golddrive native unit tests ==\n");
@@ -237,6 +263,7 @@ int main(void)
 	test_parse_remote();
 	test_parse_json();
 	test_pool_math();
+	test_backoff();
 	g_failures += run_net_tests();
 	g_failures += run_fuzz();
 

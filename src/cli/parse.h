@@ -74,3 +74,8 @@ int clamp_int(int v, int lo, int hi);
  * slots: rr_index(1,4)=0, rr_index(2,4)=1, ... rr_index(5,4)=0. Returns 0 if
  * size <= 0. Pure — backs the connection-pool picker. */
 int rr_index(long counter, int size);
+
+/* Full-jitter exponential backoff: returns a delay in
+ * [0, min(base_ms << attempt, cap_ms)] milliseconds, using `rnd` as the jitter
+ * source. Pure — backs gd_reconnect's retry loop. */
+int backoff_ms(int attempt, int base_ms, int cap_ms, unsigned rnd);

@@ -91,6 +91,31 @@ int rr_index(long counter, int size)
 	return (int)m;
 }
 
+int backoff_ms(int attempt, int base_ms, int cap_ms, unsigned rnd)
+{
+	if (attempt < 0)
+		attempt = 0;
+	if (base_ms < 0)
+		base_ms = 0;
+
+	/* exponential ceiling: base << attempt, capped (guards overflow) */
+	long ceil_ms = base_ms;
+	for (int i = 0; i < attempt; i++) {
+		ceil_ms <<= 1;
+		if (ceil_ms >= cap_ms) {
+			ceil_ms = cap_ms;
+			break;
+		}
+	}
+	if (ceil_ms > cap_ms)
+		ceil_ms = cap_ms;
+	if (ceil_ms <= 0)
+		return 0;
+
+	/* full jitter: uniform in [0, ceil_ms] */
+	return (int)(rnd % (unsigned)(ceil_ms + 1));
+}
+
 static void copy_field(char* dst, size_t cap, const char* src)
 {
 	if (cap == 0)

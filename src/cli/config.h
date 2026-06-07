@@ -20,6 +20,11 @@
 #define CACHE_INODE_TTL					24 * 3600 * 1000 /* 24hs in millisecs */
 #define CACHE_STAT_TTL					20 * 1000 /* millisecs */
 
+/* reconnect retry policy (full-jitter exponential backoff) */
+#define GD_RECONNECT_MAX				5
+#define GD_RECONNECT_BASE_MS			200
+#define GD_RECONNECT_CAP_MS				5000
+
 /* logging */
 #define ERROR							0
 #define WARN							1

@@ -371,12 +371,12 @@ static int fs_opt_proc(
 	switch (key) {
 	case FUSE_OPT_KEY_NONOPT:
 		if (!g_conf.drive) {
-			g_conf.drive = strdup(arg);
+			g_conf.drive = _strdup(arg);
 			if (!g_conf.drive) return -1;
 			return 0;
 		}
 		if (!g_conf.remote) {
-			g_conf.remote = strdup(arg);
+			g_conf.remote = _strdup(arg);
 			if (!g_conf.remote) return -1;
 			return 0;
 		}
@@ -448,18 +448,18 @@ static int parse_remote(GDCONFIG* fs)
 	if (parse_remote_str(fs->remote, &r) != 0)
 		return -1;
 
-	fs->service = strdup(r.service);
-	fs->mountpoint = strdup(r.mountpoint);
-	fs->host = strdup(r.host);
-	fs->root = strdup(r.root);
+	fs->service = _strdup(r.service);
+	fs->mountpoint = _strdup(r.mountpoint);
+	fs->host = _strdup(r.host);
+	fs->root = _strdup(r.root);
 	if (!fs->service || !fs->mountpoint || !fs->host || !fs->root)
 		return -1;
 	if (r.has_locuser) {
-		fs->locuser = strdup(r.locuser);
+		fs->locuser = _strdup(r.locuser);
 		if (!fs->locuser) return -1;
 	}
 	if (r.has_user) {
-		fs->user = strdup(r.user);
+		fs->user = _strdup(r.user);
 		if (!fs->user) return -1;
 	}
 	if (r.has_port)
@@ -471,6 +471,7 @@ static int parse_remote(GDCONFIG* fs)
 static int load_config_file(GDCONFIG* fs)
 {
 	int rc = 0;
+#pragma warning(suppress: 4996) /* getenv: read-only env access is safe here */
 	char* appdata = getenv("LOCALAPPDATA");
 	if (!appdata) {
 		fprintf(stderr, "LOCALAPPDATA environment variable not set\n");
@@ -479,7 +480,7 @@ static int load_config_file(GDCONFIG* fs)
 	char jsonfile[MAX_PATH];
 	sprintf_s(jsonfile, MAX_PATH,
 		"%s\\Golddrive\\config.json", appdata);
-	fs->json = strdup(jsonfile);
+	fs->json = _strdup(jsonfile);
 	if (!fs->json) return 1;
 	rc = load_json(fs);
 	return rc;
@@ -490,6 +491,7 @@ static void init_logging(GDCONFIG* fs)
 	g_logfile = fs->logfile;
 
 	if (!g_logfile) {
+#pragma warning(suppress: 4996) /* getenv: read-only env access is safe here */
 		char* appdata = getenv("LOCALAPPDATA");
 		if (!appdata) {
 			fprintf(stderr, "LOCALAPPDATA not set, logging disabled\n");
@@ -564,6 +566,7 @@ int main(int argc, char *argv[])
 
 	/* user in lower case */
 	if (!g_conf.user)
+#pragma warning(suppress: 4996) /* getenv: read-only env access is safe here */
 		g_conf.user = getenv("USERNAME");
 	if (!g_conf.user) {
 		fprintf(stderr, "error: USERNAME environment variable not set\n");
@@ -575,6 +578,7 @@ int main(int argc, char *argv[])
 
 	/* private key */
 	if (!g_conf.pkey || strlen(g_conf.pkey) == 0) {
+#pragma warning(suppress: 4996) /* getenv: read-only env access is safe here */
 		char* profile = getenv("USERPROFILE");
 		if (!profile) {
 			fprintf(stderr, "USERPROFILE environment variable not set\n");

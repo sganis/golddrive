@@ -23,7 +23,7 @@ int time_str(size_t time_mu, char *time_string)
 	time_t current_time;
 	current_time = time_mu / 1000000;
 	struct tm  ts;
-	ts = *localtime(&current_time);
+	localtime_s(&ts, &current_time);
 	strftime(time_string, TIME_SIZE, "%Y-%m-%d %H:%M:%S", &ts);
 	return 0;
 }

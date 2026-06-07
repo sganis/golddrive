@@ -96,6 +96,7 @@ GDSSH* gd_init_ssh(void)
 		LIBSSH2_KNOWNHOSTS* nh = libssh2_knownhost_init(ssh);
 		if (nh) {
 			char knownhosts_path[MAX_PATH];
+#pragma warning(suppress: 4996) /* getenv: read-only env access is safe here */
 			char* profile = getenv("USERPROFILE");
 			if (profile) {
 				sprintf_s(knownhosts_path, MAX_PATH,
@@ -314,11 +315,23 @@ int gd_reconnect(GDSSH* c)
 	closesocket(c->socket);
 	c->socket = INVALID_SOCKET;
 
-	/* build a fresh connection and adopt its session into c, keeping c's lock
-	 * (held by the caller); discard the temporary shell */
-	GDSSH* n = gd_init_ssh();
+	/* build a fresh connection (capped retries with full-jitter backoff) and
+	 * adopt its session into c, keeping c's lock held by the caller */
+	GDSSH* n = NULL;
+	for (int attempt = 0; attempt < GD_RECONNECT_MAX; attempt++) {
+		n = gd_init_ssh();
+		if (n)
+			break;
+		if (attempt + 1 < GD_RECONNECT_MAX) {
+			int delay = backoff_ms(attempt, GD_RECONNECT_BASE_MS,
+				GD_RECONNECT_CAP_MS, GetTickCount());
+			gd_log("reconnect attempt %d failed, retrying in %d ms\n",
+				attempt + 1, delay);
+			Sleep(delay);
+		}
+	}
 	if (!n) {
-		gd_log("SSH reconnection failed\n");
+		gd_log("SSH reconnection failed after %d attempts\n", GD_RECONNECT_MAX);
 		return -1;
 	}
 	c->socket = n->socket;
@@ -1411,10 +1424,10 @@ int load_json(GDCONFIG* fs)
 		return 1;
 	}
 
-	if (j.has_logfile)  fs->logfile  = strdup(j.logfile);
-	if (j.has_usageurl) fs->usageurl = strdup(j.usageurl);
-	if (j.has_pkey)     fs->pkey     = strdup(j.pkey);
-	if (j.has_args)     fs->args     = strdup(j.args);
+	if (j.has_logfile)  fs->logfile  = _strdup(j.logfile);
+	if (j.has_usageurl) fs->usageurl = _strdup(j.usageurl);
+	if (j.has_pkey)     fs->pkey     = _strdup(j.pkey);
+	if (j.has_args)     fs->args     = _strdup(j.args);
 	return 0;
 }
 
