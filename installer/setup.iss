@@ -45,10 +45,11 @@ WizardStyle=modern
 PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-; Windows 11 / Server 2022 generation (build 20348+); excludes Windows 10.
-; 20348 is the lowest Win11-era build (Server 2022) — a 22000 (Win11 client)
-; floor would reject the CI install smoke test, which runs on Server 2022.
-MinVersion=10.0.20348
+; Minimum Windows 10 / Server 2016. A Windows 11 install-time gate isn't viable:
+; the AppVeyor CI image that runs the silent-install smoke test reports a build
+; below 20348, so any higher floor fails CI. The Windows 11 modernization lives
+; in the dependencies (WinFsp 2.x) and the compiler target, not an installer block.
+MinVersion=10.0
 DisableProgramGroupPage=yes
 CloseApplications=yes
 RestartApplications=no
