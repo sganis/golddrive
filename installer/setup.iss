@@ -47,8 +47,12 @@ Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 PrivilegesRequired=admin
-ArchitecturesAllowed=x64compatible
-ArchitecturesInstallIn64BitMode=x64compatible
+; Use "x64" (not the 6.3-only "x64compatible"): the AppVeyor VS2022 image ships
+; an Inno Setup that may predate 6.3, and `choco install innosetup` skips the
+; upgrade when one is already present. "x64" compiles on every Inno Setup 6.x and
+; is the correct constraint since this installer ships only x64 binaries.
+ArchitecturesAllowed=x64
+ArchitecturesInstallIn64BitMode=x64
 ; Minimum Windows 10 / Server 2016. A Windows 11 install-time gate isn't viable:
 ; the AppVeyor CI image that runs the silent-install smoke test reports a build
 ; below 20348, so any higher floor fails CI. The Windows 11 modernization lives
