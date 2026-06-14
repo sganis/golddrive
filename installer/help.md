@@ -6,7 +6,8 @@ software is needed on the server — any machine running an SSH server will work
 
 ## Prerequisites
 
-- **WinFsp** must be installed: https://github.com/winfsp/winfsp/releases
+- **WinFsp** (the FUSE layer) is bundled with the installer and installed
+  automatically. If you already have it, Golddrive uses your existing copy.
 - The remote server must have an SSH server running (OpenSSH, etc.)
 - You need a user account on the remote server
 

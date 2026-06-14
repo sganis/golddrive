@@ -8,7 +8,7 @@
 
 ; Passed via /DMyAppVersion=x.y from command line
 #ifndef MyAppVersion
-  #define MyAppVersion "2.31"
+  #define MyAppVersion "3.0"
 #endif
 
 ; Passed via /DMyPlatform=x64 from command line
@@ -24,6 +24,10 @@
 ; Build output relative to this .iss file (installer/)
 #define BuildDir "..\build\" + MyConfiguration + "\" + MyPlatform
 #define SshDir "..\vendor\openssh\" + MyPlatform
+
+; Bundled WinFsp dependency (FUSE layer). Installed silently when absent and
+; removed on uninstall only if this installer added it.
+#define WinFspMsi "winfsp-2.1.25156.msi"
 
 [Setup]
 AppId={{EFCA9EFA-7F65-4C74-A65D-88092D67F41A}
@@ -92,6 +96,10 @@ Source: "help.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SshDir}\ssh.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SshDir}\ssh-keygen.exe"; DestDir: "{app}"; Flags: ignoreversion
 
+; Bundled WinFsp installer. Kept in {app} so the uninstaller can call
+; "msiexec /x" on the exact package we installed (see [Code]).
+Source: "..\vendor\winfsp\{#WinFspMsi}"; DestDir: "{app}"; Flags: ignoreversion
+
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\golddrive.ico"
 Name: "{group}\{#MyAppName} Help"; Filename: "notepad.exe"; Parameters: """{app}\help.md"""
@@ -118,6 +126,11 @@ Root: HKLM; Subkey: "Software\{#MyAppName}"; ValueType: string; ValueName: "Inst
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: nowait postinstall skipifsilent runascurrentuser
 
 [Code]
+var
+  { Whether WinFsp was already present before this install ran. Captured up
+    front so the uninstaller knows if removing WinFsp is our responsibility. }
+  WinFspWasPresent: Boolean;
+
 function IsWinFspInstalled: Boolean;
 var
   ServicePath: String;
@@ -127,14 +140,42 @@ end;
 
 function InitializeSetup: Boolean;
 begin
+  WinFspWasPresent := IsWinFspInstalled;
   Result := True;
-  if not IsWinFspInstalled then
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  ResultCode: Integer;
+  MsiPath: String;
+begin
+  { Runs after files are copied but before the postinstall "Launch Golddrive"
+    Run entry, so WinFsp is ready before the app starts. }
+  if CurStep = ssPostInstall then
   begin
-    MsgBox('WinFsp is required but not installed.' + #13#10 + #13#10 +
-           'Please download and install WinFsp from:' + #13#10 +
-           'https://github.com/winfsp/winfsp/releases' + #13#10 + #13#10 +
-           'Then run this installer again.', mbError, MB_OK);
-    Result := False;
+    if not WinFspWasPresent then
+    begin
+      MsiPath := ExpandConstant('{app}\{#WinFspMsi}');
+      if Exec('msiexec.exe', '/i "' + MsiPath + '" /qn /norestart', '',
+              SW_SHOW, ewWaitUntilTerminated, ResultCode)
+         and ((ResultCode = 0) or (ResultCode = 3010)) then
+      begin
+        { Record that WinFsp is ours, so uninstall can remove it. HKLM64 so the
+          value lands in the same 64-bit-view key as the Registry-section
+          InstallDir entry and gets cleaned up by its uninsdeletekey flag. }
+        RegWriteDWordValue(HKLM64, 'Software\Golddrive', 'InstalledWinFsp', 1);
+      end
+      else
+      begin
+        MsgBox('Golddrive was installed, but its bundled WinFsp dependency could '
+             + 'not be installed automatically (error ' + IntToStr(ResultCode) + ').'
+             + #13#10 + #13#10
+             + 'Golddrive cannot mount drives until WinFsp is present. You can '
+             + 'install it manually from:' + #13#10
+             + 'https://github.com/winfsp/winfsp/releases',
+               mbError, MB_OK);
+      end;
+    end;
   end;
 end;
 
@@ -156,10 +197,26 @@ procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
   ResultCode: Integer;
   ConfigDir: String;
+  MsiPath: String;
+  InstalledWinFsp: Cardinal;
 begin
   if CurUninstallStep = usUninstall then
   begin
     UnmountGoldDrives;
+
+    { Remove WinFsp only if this installer added it (it was absent beforehand).
+      A pre-existing WinFsp is left alone so we don't break other software that
+      relies on it (sshfs-win, rclone mounts, etc.). Runs before our files are
+      deleted, so the bundled MSI is still on disk for "msiexec /x". }
+    if RegQueryDWordValue(HKLM64, 'Software\Golddrive', 'InstalledWinFsp', InstalledWinFsp)
+       and (InstalledWinFsp = 1) then
+    begin
+      MsiPath := ExpandConstant('{app}\{#WinFspMsi}');
+      if FileExists(MsiPath) then
+        Exec('msiexec.exe', '/x "' + MsiPath + '" /qn /norestart', '',
+             SW_SHOW, ewWaitUntilTerminated, ResultCode);
+    end;
+
     { Clean up user config directory }
     ConfigDir := ExpandConstant('{localappdata}\Golddrive');
     if DirExists(ConfigDir) then

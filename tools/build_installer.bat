@@ -6,7 +6,7 @@
 setlocal
 
 set VERSION=%~1
-if "%VERSION%"=="" set VERSION=2.7
+if "%VERSION%"=="" set VERSION=3.0
 
 set "ISCC="
 for %%P in (

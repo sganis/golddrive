@@ -1,5 +1,5 @@
 # golddrive
-version: 2.31.{build}
+version: 3.0.{build}
 image: Visual Studio 2022
 platform: x64
 configuration: Release
@@ -19,6 +19,10 @@ artifacts:
     name: setup
 
 build_script:
+  # The native CLI needs WinFsp's developer headers/lib (winfsp.h, winfsp-x64.lib)
+  # from the "Developer" feature to COMPILE, so install WinFsp in full first.
+  # We uninstall it again before running the golddrive installer (below) so the
+  # bundled WinFsp install path still gets tested end-to-end.
   - start /wait msiexec /i vendor\winfsp\winfsp-2.1.25156.msi /qn ADDLOCAL=ALL
   - wslconfig /u Ubuntu-18.04
   - ps: tools\setup_wsl.ps1
@@ -30,7 +34,14 @@ build_script:
   - dotnet build src\test\test.csproj -c %CONFIGURATION% -o build\%CONFIGURATION%\%PLATFORM%
   - build\%CONFIGURATION%\%PLATFORM%\golddrive.exe --version
   - '"%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe" /DMyAppVersion=%VERSION% /DMyPlatform=%PLATFORM% /DMyConfiguration=%CONFIGURATION% installer\setup.iss'
+  # Remove WinFsp so the golddrive installer must reinstall it from its bundle.
+  # Nothing is mounted yet, so the driver uninstalls cleanly without a reboot.
+  - start /wait msiexec /x vendor\winfsp\winfsp-2.1.25156.msi /qn /norestart
   - build\%CONFIGURATION%\%PLATFORM%\golddrive-%VERSION%-%PLATFORM%-setup.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
+  # Assert the bundled installer set up WinFsp and recorded ownership of it.
+  # Both commands return non-zero (failing the build) if the bundle didn't work.
+  - sc query WinFsp.Launcher
+  - reg query "HKLM\SOFTWARE\Golddrive" /v InstalledWinFsp
   - call "c:\Program Files\Golddrive\golddrive.exe" --version
 
 test_script:
