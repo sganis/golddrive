@@ -22,7 +22,7 @@
     <PackageReference Include="MaterialDesignThemes" Version="4.9.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="NLog" Version="5.3.4" />
-    <PackageReference Include="SSH.NET" Version="2024.2.0" />
+    <PackageReference Include="SSH.NET" Version="2026.0.0" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="golddrive.ico" />
