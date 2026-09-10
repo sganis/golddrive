@@ -79,8 +79,15 @@ Source: "{#BuildDir}\MaterialDesignThemes.Wpf.dll"; DestDir: "{app}"; Flags: ign
 Source: "{#BuildDir}\Newtonsoft.Json.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\NLog.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\Renci.SshNet.dll"; DestDir: "{app}"; Flags: ignoreversion
+; SSH.NET 2026.0.0 dependency set. It differs from 2024.2.0: System.ValueTuple is
+; gone and the Microsoft.Bcl.Cryptography / Microsoft.Extensions.* assemblies are
+; new. Keep this list in step with a CLEAN `dotnet build` of app.csproj -- a stale
+; build directory hides a missing entry locally while CI fails on it.
 Source: "{#BuildDir}\BouncyCastle.Cryptography.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\Microsoft.Bcl.AsyncInterfaces.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#BuildDir}\Microsoft.Bcl.Cryptography.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#BuildDir}\Microsoft.Extensions.DependencyInjection.Abstractions.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#BuildDir}\Microsoft.Extensions.Logging.Abstractions.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\Microsoft.Xaml.Behaviors.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\System.Buffers.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\System.Formats.Asn1.dll"; DestDir: "{app}"; Flags: ignoreversion
@@ -88,7 +95,6 @@ Source: "{#BuildDir}\System.Memory.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\System.Numerics.Vectors.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\System.Runtime.CompilerServices.Unsafe.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\System.Threading.Tasks.Extensions.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#BuildDir}\System.ValueTuple.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; Default config (don't overwrite existing user config)
 Source: "config.json"; DestDir: "{localappdata}\Golddrive"; Flags: onlyifdoesntexist
