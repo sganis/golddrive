@@ -1,15 +1,36 @@
-// src/app/Service/SshService.cs
+﻿// src/app/Service/SshService.cs
 using Renci.SshNet;
 using Renci.SshNet.Common;
 using System;
 using System.IO;
 using System.Net.Sockets;
+using System.Text;
 
 namespace golddrive
 {
     public class SshService
     {
         const int TIMEOUT = 20;
+
+        /// <summary>
+        /// Flattens an exception chain into "Type: message &lt;- Type: message".
+        /// The user-facing classifications below ("Host does not respond") are
+        /// deliberately vague, which hides the cause when a connection fails for
+        /// a reason nobody anticipated -- an SSH failure that reproduced only on
+        /// CI cost several diagnosis rounds because the real exception was
+        /// discarded here. Inner exceptions carry the actual protocol error.
+        /// </summary>
+        private static string Detail(Exception ex)
+        {
+            var sb = new StringBuilder();
+            for (var e = ex; e != null; e = e.InnerException)
+            {
+                if (sb.Length > 0)
+                    sb.Append(" <- ");
+                sb.Append(e.GetType().Name).Append(": ").Append(e.Message);
+            }
+            return sb.ToString();
+        }
         private readonly string appPath;
 
         public SshService(string appPath)
@@ -49,7 +70,7 @@ namespace golddrive
             catch (Exception ex)
             {
                 r.MountStatus = MountStatus.BAD_HOST;
-                r.Error = ex.Message;
+                r.Error = Detail(ex);
             }
             return r;
         }
@@ -119,7 +140,7 @@ namespace golddrive
                     ex is InvalidOperationException ||
                     ex.Message.Contains("milliseconds"))
                 {
-                    r.Error = "Host does not respond";
+                    r.Error = $"Host does not respond. {Detail(ex)}";
                     r.MountStatus = MountStatus.BAD_HOST;
                 }
                 else
@@ -179,7 +200,7 @@ namespace golddrive
             }
             catch (Exception ex)
             {
-                r.Error = ex.Message;
+                r.Error = Detail(ex);
                 return r;
             }
 

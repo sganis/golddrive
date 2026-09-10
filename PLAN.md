@@ -391,3 +391,52 @@ suppressing redundant rebuilds of sessions another thread had already healed.
   the data always remains under one of the two names -- it is never lost -- but callers
   may see the operation report failure.
 - **Reopen consistency check** remains unimplemented (see above).
+
+---
+
+# SSH.NET 2026.0.0 upgrade — blocked (2026-09-10)
+
+The Dependabot advisory on SSH.NET 2024.2.0 is **still open**. The upgrade to
+2026.0.0 is not a drop-in and was backed out of `master` (`a91581c`) after it
+broke CI. Work in progress on branch `fix/sshnet-2026`.
+
+## Attribution
+
+| Build | Commit | Result |
+|---|---|---|
+| 3.1.878 | `3302b00` reconnect fix | success, 63/63 |
+| 3.1.879 | `0dc8455` SSH.NET bump | **failed** |
+| 3.0.876 | `e536d82` SSH.NET bump (master) | **failed** |
+| 3.0.875 | `9837192` SSH.NET bump (dependabot's own branch) | **failed** |
+
+Three independent builds of the same upgrade fail; the commit immediately before
+it is green. Dependabot's own build had already failed the same way, which is why
+the advisory was never closed.
+
+## Root cause
+
+`SshConnectionException: MAC error`, surfaced once `SshService.Detail()` stopped
+discarding the exception. It is a MAC negotiation/computation failure, not
+authentication: it reproduces against the CI environment (Ubuntu 18.04 /
+OpenSSH 7.6 in WSL) and not against a modern sshd (OpenSSH 9.6), where the same
+upgrade passes 63/63 locally.
+
+Consistent with the SSH.NET 2025.0.0 change that replaced its own cipher padding
+implementations with BouncyCastle's `IBlockCipherPadding`.
+
+## Ruled out (verified, not assumed)
+
+- **ssh-rsa removal** — 2026.0.0 still offers `ssh-rsa`, `rsa-sha2-512` and
+  `rsa-sha2-256`; checked by loading `Renci.SshNet.dll` directly.
+- **PEM RSA key parsing** — `PrivateKeyFile` loads the exact
+  `ssh-keygen -t rsa -m PEM` key CI generates.
+- **`GOLDDRIVE_HOST` defaulting to the LAN dev server** — 3.1.878 was green with
+  that same default, so it was never the cause.
+
+## Next step
+
+Identify which MAC OpenSSH 7.6 negotiates that 2026.0.0 mishandles (its defaults
+include the `-etm@openssh.com` variants and `umac-64/128`), then either pin
+`ConnectionInfo.MacAlgorithms` to a known-good set or report upstream. Note the
+CI server is 2018-era; upgrading `setup_wsl.ps1` past Ubuntu 18.04 may sidestep
+it, but that hides rather than fixes a client bug real users could hit.
