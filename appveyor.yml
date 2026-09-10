@@ -7,6 +7,15 @@ clone_depth: 1
 cache:
   - C:\cache
 
+environment:
+  # The build agent provisions its own sshd on localhost (see setupssh.py in
+  # build_script). Without these, tools\test.bat falls back to its developer
+  # default of 192.168.100.46 -- a LAN host the agent cannot reach -- and every
+  # SSH-backed test fails with "Host does not respond".
+  GOLDDRIVE_HOST: localhost
+  GOLDDRIVE_USER: support
+  GOLDDRIVE_PASS: support
+
 install:
   - dir C:\cache >nul 2>&1 || mkdir C:\cache
   - choco install innosetup -y --no-progress
