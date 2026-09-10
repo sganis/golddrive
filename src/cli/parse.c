@@ -137,6 +137,11 @@ int retry_result(int op, int rc)
 	return rc;
 }
 
+int reopen_is_safe(unsigned long long written_end, unsigned long long size)
+{
+	return size >= written_end;
+}
+
 int rr_index(long counter, int size)
 {
 	if (size <= 0)

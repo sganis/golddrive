@@ -318,7 +318,7 @@ release build (`tools/build_cli.bat`, `/sdl /W4`, CFG, CET) + native suite
 | R4 — path-op recovery | **Done** — `RETRY_PATH_OP(op, call)` + pure `retry_result()`. `f_open`/`f_create`/`f_readlink`/`f_utimens`/`f_truncate` plain; `f_mkdir` EEXIST→success; `f_unlink`/`f_rmdir` ENOENT→success. | 11 native checks on the decision table |
 | R5 — double-reconnect race | **Done** — `generation` on `GDSSH` bumped by `gd_reconnect`; thread-local `g_gen` captured at lock time; `gd_heal(c, seen_gen)` reconnects only if the generation is unchanged. | Build + suite green |
 | R6 — session timeout | **Done** — `libssh2_session_set_timeout()` on every session (init and reconnect), `SO_KEEPALIVE` in `gd_tcp_connect`, `-o timeout=N` (default 30 s, clamped 5–600) via pure `timeout_ms()`. | 8 native checks on parse/clamp/boundaries |
-| R7 — log degraded state | **Partial** — CLI side done: one line per reconnect with generation, handles reopened and handles lost, plus a line per handle that could not be reopened. **WPF status surfacing not done** (scoped to the C layer for this pass). | Build + suite green |
+| R7 — log degraded state | **Done** — one log line per reconnect with connection index, generation, handles reopened and lost, plus a line per handle that could not be reopened. When handles are lost the CLI drops a `<letter>.degraded` marker beside `config.json`; `MountService.IsDegraded()` downgrades `CONNECTED` to the new `DriveStatus.DEGRADED` (amber in the UI). Nothing else the app polls can see this -- the mount is still up, so `IsReady` and `net use` both read healthy. Cleared on a fresh mount. | Build + suite green; marker verified absent when 0 handles lost |
 
 ### Additional findings from this pass (not in the original Round 3 write-up)
 
@@ -344,11 +344,15 @@ release build (`tools/build_cli.bat`, `/sdl /W4`, CFG, CET) + native suite
 
 ### Residual risk
 
-- **Reopen does no consistency check.** A reopened handle is a new server-side file
-  description. If a third party replaced or truncated the file during the drop, a retried
-  write at the old offset lands in the wrong content. Offsets themselves are safe (FUSE
-  passes an absolute offset and `gd_read`/`gd_write` seek before every op). The re-stat
-  guard from the Risks section above is **not** implemented.
+- ~~**Reopen does no consistency check.**~~ **Implemented.** `gd_write` tracks
+  `written_end`, the high-water mark of its own writes; `gd_handle_reopen` fstats the
+  reopened file and refuses to resume (handle marked stale, `EIO`) when the file has
+  shrunk below it, which means it was truncated or replaced remotely. Comparing raw
+  size/mtime against open time -- the obvious approach -- would have flagged every
+  ordinary write, since our own writes change both. Read-only handles have
+  `written_end == 0` and are never rejected. Pure `reopen_is_safe()` unit-tested
+  (10 checks incl. >4 GiB); live-verified with 0 false refusals across a 12.8 MB
+  sustained write spanning a drop.
 ### Live verification (2026-09-10, san@192.168.100.73)
 
 Tested through a local TCP proxy (127.0.0.1:2222 -> host:22) so connections could be
@@ -383,6 +387,7 @@ with `listdir` traffic throughout so drops also landed mid-readdir:
 suppressing redundant rebuilds of sessions another thread had already healed.
 
 ### Still unverified
-- **`gd_rename` across a drop** returns an error by design (see deviations); no test
-  covers what an application does with that.
+- **`gd_rename` across a drop** is not retried by design (see deviations). Live-checked:
+  the data always remains under one of the two names -- it is never lost -- but callers
+  may see the operation report failure.
 - **Reopen consistency check** remains unimplemented (see above).

@@ -358,6 +358,30 @@ static void test_retry_result(void)
 	CHECK(retry_result(GD_OP_DELETE, 0) == 0, "delete success");
 }
 
+static void test_reopen_is_safe(void)
+{
+	printf("reopen_is_safe (R2 consistency)...\n");
+
+	/* read-only handle: nothing written, so nothing can be inconsistent */
+	CHECK(reopen_is_safe(0, 0) == 1, "read-only handle, empty file");
+	CHECK(reopen_is_safe(0, 12345) == 1, "read-only handle, any size");
+
+	/* our own writes only ever grow the file to at least written_end */
+	CHECK(reopen_is_safe(1024, 1024) == 1, "exactly what we wrote");
+	CHECK(reopen_is_safe(1024, 4096) == 1, "someone appended: still safe");
+
+	/* shrunk below our high-water mark: truncated or replaced remotely */
+	CHECK(reopen_is_safe(1024, 1023) == 0, "one byte short -> unsafe");
+	CHECK(reopen_is_safe(1024, 0) == 0, "truncated to empty -> unsafe");
+	CHECK(reopen_is_safe(26214400, 65536) == 0, "replaced by smaller -> unsafe");
+
+	/* must not wrap or misbehave past 4 GiB (offsets are 64-bit) */
+	unsigned long long big = 5ULL * 1024 * 1024 * 1024;
+	CHECK(reopen_is_safe(big, big) == 1, "5 GiB exact -> safe");
+	CHECK(reopen_is_safe(big, big - 1) == 0, "5 GiB minus a byte -> unsafe");
+	CHECK(reopen_is_safe(big + 1, big) == 0, "past 32-bit range still compares");
+}
+
 int main(void)
 {
 	printf("== golddrive native unit tests ==\n");
@@ -373,6 +397,7 @@ int main(void)
 	test_handle_registry();
 	test_timeout_ms();
 	test_retry_result();
+	test_reopen_is_safe();
 	g_failures += run_net_tests();
 	g_failures += run_fuzz();
 

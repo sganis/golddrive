@@ -338,6 +338,25 @@ static int gd_handle_reopen(GDSSH* c, GDHANDLE* sh)
 		return -1;
 	}
 
+	/* Refuse to resume a write handle whose file shrank while we were
+	 * disconnected: it was truncated or replaced, so our old offsets now point
+	 * into different content. Read-only handles have written_end == 0 and are
+	 * never rejected here. */
+	if (!sh->dir && sh->written_end > 0) {
+		LIBSSH2_SFTP_ATTRIBUTES attrs;
+		memset(&attrs, 0, sizeof attrs);
+		if (libssh2_sftp_fstat_ex(h, &attrs, 0) == 0 &&
+			(attrs.flags & LIBSSH2_SFTP_ATTR_SIZE) &&
+			!reopen_is_safe(sh->written_end, attrs.filesize)) {
+			gd_log("refusing to resume %s: %llu bytes written but file is "
+				"now %llu -- truncated or replaced remotely\n",
+				sh->path, sh->written_end,
+				(unsigned long long)attrs.filesize);
+			libssh2_sftp_close_handle(h);
+			return -1;
+		}
+	}
+
 	if (sh->dir)
 		sh->dir_handle = h;
 	else
@@ -465,7 +484,40 @@ int gd_reconnect(GDSSH* c)
 	gd_log("SSH reconnection successful (conn %d, generation %ld, "
 		"%d handle(s) reopened, %d lost)\n",
 		gd_pool_index(c), c->generation, reopened, lost);
+
+	/* Only raise the flag; never clear it here. A later reconnect that happens
+	 * to have no handles open would otherwise erase the record of files this
+	 * mount already lost. The app clears it on a fresh mount. */
+	if (lost > 0)
+		gd_set_degraded(1);
 	return 0;
+}
+
+/* Publish "this mount lost open file handles across a reconnect" so the WPF app
+ * can show the drive as degraded instead of healthy (R7). The mount itself is
+ * still up, so nothing else the app polls -- DriveInfo.IsReady, `net use` --
+ * would ever reveal it. A marker file next to config.json is used rather than a
+ * new IPC channel: the app already reads that directory.
+ * Callers hold the connection lock. */
+void gd_set_degraded(int degraded)
+{
+	char path[MAX_PATH];
+#pragma warning(suppress: 4996) /* getenv: read-only env access is safe here */
+	char* appdata = getenv("LOCALAPPDATA");
+	if (!appdata || !g_conf.letter)
+		return;
+	sprintf_s(path, MAX_PATH, "%s\\Golddrive\\%c.degraded",
+		appdata, g_conf.letter);
+	if (degraded) {
+		FILE* f = NULL;
+		if (fopen_s(&f, path, "w") == 0 && f) {
+			fprintf(f, "%s\n", g_conf.mountpoint ? g_conf.mountpoint : "");
+			fclose(f);
+		}
+	}
+	else {
+		remove(path);
+	}
 }
 
 /* Register/unregister a live handle on the connection that owns it. The
@@ -850,6 +902,7 @@ intptr_t gd_open(const char* path, int flags, unsigned int mode)
 	sh->link.next = NULL;
 	sh->link.prev = NULL;
 	sh->stale = 0;
+	sh->written_end = 0;
 	sh->file_handle = 0;
 	sh->dir_handle = 0;
 	strcpy_s(sh->path, MAX_PATH, path);
@@ -1022,6 +1075,14 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 		if (rc)
 			total = -1;
 	}
+	if (total > 0) {
+		/* high-water mark of our own writes; gd_handle_reopen refuses to resume
+		 * if the file has since shrunk below it (truncated or replaced) */
+		unsigned long long end =
+			(unsigned long long)offset + (unsigned long long)total;
+		if (end > sh->written_end)
+			sh->written_end = end;
+	}
 	gd_unlock();
 
 	log_debug("FINISH WRITING %zu, bytes: %zu\n", (size_t)handle, total);
@@ -1110,6 +1171,7 @@ GDDIR* gd_opendir(const char* path)
 	sh->link.next = NULL;
 	sh->link.prev = NULL;
 	sh->stale = 0;
+	sh->written_end = 0;
 	sh->file_handle = 0;
 	sh->dir_handle = 0;
 	sh->flags = 0;

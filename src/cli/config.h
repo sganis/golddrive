@@ -256,6 +256,7 @@ typedef struct GDHANDLE {
 	char path[MAX_PATH];			/* file full path */
 	long size;
 	int stale;						/* reopen failed; ops fail with EIO */
+	unsigned long long written_end;	/* highest offset+len written, for reopen */
 } GDHANDLE;
 
 struct GDDIRENT {

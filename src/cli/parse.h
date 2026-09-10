@@ -108,6 +108,18 @@ enum {
  * rc is the negative errno (or 0) from the retry. Pure. */
 int retry_result(int op, int rc);
 
+/* Is it safe to resume writing through a handle that was reopened after a
+ * reconnect? A reopened handle is a NEW server-side file description, so if the
+ * file was truncated or replaced while we were disconnected, resuming at our
+ * old offsets would write into the wrong content.
+ *
+ * written_end is the highest offset+length this handle has successfully
+ * written (0 if it has only ever read); size is the file's size at reopen.
+ * Our own writes only ever grow the file to at least written_end, so a smaller
+ * file means somebody else truncated or replaced it. Comparing raw size/mtime
+ * against open time instead would flag every ordinary write. Pure. */
+int reopen_is_safe(unsigned long long written_end, unsigned long long size);
+
 /* Round-robin index for a 1-based monotonically increasing counter over `size`
  * slots: rr_index(1,4)=0, rr_index(2,4)=1, ... rr_index(5,4)=0. Returns 0 if
  * size <= 0. Pure — backs the connection-pool picker. */

@@ -16,6 +16,7 @@
         BROKEN,
         DISCONNECTED,
         CONNECTED,
+        DEGRADED,
         NOT_SUPPORTED,
         UNKNOWN,
     }

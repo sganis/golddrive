@@ -726,6 +726,11 @@ int main(int argc, char *argv[])
 	}
 	gd_log("connections = %d\n", g_pool.size);
 
+	/* a fresh mount starts healthy: clear any degraded marker left by the
+	 * previous run, otherwise the app would report this mount as degraded
+	 * because of files lost by a process that is no longer running */
+	gd_set_degraded(0);
+
 	/* keepalive event */
 	g_keepalive_stop_event = CreateEvent(NULL, TRUE, FALSE, NULL);
 	if (g_keepalive_stop_event) {

@@ -259,6 +259,11 @@ namespace golddrive
                                 d.MountPoint = dinfo.VolumeLabel.Replace("/", "\\");
                                 d.Label = GetExplorerDriveLabel(d);
                                 d.Status = dinfo.IsReady ? DriveStatus.CONNECTED : DriveStatus.BROKEN;
+                                // The mount can be up while files opened before an SSH
+                                // drop were lost: IsReady stays true, so the CLI leaves
+                                // a marker and we downgrade CONNECTED to DEGRADED.
+                                if (d.Status == DriveStatus.CONNECTED && IsDegraded(d.Letter))
+                                    d.Status = DriveStatus.DEGRADED;
                                 var d1 = settingsDrives.Find(x => x.Letter == d.Letter);
                                 if (d1 != null)
                                 {
@@ -322,6 +327,27 @@ namespace golddrive
                     }
                     Drives.Add(d);
                 }
+            }
+        }
+
+        /// <summary>
+        /// True when the CLI recorded that this mount lost open file handles across
+        /// an SSH reconnect. Nothing else the app polls can reveal this: the mount
+        /// is still up, so DriveInfo.IsReady and `net use` both report healthy.
+        /// The marker is cleared by the CLI when the drive is mounted afresh.
+        /// </summary>
+        public bool IsDegraded(string letter)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(letter))
+                    return false;
+                return File.Exists(Path.Combine(LocalAppData, $"{letter[0]}.degraded"));
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"IsDegraded({letter}): {ex.Message}");
+                return false;
             }
         }
 
