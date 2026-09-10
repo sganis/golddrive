@@ -14,6 +14,7 @@
 #include <libssh2_sftp.h>
 #include <winfsp/winfsp.h>
 #include <fuse.h>
+#include "parse.h"	/* gd_link: intrusive node embedded in GDHANDLE */
 
 #define BUFFER_SIZE						65536
 #define COMMAND_SIZE					1024
@@ -24,6 +25,13 @@
 #define GD_RECONNECT_MAX				5
 #define GD_RECONNECT_BASE_MS			200
 #define GD_RECONNECT_CAP_MS				5000
+
+/* libssh2 session timeout (-o timeout=SECONDS). Bounds every blocking call so
+ * a black-holed socket surfaces an error instead of parking a thread forever.
+ * Must exceed the slowest legitimate SFTP round trip. */
+#define GD_TIMEOUT_DEFAULT				30
+#define GD_TIMEOUT_MIN					5
+#define GD_TIMEOUT_MAX					600
 
 /* logging */
 #define ERROR							0
@@ -105,6 +113,7 @@ typedef struct GDCONFIG {
 	unsigned local_uid;
 	unsigned remote_uid;
 	int connections;				/* SSH connection-pool size (-o connections=N) */
+	int timeout;					/* session timeout secs (-o timeout=N) */
 } GDCONFIG;
 
 extern GDCONFIG g_conf;
@@ -232,9 +241,12 @@ typedef struct GDSSH {
 	LIBSSH2_SFTP* sftp;				/* sftp session struct */
 	LIBSSH2_CHANNEL* channel;		/* channel for commands */
 	SRWLOCK lock;					/* serializes use of this connection */
+	volatile long generation;		/* bumped by every successful gd_reconnect */
+	gd_link* handles;				/* live-handle list head, guarded by lock */
 } GDSSH;
 
 typedef struct GDHANDLE {
+	gd_link link;					/* MUST be first: registry list node */
 	LIBSSH2_SFTP_HANDLE* file_handle;	/* remote file handle */
 	LIBSSH2_SFTP_HANDLE* dir_handle;	/* remote dir handle */
 	struct GDSSH* conn;				/* connection that owns the handle (affinity) */
@@ -243,6 +255,7 @@ typedef struct GDHANDLE {
 	int mode;						/* open mode */
 	char path[MAX_PATH];			/* file full path */
 	long size;
+	int stale;						/* reopen failed; ops fail with EIO */
 } GDHANDLE;
 
 struct GDDIRENT {
@@ -269,15 +282,20 @@ typedef struct usagedata {
 } usagedata;
 
 extern __declspec(thread) GDSSH *g_ssh;	/* current thread's active connection */
+extern __declspec(thread) long g_gen;	/* g_ssh->generation at lock time */
 extern SRWLOCK g_log_lock;
 
 /* connection-pool aware locking (impl in pool.c):
  *   gd_lock()      pick a pooled connection (round-robin) into g_ssh, lock it
  *   gd_lock_conn() bind g_ssh to a specific connection (handle affinity), lock it
- *   gd_unlock()    release g_ssh's lock */
+ *   gd_unlock()    release g_ssh's lock
+ *   gd_pin()       make gd_lock() reuse c instead of round-robining (thread-local)
+ *   gd_unpin()     drop the pin; gd_lock() round-robins again */
 void gd_lock(void);
 void gd_lock_conn(GDSSH* c);
 void gd_unlock(void);
+void gd_pin(GDSSH* c);
+void gd_unpin(void);
 
 /* file flags */
 #define GD_READONLY   0x00

@@ -303,3 +303,86 @@ Under R2 of the Round-2 guiding rules, every item lands with its test:
 - The blocking-mode session means the `LIBSSH2_ERROR_EAGAIN` loops and `waitsocket`
   (`gd.c:1295`) are largely vestigial today; R6's timeout changes which errors actually
   surface, so those loops need a re-read rather than a trust.
+
+## Implementation status (2026-09-10)
+
+Implemented on `plan/handle-reconnect`. Verification after every item: real msbuild
+release build (`tools/build_cli.bat`, `/sdl /W4`, CFG, CET) + native suite
+(`tools/build_clitest.bat`).
+
+| Item | Status | Verification |
+|---|---|---|
+| R1 — handle registry | **Done** — `gd_link` intrusive node in `parse.{c,h}`, embedded as the FIRST member of `GDHANDLE`; `handles` head on `GDSSH`. Register in `gd_open`/`gd_opendir`, unregister in `gd_close`/`gd_closedir`, all under the connection lock. | 16 native checks: walk reaches every handle, middle/head/tail unregister, double unregister no-op, interleaved add/remove, NULL-safety |
+| R2 — reopen on reconnect | **Done** — `gd_reconnect` NULLs every registered handle before teardown, then reopens each from stored path/flags/mode via `gd_handle_reopen`. `GD_CREAT\|GD_TRUNC\|GD_EXCL` masked off. Reopen failure marks `stale`. | Build + suite green; live drop behaviour is CI/manual |
+| R3 — handle-op retry | **Done** — new `RETRY_HANDLE_OP` pins `sh->conn` (never reads `g_ssh`) and skips the retry when the handle is stale. Applied to `f_read`, `f_write`, `f_flush`, `f_fsync`. | Build + suite green |
+| R4 — path-op recovery | **Done** — `RETRY_PATH_OP(op, call)` + pure `retry_result()`. `f_open`/`f_create`/`f_readlink`/`f_utimens`/`f_truncate` plain; `f_mkdir` EEXIST→success; `f_unlink`/`f_rmdir` ENOENT→success. | 11 native checks on the decision table |
+| R5 — double-reconnect race | **Done** — `generation` on `GDSSH` bumped by `gd_reconnect`; thread-local `g_gen` captured at lock time; `gd_heal(c, seen_gen)` reconnects only if the generation is unchanged. | Build + suite green |
+| R6 — session timeout | **Done** — `libssh2_session_set_timeout()` on every session (init and reconnect), `SO_KEEPALIVE` in `gd_tcp_connect`, `-o timeout=N` (default 30 s, clamped 5–600) via pure `timeout_ms()`. | 8 native checks on parse/clamp/boundaries |
+| R7 — log degraded state | **Partial** — CLI side done: one line per reconnect with generation, handles reopened and handles lost, plus a line per handle that could not be reopened. **WPF status surfacing not done** (scoped to the C layer for this pass). | Build + suite green |
+
+### Additional findings from this pass (not in the original Round 3 write-up)
+
+| # | Finding | Fix |
+|---|---------|-----|
+| A | **Round-robin defeated the retry.** `RETRY_ON_DISCONNECT` healed one connection, then re-ran an impl calling `gd_lock()` → `gd_pool_pick()` → `InterlockedIncrement`, so the retry ran on a *different* connection. After a network drop every connection is dead, so at the default `connections=4` recovery succeeded only by luck. This, not C1, is why the mount "never comes back". | Thread-local pin honoured by `gd_lock()`; recovery pins the healed connection for the retry. NULL outside a retry, so healthy I/O is byte-identical. |
+| C | **Handle pointers were read before the lock** in `gd_read`/`gd_write`/`gd_close`/`gd_fstat`/`gd_fsync`/`gd_readdir`/`gd_rewinddir`/`gd_closedir`. A thread parked on the lock resumed with a freed pointer, so R2's reopen alone could not have fixed them. | All reads (and the `!handle` EBADF guards) moved inside the lock. |
+| D | **`gd_error()` ran outside the lock** in 8 places (`gd_stat`, `gd_fstat`, `gd_readlink`, `gd_mkdir`, `gd_unlink`, `gd_rmdir`, `_gd_rename`, `gd_check_hlink`). It dereferences `g_ssh->ssh`/`->sftp`, so a concurrent reconnect made it a second use-after-free independent of file handles. It also reassigns `rc`, so a stale `SFTP_OK` could turn a failed `gd_rename` into a `0` return. | Brought inside the lock where an op exists; replaced with a plain log where no lock applies. |
+| E | **Keepalive parked while holding the lock.** `gd_keepalive_thread` takes `gd_lock_conn(c)` then calls `libssh2_keepalive_send`; with no session timeout a black-holed socket froze *every* op pinned to that connection, not just one thread. | Bounded by R6's session timeout. |
+
+### Deliberate deviations from the plan
+
+- **`f_release`/`f_releasedir` are not retried.** `gd_close`/`gd_closedir` free the
+  `GDHANDLE` on every path, so a second attempt would pass freed memory — reintroducing
+  the exact use-after-free this work removes. FUSE calls release once and the fd must be
+  freed once with it.
+- **`f_truncate` uses the path retry, not the handle retry.** Both branches bottom out in
+  `gd_truncate()`, which is a path op on a round-robin connection; `RETRY_HANDLE_OP`'s
+  premise (the op ran on `sh->conn`) does not hold for it.
+- **`f_rename` is not retried at all.** Not idempotent: if the first attempt succeeded
+  before the socket died, the retry reports ENOENT for an operation that worked.
+  Distinguishing the cases needs a probe of the target, which is its own race.
+
+### Residual risk
+
+- **Reopen does no consistency check.** A reopened handle is a new server-side file
+  description. If a third party replaced or truncated the file during the drop, a retried
+  write at the old offset lands in the wrong content. Offsets themselves are safe (FUSE
+  passes an absolute offset and `gd_read`/`gd_write` seek before every op). The re-stat
+  guard from the Risks section above is **not** implemented.
+### Live verification (2026-09-10, san@192.168.100.73)
+
+Tested through a local TCP proxy (127.0.0.1:2222 -> host:22) so connections could be
+killed on demand without touching port 22 -- a firewall rule there would have taken down
+the user's production `Z:` mount to the same host.
+
+- **Full suite: 63/63 passed.** (Blocked earlier by a WinFsp `VolumePrefix` collision:
+  `Z:` already held `\golddrive\san@192.168.100.73`, so the tests' own mount failed with
+  `ERROR_FILE_EXISTS`. Not a code fault.)
+- **Reopen path confirmed executing end to end.** A 25 MB sustained write through a single
+  open handle, with all 4 pooled connections killed mid-write:
+  `Handle error (-5) on .../sustained.bin, attempting reconnect` (R3) ->
+  `SSH reconnection successful (conn 1, generation 2, 1 handle(s) reopened, 0 lost)`
+  (R1+R2) -> write completed, server-side size byte-exact (26214400).
+- **A first attempt did not prove anything** and is worth recording: a short
+  write/drop/write test passed, but the log showed `0 handle(s) reopened` on every
+  reconnect -- background getattr traffic healed the drop during the test's sleep and
+  Windows reopened the file, so no handle was ever live on a reconnecting connection. A
+  passing test that never enters the code under test is not evidence.
+
+### Soak test (2026-09-10)
+
+4 concurrent writers each holding one handle open, 6 drops of all 4 pooled connections,
+with `listdir` traffic throughout so drops also landed mid-readdir:
+
+- 4 x 9600 KiB written, **every file byte-exact** on the server
+- 9 reconnects, **9 handles reopened, 0 lost**, 0 reconnect failures
+- 8 of 9 reconnects reopened at least one live handle (max 2 in one reconnect)
+- 32 directory listings across the drops, no errors; process did not crash
+
+24 connection deaths (6 drops x 4) produced only 9 reconnects -- the R5 generation check
+suppressing redundant rebuilds of sessions another thread had already healed.
+
+### Still unverified
+- **`gd_rename` across a drop** returns an error by design (see deviations); no test
+  covers what an application does with that.
+- **Reopen consistency check** remains unimplemented (see above).

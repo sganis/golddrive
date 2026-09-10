@@ -7,6 +7,7 @@ int gd_global_init(void);
 GDSSH *gd_init_ssh(void);
 void gd_conn_free(GDSSH* c);
 int gd_reconnect(GDSSH* c);
+int gd_heal(GDSSH* c, long seen_gen);
 int gd_finalize(int);
 int gd_stat(const char *path, struct fuse_stat *stbuf);
 int gd_fstat(intptr_t fd, struct fuse_stat *stbuf);

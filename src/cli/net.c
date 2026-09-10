@@ -30,8 +30,15 @@ SOCKET gd_tcp_connect(const char* host, int port)
 		sock = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 		if (sock == INVALID_SOCKET)
 			continue;
-		if (connect(sock, ai->ai_addr, (int)ai->ai_addrlen) == 0)
+		if (connect(sock, ai->ai_addr, (int)ai->ai_addrlen) == 0) {
+			/* ask the OS to probe idle connections, so a peer that vanished
+			 * without a FIN/RST eventually surfaces as a socket error rather
+			 * than a silently dead connection */
+			int on = 1;
+			setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE,
+				(const char*)&on, sizeof on);
 			break;                      /* connected */
+		}
 		closesocket(sock);
 		sock = INVALID_SOCKET;
 	}

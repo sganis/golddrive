@@ -9,6 +9,7 @@
 #include "../cli/util.h"
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
 static int g_checks = 0;
 static int g_failures = 0;
@@ -252,6 +253,111 @@ static void test_backoff(void)
 	CHECK(ok, "large attempt capped at 5000");
 }
 
+/* R1: the handle registry gd_reconnect walks to reopen live handles. Mirrors
+ * GDHANDLE by embedding gd_link as the FIRST member, which is what makes the
+ * gd_link* -> owner cast in gd_reconnect valid. */
+typedef struct {
+	gd_link link;
+	int id;
+} fake_handle;
+
+static void test_handle_registry(void)
+{
+	printf("handle registry (R1: gd_link)...\n");
+
+	gd_link* head = NULL;
+	fake_handle a = { {NULL, NULL}, 1 };
+	fake_handle b = { {NULL, NULL}, 2 };
+	fake_handle c = { {NULL, NULL}, 3 };
+
+	CHECK(gd_link_count(head) == 0, "empty list counts 0");
+
+	gd_link_add(&head, &a.link);
+	CHECK(gd_link_count(head) == 1, "one handle registered");
+	CHECK(((fake_handle*)head)->id == 1, "link* casts back to owner");
+
+	gd_link_add(&head, &b.link);
+	gd_link_add(&head, &c.link);
+	CHECK(gd_link_count(head) == 3, "three handles registered");
+
+	/* the walk must reach every registered handle: a missed one is exactly the
+	 * dangling pointer this registry exists to prevent */
+	int seen = 0;
+	for (gd_link* p = head; p; p = p->next)
+		seen |= 1 << ((fake_handle*)p)->id;
+	CHECK(seen == ((1 << 1) | (1 << 2) | (1 << 3)), "walk reaches all handles");
+
+	/* unregister from the middle */
+	gd_link_remove(&head, &b.link);
+	CHECK(gd_link_count(head) == 2, "middle unregister keeps the rest");
+	CHECK(b.link.next == NULL && b.link.prev == NULL, "removed node cleared");
+
+	/* double unregister must be harmless (gd_close on a stale handle) */
+	gd_link_remove(&head, &b.link);
+	CHECK(gd_link_count(head) == 2, "double unregister is a no-op");
+
+	/* unregister the head, then the last node */
+	gd_link_remove(&head, &c.link);
+	CHECK(gd_link_count(head) == 1, "head unregister works");
+	gd_link_remove(&head, &a.link);
+	CHECK(gd_link_count(head) == 0 && head == NULL, "list empties to NULL");
+
+	/* interleaved open/close over the same nodes leaves a sane list */
+	gd_link_add(&head, &a.link);
+	gd_link_add(&head, &b.link);
+	gd_link_remove(&head, &a.link);
+	gd_link_add(&head, &c.link);
+	gd_link_remove(&head, &b.link);
+	CHECK(gd_link_count(head) == 1, "interleaved add/remove: one left");
+	CHECK(((fake_handle*)head)->id == 3, "interleaved add/remove: correct one");
+
+	gd_link_remove(&head, &c.link);
+	CHECK(head == NULL, "interleaved add/remove empties cleanly");
+
+	/* NULL-safety: recovery paths must never trip over a missing list */
+	gd_link_add(NULL, &a.link);
+	gd_link_add(&head, NULL);
+	gd_link_remove(NULL, &a.link);
+	gd_link_remove(&head, NULL);
+	CHECK(head == NULL, "NULL arguments are no-ops");
+}
+
+static void test_timeout_ms(void)
+{
+	printf("timeout_ms (R6)...\n");
+
+	CHECK(timeout_ms(0, 30, 5, 600) == 30000, "absent -> default");
+	CHECK(timeout_ms(-5, 30, 5, 600) == 30000, "negative -> default");
+	CHECK(timeout_ms(45, 30, 5, 600) == 45000, "explicit value honoured");
+	CHECK(timeout_ms(1, 30, 5, 600) == 5000, "below min clamps up");
+	CHECK(timeout_ms(9999, 30, 5, 600) == 600000, "above max clamps down");
+	CHECK(timeout_ms(5, 30, 5, 600) == 5000, "min boundary");
+	CHECK(timeout_ms(600, 30, 5, 600) == 600000, "max boundary");
+	/* a zero timeout would mean "block forever", reintroducing the hang */
+	CHECK(timeout_ms(0, 30, 5, 600) > 0, "never resolves to no timeout");
+}
+
+static void test_retry_result(void)
+{
+	printf("retry_result (R4 idempotency)...\n");
+
+	CHECK(retry_result(GD_OP_PLAIN, 0) == 0, "plain success");
+	CHECK(retry_result(GD_OP_PLAIN, -EIO) == -EIO, "plain error passes through");
+	CHECK(retry_result(GD_OP_PLAIN, -EEXIST) == -EEXIST, "plain keeps EEXIST");
+	CHECK(retry_result(GD_OP_PLAIN, -ENOENT) == -ENOENT, "plain keeps ENOENT");
+
+	/* the first attempt created the dir before the socket died */
+	CHECK(retry_result(GD_OP_MKDIR, -EEXIST) == 0, "mkdir EEXIST -> success");
+	CHECK(retry_result(GD_OP_MKDIR, -ENOENT) == -ENOENT, "mkdir keeps ENOENT");
+	CHECK(retry_result(GD_OP_MKDIR, -EACCES) == -EACCES, "mkdir keeps EACCES");
+
+	/* the first attempt removed it before the socket died */
+	CHECK(retry_result(GD_OP_DELETE, -ENOENT) == 0, "delete ENOENT -> success");
+	CHECK(retry_result(GD_OP_DELETE, -EEXIST) == -EEXIST, "delete keeps EEXIST");
+	CHECK(retry_result(GD_OP_DELETE, -EACCES) == -EACCES, "delete keeps EACCES");
+	CHECK(retry_result(GD_OP_DELETE, 0) == 0, "delete success");
+}
+
 int main(void)
 {
 	printf("== golddrive native unit tests ==\n");
@@ -264,6 +370,9 @@ int main(void)
 	test_parse_json();
 	test_pool_math();
 	test_backoff();
+	test_handle_registry();
+	test_timeout_ms();
+	test_retry_result();
 	g_failures += run_net_tests();
 	g_failures += run_fuzz();
 
