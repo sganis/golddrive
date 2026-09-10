@@ -218,3 +218,88 @@ Drops the Windows 10 pin and moves the platform forward.
 5. **B1–B2** (trivial), then **B4** (ASan) to backstop fuzzing + the WinFsp move.
 6. **I2, I4** (small, unit-tested), then **I1** (connection pool) as a deliberate project.
 7. **B3, B5, I3, D2** as cleanup.
+
+---
+
+# Round 3 — Connection loss with open file handles (proposed 2026-09-10)
+
+**Status: proposed, nothing implemented.** Findings below are from code inspection on
+the current `master` (`627ed30`), not from a live repro.
+
+## Symptom
+
+An editor that holds a file open across an SSH connection drop (VSCode, Sublime) can no
+longer save it. The drive letter does **not** look disconnected — `net use` reports OK,
+Windows shows no red X — but every write on the open handle fails. Listing the folder in
+Explorer restores the drive, and only then can the editor save.
+
+## Why Explorer "fixes" it
+
+Explorer's directory listing goes through `f_getattr` / `f_opendir`, which are two of the
+only three callbacks wired to `RETRY_ON_DISCONNECT` (`main.c:64`) — they reconnect **and
+retry**, so they succeed and the mount looks healthy again. The editor's already-open
+handle is never repaired by that path, so the save keeps failing until the file is
+reopened.
+
+## Root cause
+
+| # | Finding | Evidence |
+|---|---------|----------|
+| C1 | **Open SFTP handles do not survive a reconnect, and nothing reopens them.** `gd_reconnect` calls `libssh2_sftp_shutdown` + `libssh2_session_free` on the dead session; the `LIBSSH2_SFTP_HANDLE`s belong to that session and do not outlive it. There is **no registry of open handles anywhere in the CLI**, so `sh->file_handle` / `sh->dir_handle` are left dangling. The next `gd_read`/`gd_write`/`gd_fstat`/`gd_fsync`/`gd_close` on that fd is a **use-after-free**. | `gd.c:287-346` (teardown at `296-318`), handles stored at `gd.c:736-737`, `gd.c:946-947`, struct `config.h:237-246` |
+| C2 | **`read`/`write` reconnect but never retry.** Both detect the connection error, kick a reconnect, then return the original error straight to the application. Even without C1 the save would still fail. | `main.c:173-205` |
+| C3 | **Most callbacks have no recovery at all.** Only `f_statfs` (`97`), `f_getattr` (`118`) and `f_opendir` (`232`) use `RETRY_ON_DISCONNECT`. Untouched: `f_open`, `f_create`, `f_truncate`, `f_release`, `f_flush`, `f_fsync`, `f_rename`, `f_unlink`, `f_mkdir`, `f_rmdir`, `f_readlink`, `f_utimens`, `f_readdir`, `f_releasedir`. | `main.c:124-311` |
+| C4 | **The pool makes the split visible.** A handle is pinned to the connection that opened it (`sh->conn`), while stateless ops round-robin the pool. With `connections=4`, one dead connection leaves the editor's file unusable while Explorer's listing lands on a healthy connection and works — exactly the "looks fine, won't save" report. | `gd.c:737`, `gd.c:947`, `pool.c` (`gd_lock` vs `gd_lock_conn`) |
+| C5 | **Double reconnect race.** `RETRY_ON_DISCONNECT` reads `g_ssh` *after* the failed call and reconnects it. `gd_reconnect` is serialized by the per-connection `SRWLOCK`, so when N dispatcher threads fail on the same dead connection, thread A rebuilds the session and threads B..N then tear down and rebuild the *healthy* session A just created — destroying any handles reopened by C6 in the process. | `main.c:64-77`, `pool.c` (`gd_lock_conn`) |
+| C6 | **No session timeout.** The session is blocking (`libssh2_session_set_blocking(ssh, 1)`) and `libssh2_session_set_timeout()` is never called, so a black-holed TCP connection (laptop sleep, VPN drop, NAT timeout) parks a WinFsp dispatcher thread in a socket read **indefinitely** — the error that would trigger recovery never arrives. This is a second, distinct path to "connected but frozen". Keepalive (`libssh2_keepalive_config(ssh, 1, 60)`, thread ping every 30 s) only helps once the socket actually errors. | `gd.c:69`, `gd.c:149`, `main.c:24-54` |
+
+## Work items
+
+| # | Item | File(s) | Tests to add | Effort |
+|---|------|---------|--------------|--------|
+| R1 | **Per-connection handle registry.** Add an intrusive list of live `GDHANDLE`s to `GDSSH` plus `next`/`prev` + `stale` on `GDHANDLE`. Register in `gd_open`/`gd_opendir`, unregister in `gd_close`/`gd_closedir` — all four already hold the connection lock at that point, so no new locking. `GDHANDLE` already carries `path`, `flags`, `mode`, `dir`, so **no new state is needed to reopen**; offsets need no tracking either, since FUSE passes an absolute offset on every call and `gd_read`/`gd_write` seek before each op (`gd.c:763`, `gd.c:808`). | `config.h:229-246`, `gd.c:665-744`, `869-899`, `900-959`, `1005-1034` | Native (`clitest`): register/unregister ordering, double-unregister, list integrity under interleaved open/close | M |
+| R2 | **Reopen handles inside `gd_reconnect`.** Before teardown, NULL every registered handle pointer so no racing thread dereferences freed memory. After the new session is adopted (`gd.c:336-344`), walk the list and `libssh2_sftp_open_ex` each entry from its stored path/flags/mode; on success swap the pointer in, on failure mark the handle `stale`. A stale handle returns `-EIO` once and is freed by `gd_close` without touching the dead pointer. | `gd.c:287-346` | Native: reopen-all / partial-failure / all-fail paths against a faked handle list; integration: drop the server mid-write and assert the write completes | L |
+| R3 | **Handle-aware retry for handle ops.** Replace the fire-and-forget reconnect in `f_read`/`f_write` with reconnect → reopen (R2) → retry once → only then return the error. Same treatment for `f_flush`, `f_fsync`, `f_release`, and `f_truncate` when `fi != 0`. Give the macro a handle-op sibling that pins `sh->conn` instead of reading `g_ssh`. | `main.c:64-77`, `149-212`, `291-305` | `CliTest`: write a file across a forced server restart; integration: fsx/fsbench must stay green | M |
+| R4 | **Recovery for the remaining path ops**, with explicit idempotency rules — a mutating op may have completed server-side before the socket died, so a blind retry can return a bogus error. On retry only: `mkdir` → `EEXIST` counts as success, `unlink`/`rmdir` → `ENOENT` counts as success, `rename` is **not** retried blindly (probe the target first, else surface the error). `open`/`create`/`readlink`/`utimens`/`truncate(path)` are safe to retry as-is. | `main.c:124-171`, `214-222`, `269-290` | Native: idempotency decision table; `CliTest` for each op across a reconnect | M |
+| R5 | **Fix the double-reconnect race (C5).** Add a `generation` counter to `GDSSH`, bumped by `gd_reconnect`. Recovery paths capture the generation before the op and, under the lock, reconnect **only if it is unchanged** — otherwise another thread already healed the connection, so just retry. Prevents B..N from destroying the handles A just reopened. | `config.h:229-235`, `gd.c:287`, `main.c:64-77` | Native: generation monotonicity + skip-reconnect decision; stress: N threads on one killed connection ⇒ exactly one reconnect | S |
+| R6 | **Bound the blocking case (C6).** Call `libssh2_session_set_timeout()` on every session (init and reconnect) so a black-holed socket fails with a real error instead of parking a dispatcher thread forever; enable `SO_KEEPALIVE` on the socket in `gd_tcp_connect`. Timeout must exceed the largest legitimate SFTP round trip — start at 30 s, make it `-o timeout=N`. | `gd.c:69`, `gd.c:149`, `net.c` | Native: option parse/clamp; integration: block the port with a firewall rule mid-read and assert the op errors within the timeout instead of hanging | M |
+| R7 | **Log + surface degraded state.** One log line per reconnect with connection index, handles reopened, handles lost. If reopen fails permanently, the WPF app's existing status poll should show the drive as degraded rather than healthy. | `gd.c`, `src/app/Service/MountService.cs` | C# test for the status mapping | S |
+
+## Test strategy
+
+Under R2 of the Round-2 guiding rules, every item lands with its test:
+
+- **Native (`src/clitest/`)** — registry bookkeeping, generation logic, idempotency table,
+  timeout option parsing. All network-free; the handle list is exercised against a fake
+  connection struct, so no server is needed.
+- **`CliTest` (`src/test/Cli/CliTest.cs`)** — black-box: open a file, restart/kill the SSH
+  server, write, assert success. This is the regression test for the reported bug and the
+  one that must fail before R1–R3 and pass after.
+- **Integration** — the existing fsx/fsbench/iozone stress run must stay green; add a
+  connection-drop variant if CI can bounce sshd mid-run.
+- **ASan (B4, still open)** would catch C1 directly; worth revisiting once the registry
+  exists, since the use-after-free is now a known reproducible target.
+
+## Order
+
+1. **R5** first — it is small, independent, and without it R2's reopened handles can be
+   destroyed by a second thread.
+2. **R1** — registry, behavior-preserving on its own.
+3. **R2** — reopen on reconnect. This is the fix; C1's use-after-free dies here.
+4. **R3** — retry read/write/flush/fsync/release. This is what makes the editor save work.
+5. **R6** — session timeout, so the *hang* variant reaches the recovery path at all.
+6. **R4**, then **R7** — coverage for the remaining ops, then observability.
+
+## Risks
+
+- **R2 is the sharp edge.** Reopening on a connection whose lock is held by the caller,
+  while other threads hold pointers to the old handles, is where a mistake turns a
+  recoverable drop into a crash. NULL-first-then-rebuild ordering is load-bearing.
+- **Silent data loss on reopen.** A reopened handle is a *new* server-side file
+  description. If the file was replaced/truncated remotely in between, a retried write at
+  the old offset writes to the wrong content. Reopen should re-stat and refuse (`-EIO`)
+  when size/mtime moved in a way inconsistent with the handle's own writes.
+- **`O_TRUNC`/`O_EXCL` must not be replayed.** Reopen has to mask creation flags off
+  `sh->flags`, or reconnecting mid-session truncates the user's file.
+- The blocking-mode session means the `LIBSSH2_ERROR_EAGAIN` loops and `waitsocket`
+  (`gd.c:1295`) are largely vestigial today; R6's timeout changes which errors actually
+  surface, so those loops need a re-read rather than a trust.
