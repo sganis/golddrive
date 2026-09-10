@@ -137,10 +137,16 @@ namespace golddrive
             set { _isWorking = value; NotifyPropertyChanged(); }
         }
 
+        // DEGRADED is a mounted drive, so it disconnects like CONNECTED; it is
+        // shown amber rather than green because files opened before an SSH drop
+        // were lost and have to be reopened by the application.
         public string ConnectButtonText =>
             (DriveStatus == DriveStatus.CONNECTED
+            || DriveStatus == DriveStatus.DEGRADED
             || DriveStatus == DriveStatus.BROKEN) ? "Disconnect" : "Connect";
-        public string ConnectButtonColor => DriveStatus == DriveStatus.CONNECTED ? "#43A047" : "#5C6BC0";
+        public string ConnectButtonColor =>
+            DriveStatus == DriveStatus.CONNECTED ? "#43A047" :
+            DriveStatus == DriveStatus.DEGRADED ? "#FB8C00" : "#5C6BC0";
         public bool ConnectButtonIsEnabled => true;
         public bool IsSettingsChanged { get; set; }
 

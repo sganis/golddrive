@@ -68,6 +68,14 @@ GDSSH* gd_init_ssh(void)
 	/* blocking mode */
 	libssh2_session_set_blocking(ssh, 1);
 
+	/* Bound every blocking call. Without this a black-holed socket (laptop
+	 * sleep, VPN drop, NAT timeout) parks the caller forever and the error that
+	 * would trigger recovery never arrives -- and when the caller is the
+	 * keepalive thread it parks holding the connection lock, freezing every
+	 * other op pinned to that connection. */
+	libssh2_session_set_timeout(ssh, timeout_ms(g_conf.timeout,
+		GD_TIMEOUT_DEFAULT, GD_TIMEOUT_MIN, GD_TIMEOUT_MAX));
+
 	/* resolve (IPv4 or IPv6) and connect */
 	sock = gd_tcp_connect(g_conf.host, g_conf.port);
 	if (sock == INVALID_SOCKET) {
@@ -233,6 +241,8 @@ GDSSH* gd_init_ssh(void)
 	s->sftp = sftp;
 	s->channel = channel;
 	s->thread = GetCurrentThreadId();
+	s->generation = 0;
+	s->handles = NULL;
 	InitializeSRWLock(&s->lock);
 
 	return s;
@@ -283,6 +293,77 @@ void gd_conn_free(GDSSH* c)
 	free(c);
 }
 
+/* Reopen one registered handle on the freshly rebuilt session.
+ * Returns 0 on success, -1 if this file/dir could not be reopened, and -2 if
+ * the failure was transport-level (the caller must stop walking the list). */
+static int gd_handle_reopen(GDSSH* c, GDHANDLE* sh)
+{
+	LIBSSH2_SFTP_HANDLE* h = NULL;
+	int retries = 0;
+	const int max_retries = 50;
+	unsigned long flags;
+	int type;
+
+	if (sh->dir) {
+		flags = 0;
+		type = LIBSSH2_SFTP_OPENDIR;
+	}
+	else {
+		/* Mask the creation flags. These have one-shot semantics and must not
+		 * be replayed: O_TRUNC would wipe the file the caller is still
+		 * writing, and O_EXCL would fail now that the file exists. */
+		flags = (unsigned long)sh->flags &
+			~(unsigned long)(GD_CREAT | GD_TRUNC | GD_EXCL);
+		type = LIBSSH2_SFTP_OPENFILE;
+	}
+
+	do {
+		h = libssh2_sftp_open_ex(c->sftp, sh->path,
+			(int)strlen(sh->path), flags, sh->mode, type);
+		g_sftp_calls++;
+		if (!h && libssh2_session_last_errno(c->ssh) != LIBSSH2_ERROR_EAGAIN)
+			break;
+		if (!h)
+			Sleep(10);
+	} while (!h && ++retries < max_retries);
+
+	if (!h) {
+		/* An SFTP-protocol error is about this path (deleted remotely,
+		 * permissions changed) -- the rest of the list can still be reopened.
+		 * Anything else means the fresh session is already in trouble, and with
+		 * a session timeout in force each further attempt can burn the full
+		 * timeout while we hold the connection lock. Stop instead. */
+		if (libssh2_session_last_errno(c->ssh) != LIBSSH2_ERROR_SFTP_PROTOCOL)
+			return -2;
+		return -1;
+	}
+
+	/* Refuse to resume a write handle whose file shrank while we were
+	 * disconnected: it was truncated or replaced, so our old offsets now point
+	 * into different content. Read-only handles have written_end == 0 and are
+	 * never rejected here. */
+	if (!sh->dir && sh->written_end > 0) {
+		LIBSSH2_SFTP_ATTRIBUTES attrs;
+		memset(&attrs, 0, sizeof attrs);
+		if (libssh2_sftp_fstat_ex(h, &attrs, 0) == 0 &&
+			(attrs.flags & LIBSSH2_SFTP_ATTR_SIZE) &&
+			!reopen_is_safe(sh->written_end, attrs.filesize)) {
+			gd_log("refusing to resume %s: %llu bytes written but file is "
+				"now %llu -- truncated or replaced remotely\n",
+				sh->path, sh->written_end,
+				(unsigned long long)attrs.filesize);
+			libssh2_sftp_close_handle(h);
+			return -1;
+		}
+	}
+
+	if (sh->dir)
+		sh->dir_handle = h;
+	else
+		sh->file_handle = h;
+	return 0;
+}
+
 /* rebuild connection c in place; caller must hold c->lock. Returns 0 on success */
 int gd_reconnect(GDSSH* c)
 {
@@ -290,6 +371,20 @@ int gd_reconnect(GDSSH* c)
 	int retries;
 	if (!c)
 		return -1;
+
+	/* Clear every handle this session owns BEFORE freeing it. The libssh2
+	 * handles belong to the session and die with it, so any thread that later
+	 * wakes on this connection's lock must find NULL rather than a freed
+	 * pointer. path/flags/mode/dir stay in GDHANDLE, which is all we need to
+	 * reopen below -- offsets need no tracking because FUSE passes an absolute
+	 * offset on every call and gd_read/gd_write seek before each op. */
+	int nhandles = 0;
+	for (gd_link* p = c->handles; p; p = p->next) {
+		GDHANDLE* sh = (GDHANDLE*)p;
+		sh->file_handle = NULL;
+		sh->dir_handle = NULL;
+		nhandles++;
+	}
 
 	/* tear down the dead session (abrupt) */
 	if (c->channel) {
@@ -331,9 +426,15 @@ int gd_reconnect(GDSSH* c)
 		}
 	}
 	if (!n) {
-		gd_log("SSH reconnection failed after %d attempts\n", GD_RECONNECT_MAX);
+		/* no session to reopen onto: every handle is permanently lost. They
+		 * stay NULL so ops fail with EBADF instead of touching freed memory. */
+		for (gd_link* p = c->handles; p; p = p->next)
+			((GDHANDLE*)p)->stale = 1;
+		gd_log("SSH reconnection failed after %d attempts, %d handle(s) lost\n",
+			GD_RECONNECT_MAX, nhandles);
 		return -1;
 	}
+	/* adopt the new session; c keeps its own lock, handle list and generation */
 	c->socket = n->socket;
 	c->ssh = n->ssh;
 	c->sftp = n->sftp;
@@ -341,8 +442,120 @@ int gd_reconnect(GDSSH* c)
 	c->thread = n->thread;
 	free(n);
 
-	gd_log("SSH reconnection successful\n");
+	/* publish the new generation: threads that failed on the old session see
+	 * the change and retry instead of tearing this fresh session back down */
+	c->generation++;
+
+	/* Reopen the handles the dead session owned, so an editor holding a file
+	 * open across the drop can still save. A handle we cannot reopen (deleted
+	 * remotely, permissions changed) is marked stale: its next op fails with
+	 * EBADF and gd_close frees it without touching the dead pointer. */
+	int reopened = 0;
+	int lost = 0;
+	int aborted = 0;
+	for (gd_link* p = c->handles; p; p = p->next) {
+		GDHANDLE* sh = (GDHANDLE*)p;
+		if (aborted) {
+			sh->stale = 1;
+			lost++;
+			continue;
+		}
+		int rr = gd_handle_reopen(c, sh);
+		if (rr == 0) {
+			sh->stale = 0;
+			reopened++;
+			continue;
+		}
+		sh->stale = 1;
+		lost++;
+		if (rr == -2) {
+			/* transport-level: the new session is already failing, so stop
+			 * retrying. Each attempt could otherwise burn the session timeout
+			 * while this connection's lock is held. */
+			aborted = 1;
+			gd_log("reopen aborted at %s: new session already failing\n",
+				sh->path);
+		}
+		else {
+			gd_log("could not reopen %s after reconnect\n", sh->path);
+		}
+	}
+
+	gd_log("SSH reconnection successful (conn %d, generation %ld, "
+		"%d handle(s) reopened, %d lost)\n",
+		gd_pool_index(c), c->generation, reopened, lost);
+
+	/* Only raise the flag; never clear it here. A later reconnect that happens
+	 * to have no handles open would otherwise erase the record of files this
+	 * mount already lost. The app clears it on a fresh mount. */
+	if (lost > 0)
+		gd_set_degraded(1);
 	return 0;
+}
+
+/* Publish "this mount lost open file handles across a reconnect" so the WPF app
+ * can show the drive as degraded instead of healthy (R7). The mount itself is
+ * still up, so nothing else the app polls -- DriveInfo.IsReady, `net use` --
+ * would ever reveal it. A marker file next to config.json is used rather than a
+ * new IPC channel: the app already reads that directory.
+ * Callers hold the connection lock. */
+void gd_set_degraded(int degraded)
+{
+	char path[MAX_PATH];
+#pragma warning(suppress: 4996) /* getenv: read-only env access is safe here */
+	char* appdata = getenv("LOCALAPPDATA");
+	if (!appdata || !g_conf.letter)
+		return;
+	sprintf_s(path, MAX_PATH, "%s\\Golddrive\\%c.degraded",
+		appdata, g_conf.letter);
+	if (degraded) {
+		FILE* f = NULL;
+		if (fopen_s(&f, path, "w") == 0 && f) {
+			fprintf(f, "%s\n", g_conf.mountpoint ? g_conf.mountpoint : "");
+			fclose(f);
+		}
+	}
+	else {
+		remove(path);
+	}
+}
+
+/* Register/unregister a live handle on the connection that owns it. The
+ * registry is what lets gd_reconnect find and reopen the handles belonging to a
+ * session it is about to free -- without it those pointers simply dangle.
+ * Callers must hold c->lock; gd_open/gd_opendir/gd_close/gd_closedir all do. */
+static void gd_handle_register(GDSSH* c, GDHANDLE* sh)
+{
+	gd_link_add(&c->handles, &sh->link);
+}
+
+static void gd_handle_unregister(GDSSH* c, GDHANDLE* sh)
+{
+	gd_link_remove(&c->handles, &sh->link);
+}
+
+/* Bring connection c back up unless another thread already did it.
+ * seen_gen is the generation the caller's failed operation ran under; if c has
+ * moved past it, someone else rebuilt the session (and reopened its handles)
+ * and reconnecting again would destroy that work. Takes c->lock internally.
+ * Returns 0 when the connection is usable afterwards. */
+int gd_heal(GDSSH* c, long seen_gen)
+{
+	int rc = 0;
+	if (!c)
+		return -1;
+
+	gd_lock_conn(c);
+	if (c->generation != seen_gen) {
+		gd_log("connection already healed by another thread "
+			"(generation %ld -> %ld), skipping reconnect\n",
+			seen_gen, c->generation);
+	}
+	else {
+		rc = gd_reconnect(c);
+	}
+	gd_unlock();
+	return rc;
 }
 
 int gd_finalize(int error)
@@ -369,10 +582,10 @@ int gd_stat(const char* path, struct fuse_stat* stbuf)
 		waitsocket(g_ssh);
 		g_sftp_calls++;
 	}
-	gd_unlock();
 
 	log_debug("rc=%d, %s\n", rc, path);
 	if (rc < 0) {
+		/* gd_error reads g_ssh->ssh/->sftp: must stay inside the lock */
 		gd_error(path);
 		rc = error();
 
@@ -380,6 +593,8 @@ int gd_stat(const char* path, struct fuse_stat* stbuf)
 			gd_log("I/O error detected, connection may be lost.");
 		}
 	}
+	gd_unlock();
+
 	copy_attributes(stbuf, &attrs);
 
 	/* generate inode */
@@ -406,29 +621,31 @@ int gd_fstat(intptr_t fd, struct fuse_stat* stbuf)
 	int rc = 0;
 	GDHANDLE* sh = (GDHANDLE*)fd;
 
-	LIBSSH2_SFTP_HANDLE* handle = sh->file_handle;
-	if (!handle) {
-		errno = EBADF;
-		return -1;
-	}
-
 	log_info("FSTAT: %s\n", sh->path);
 
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
 
 	gd_lock_conn(sh->conn);
+	/* read the handle under the lock: a concurrent gd_reconnect frees it */
+	LIBSSH2_SFTP_HANDLE* handle = sh->file_handle;
+	if (!handle) {
+		gd_unlock();
+		errno = EBADF;
+		return -1;
+	}
 	while ((rc = libssh2_sftp_fstat_ex(handle, &attrs, 0)) ==
 		LIBSSH2_ERROR_EAGAIN) {
 		waitsocket(g_ssh);
 		g_sftp_calls++;
 	}
-	gd_unlock();
-
 	log_debug("rc=%d, %s\n", rc, sh->path);
 	if (rc < 0) {
+		/* gd_error reads g_ssh->ssh/->sftp: must stay inside the lock */
 		gd_error(sh->path);
 		rc = error();
 	}
+	gd_unlock();
+
 	copy_attributes(stbuf, &attrs);
 	log_info("DONE\n");
 	return rc;
@@ -458,17 +675,19 @@ int gd_readlink(const char* path, char* buf, size_t size)
 		waitsocket(g_ssh);
 		g_sftp_calls++;
 	}
-	gd_unlock();
-
 	log_debug("rc=%d, %s\n", rc, path);
 	if (rc < 0) {
-		free(target);
-		if (strcmp(path, g_conf.root) != 0) {
+		int notroot = (strcmp(path, g_conf.root) != 0);
+		if (notroot) {
+			/* gd_error reads g_ssh->ssh/->sftp: must stay inside the lock */
 			gd_error(path);
-			return error();
+			rc = error();
 		}
-		return 0;
+		gd_unlock();
+		free(target);
+		return notroot ? rc : 0;
 	}
+	gd_unlock();
 	if (rc >= (int)size || rc >= MAX_PATH) {
 		free(target);
 		errno = ENAMETOOLONG;
@@ -515,12 +734,14 @@ int gd_mkdir(const char* path, fuse_mode_t mode)
 		waitsocket(g_ssh);
 		g_sftp_calls++;
 	}
-	gd_unlock();
 
 	if (rc < 0) {
+		/* gd_error reads g_ssh->ssh/->sftp: must stay inside the lock */
 		gd_error(path);
 		rc = error();
 	}
+	gd_unlock();
+
 	log_info("DONE\n");
 	return rc;
 }
@@ -537,12 +758,13 @@ int gd_unlink(const char* path)
 		waitsocket(g_ssh);
 		g_sftp_calls++;
 	}
-	gd_unlock();
 
 	if (rc) {
+		/* gd_error reads g_ssh->ssh/->sftp: must stay inside the lock */
 		gd_error(path);
 		rc = error();
 	}
+	gd_unlock();
 
 	if (g_conf.audit) {
 		gd_log("%s: DELETE: %s\n", g_conf.user, path);
@@ -563,12 +785,13 @@ int gd_rmdir(const char* path)
 		waitsocket(g_ssh);
 		g_sftp_calls++;
 	}
-	gd_unlock();
 
 	if (rc < 0) {
+		/* gd_error reads g_ssh->ssh/->sftp: must stay inside the lock */
 		gd_error(path);
 		rc = error();
 	}
+	gd_unlock();
 
 	log_info("DONE\n");
 	return rc;
@@ -586,12 +809,13 @@ static int _gd_rename(const char* from, const char* to)
 		waitsocket(g_ssh);
 		g_sftp_calls++;
 	}
-	gd_unlock();
 
 	if (rc < 0) {
+		/* gd_error reads g_ssh->ssh/->sftp: must stay inside the lock */
 		gd_error(from);
 		rc = error();
 	}
+	gd_unlock();
 
 	if (g_conf.audit) {
 		gd_log("%s: RENAME: %s -> %s\n", g_conf.user, from, to);
@@ -623,8 +847,12 @@ int gd_rename(const char* from, const char* to)
 					_gd_rename(totmp, to);
 			}
 			if (rc) {
-				gd_error(from);
-				gd_error(to);
+				/* the failing _gd_rename/gd_unlink already logged the SSH
+				 * error under its own lock. Repeating it here would read
+				 * g_ssh->ssh with no lock held, and gd_error reassigns rc --
+				 * a stale SFTP_OK would turn this failure into a 0 return. */
+				gd_log("ERROR: %s: rename fallback failed, %s -> %s\n",
+					__func__, from, to);
 			}
 		}
 	}
@@ -671,6 +899,10 @@ intptr_t gd_open(const char* path, int flags, unsigned int mode)
 		errno = ENOMEM;
 		return -1;
 	}
+	sh->link.next = NULL;
+	sh->link.prev = NULL;
+	sh->stale = 0;
+	sh->written_end = 0;
 	sh->file_handle = 0;
 	sh->dir_handle = 0;
 	strcpy_s(sh->path, MAX_PATH, path);
@@ -727,14 +959,17 @@ intptr_t gd_open(const char* path, int flags, unsigned int mode)
 
 	if (!handle) {
 		gd_error(sh->path);
+		rc = error();
 		gd_unlock();
 		free(sh);
-		return error();
+		return rc;
 	}
-	gd_unlock();
-
 	sh->file_handle = handle;
 	sh->conn = g_ssh;	/* pin the handle to the connection that opened it */
+	/* register while still holding the lock: publishing the handle and adding
+	 * it to the registry must be atomic w.r.t. a concurrent gd_reconnect */
+	gd_handle_register(g_ssh, sh);
+	gd_unlock();
 
 	log_info("OPEN HANDLE : %zu:%zu: %s, flags=%d, mode=%d\n",
 		(size_t)sh, (size_t)handle, sh->path, sh->flags, sh->mode);
@@ -754,12 +989,18 @@ int gd_read(intptr_t fd, void* buf, size_t size, fuse_off_t offset)
 		gd_log("%s: READ: %s\n", g_conf.user, sh->path);
 	}
 
+	gd_lock_conn(sh->conn);
+	/* read the handle under the lock: a concurrent gd_reconnect frees it */
 	LIBSSH2_SFTP_HANDLE* handle = sh->file_handle;
+	if (!handle) {
+		gd_unlock();
+		errno = EBADF;
+		return -1;
+	}
 
 	log_info("READING HANDLE: %zu size=%zu, offset=%zu\n",
 		(size_t)handle, size, offset);
 
-	gd_lock_conn(sh->conn);
 	libssh2_sftp_seek64(handle, offset);
 
 	size_t bsize;
@@ -801,10 +1042,16 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 		gd_log("%s: WRITE: %s\n", g_conf.user, sh->path);
 	}
 
+	gd_lock_conn(sh->conn);
+	/* read the handle under the lock: a concurrent gd_reconnect frees it */
 	LIBSSH2_SFTP_HANDLE* handle = sh->file_handle;
+	if (!handle) {
+		gd_unlock();
+		errno = EBADF;
+		return -1;
+	}
 	log_info("WRITING HANDLE: %zu size: %zu\n", (size_t)handle, size);
 
-	gd_lock_conn(sh->conn);
 	libssh2_sftp_seek64(handle, offset);
 
 	size_t bsize;
@@ -827,6 +1074,14 @@ int gd_write(intptr_t fd, const void* buf, size_t size, fuse_off_t offset)
 		rc = error();
 		if (rc)
 			total = -1;
+	}
+	if (total > 0) {
+		/* high-water mark of our own writes; gd_handle_reopen refuses to resume
+		 * if the file has since shrunk below it (truncated or replaced) */
+		unsigned long long end =
+			(unsigned long long)offset + (unsigned long long)total;
+		if (end > sh->written_end)
+			sh->written_end = end;
 	}
 	gd_unlock();
 
@@ -870,15 +1125,20 @@ int gd_close(intptr_t fd)
 {
 	int rc = 0;
 	GDHANDLE* sh = (GDHANDLE*)fd;
-	LIBSSH2_SFTP_HANDLE* handle;
-	handle = sh->file_handle;
+
+	gd_lock_conn(sh->conn);
+	/* read the handle under the lock: a concurrent gd_reconnect frees it */
+	LIBSSH2_SFTP_HANDLE* handle = sh->file_handle;
 	if (!handle) {
+		/* stale handle: reopen failed during a reconnect. Drop it from the
+		 * registry and free it -- there is no live SFTP handle to close. */
+		gd_handle_unregister(g_ssh, sh);
+		gd_unlock();
 		free(sh);
 		errno = EBADF;
 		return -1;
 	}
 	log_info("CLOSE HANDLE: %zu:%zu\n", (size_t)sh, (size_t)handle);
-	gd_lock_conn(sh->conn);
 	while ((rc = libssh2_sftp_close_handle(handle)) ==
 		LIBSSH2_ERROR_EAGAIN) {
 		waitsocket(g_ssh);
@@ -889,6 +1149,7 @@ int gd_close(intptr_t fd)
 		rc = error();
 	}
 
+	gd_handle_unregister(g_ssh, sh);
 	free(sh);
 	sh = NULL;
 	log_info("DONE\n");
@@ -907,8 +1168,14 @@ GDDIR* gd_opendir(const char* path)
 		errno = ENOMEM;
 		return 0;
 	}
+	sh->link.next = NULL;
+	sh->link.prev = NULL;
+	sh->stale = 0;
+	sh->written_end = 0;
 	sh->file_handle = 0;
 	sh->dir_handle = 0;
+	sh->flags = 0;
+	sh->mode = 0;
 	log_debug("OPEN GDHANDLE: %zu, %s\n", (size_t)sh, path);
 
 	LIBSSH2_SFTP_HANDLE* handle;
@@ -946,6 +1213,7 @@ GDDIR* gd_opendir(const char* path)
 	sh->dir_handle = handle;
 	sh->conn = g_ssh;	/* pin the dir handle to the connection that opened it */
 	sh->dir = 1;
+	gd_handle_register(g_ssh, sh);
 	memset(dirp, 0, sizeof * dirp);
 	dirp->handle = sh;
 	memcpy(dirp->path, path, pathlen);
@@ -961,10 +1229,13 @@ void gd_rewinddir(GDDIR* dirp)
 {
 	log_info("%s\n", dirp->path);
 	GDHANDLE* sh = dirp->handle;
-	LIBSSH2_SFTP_HANDLE* handle = sh->dir_handle;
 	gd_lock_conn(sh->conn);
-	libssh2_sftp_seek64(handle, 0);
-	g_sftp_calls++;
+	/* read the handle under the lock: a concurrent gd_reconnect frees it */
+	LIBSSH2_SFTP_HANDLE* handle = sh->dir_handle;
+	if (handle) {
+		libssh2_sftp_seek64(handle, 0);
+		g_sftp_calls++;
+	}
 	gd_unlock();
 	log_info("DONE\n");
 }
@@ -974,12 +1245,18 @@ struct GDDIRENT* gd_readdir(GDDIR* dirp)
 	int rc;
 	GDHANDLE* sh = dirp->handle;
 
-	LIBSSH2_SFTP_HANDLE* handle = sh->dir_handle;
 	LIBSSH2_SFTP_ATTRIBUTES attrs;
 	memset(&attrs, 0, sizeof attrs);
 	char fname[FILENAME_MAX];
 
 	gd_lock_conn(sh->conn);
+	/* read the handle under the lock: a concurrent gd_reconnect frees it */
+	LIBSSH2_SFTP_HANDLE* handle = sh->dir_handle;
+	if (!handle) {
+		gd_unlock();
+		errno = EBADF;
+		return 0;
+	}
 	while ((rc = libssh2_sftp_readdir(
 		handle, fname, FILENAME_MAX, &attrs)) ==
 		LIBSSH2_ERROR_EAGAIN) {
@@ -1009,10 +1286,19 @@ int gd_closedir(GDDIR* dirp)
 		return 0;
 
 	GDHANDLE* dirfh = dirp->handle;
-	LIBSSH2_SFTP_HANDLE* handle = dirfh->dir_handle;
-	log_info("CLOSE HANDLE: %zu:%zu\n", (size_t)dirfh, (size_t)handle);
 
 	gd_lock_conn(dirfh->conn);
+	/* read the handle under the lock: a concurrent gd_reconnect frees it */
+	LIBSSH2_SFTP_HANDLE* handle = dirfh->dir_handle;
+	log_info("CLOSE HANDLE: %zu:%zu\n", (size_t)dirfh, (size_t)handle);
+	if (!handle) {
+		/* stale dir handle: reopen failed during a reconnect */
+		gd_handle_unregister(g_ssh, dirfh);
+		gd_unlock();
+		free(dirfh);
+		free(dirp);
+		return 0;
+	}
 	while ((rc = libssh2_sftp_close_handle(handle)) ==
 		LIBSSH2_ERROR_EAGAIN) {
 		waitsocket(g_ssh);
@@ -1023,6 +1309,7 @@ int gd_closedir(GDDIR* dirp)
 		rc = error();
 	}
 
+	gd_handle_unregister(g_ssh, dirfh);
 	free(dirfh);
 	dirfh = NULL;
 	free(dirp);
@@ -1072,17 +1359,21 @@ int gd_check_hlink(const char* path)
 		rc = _splitpath_s(path, drive, _MAX_DRIVE, dir, _MAX_DIR, fname,
 				_MAX_FNAME, ext, _MAX_EXT);
 		if (rc != 0) {
-			gd_error(path);
-			rc = error();
-			return rc;
+			/* _splitpath_s failure is a CRT error, not an SSH one: gd_error
+			 * would read g_ssh->ssh with no lock held and overwrite rc */
+			gd_log("ERROR: %s: cannot split path, %s\n", __func__, path);
+			errno = EINVAL;
+			return -1;
 		}
 
 		rc = sprintf_s(backup, sizeof backup, "%s.%s_%s_%zu.hlink",	dir, fname, ext, time_mu());
 		rc = gd_rename(path, backup);
 
 		if (rc) {
-			gd_error(path);
-			rc = error();
+			/* gd_rename already logged the SSH error under its own lock */
+			gd_log("ERROR: %s: cannot rename hardlinked file, %s\n",
+				__func__, path);
+			rc = -1;
 		}
 		else {
 			gd_lock();
@@ -1152,13 +1443,15 @@ int gd_fsync(intptr_t fd)
 {
 	int rc = 0;
 	GDHANDLE* sh = (GDHANDLE*)fd;
+	log_info("%s\n", sh->path);
+	gd_lock_conn(sh->conn);
+	/* read the handle under the lock: a concurrent gd_reconnect frees it */
 	LIBSSH2_SFTP_HANDLE* handle = sh->file_handle;
 	if (!handle) {
+		gd_unlock();
 		errno = EBADF;
 		return -1;
 	}
-	log_info("%s\n", sh->path);
-	gd_lock_conn(sh->conn);
 	while ((rc = libssh2_sftp_fsync(handle)) ==
 		LIBSSH2_ERROR_EAGAIN) {
 		waitsocket(g_ssh);
@@ -1300,6 +1593,14 @@ int waitsocket(GDSSH* ssh)
 	fd_set* writefd = NULL;
 	fd_set* readfd = NULL;
 	int dir;
+
+	/* A failed gd_reconnect leaves socket == INVALID_SOCKET. select() would
+	 * then fail immediately, turning the caller's EAGAIN loop into a tight spin
+	 * with the connection lock held. Unreachable while the session is blocking
+	 * (libssh2 never returns EAGAIN then), but the loops are still there. */
+	if (!ssh || ssh->socket == INVALID_SOCKET)
+		return -1;
+
 	timeout.tv_sec = 10;
 	timeout.tv_usec = 0;
 	FD_ZERO(&fd);

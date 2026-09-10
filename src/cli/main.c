@@ -60,18 +60,50 @@ static int is_connection_error(int err)
 }
 
 /* Try to reconnect and retry an operation once.
- * Returns the original error if reconnection fails. */
-#define RETRY_ON_DISCONNECT(call) do {                     \
+ * Returns the original error if reconnection fails.
+ *
+ * The retry is pinned to the connection we just healed. Without the pin the
+ * retry calls gd_lock(), which round-robins to the *next* pooled connection --
+ * after a network drop every connection is dead, so the retry would run on a
+ * still-dead one and fail for a reason we already fixed. */
+#define RETRY_PATH_OP(op, call) do {                       \
 	int _rc = (call);                                      \
 	if (_rc != 0 && is_connection_error(_rc)) {            \
 		GDSSH* _c = g_ssh;  /* connection the failed op used */ \
-		gd_log("Connection error (%d), attempting reconnect\n", _rc); \
-		gd_lock_conn(_c);                                  \
-		if (gd_reconnect(_c) == 0) {                        \
-			gd_unlock();                                   \
-			_rc = (call);                                  \
-		} else {                                           \
-			gd_unlock();                                   \
+		long _gen = g_gen;  /* generation it ran under */   \
+		if (_c) {                                          \
+			gd_log("Connection error (%d), attempting reconnect\n", _rc); \
+			if (gd_heal(_c, _gen) == 0) {                  \
+				gd_pin(_c);                                \
+				_rc = retry_result((op), (call));          \
+				gd_unpin();                                \
+			}                                              \
+		}                                                  \
+	}                                                      \
+	return _rc;                                            \
+} while(0)
+
+/* idempotent path op: the retry's result is reported unchanged */
+#define RETRY_ON_DISCONNECT(call) RETRY_PATH_OP(GD_OP_PLAIN, call)
+
+/* Retry a handle operation once after healing the connection the handle is
+ * pinned to. Unlike RETRY_ON_DISCONNECT this never consults g_ssh: a handle's
+ * connection is known up front (sh->conn), and gd_reconnect reopens the handle
+ * before the retry runs, so the second attempt uses a live SFTP handle on a
+ * live session. If the reopen failed the handle is stale and we do not retry.
+ *
+ * Not used for release/close: gd_close frees the GDHANDLE, so retrying it would
+ * pass a freed pointer -- exactly the use-after-free this work removes. */
+#define RETRY_HANDLE_OP(fd, call) do {                     \
+	int _rc = (call);                                      \
+	if (_rc != 0 && is_connection_error(_rc)) {            \
+		GDHANDLE* _sh = (GDHANDLE*)(fd);                   \
+		long _gen = g_gen;  /* generation the op ran under */ \
+		if (_sh && _sh->conn) {                            \
+			gd_log("Handle error (%d) on %s, attempting reconnect\n", \
+				_rc, _sh->path);                           \
+			if (gd_heal(_sh->conn, _gen) == 0 && !_sh->stale) \
+				_rc = (call);                              \
 		}                                                  \
 	}                                                      \
 	return _rc;                                            \
@@ -121,32 +153,42 @@ static int f_getattr(const char* path, struct fuse_stat* stbuf,
 	RETRY_ON_DISCONNECT(f_getattr_impl(path, stbuf, fi));
 }
 
+static int f_readlink_impl(const char* path, char* buf, size_t size)
+{
+	realpath(path);
+	return -1 != gd_readlink(path, buf, size) ? 0 : -errno;
+}
 static int f_readlink(const char* path, char* buf, size_t size)
 {
-	realpath(path);
-	int rc = -1 != gd_readlink(path, buf, size) ? 0 : -errno;
-	return rc;
+	RETRY_ON_DISCONNECT(f_readlink_impl(path, buf, size));
 }
 
-static int f_unlink(const char* path)
+static int f_unlink_impl(const char* path)
 {
 	realpath(path);
-	int rc = -1 != gd_unlink(path) ? 0 : -errno;
-	return rc;
+	return -1 != gd_unlink(path) ? 0 : -errno;
+}
+static int f_unlink(const char* path)
+{
+	RETRY_PATH_OP(GD_OP_DELETE, f_unlink_impl(path));
 }
 
-static int f_create(const char* path, fuse_mode_t mode,
+static int f_create_impl(const char* path, fuse_mode_t mode,
 	struct fuse_file_info* fi)
 {
 	realpath(path);
 	intptr_t fd;
 	fuse_mode_t mod = mode;
-	int rc = -1 != (fd = gd_open(path, fi->flags, mod)) ?
+	return -1 != (fd = gd_open(path, fi->flags, mod)) ?
 		(fi_setfd(fi, fd), 0) : -errno;
-	return rc;
+}
+static int f_create(const char* path, fuse_mode_t mode,
+	struct fuse_file_info* fi)
+{
+	RETRY_ON_DISCONNECT(f_create_impl(path, mode, fi));
 }
 
-static int f_truncate(const char* path, fuse_off_t size,
+static int f_truncate_impl(const char* path, fuse_off_t size,
 	struct fuse_file_info* fi)
 {
 	if (0 == fi)
@@ -160,14 +202,24 @@ static int f_truncate(const char* path, fuse_off_t size,
 		return -1 != gd_ftruncate(fd, size) ? 0 : -errno;
 	}
 }
+/* Both branches bottom out in gd_truncate(), which is a path op on a
+ * round-robin connection -- not a handle op -- so this takes the path retry. */
+static int f_truncate(const char* path, fuse_off_t size,
+	struct fuse_file_info* fi)
+{
+	RETRY_ON_DISCONNECT(f_truncate_impl(path, size, fi));
+}
 
-static int f_open(const char* path, struct fuse_file_info* fi)
+static int f_open_impl(const char* path, struct fuse_file_info* fi)
 {
 	realpath(path);
 	intptr_t fd;
-	int rc = -1 != (fd = gd_open(path, fi->flags, 0)) ?
+	return -1 != (fd = gd_open(path, fi->flags, 0)) ?
 		(fi_setfd(fi, fd), 0) : -errno;
-	return rc;
+}
+static int f_open(const char* path, struct fuse_file_info* fi)
+{
+	RETRY_ON_DISCONNECT(f_open_impl(path, fi));
 }
 
 static int f_read(const char* path, char* buf, size_t size,
@@ -176,15 +228,7 @@ static int f_read(const char* path, char* buf, size_t size,
 	(void)path;
 	intptr_t fd = fi_fd(fi);
 	int nb;
-	int rc = -1 != (nb = gd_read(fd, buf, size, off)) ? nb : -errno;
-	if (rc != 0 && is_connection_error(rc)) {
-		gd_log("Read connection error (%d), attempting reconnect\n", rc);
-		GDSSH* c = g_ssh;
-		gd_lock_conn(c);
-		gd_reconnect(c);
-		gd_unlock();
-	}
-	return rc;
+	RETRY_HANDLE_OP(fd, -1 != (nb = gd_read(fd, buf, size, off)) ? nb : -errno);
 }
 
 static int f_write(const char* path, const char* buf,
@@ -193,17 +237,12 @@ static int f_write(const char* path, const char* buf,
 	(void)path;
 	intptr_t fd = fi_fd(fi);
 	int nb;
-	int rc = -1 != (nb = gd_write(fd, buf, size, off)) ? nb : -errno;
-	if (rc != 0 && is_connection_error(rc)) {
-		gd_log("Write connection error (%d), attempting reconnect\n", rc);
-		GDSSH* c = g_ssh;
-		gd_lock_conn(c);
-		gd_reconnect(c);
-		gd_unlock();
-	}
-	return rc;
+	RETRY_HANDLE_OP(fd, -1 != (nb = gd_write(fd, buf, size, off)) ? nb : -errno);
 }
 
+/* No retry here on purpose: gd_close frees the GDHANDLE on every path, so a
+ * second attempt would dereference freed memory. FUSE calls release exactly
+ * once, and the fd must be freed exactly once with it. */
 static int f_release(const char* path, struct fuse_file_info* fi)
 {
 	(void)path;
@@ -211,6 +250,11 @@ static int f_release(const char* path, struct fuse_file_info* fi)
 	return gd_close(fd);
 }
 
+/* Deliberately not retried. rename is not idempotent: if the first attempt
+ * succeeded server-side before the socket died, the retry finds oldpath gone
+ * and reports ENOENT for an operation that actually worked. Telling those two
+ * cases apart needs a probe of newpath, which is its own race -- surfacing the
+ * error is the honest answer. */
 static int f_rename(const char* oldpath, const char* newpath,
 	unsigned int flags)
 {
@@ -266,26 +310,38 @@ static int f_releasedir(const char* path,
 	return gd_closedir(dirp);
 }
 
+static int f_mkdir_impl(const char* path, fuse_mode_t mode)
+{
+	realpath(path);
+	return -1 != gd_mkdir(path, mode) ? 0 : -errno;
+}
 static int f_mkdir(const char* path, fuse_mode_t  mode)
 {
-	realpath(path);
-	int rc = -1 != gd_mkdir(path, mode) ? 0 : -errno;
-	return rc;
+	RETRY_PATH_OP(GD_OP_MKDIR, f_mkdir_impl(path, mode));
 }
 
-static int f_rmdir(const char* path)
+static int f_rmdir_impl(const char* path)
 {
 	realpath(path);
-	int rc = -1 != gd_rmdir(path) ? 0 : -errno;
-	return rc;
+	return -1 != gd_rmdir(path) ? 0 : -errno;
+}
+static int f_rmdir(const char* path)
+{
+	RETRY_PATH_OP(GD_OP_DELETE, f_rmdir_impl(path));
 }
 
-static int f_utimens(const char* path,
+static int f_utimens_impl(const char* path,
 	const struct fuse_timespec tv[2],
 	struct fuse_file_info* fi)
 {
 	realpath(path);
 	return -1 != gd_utimens(path, tv, fi) ? 0 : -errno;
+}
+static int f_utimens(const char* path,
+	const struct fuse_timespec tv[2],
+	struct fuse_file_info* fi)
+{
+	RETRY_ON_DISCONNECT(f_utimens_impl(path, tv, fi));
 }
 
 static int f_fsync(const char* path,
@@ -293,14 +349,14 @@ static int f_fsync(const char* path,
 {
 	(void)path; (void)datasync;
 	intptr_t fd = fi_fd(fi);
-	return -1 != gd_fsync(fd) ? 0 : -errno;
+	RETRY_HANDLE_OP(fd, -1 != gd_fsync(fd) ? 0 : -errno);
 }
 
 static int f_flush(const char* path, struct fuse_file_info* fi)
 {
 	(void)path;
 	intptr_t fd = fi_fd(fi);
-	return -1 != gd_flush(fd) ? 0 : -errno;
+	RETRY_HANDLE_OP(fd, -1 != gd_flush(fd) ? 0 : -errno);
 }
 
 /* supported fs operations */
@@ -353,6 +409,7 @@ static struct fuse_opt fs_opts[] = {
 	fs_OPT("audit",             audit, 1),
 	fs_OPT("buffer=%u",         buffer, 0),
 	fs_OPT("connections=%d",    connections, 0),
+	fs_OPT("timeout=%d",        timeout, 0),
 	fs_OPT("cipher=%s",         cipher, 0),
 
 	FUSE_OPT_KEY("--version",      KEY_VERSION),
@@ -402,6 +459,7 @@ static int fs_opt_proc(
 			"    -o cipher                  cipher for symmetric encryption, comma-separated list\n"
 			"    -o buffer=BYTES            read/write block size in bytes, default: 65535\n"
 			"    -o connections=N           SSH connection-pool size (1-16), default: 4\n"
+		"    -o timeout=SECONDS         SSH session timeout (5-600), default: 30\n"
 			"    -o create_umask=MASK       file creation umask permissions\n"
 			"    -o DebugLog=FILE           debug log file (requires -d)\n"
 			"    -o FileInfoTimeout=N       metadata timeout (millis, -1 for data caching)\n"
@@ -667,6 +725,11 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	gd_log("connections = %d\n", g_pool.size);
+
+	/* a fresh mount starts healthy: clear any degraded marker left by the
+	 * previous run, otherwise the app would report this mount as degraded
+	 * because of files lost by a process that is no longer running */
+	gd_set_degraded(0);
 
 	/* keepalive event */
 	g_keepalive_stop_event = CreateEvent(NULL, TRUE, FALSE, NULL);

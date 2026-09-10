@@ -6,6 +6,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <errno.h>
 #include "jsmn.h"
 
 int gd_knownhost_keytype(int hostkey_type)
@@ -71,6 +72,43 @@ int extract_rcode(const char* out, int* rcode)
 	return (int)(last - out);
 }
 
+void gd_link_add(gd_link** head, gd_link* n)
+{
+	if (!head || !n)
+		return;
+	n->prev = NULL;
+	n->next = *head;
+	if (*head)
+		(*head)->prev = n;
+	*head = n;
+}
+
+void gd_link_remove(gd_link** head, gd_link* n)
+{
+	if (!head || !n)
+		return;
+	/* an unlinked node has no neighbours and is not the head: nothing to do.
+	 * This is what makes a double unregister harmless. */
+	if (!n->prev && !n->next && *head != n)
+		return;
+	if (n->prev)
+		n->prev->next = n->next;
+	else if (*head == n)
+		*head = n->next;
+	if (n->next)
+		n->next->prev = n->prev;
+	n->next = NULL;
+	n->prev = NULL;
+}
+
+int gd_link_count(const gd_link* head)
+{
+	int n = 0;
+	for (const gd_link* p = head; p; p = p->next)
+		n++;
+	return n;
+}
+
 int clamp_int(int v, int lo, int hi)
 {
 	if (v < lo)
@@ -78,6 +116,30 @@ int clamp_int(int v, int lo, int hi)
 	if (v > hi)
 		return hi;
 	return v;
+}
+
+int timeout_ms(int seconds, int def_s, int min_s, int max_s)
+{
+	if (seconds <= 0)
+		seconds = def_s;
+	seconds = clamp_int(seconds, min_s, max_s);
+	return seconds * 1000;
+}
+
+int retry_result(int op, int rc)
+{
+	if (rc == 0)
+		return 0;
+	if (op == GD_OP_MKDIR && rc == -EEXIST)
+		return 0;
+	if (op == GD_OP_DELETE && rc == -ENOENT)
+		return 0;
+	return rc;
+}
+
+int reopen_is_safe(unsigned long long written_end, unsigned long long size)
+{
+	return size >= written_end;
 }
 
 int rr_index(long counter, int size)

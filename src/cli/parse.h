@@ -67,8 +67,58 @@ typedef struct {
  * file I/O, no globals. */
 int parse_json_buffer(const char* json, const char* drive, gd_json* out);
 
+/* Intrusive doubly-linked list node, embedded as the FIRST member of the struct
+ * being linked so a gd_link* converts straight back to the owner pointer. Backs
+ * the per-connection registry of open SFTP handles (R1): gd_reconnect walks it
+ * to reopen everything the dead session owned. Pure pointer surgery -- no
+ * allocation and no locking of its own; callers serialize (conn->lock). */
+typedef struct gd_link {
+	struct gd_link* next;
+	struct gd_link* prev;
+} gd_link;
+
+/* Push n onto the front of the list. n must not already be linked. */
+void gd_link_add(gd_link** head, gd_link* n);
+
+/* Unlink n and clear its pointers. Calling it on a node that is not currently
+ * linked is a no-op, so a double unregister cannot corrupt the list. */
+void gd_link_remove(gd_link** head, gd_link* n);
+
+/* Number of nodes currently linked (walks the list; for tests and logging). */
+int gd_link_count(const gd_link* head);
+
 /* Clamp v into [lo, hi]. Used to bound the connection-pool size. */
 int clamp_int(int v, int lo, int hi);
+
+/* Resolve the -o timeout=N option into milliseconds for
+ * libssh2_session_set_timeout: a non-positive value (option absent) selects
+ * def_s, and the result is clamped into [min_s, max_s] seconds. Pure. */
+int timeout_ms(int seconds, int def_s, int min_s, int max_s);
+
+/* Retry classes for path operations (R4). A mutating op may have completed on
+ * the server before the socket died, so after a reconnect the retry can fail
+ * with an error that really means "your first attempt already landed". */
+enum {
+	GD_OP_PLAIN = 0,	/* idempotent: report the retry's result unchanged */
+	GD_OP_MKDIR,		/* EEXIST on retry means the first attempt created it */
+	GD_OP_DELETE		/* ENOENT on retry means the first attempt removed it */
+};
+
+/* Translate a retried operation's result into what the caller should report.
+ * rc is the negative errno (or 0) from the retry. Pure. */
+int retry_result(int op, int rc);
+
+/* Is it safe to resume writing through a handle that was reopened after a
+ * reconnect? A reopened handle is a NEW server-side file description, so if the
+ * file was truncated or replaced while we were disconnected, resuming at our
+ * old offsets would write into the wrong content.
+ *
+ * written_end is the highest offset+length this handle has successfully
+ * written (0 if it has only ever read); size is the file's size at reopen.
+ * Our own writes only ever grow the file to at least written_end, so a smaller
+ * file means somebody else truncated or replaced it. Comparing raw size/mtime
+ * against open time instead would flag every ordinary write. Pure. */
+int reopen_is_safe(unsigned long long written_end, unsigned long long size);
 
 /* Round-robin index for a 1-based monotonically increasing counter over `size`
  * slots: rr_index(1,4)=0, rr_index(2,4)=1, ... rr_index(5,4)=0. Returns 0 if

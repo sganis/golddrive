@@ -1,5 +1,5 @@
 # golddrive
-version: 3.0.{build}
+version: 3.1.{build}
 image: Visual Studio 2022
 platform: x64
 configuration: Release

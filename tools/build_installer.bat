@@ -13,7 +13,7 @@ for %%P in (
     "%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe"
     "%ProgramFiles%\Inno Setup 6\ISCC.exe"
     "%USERPROFILE%\.local\InnoSetup6\ISCC.exe"
-) do if exist %%P set "ISCC=%%P"
+) do if exist %%P set "ISCC=%%~P"
 set SCRIPT=%~dp0..\installer\setup.iss
 
 if "%ISCC%"=="" (
@@ -22,7 +22,7 @@ if "%ISCC%"=="" (
 )
 
 echo Building installer: Golddrive %VERSION% x64
-%ISCC% /DMyAppVersion=%VERSION% /DMyPlatform=x64 /DMyConfiguration=Release %SCRIPT%
+"%ISCC%" /DMyAppVersion=%VERSION% /DMyPlatform=x64 /DMyConfiguration=Release "%SCRIPT%"
 
 if %ERRORLEVEL% neq 0 (
     echo INSTALLER BUILD FAILED

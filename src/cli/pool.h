@@ -22,3 +22,7 @@ void gd_pool_free(void);
 
 /* Round-robin a connection for new/stateless work. */
 GDSSH* gd_pool_pick(void);
+
+/* Index of c within the pool, or -1 if it is not pooled. For logging: a
+ * reconnect line is far easier to read when it names which connection moved. */
+int gd_pool_index(const GDSSH* c);
