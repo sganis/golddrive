@@ -4,11 +4,11 @@
 
 **Goal:** Mount a golddrive drive from a network with no SSH access (the VPN) but HTTPS access to termita, by carrying the SSH session through termita's `/tunnel` WebSocket.
 
-**Architecture:** termita already relays raw bytes between a WebSocket and an allowlisted `host:port` (termita repo, `src/tunnel.rs`, `doc/tunnel.md`). In the driver, `gd_init_ssh` gets a second transport: `gd_ws_connect` opens the WebSocket with WinHTTP and hands libssh2 one end of a loopback socket pair, with two pump threads between the other end and the WebSocket. Everything above the socket stays the same: `waitsocket`, timeouts, `gd_reconnect` and `known_hosts`. In the app, SSH.NET connects to a local port opened by `WebSocketTunnel`, ported from SEE (`/Users/san/dev/see/windows/Aramco.SEE.Core/SSH/SshNet/WebSocketTunnel.cs`). The user chooses SSH or WSS per drive, by hand.
+**Architecture:** termita already relays raw bytes between a WebSocket and an allowlisted `host:port` (termita repo, `src/tunnel.rs`, `doc/tunnel.md`). In the driver, `gd_init_ssh` gets a second transport: `gd_ws_connect` opens the WebSocket with WinHTTP and hands libssh2 one end of a loopback socket pair, with two pump threads between the other end and the WebSocket. Everything above the socket stays the same: `waitsocket`, timeouts, `gd_reconnect` and `known_hosts`. In the app, SSH.NET connects to a local port opened by `WebSocketTunnel`, ported from the SEE repo's `windows/Aramco.SEE.Core/SSH/SshNet/WebSocketTunnel.cs` (sibling checkout `..\see`). The user chooses SSH or WSS per drive, by hand.
 
 **Tech Stack:** C (MSVC, libssh2, WinHTTP WebSocket API, Winsock), C# .NET Framework 4.8 (`System.Net.WebSockets.ClientWebSocket`, SSH.NET 2024.2.0), WPF/MaterialDesign, MSTest.
 
-**Spec:** No separate spec. The decisions were agreed in chat on 2026-10-19 and are recorded in *Decisions* below. The termita protocol is in the termita repo's `doc/tunnel.md`, and SEE's client behavior in SEE's `doc/websocket-jump.md`.
+**Spec:** No separate spec. Reference repos (clone them next to golddrive on the Windows box): `github.com/sganis/see` and `github.com/sganis/termita`. The decisions were agreed in chat on 2026-10-19 and are recorded in *Decisions* below. The termita protocol is in the termita repo's `doc/tunnel.md`, and SEE's client behavior in SEE's `doc/websocket-jump.md`.
 
 ## Decisions
 
@@ -146,7 +146,7 @@ Expected: build error, `TunnelRelay` not defined.
 
 - [ ] **Step 3: Implement `TunnelRelay`**
 
-Follow SEE's test stand-in (`/Users/san/dev/see/windows/Aramco.SEE.Test/SSH/WebSocketTunnelTest.cs`, `Serve`/`Echo`). The difference: it dials the requested `host:port` with `TcpClient` and answers 502 if that fails, *before* accepting the WebSocket. It then pipes both directions concurrently as binary frames.
+Follow SEE's test stand-in (`..\see\windows\Aramco.SEE.Test\SSH\WebSocketTunnelTest.cs`, `Serve`/`Echo`). The difference: it dials the requested `host:port` with `TcpClient` and answers 502 if that fails, *before* accepting the WebSocket. It then pipes both directions concurrently as binary frames.
 
 - [ ] **Step 4: Run them to verify they pass**
 
